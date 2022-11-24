@@ -1,0 +1,20 @@
+name: tomo-methods
+channels:
+  - astra-toolbox
+  - conda-forge
+  - savu-dep
+  - anaconda
+dependencies:
+  - astra-toolbox::astra-toolbox
+  - conda-forge::cupy
+  - conda-forge::h5py[build=*openmpi*]
+  - conda-forge::hdf5plugin
+  - conda-forge::mpi4py
+  - conda-forge::numpy
+  - conda-forge::nvtx
+  - conda-forge::python
+  - conda-forge::pytest
+  - anaconda::ipython
+  - conda-forge::tomopy
+  - savu-dep::larix
+  - savu-dep::tomobar
