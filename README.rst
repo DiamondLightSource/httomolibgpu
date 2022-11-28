@@ -17,5 +17,6 @@ An example of running a method
 Input data for methods
 ======================
 
-* The file :code:`data/tomo_standard.nxs` contains the data that should be passed to the `standard_tomo()` loader function, and the loader's first three outputs should be passed to methods in `normalisation.py`
-* The dataset :code:`/data` in :code:`data/normalized-projs.h5` is the input for methods in `stripe_removal.py`
+* The file :code:`data/tomo_standard.nxs` contains the data that should be passed to the :code:`standard_tomo()` loader function, and the loader's first three outputs should be passed to methods in :code:`normalisation.py`
+* The dataset :code:`/data` in :code:`data/normalized-projs.h5` is the input for methods in :code:`stripe_removal.py`
+* The dataset :code:`/data` in :code:`data/removed-stripes.h5` is the input for methods in :code:`centering.py`
