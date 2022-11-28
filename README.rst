@@ -7,6 +7,7 @@ Setup
 * Install dependencies from the environment file :code:`conda env create httomolib --file conda/environment.yml` (SLOW)
 * Alternatively you can install from the existing explicit file :code:`conda create --name httomolib --file conda/explicit.txt`
 * Activate the environment with :code:`conda activate httomolib`
+* Install the enviroment in development mode with :code:`python setup.py develop`
 
 An example of running a method
 ==============================
