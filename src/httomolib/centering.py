@@ -62,9 +62,9 @@ def _search_coarse(sino, smin, smax, ratio, drop):
     (nrow, ncol) = sino.shape
     cen_fliplr = (ncol - 1.0) / 2.0
     smin_clip_val = cupy.clip(cupy.asarray([smin + cen_fliplr]), 0, ncol - 1)
-    smin = cupy.float(smin_clip_val - cen_fliplr)
+    smin = cupy.float_(smin_clip_val - cen_fliplr)
     smax_clip_val = cupy.clip(cupy.asarray([smax + cen_fliplr]), 0, ncol - 1)
-    smax = cupy.float(smax_clip_val - cen_fliplr)
+    smax = cupy.float_(smax_clip_val - cen_fliplr)
     start_cor = ncol // 2 + smin
     stop_cor = ncol // 2 + smax
     flip_sino = cupy.fliplr(sino)
@@ -97,11 +97,11 @@ def _search_fine(sino, srad, step, init_cen, ratio, drop):
     (nrow, ncol) = sino.shape
     cen_fliplr = (ncol - 1.0) / 2.0
     srad_clip_val = cupy.clip(cupy.asarray([cupy.abs(srad)]), 1.0, ncol / 4.0)
-    srad = cupy.float(srad_clip_val)
+    srad = cupy.float_(srad_clip_val)
     step_clip_val = cupy.clip(cupy.asarray([cupy.abs(step)]), 0.1, srad)
-    step = cupy.float(step_clip_val)
+    step = cupy.float_(step_clip_val)
     init_cen_clip_val = cupy.clip(cupy.asarray([init_cen]), srad, ncol - srad - 1)
-    init_cen = cupy.float(init_cen_clip_val)
+    init_cen = cupy.float_(init_cen_clip_val)
     list_cor = init_cen + cupy.arange(-srad, srad + step, step)
     flip_sino = cupy.fliplr(sino)
     comp_sino = cupy.flipud(sino)
