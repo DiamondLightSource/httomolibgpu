@@ -30,13 +30,16 @@ def test_stripe_removal():
     #--- testing the CuPy implementation from TomoCupy ---#
     data_after_stripe_removal = remove_stripes_tomocupy(data)
     for _ in range(10):
-        assert_allclose(cp.mean(data_after_stripe_removal), 0.28924704)
-        assert_allclose(cp.max(data_after_stripe_removal), 2.715983)
-        assert_allclose(cp.min(data_after_stripe_removal), -0.15378489)
+        assert_allclose(cp.mean(data_after_stripe_removal), 0.28924704,
+                        rtol=1e-05)
+        assert_allclose(cp.max(data_after_stripe_removal), 2.715983,
+                        rtol=1e-05)
+        assert_allclose(cp.min(data_after_stripe_removal), -0.15378489,
+                        rtol=1e-05)
 
     #--- testing the CuPy port of TomoPy's implementation ---#
     corrected_data = remove_stripe_based_sorting_cupy(data)
     for _ in range(10):
-        assert_allclose(cp.mean(corrected_data), 0.28907317)
-        assert_allclose(cp.max(corrected_data), 2.5370452)
-        assert_allclose(cp.min(corrected_data), -0.116429195)
+        assert_allclose(cp.mean(corrected_data), 0.28907317, rtol=1e-05)
+        assert_allclose(cp.max(corrected_data), 2.5370452, rtol=1e-05)
+        assert_allclose(cp.min(corrected_data), -0.116429195, rtol=1e-05)

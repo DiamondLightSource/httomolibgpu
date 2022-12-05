@@ -1,6 +1,6 @@
 import cupy as cp
 
-from cupy.testing import assert_array_equal
+from cupy.testing import assert_allclose
 from mpi4py import MPI
 
 from httomolib.normalisation import normalize_cupy
@@ -32,5 +32,5 @@ def test_normalize_cupy():
     data_max = cp.array(2.7530956, dtype=cp.float32)
 
     for _ in range(10):
-        assert_array_equal(cp.min(data), data_min)
-        assert_array_equal(cp.max(data), data_max)
+        assert_allclose(cp.min(data), data_min, rtol=1e-05)
+        assert_allclose(cp.max(data), data_max, rtol=1e-05)
