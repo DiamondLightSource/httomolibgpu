@@ -1,4 +1,4 @@
-import numpy as np
+import cupy as cp
 from imageio.v2 import imread, imwrite
 
 from httomolib.correction import correct_distortion
@@ -6,7 +6,8 @@ from httomolib.correction import correct_distortion
 
 # Load image to be corrected
 file_path = "data/distortion-correction/dot_pattern_03.tif"
-im = imread(file_path)
+im_host = imread(file_path)
+im = cp.asarray(im_host)
 
 # Define the `preview` to not crop out any of the image
 PREVIEW = {
@@ -22,8 +23,8 @@ distortion_coeffs_file_path = 'data/distortion-correction/distortion-coeffs.txt'
 # Apply distortion correction
 corrected_images = \
     correct_distortion(im, distortion_coeffs_file_path, PREVIEW)
-corrected_images = np.squeeze(corrected_images)
+corrected_images = cp.squeeze(corrected_images)
 
 # Save corrected image if desired
 #out_file_path = 'corrected-distortion.tif'
-#imwrite(out_file_path, im)
+#imwrite(out_file_path, im.get())
