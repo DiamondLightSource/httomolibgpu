@@ -1,14 +1,14 @@
-import numpy as np
+import cupy as cp
 
 
-# TODO: NumPy implementation of Fresnel filter from Savu
-def fresnel_filter(mat: np.ndarray, pattern: str, ratio: float,
+# CuPy implementation of Fresnel filter ported from Savu
+def fresnel_filter(mat: cp.ndarray, pattern: str, ratio: float,
                    apply_log: bool=True):
     """Apply Fresnel filter.
 
     Parameters
     ----------
-    mat : np.ndarray
+    mat : cp.ndarray
         The data to apply filtering to.
 
     pattern : str
@@ -23,11 +23,11 @@ def fresnel_filter(mat: np.ndarray, pattern: str, ratio: float,
 
     Returns
     -------
-    np.ndarray
+    cp.ndarray
         The filtered data.
     """
     if apply_log is True:
-        mat = -np.log(mat)
+        mat = -cp.log(mat)
 
     # Define window
     (depth1, height1, width1) = mat.shape[:3]
@@ -50,47 +50,47 @@ def fresnel_filter(mat: np.ndarray, pattern: str, ratio: float,
     padded_width = mat.shape[2] + pad_width*2
     res_width = \
         ncol if ncol < padded_width - pad_width else padded_width - pad_width
-    res = np.zeros((mat.shape[0], res_height, res_width))
+    res = cp.zeros((mat.shape[0], res_height, res_width))
 
     # Loop over images and apply filter
     for i in range(mat.shape[0]):
         if pattern == "PROJECTION":
             top_drop = 10  # To remove the time stamp in some data
-            mat_pad = np.pad(mat[i][top_drop:], (
+            mat_pad = cp.pad(mat[i][top_drop:], (
             (pad_width + top_drop, pad_width), (pad_width, pad_width)),
                                 mode="edge")
-            win_pad = np.pad(window, pad_width, mode="edge")
+            win_pad = cp.pad(window, pad_width, mode="edge")
             mat_dec = \
-                np.fft.ifft2(np.fft.fft2(mat_pad) / np.fft.ifftshift(win_pad))
-            mat_dec = np.real(
+                cp.fft.ifft2(cp.fft.fft2(mat_pad) / cp.fft.ifftshift(win_pad))
+            mat_dec = cp.real(
                 mat_dec[pad_width:pad_width + nrow, pad_width:pad_width + ncol])
             res[i] = mat_dec
         else:
             mat_pad = \
-                np.pad(mat[i], ((0, 0), (pad_width, pad_width)), mode='edge')
-            win_pad = np.pad(window, ((0, 0), (pad_width, pad_width)),
+                cp.pad(mat[i], ((0, 0), (pad_width, pad_width)), mode='edge')
+            win_pad = cp.pad(window, ((0, 0), (pad_width, pad_width)),
                                 mode="edge")
-            mat_fft = np.fft.fftshift(np.fft.fft(mat_pad), axes=1) / win_pad
-            mat_dec = np.fft.ifft(np.fft.ifftshift(mat_fft, axes=1))
-            mat_dec = np.real(mat_dec[:, pad_width:pad_width + ncol])
+            mat_fft = cp.fft.fftshift(cp.fft.fft(mat_pad), axes=1) / win_pad
+            mat_dec = cp.fft.ifft(cp.fft.ifftshift(mat_fft, axes=1))
+            mat_dec = cp.real(mat_dec[:, pad_width:pad_width + ncol])
             res[i] = mat_dec
 
     if apply_log is True:
-        res = np.exp(-res)
+        res = cp.exp(-res)
 
-    return np.float32(res)
+    return cp.asarray(res, dtype=cp.float32)
 
 
 def _make_window(height, width, ratio, pattern):
-    center_hei = int(np.ceil((height - 1) * 0.5))
-    center_wid = int(np.ceil((width - 1) * 0.5))
+    center_hei = int(cp.ceil((height - 1) * 0.5))
+    center_wid = int(cp.ceil((width - 1) * 0.5))
     if pattern == "PROJECTION":
-        ulist = (1.0 * np.arange(0, width) - center_wid) / width
-        vlist = (1.0 * np.arange(0, height) - center_hei) / height
-        u, v = np.meshgrid(ulist, vlist)
+        ulist = (1.0 * cp.arange(0, width) - center_wid) / width
+        vlist = (1.0 * cp.arange(0, height) - center_hei) / height
+        u, v = cp.meshgrid(ulist, vlist)
         win2d = 1.0 + ratio * (u ** 2 + v ** 2)
     else:
-        ulist = (1.0 * np.arange(0, width) - center_wid) / width
+        ulist = (1.0 * cp.arange(0, width) - center_wid) / width
         win1d = 1.0 + ratio * ulist ** 2
-        win2d = np.tile(win1d, (height, 1))
+        win2d = cp.tile(win1d, (height, 1))
     return win2d

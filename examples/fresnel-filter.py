@@ -1,5 +1,5 @@
 import h5py
-import numpy as np
+import cupy as cp
 from mpi4py import MPI
 
 from loaders import standard_tomo
@@ -25,13 +25,14 @@ PAD = 0
     detector_y,
     detector_x,
 ) = standard_tomo(in_file, data_key, image_key, DIMENSION, PREVIEW, PAD, comm)
+data = cp.asarray(host_data)
 
-# Apply NumPy implementation of Fresnel filter to projection data
+# Apply CuPy implementation of Fresnel filter to projection data
 PATTERN = 'PROJECTION'
 RATIO = 100.0
-data = fresnel_filter(host_data, PATTERN, RATIO)
+data = fresnel_filter(data, PATTERN, RATIO)
 
-## Apply NumPy implementation of Fresnel filter to sinogram data
+## Apply CuPy implementation of Fresnel filter to sinogram data
 #PATTERN = 'SINOGRAM'
 #RATIO = 100.0
-#data = fresnel_filter(np.swapaxes(host_data, 0, 1), PATTERN, RATIO)
+#data = fresnel_filter(cp.swapaxes(data, 0, 1), PATTERN, RATIO)
