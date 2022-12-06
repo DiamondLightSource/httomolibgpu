@@ -1,5 +1,4 @@
 import cupy as cp
-
 from cupy.testing import assert_allclose
 from mpi4py import MPI
 
