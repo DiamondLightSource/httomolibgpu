@@ -19,7 +19,7 @@ def fresnel_filter(mat: cp.ndarray, pattern: str, ratio: float,
         Control the strength of the filter. Greater is stronger.
 
     apply_log : optional, bool
-        Apply negative log function to data being filtering.
+        Apply negative log function to data being filtered.
 
     Returns
     -------
@@ -45,11 +45,9 @@ def fresnel_filter(mat: cp.ndarray, pattern: str, ratio: float,
     # shape of the filtered images are different to the shape of the
     # original/unfiltered images.
     padded_height = mat.shape[1] + pad_width*2
-    res_height = \
-        nrow if nrow < padded_height - pad_width else padded_height - pad_width
+    res_height = min(nrow, padded_height - pad_width)
     padded_width = mat.shape[2] + pad_width*2
-    res_width = \
-        ncol if ncol < padded_width - pad_width else padded_width - pad_width
+    res_width = min(ncol, padded_width - pad_width)
     res = cp.zeros((mat.shape[0], res_height, res_width))
 
     # Loop over images and apply filter

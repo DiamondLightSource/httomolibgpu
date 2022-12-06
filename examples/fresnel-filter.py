@@ -17,14 +17,8 @@ PREVIEW = [None, None, None]
 PAD = 0
 
 # Load the projection data
-(   host_data,
-    host_flats,
-    host_darks,
-    angles_radians,
-    angles_total,
-    detector_y,
-    detector_x,
-) = standard_tomo(in_file, data_key, image_key, DIMENSION, PREVIEW, PAD, comm)
+host_data = \
+    standard_tomo(in_file, data_key, image_key, DIMENSION, PREVIEW, PAD, comm)[0]
 data = cp.asarray(host_data)
 
 # Apply CuPy implementation of Fresnel filter to projection data
