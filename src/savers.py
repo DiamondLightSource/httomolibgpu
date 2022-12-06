@@ -1,8 +1,8 @@
 from pathlib import Path
 from typing import Tuple
 
-import numpy
 import h5py
+import numpy
 from mpi4py import MPI
 from mpi4py.MPI import Comm
 

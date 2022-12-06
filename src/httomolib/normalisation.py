@@ -1,5 +1,5 @@
 import cupy as cp
-from cupy import isinf, isnan, log, mean, ndarray, float32
+from cupy import float32, log, mean, ndarray
 
 
 # Raw CUDA kernel wrapped in python using CuPy
@@ -49,10 +49,12 @@ def normalize_raw_cuda(data: ndarray, flats: ndarray,
 	     }
            }""","normalize")
 
-    grids = (32,32,1)
-    blocks = (int(data.shape[0]),1,1)
-    params = (data,flat0,dark0,out,float32(1e-9),float32(10.),int(data.shape[1]), int(data.shape[2]))
+    grids = (32, 32, 1)
+    blocks = (data.shape[0], 1, 1)
+    params = (data, flat0, dark0, out, float32(1e-9),
+              float32(10.), data.shape[1], data.shape[2])
     norm_kernel(grids, blocks, params)
+
     return out
 
 
