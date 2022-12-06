@@ -1,9 +1,8 @@
 import cupy
 from mpi4py import MPI
 
-from loaders import standard_tomo
 from httomolib.normalisation import normalize_cupy
-
+from loaders import standard_tomo
 
 comm = MPI.COMM_WORLD
 

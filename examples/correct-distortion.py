@@ -3,7 +3,6 @@ from imageio.v2 import imread, imwrite
 
 from httomolib.correction import correct_distortion
 
-
 # Load image to be corrected
 file_path = "data/distortion-correction/dot_pattern_03.tif"
 im_host = imread(file_path)

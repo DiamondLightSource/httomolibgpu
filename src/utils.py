@@ -1,8 +1,8 @@
-from typing import Any
-from mpi4py.MPI import Comm
-from typing import Tuple, List, Dict
+from typing import Any, Dict, List, Tuple
 
- 
+from mpi4py.MPI import Comm
+
+
 def print_once(output: Any, comm: Comm) -> None:
     """Print an output from rank zero only.
 

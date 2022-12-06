@@ -1,5 +1,5 @@
 import os
-from typing import List, Tuple, Dict
+from typing import Dict, List
 
 import cupy as cp
 from cupyx.scipy.ndimage import map_coordinates
@@ -64,8 +64,7 @@ def correct_distortion(data: cp.ndarray, metadata_path: str,
     step = preview['steps']
     x_dim = 1
     y_dim = 0
-    step_check = \
-        True if max([step[i] for i in [x_dim, y_dim]]) > 1 else False
+    step_check = max([step[i] for i in [x_dim, y_dim]]) > 1
     if step_check:
         msg = "\n***********************************************\n" \
               "!!! ERROR !!! -> Method doesn't work with the step in" \
@@ -83,7 +82,7 @@ def correct_distortion(data: cp.ndarray, metadata_path: str,
         y_center = cp.asarray(center_from_top, dtype=cp.float32) - y_offset
         list_fact = cp.float32(tuple(polynomial_coeffs))
     else:
-        if not (os.path.isfile(metadata_path)):
+        if not os.path.isfile(metadata_path):
             msg = "!!! No such file: %s !!!" \
                   " Please check the file path" % str(metadata_path)
             raise ValueError(msg)
@@ -92,12 +91,12 @@ def correct_distortion(data: cp.ndarray, metadata_path: str,
                 metadata_path)
             x_center = x_center - x_offset
             y_center = y_center - y_offset
-        except IOError:
+        except IOError as exc:
             msg = "\n*****************************************\n" \
                   "!!! ERROR !!! -> Can't open this file: %s \n" \
                   "*****************************************\n\
                   " % str(metadata_path)
-            raise ValueError(msg)
+            raise ValueError(msg) from exc
 
     height, width = data.shape[y_dim+1], data.shape[x_dim+1]
     xu_list = cp.arange(width) - x_center

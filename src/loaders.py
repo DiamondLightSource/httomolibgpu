@@ -1,12 +1,13 @@
+import math
 from pathlib import Path
-from typing import Tuple, List, Dict
+from typing import Dict, List, Tuple
 
 import h5py
 from mpi4py import MPI
 from mpi4py.MPI import Comm
 from numpy import asarray, deg2rad, ndarray
 
-from utils import print_once, print_rank, _parse_preview
+from utils import _parse_preview, print_once, print_rank
 
 
 def standard_tomo(in_file: Path, data_path: str, image_key_path: str,
@@ -178,8 +179,7 @@ def read_through_dim3(file: str, path: str, preview: str=":,:,:",
         i1 = round((length / nproc) * (rank + 1)) + offset + pad[1]
         # Checking that i0 and i1 are still within the bounds of the dataset after
         # padding.
-        if i0 < 0:
-            i0 = 0
+        i0 = max(i0, 0)
         if i1 > dataset.shape[2]:
             i1 = dataset.shape[2]
         data = dataset[:, :, i0:i1:step]
@@ -236,8 +236,8 @@ def read_through_dim2(file: str, path: str, preview: str=":,:,:",
         i1 = round((length / nproc) * (rank + 1)) + offset + pad[1]
         # Checking that i0 and i1 are still within the bounds of the dataset after
         # padding.
-        if i0 < 0:
-            i0 = 0
+
+        i0 = max(i0, 0)
         if i1 > dataset.shape[1]:
             i1 = dataset.shape[1]
         data = dataset[slice_list[0], i0:i1:step, :]
@@ -294,8 +294,8 @@ def read_through_dim1(file: str, path: str, preview: str=":,:,:",
         i1 = round((length / nproc) * (rank + 1)) + offset + pad[1]
         # Checking that i0 and i1 are still within the bounds of the dataset after
         # padding.
-        if i0 < 0:
-            i0 = 0
+
+        i0 = max(i0, 0)
         if i1 > dataset.shape[0]:
             i1 = dataset.shape[0]
         data = dataset[i0:i1:step, slice_list[1], slice_list[2]]

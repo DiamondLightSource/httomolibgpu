@@ -3,7 +3,6 @@ from typing import Optional
 import cupy
 from cupyx.scipy.ndimage import gaussian_filter, shift
 
-
 # Paper describing centering algorithm:
 # https://opg.optica.org/oe/fulltext.cfm?uri=oe-22-16-19078&id=297315
 
@@ -31,7 +30,8 @@ def _find_center_vo_gpu(
     if sino.ndim == 2:
         sino = cupy.expand_dims(sino, 1)
         ind = 0
-    (depth, height, width) = sino.shape
+
+    height = sino.shape[1]
 
     if ind is None:
         ind = height // 2

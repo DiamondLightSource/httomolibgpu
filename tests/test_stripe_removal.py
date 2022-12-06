@@ -1,10 +1,12 @@
 import cupy as cp
-
-from cupy.testing import assert_array_equal, assert_allclose
+from cupy.testing import assert_allclose, assert_array_equal
 from mpi4py import MPI
 
 from httomolib.normalisation import normalize_cupy
-from httomolib.stripe_removal import remove_stripes_tomocupy, remove_stripe_based_sorting_cupy
+from httomolib.stripe_removal import (
+    remove_stripe_based_sorting_cupy,
+    remove_stripes_tomocupy,
+)
 from loaders import standard_tomo
 
 comm = MPI.COMM_WORLD
