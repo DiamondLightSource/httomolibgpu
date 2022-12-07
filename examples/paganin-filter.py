@@ -1,9 +1,8 @@
 import cupy as cp
 from mpi4py import MPI
 
-from loaders import standard_tomo
 from httomolib.filtering import paganin_filter
-
+from loaders import standard_tomo
 
 comm = MPI.COMM_WORLD
 

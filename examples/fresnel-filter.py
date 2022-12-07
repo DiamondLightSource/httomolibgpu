@@ -1,10 +1,9 @@
-import h5py
 import cupy as cp
+import h5py
 from mpi4py import MPI
 
-from loaders import standard_tomo
 from httomolib.filtering import fresnel_filter
-
+from loaders import standard_tomo
 
 comm = MPI.COMM_WORLD
 
