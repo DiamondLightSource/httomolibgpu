@@ -33,6 +33,6 @@ def test_fresnel_filter():
     pattern = 'SINOGRAM'
     filtered_data = fresnel_filter(data, pattern, ratio)
     for _ in range(5):
-        assert_allclose(cp.mean(filtered_data), 806.74347)
+        assert_allclose(cp.mean(filtered_data), 806.74347, rtol=1e-06)
         assert_allclose(cp.max(filtered_data), 1063.7007)
         assert_allclose(cp.min(filtered_data), 87.91508)
