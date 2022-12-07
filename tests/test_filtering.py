@@ -1,4 +1,5 @@
 import cupy as cp
+import pytest
 from cupy.testing import assert_allclose
 from mpi4py import MPI
 
@@ -6,22 +7,19 @@ from httomolib.filtering import fresnel_filter, paganin_filter
 from loaders import standard_tomo
 
 comm = MPI.COMM_WORLD
+in_file = 'data/tomo_standard.nxs'
+data_key = '/entry1/tomo_entry/data/data'
+image_key = '/entry1/tomo_entry/data/image_key'
+dimension = 1
+preview = [None, None, None]
+pad = 0
+eps = 1e-6
+host_data = \
+    standard_tomo(in_file, data_key, image_key, dimension, preview, pad, comm)[0]
+data = cp.array(host_data)
 
 
 def test_fresnel_filter():
-    in_file = 'data/tomo_standard.nxs'
-    data_key = '/entry1/tomo_entry/data/data'
-    image_key = '/entry1/tomo_entry/data/image_key'
-    dimension = 1
-    preview = [None, None, None]
-    pad = 0
-    eps = 1e-6
-
-    host_data = \
-        standard_tomo(in_file, data_key, image_key, dimension, preview, pad, comm)[0]
-
-    data = cp.array(host_data)
-
     #--- testing the Fresnel filter on tomo_standard ---#
     pattern = 'PROJECTION'
     ratio = 100.0
@@ -39,6 +37,8 @@ def test_fresnel_filter():
         assert_allclose(cp.max(filtered_data), 1063.7007)
         assert_allclose(cp.min(filtered_data), 87.91508)
 
+
+def test_paganin_filter():
     #--- testing the Paganin filter on tomo_standard ---#
     filtered_data = paganin_filter(data)
 
@@ -56,3 +56,6 @@ def test_fresnel_filter():
 
     assert_allclose(cp.mean(filtered_data), -765.3401, rtol=eps)
     assert_allclose(cp.min(filtered_data), -793.68787, rtol=eps)
+
+    _data = cp.ones(10)
+    pytest.raises(ValueError, lambda: paganin_filter(_data))

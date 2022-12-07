@@ -141,6 +141,10 @@ def paganin_filter(data: cp.ndarray, ratio: float=250.0, energy: float=53.0,
     if data.ndim == 2:
         data = cp.expand_dims(data, 0)
 
+    if data.ndim != 3:
+        raise ValueError(f"Invalid number of dimensions in data: {data.ndim},"
+            " please provide a stack of 2D projections.")
+
     # Setup various values for the filter
     _, height, width = data.shape
     micron = 10 ** (-6)
