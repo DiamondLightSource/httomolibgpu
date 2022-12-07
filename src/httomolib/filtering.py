@@ -138,6 +138,9 @@ def paganin_filter(data: cp.ndarray, ratio: float=250.0, energy: float=53.0,
     cp.ndarray
         The stack of filtered projections.
     """
+    if data.ndim == 2:
+        data = cp.expand_dims(data, 0)
+
     # Setup various values for the filter
     _, height, width = data.shape
     micron = 10 ** (-6)
