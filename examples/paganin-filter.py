@@ -1,8 +1,7 @@
 import cupy as cp
-import h5py
 from mpi4py import MPI
 
-from httomolib.filtering import fresnel_filter
+from httomolib.filtering import paganin_filter
 from loaders import standard_tomo
 
 comm = MPI.COMM_WORLD
@@ -20,12 +19,5 @@ host_data = \
     standard_tomo(in_file, data_key, image_key, DIMENSION, PREVIEW, PAD, comm)[0]
 data = cp.asarray(host_data)
 
-# Apply CuPy implementation of Fresnel filter to projection data
-PATTERN = 'PROJECTION'
-RATIO = 100.0
-data = fresnel_filter(data, PATTERN, RATIO)
-
-## Apply CuPy implementation of Fresnel filter to sinogram data
-#PATTERN = 'SINOGRAM'
-#RATIO = 100.0
-#data = fresnel_filter(cp.swapaxes(data, 0, 1), PATTERN, RATIO)
+# Apply CuPy implementation of Paganin filter to projection data
+data = paganin_filter(data)

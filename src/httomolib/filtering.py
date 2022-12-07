@@ -1,3 +1,5 @@
+import math
+
 import cupy as cp
 
 
@@ -92,3 +94,100 @@ def _make_window(height, width, ratio, pattern):
         win1d = 1.0 + ratio * ulist ** 2
         win2d = cp.tile(win1d, (height, 1))
     return win2d
+
+
+#: CuPy implementation of Paganin filter from Savu
+def paganin_filter(data: cp.ndarray, ratio: float=250.0, energy: float=53.0,
+                   distance: float=1.0, resolution: float=1.28, pad_y: int=100,
+                   pad_x: int=100, pad_method: str='edge',
+                   increment: float=0.0):
+    """Apply Paganin filter (for denoising or contrast enhancement) to
+    projections.
+
+    Parameters
+    ----------
+    data : cp.ndarray
+        The stack of projections to filter.
+
+    ratio : optional, float
+        Ratio of delta/beta.
+
+    energy : optional, float
+        Beam energy in keV.
+
+    distance : optional, float
+        Distance from sample to detector in metres.
+
+    resolution : optional, float
+        Pixel size in microns.
+
+    pad_y : optional, int
+        Pad the top and bottom of projections.
+
+    pad_x : optional, int
+        Pad the left and right of projections.
+
+    pad_method : optional, str
+        Numpy pad method.
+
+    increment : optional, float
+        Increment all values by this amount before taking the log.
+
+    Returns
+    -------
+    cp.ndarray
+        The stack of filtered projections.
+    """
+    if data.ndim == 2:
+        data = cp.expand_dims(data, 0)
+
+    if data.ndim != 3:
+        raise ValueError(f"Invalid number of dimensions in data: {data.ndim},"
+            " please provide a stack of 2D projections.")
+
+    # Setup various values for the filter
+    _, height, width = data.shape
+    micron = 10 ** (-6)
+    keV = 1000.0
+    energy *= keV
+    resolution *= micron
+    wavelength = (1240.0 / energy) * 10.0 ** (-9)
+
+    height1 = height + 2 * pad_y
+    width1 = width + 2 * pad_x
+    centery = cp.ceil(height1 / 2.0) - 1.0
+    centerx = cp.ceil(width1 / 2.0) - 1.0
+
+    # Define the paganin filter, taking into account the padding that will be
+    # applied to the projections (if any)
+    dpx = 1.0 / (width1 * resolution)
+    dpy = 1.0 / (height1 * resolution)
+    pxlist = (cp.arange(width1) - centerx) * dpx
+    pylist = (cp.arange(height1) - centery) * dpy
+    pxx = cp.zeros((height1, width1), dtype=cp.float32)
+    pxx[:, 0:width1] = pxlist
+    pyy = cp.zeros((height1, width1), dtype=cp.float32)
+    pyy[0:height1, :] = cp.reshape(pylist, (height1, 1))
+    pd = (pxx * pxx + pyy * pyy) * wavelength * distance * math.pi
+
+    filter1 = 1.0 + ratio * pd
+    filtercomplex = filter1 + filter1 * 1j
+
+    # Apply padding to all the 2D projections
+    data = cp.pad(data, ((0, 0), (pad_y, pad_y), (pad_x, pad_x)),
+                  mode=pad_method)
+
+    # Define array to hold result, which will not have the padding applied to it
+    res = cp.zeros((data.shape[0], height, width), dtype=cp.float32)
+
+    # Loop over projections and apply the filter
+    for i in range(data.shape[0]):
+        proj = cp.nan_to_num(data[i])  # Noted performance <- COMMENT PRESERVED FROM SAVU CODE, NOT SURE WHAT IT MEANS YET THOUGH...
+        proj[proj == 0] = 1.0
+        pci1 = cp.fft.fft2(cp.asarray(proj, dtype=cp.float32))
+        pci2 = cp.fft.fftshift(pci1) / filtercomplex
+        fpci = cp.abs(cp.fft.ifft2(pci2))
+        proj = -0.5 * ratio * cp.log(fpci + increment)
+        res[i] = proj[pad_y: pad_y + height, pad_x: pad_x + width]
+
+    return res
