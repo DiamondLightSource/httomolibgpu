@@ -1,3 +1,4 @@
+import cupy as cp
 from mpi4py import MPI
 
 from loaders import standard_tomo
@@ -15,8 +16,9 @@ PREVIEW = [None, None, None]
 PAD = 0
 
 # Load the projection data
-data = \
+host_data = \
     standard_tomo(in_file, data_key, image_key, DIMENSION, PREVIEW, PAD, comm)[0]
+data = cp.asarray(host_data)
 
-# Apply NumPy implementation of Paganin filter to projection data
+# Apply CuPy implementation of Paganin filter to projection data
 data = paganin_filter(data)

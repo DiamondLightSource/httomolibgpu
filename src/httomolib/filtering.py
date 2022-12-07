@@ -1,5 +1,4 @@
 import math
-import numpy as np
 import cupy as cp
 
 
@@ -97,7 +96,7 @@ def _make_window(height, width, ratio, pattern):
 
 
 # TODO: NumPy implementation of Paganin filter from Savu
-def paganin_filter(data: np.ndarray, ratio: float=250.0, energy: float=53.0,
+def paganin_filter(data: cp.ndarray, ratio: float=250.0, energy: float=53.0,
                    distance: float=1.0, resolution: float=1.28, pad_y: int=100,
                    pad_x: int=100, pad_method: str='edge',
                    increment: float=0.0):
@@ -106,7 +105,7 @@ def paganin_filter(data: np.ndarray, ratio: float=250.0, energy: float=53.0,
 
     Parameters
     ----------
-    data : np.ndarray
+    data : cp.ndarray
         The stack of projections to filter.
 
     ratio : optional, float
@@ -135,7 +134,7 @@ def paganin_filter(data: np.ndarray, ratio: float=250.0, energy: float=53.0,
 
     Returns
     -------
-    np.ndarray
+    cp.ndarray
         The stack of filtered projections.
     """
     # Setup various values for the filter
@@ -148,39 +147,39 @@ def paganin_filter(data: np.ndarray, ratio: float=250.0, energy: float=53.0,
 
     height1 = height + 2 * pad_y
     width1 = width + 2 * pad_x
-    centery = np.ceil(height1 / 2.0) - 1.0
-    centerx = np.ceil(width1 / 2.0) - 1.0
+    centery = cp.ceil(height1 / 2.0) - 1.0
+    centerx = cp.ceil(width1 / 2.0) - 1.0
 
     # Define the paganin filter, taking into account the padding that will be
     # applied to the projections (if any)
     dpx = 1.0 / (width1 * resolution)
     dpy = 1.0 / (height1 * resolution)
-    pxlist = (np.arange(width1) - centerx) * dpx
-    pylist = (np.arange(height1) - centery) * dpy
-    pxx = np.zeros((height1, width1), dtype=np.float32)
+    pxlist = (cp.arange(width1) - centerx) * dpx
+    pylist = (cp.arange(height1) - centery) * dpy
+    pxx = cp.zeros((height1, width1), dtype=cp.float32)
     pxx[:, 0:width1] = pxlist
-    pyy = np.zeros((height1, width1), dtype=np.float32)
-    pyy[0:height1, :] = np.reshape(pylist, (height1, 1))
+    pyy = cp.zeros((height1, width1), dtype=cp.float32)
+    pyy[0:height1, :] = cp.reshape(pylist, (height1, 1))
     pd = (pxx * pxx + pyy * pyy) * wavelength * distance * math.pi
 
     filter1 = 1.0 + ratio * pd
     filtercomplex = filter1 + filter1 * 1j
 
     # Apply padding to all the 2D projections
-    data = np.pad(data, ((0, 0), (pad_y, pad_y), (pad_x, pad_x)),
+    data = cp.pad(data, ((0, 0), (pad_y, pad_y), (pad_x, pad_x)),
                   mode=pad_method)
 
     # Define array to hold result, which will not have the padding applied to it
-    res = np.zeros((data.shape[0], height, width), dtype=np.float32)
+    res = cp.zeros((data.shape[0], height, width), dtype=cp.float32)
 
     # Loop over projections and apply the filter
     for i in range(data.shape[0]):
-        proj = np.nan_to_num(data[i])  # Noted performance <- COMMENT PRESERVED FROM SAVU CODE, NOT SURE WHAT IT MEANS YET THOUGH...
+        proj = cp.nan_to_num(data[i])  # Noted performance <- COMMENT PRESERVED FROM SAVU CODE, NOT SURE WHAT IT MEANS YET THOUGH...
         proj[proj == 0] = 1.0
-        pci1 = np.fft.fft2(np.float32(proj))
-        pci2 = np.fft.fftshift(pci1) / filtercomplex
-        fpci = np.abs(np.fft.ifft2(pci2))
-        proj = -0.5 * ratio * np.log(fpci + increment)
+        pci1 = cp.fft.fft2(cp.asarray(proj, dtype=cp.float32))
+        pci2 = cp.fft.fftshift(pci1) / filtercomplex
+        fpci = cp.abs(cp.fft.ifft2(pci2))
+        proj = -0.5 * ratio * cp.log(fpci + increment)
         res[i] = proj[pad_y: pad_y + height, pad_x: pad_x + width]
 
     return res
