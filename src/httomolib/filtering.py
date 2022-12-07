@@ -95,7 +95,7 @@ def _make_window(height, width, ratio, pattern):
     return win2d
 
 
-# TODO: NumPy implementation of Paganin filter from Savu
+#: CuPy implementation of Paganin filter from Savu
 def paganin_filter(data: cp.ndarray, ratio: float=250.0, energy: float=53.0,
                    distance: float=1.0, resolution: float=1.28, pad_y: int=100,
                    pad_x: int=100, pad_method: str='edge',
