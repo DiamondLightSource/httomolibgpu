@@ -8,10 +8,10 @@ from cupyx.scipy.ndimage import map_coordinates
 # CuPy implementation of distortion correction from Savu
 def correct_distortion(data: cp.ndarray, metadata_path: str,
                        preview: Dict[str, List[int]],
-                       center_from_left: float=None,
-                       center_from_top: float=None,
-                       polynomial_coeffs: List[float]=None,
-                       crop: int=0):
+                       center_from_left: float = None,
+                       center_from_top: float = None,
+                       polynomial_coeffs: List[float] = None,
+                       crop: int = 0):
     """Correct the radial distortion in the given stack of 2D images.
 
     Parameters
@@ -98,15 +98,14 @@ def correct_distortion(data: cp.ndarray, metadata_path: str,
                   " % str(metadata_path)
             raise ValueError(msg) from exc
 
-    height, width = data.shape[y_dim+1], data.shape[x_dim+1]
+    height, width = data.shape[y_dim + 1], data.shape[x_dim + 1]
     xu_list = cp.arange(width) - x_center
     yu_list = cp.arange(height) - y_center
     xu_mat, yu_mat = cp.meshgrid(xu_list, yu_list)
     ru_mat = cp.sqrt(xu_mat ** 2 + yu_mat ** 2)
     fact_mat = cp.sum(
         cp.asarray([factor * ru_mat ** i for i,
-                                                factor in
-                    enumerate(list_fact)]), axis=0)
+                    factor in enumerate(list_fact)]), axis=0)
     xd_mat = cp.asarray(cp.clip(
         x_center + fact_mat * xu_mat, 0, width - 1), dtype=cp.float32)
     yd_mat = cp.asarray(cp.clip(

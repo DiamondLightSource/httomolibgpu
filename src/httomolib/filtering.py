@@ -5,7 +5,7 @@ import cupy as cp
 
 # CuPy implementation of Fresnel filter ported from Savu
 def fresnel_filter(mat: cp.ndarray, pattern: str, ratio: float,
-                   apply_log: bool=True):
+                   apply_log: bool = True):
     """Apply Fresnel filter.
 
     Parameters
@@ -46,9 +46,9 @@ def fresnel_filter(mat: cp.ndarray, pattern: str, ratio: float,
     # Define array to hold result. Note that, due to the padding applied, the
     # shape of the filtered images are different to the shape of the
     # original/unfiltered images.
-    padded_height = mat.shape[1] + pad_width*2
+    padded_height = mat.shape[1] + pad_width * 2
     res_height = min(nrow, padded_height - pad_width)
-    padded_width = mat.shape[2] + pad_width*2
+    padded_width = mat.shape[2] + pad_width * 2
     res_width = min(ncol, padded_width - pad_width)
     res = cp.zeros((mat.shape[0], res_height, res_width))
 
@@ -57,8 +57,8 @@ def fresnel_filter(mat: cp.ndarray, pattern: str, ratio: float,
         if pattern == "PROJECTION":
             top_drop = 10  # To remove the time stamp in some data
             mat_pad = cp.pad(mat[i][top_drop:], (
-            (pad_width + top_drop, pad_width), (pad_width, pad_width)),
-                                mode="edge")
+                (pad_width + top_drop, pad_width), (pad_width, pad_width)),
+                mode="edge")
             win_pad = cp.pad(window, pad_width, mode="edge")
             mat_dec = \
                 cp.fft.ifft2(cp.fft.fft2(mat_pad) / cp.fft.ifftshift(win_pad))
@@ -69,7 +69,7 @@ def fresnel_filter(mat: cp.ndarray, pattern: str, ratio: float,
             mat_pad = \
                 cp.pad(mat[i], ((0, 0), (pad_width, pad_width)), mode='edge')
             win_pad = cp.pad(window, ((0, 0), (pad_width, pad_width)),
-                                mode="edge")
+                             mode="edge")
             mat_fft = cp.fft.fftshift(cp.fft.fft(mat_pad), axes=1) / win_pad
             mat_dec = cp.fft.ifft(cp.fft.ifftshift(mat_fft, axes=1))
             mat_dec = cp.real(mat_dec[:, pad_width:pad_width + ncol])
@@ -97,10 +97,10 @@ def _make_window(height, width, ratio, pattern):
 
 
 #: CuPy implementation of Paganin filter from Savu
-def paganin_filter(data: cp.ndarray, ratio: float=250.0, energy: float=53.0,
-                   distance: float=1.0, resolution: float=1.28, pad_y: int=100,
-                   pad_x: int=100, pad_method: str='edge',
-                   increment: float=0.0):
+def paganin_filter(data: cp.ndarray, ratio: float = 250.0, energy: float = 53.0,
+                   distance: float = 1.0, resolution: float = 1.28, pad_y: int = 100,
+                   pad_x: int = 100, pad_method: str = 'edge',
+                   increment: float = 0.0):
     """Apply Paganin filter (for denoising or contrast enhancement) to
     projections.
 
@@ -143,7 +143,7 @@ def paganin_filter(data: cp.ndarray, ratio: float=250.0, energy: float=53.0,
 
     if data.ndim != 3:
         raise ValueError(f"Invalid number of dimensions in data: {data.ndim},"
-            " please provide a stack of 2D projections.")
+                         " please provide a stack of 2D projections.")
 
     # Setup various values for the filter
     _, height, width = data.shape
@@ -182,7 +182,9 @@ def paganin_filter(data: cp.ndarray, ratio: float=250.0, energy: float=53.0,
 
     # Loop over projections and apply the filter
     for i in range(data.shape[0]):
-        proj = cp.nan_to_num(data[i])  # Noted performance <- COMMENT PRESERVED FROM SAVU CODE, NOT SURE WHAT IT MEANS YET THOUGH...
+        # Noted performance <- COMMENT PRESERVED FROM SAVU CODE, NOT SURE WHAT IT
+        # MEANS YET THOUGH...
+        proj = cp.nan_to_num(data[i])
         proj[proj == 0] = 1.0
         pci1 = cp.fft.fft2(cp.asarray(proj, dtype=cp.float32))
         pci2 = cp.fft.fftshift(pci1) / filtercomplex
