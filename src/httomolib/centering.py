@@ -36,7 +36,7 @@ def _find_center_vo_gpu(
     if ind is None:
         ind = height // 2
         if height > 10:
-            _sino = cupy.mean(sino[:, ind - 5 : ind + 5, :], axis=1)
+            _sino = cupy.mean(sino[:, ind - 5: ind + 5, :], axis=1)
         else:
             _sino = sino[:, ind, :]
     else:
@@ -189,8 +189,8 @@ def _create_mask(nrow, ncol, radius, drop):
         mask,
     )
     GENERATE_MASK_KERNEL(grid_dims, block_dims, params)
-    mask[cen_row - drop : cen_row + drop + 1, :] = 0
-    mask[:, cen_col - 1 : cen_col + 2] = 0
+    mask[cen_row - drop: cen_row + drop + 1, :] = 0
+    mask[:, cen_col - 1: cen_col + 2] = 0
     return mask
 
 

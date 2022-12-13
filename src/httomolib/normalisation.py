@@ -47,7 +47,7 @@ def normalize_raw_cuda(data: ndarray, flats: ndarray,
 	        out[a * B + b] = -log(tmp);
     	        }
 	     }
-           }""","normalize")
+           }""", "normalize")
 
     grids = (32, 32, 1)
     blocks = (data.shape[0], 1, 1)
@@ -69,7 +69,7 @@ def normalize_cupy(data: ndarray, flats: ndarray, darks: ndarray) -> ndarray:
 
     # same as tomopy implementation
     denom = (flat0 - dark0)
-    denom[denom<1e-6] = 1e-6
+    denom[denom < 1e-6] = 1e-6
     data = (data - dark0) / denom
     data[data > 10] = 10.
     data[data <= 0.0] = 1e-6

@@ -90,8 +90,8 @@ def standard_tomo(in_file: Path, data_path: str, image_key_path: str,
     return data, flats, darks, angles, angles_total, detector_y, detector_x
 
 
-def load_data(file: str, dim: int, path: str, preview: str=":,:,:",
-              pad: Tuple=(0, 0), comm: MPI.Comm=MPI.COMM_WORLD) -> ndarray:
+def load_data(file: str, dim: int, path: str, preview: str = ":,:,:",
+              pad: Tuple = (0, 0), comm: MPI.Comm = MPI.COMM_WORLD) -> ndarray:
     """Load data in parallel, slicing it through a certain dimension.
 
     Parameters
@@ -129,9 +129,9 @@ def load_data(file: str, dim: int, path: str, preview: str=":,:,:",
     return data
 
 
-def read_through_dim3(file: str, path: str, preview: str=":,:,:",
-                      pad: Tuple=(0, 0),
-                      comm: MPI.Comm=MPI.COMM_WORLD) -> ndarray:
+def read_through_dim3(file: str, path: str, preview: str = ":,:,:",
+                      pad: Tuple = (0, 0),
+                      comm: MPI.Comm = MPI.COMM_WORLD) -> ndarray:
     """Read a dataset in parallel, with each MPI process loading a block.
 
     Parameters
@@ -186,9 +186,9 @@ def read_through_dim3(file: str, path: str, preview: str=":,:,:",
         return data
 
 
-def read_through_dim2(file: str, path: str, preview: str=":,:,:",
-                      pad: Tuple=(0, 0),
-                      comm: MPI.Comm=MPI.COMM_WORLD) -> ndarray:
+def read_through_dim2(file: str, path: str, preview: str = ":,:,:",
+                      pad: Tuple = (0, 0),
+                      comm: MPI.Comm = MPI.COMM_WORLD) -> ndarray:
     """Read a dataset in parallel, with each MPI process loading a block.
 
     Parameters
@@ -244,9 +244,9 @@ def read_through_dim2(file: str, path: str, preview: str=":,:,:",
         return data
 
 
-def read_through_dim1(file: str, path: str, preview: str=":,:,:",
-                      pad: Tuple=(0, 0),
-                      comm: MPI.Comm=MPI.COMM_WORLD) -> ndarray:
+def read_through_dim1(file: str, path: str, preview: str = ":,:,:",
+                      pad: Tuple = (0, 0),
+                      comm: MPI.Comm = MPI.COMM_WORLD) -> ndarray:
     """Read a dataset in parallel, with each MPI process loading a block.
 
     Parameters
@@ -303,8 +303,8 @@ def read_through_dim1(file: str, path: str, preview: str=":,:,:",
 
 
 def get_pad_values(
-    pad: int, dim: int, dim_length: int, data_indices: List[int]=None,
-    preview: str=":,:,:", comm: MPI.Comm=MPI.COMM_WORLD
+    pad: int, dim: int, dim_length: int, data_indices: List[int] = None,
+    preview: str = ":,:,:", comm: MPI.Comm = MPI.COMM_WORLD
 ) -> Tuple[int, int]:
     """Get number of slices the block of data is padded either side.
 
@@ -411,8 +411,8 @@ def get_num_chunks(filepath: str, path: str, comm: MPI.Comm) -> int:
     return nchunks
 
 
-def get_angles(file: str, path: str="/entry1/tomo_entry/data/rotation_angle",
-               comm: MPI.Comm=MPI.COMM_WORLD) -> ndarray:
+def get_angles(file: str, path: str = "/entry1/tomo_entry/data/rotation_angle",
+               comm: MPI.Comm = MPI.COMM_WORLD) -> ndarray:
     """Get angles.
 
     Parameters
@@ -436,12 +436,12 @@ def get_angles(file: str, path: str="/entry1/tomo_entry/data/rotation_angle",
 
 def get_darks_flats(
     file: str,
-    data_path: str="/entry1/tomo_entry/data/data",
-    image_key_path: str="/entry1/instrument/image_key/image_key",
-    dim: int=1,
-    pad: int=0,
-    preview: str=":,:,:",
-    comm: MPI.Comm=MPI.COMM_WORLD,
+    data_path: str = "/entry1/tomo_entry/data/data",
+    image_key_path: str = "/entry1/instrument/image_key/image_key",
+    dim: int = 1,
+    pad: int = 0,
+    preview: str = ":,:,:",
+    comm: MPI.Comm = MPI.COMM_WORLD,
 ) -> Tuple[ndarray, ndarray]:
     """Get darks and flats.
 
@@ -512,8 +512,8 @@ def get_darks_flats(
 
 
 def get_data_indices(
-    filepath: str, image_key_path: str="/entry1/instrument/image_key/image_key",
-    comm: MPI.Comm=MPI.COMM_WORLD) -> List[int]:
+        filepath: str, image_key_path: str = "/entry1/instrument/image_key/image_key",
+        comm: MPI.Comm = MPI.COMM_WORLD) -> List[int]:
     """Get the indices of where the data is in a dataset.
 
     Parameters

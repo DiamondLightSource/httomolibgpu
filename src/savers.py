@@ -35,9 +35,9 @@ def _save_dataset(
     file_name: str,
     data: numpy.ndarray,
     slice_dim: int = 1,
-    chunks: Tuple=(150, 150, 10),
-    path: str="/data",
-    comm: MPI.Comm=MPI.COMM_WORLD,
+    chunks: Tuple = (150, 150, 10),
+    path: str = "/data",
+    comm: MPI.Comm = MPI.COMM_WORLD,
 ) -> None:
     """Save dataset in parallel.
     Parameters
@@ -70,7 +70,7 @@ def _save_data_parallel(
     dataset: h5py.Dataset,
     data: numpy.ndarray,
     slice_dim: int,
-    comm: MPI.Comm=MPI.COMM_WORLD,
+    comm: MPI.Comm = MPI.COMM_WORLD,
 ) -> None:
     """Save data to dataset in parallel.
     Parameters
@@ -100,7 +100,7 @@ def _save_data_parallel(
 
 
 def _get_data_shape(data: numpy.ndarray, dim: int,
-                   comm: MPI.Comm=MPI.COMM_WORLD) -> Tuple:
+                    comm: MPI.Comm = MPI.COMM_WORLD) -> Tuple:
     """Gets the shape of a distributed dataset.
     Parameters
     ----------

@@ -24,8 +24,8 @@ def remove_stripes_tomocupy(data: cupy.ndarray) -> cupy.ndarray:
 
 
 # Naive CuPy port of the NumPy implementation in TomoPy
-def remove_stripe_based_sorting_cupy(tomo:cupy.ndarray, size:int=None,
-                                     dim:int=1) -> cupy.ndarray:
+def remove_stripe_based_sorting_cupy(tomo: cupy.ndarray, size: int = None,
+                                     dim: int = 1) -> cupy.ndarray:
     """
     Remove full and partial stripe artifacts from sinogram using Nghia Vo's
     approach :cite:`Vo:18` (algorithm 3).
