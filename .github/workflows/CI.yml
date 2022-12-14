@@ -30,8 +30,8 @@ jobs:
       - name: Install dependencies with Conda
         run: |
           conda create --name httomolib --file conda/explicit.txt
-          conda activate httomolib
+          conda run -n httomolib python setup.py develop
 
       # run pytest
       - name: Run tests
-        run: pytest
+        run: conda run -n httomolib pytest
