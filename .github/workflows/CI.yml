@@ -24,7 +24,7 @@ jobs:
 
       # install dependencies with conda
       - name: Install dependencies with Conda
-        uses: |
+        run: |
           conda create --name httomolib --file conda/explicit.txt
           conda activate httomolib
           python setup.py develop
