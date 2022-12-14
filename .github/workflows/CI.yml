@@ -1,0 +1,36 @@
+name: httomolib CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v2
+
+      # setup Python 3.9
+      - name: Setup Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      # install dependencies with conda
+      - name: Install dependencies with Conda
+        uses: |
+          conda create --name httomolib --file conda/explicit.txt
+          conda activate httomolib
+          python setup.py develop
+
+      # run pytest
+      - name: Run tests
+        run: |
+          conda install pytest
+          pytest
