@@ -29,9 +29,9 @@ jobs:
       # install dependencies with conda
       - name: Install dependencies with Conda
         run: |
-          conda create --name httomolib --file conda/explicit.txt
+          conda env create httomolib --file conda/environment.yml
           conda run -n httomolib python setup.py develop
 
-      # run pytest
-      - name: Run tests
-        run: conda run -n httomolib pytest
+      - name: Run CPU tests with pytest
+        run: |
+          pytest -v -m "not gpu"
