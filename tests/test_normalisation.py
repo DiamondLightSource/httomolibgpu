@@ -33,3 +33,7 @@ def test_normalize_cupy():
     for _ in range(10):
         assert_allclose(cp.min(data), data_min, rtol=1e-05)
         assert_allclose(cp.max(data), data_max, rtol=1e-05)
+
+    # free up GPU memory by no longer referencing the variables
+    data, flats, darks, data_min, data_max = None, None, None, None, None
+    cp._default_memory_pool.free_all_blocks()

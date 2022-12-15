@@ -33,3 +33,7 @@ def test_find_center_of_rotation():
     cor = find_center_of_rotation(data_after_stripe_removal)
     for _ in range(10):
         assert_allclose(cor, 79.5)
+
+    # free up GPU memory by no longer referencing the variables
+    data, flats, darks, data_after_stripe_removal = None, None, None, None
+    cp._default_memory_pool.free_all_blocks()

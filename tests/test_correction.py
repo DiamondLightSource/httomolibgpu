@@ -39,3 +39,7 @@ def test_correct_distortion():
     for _ in range(5):
         assert_allclose(cp.mean(corrected_data), 122.2400016784668)
         assert cp.max(corrected_data) == 254
+
+    # free up GPU memory
+    im, corrected_data = None, None
+    cp._default_memory_pool.free_all_blocks()

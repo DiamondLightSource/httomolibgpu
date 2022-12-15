@@ -37,6 +37,10 @@ def test_fresnel_filter():
         assert_allclose(cp.max(filtered_data), 1063.7007)
         assert_allclose(cp.min(filtered_data), 87.91508)
 
+    # free up GPU memory by no longer referencing the variable
+    filtered_data = None
+    cp._default_memory_pool.free_all_blocks()
+
 
 def test_paganin_filter():
     #--- testing the Paganin filter on tomo_standard ---#
@@ -59,3 +63,7 @@ def test_paganin_filter():
 
     _data = cp.ones(10)
     pytest.raises(ValueError, lambda: paganin_filter(_data))
+
+    # free up GPU memory by no longer referencing the variable
+    filtered_data, _data = None, None
+    cp._default_memory_pool.free_all_blocks()
