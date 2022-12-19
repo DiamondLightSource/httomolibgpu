@@ -1,27 +1,18 @@
 import cupy as cp
+import numpy as np
 from cupy.testing import assert_allclose
-from mpi4py import MPI
 
 from httomolib.normalisation import normalize_cupy
-from loaders import standard_tomo
-
-comm = MPI.COMM_WORLD
-
 
 def test_normalize_cupy():
     # testing cupy implementation for normalization
 
-    in_file = 'data/tomo_standard.nxs'
-    data_key = '/entry1/tomo_entry/data/data'
-    image_key = '/entry1/tomo_entry/data/image_key'
-    dimension = 1
-    preview = [None, None, None]
-    pad = 0
-
-    (
-        host_data, host_flats, host_darks, _, _, _, _
-    ) = standard_tomo(in_file, data_key, image_key, dimension, preview, pad, comm)
-
+    in_file = 'data/tomo_standard.npz'
+    datafile = np.load(in_file) #keys: data, flats, darks, angles, angles_total, detector_y, detector_x
+    host_data = datafile['data']
+    host_flats = datafile['flats']
+    host_darks = datafile['darks']
+    
     data = cp.asarray(host_data)
     flats = cp.asarray(host_flats)
     darks = cp.asarray(host_darks)
