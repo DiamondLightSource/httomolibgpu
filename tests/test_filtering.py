@@ -1,23 +1,15 @@
 import cupy as cp
+import numpy as np
 import pytest
 from cupy.testing import assert_allclose
-from mpi4py import MPI
 
 from httomolib.filtering import fresnel_filter, paganin_filter
-from loaders import standard_tomo
 
-comm = MPI.COMM_WORLD
-in_file = 'data/tomo_standard.nxs'
-data_key = '/entry1/tomo_entry/data/data'
-image_key = '/entry1/tomo_entry/data/image_key'
-dimension = 1
-preview = [None, None, None]
-pad = 0
-eps = 1e-6
-host_data = \
-    standard_tomo(in_file, data_key, image_key, dimension, preview, pad, comm)[0]
+in_file = 'data/tomo_standard.npz'
+datafile = np.load(in_file) #keys: data, flats, darks, angles, angles_total, detector_y, detector_x
+host_data = datafile['data']
 data = cp.array(host_data)
-
+eps = 1e-6
 
 def test_fresnel_filter():
     #--- testing the Fresnel filter on tomo_standard ---#
