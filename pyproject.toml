@@ -1,4 +1,21 @@
 # pyproject.toml
+[tool.poetry]
+name = "httomolib"
+description = "Commonly used tomography data processing methods at DLS."
+readme = "README.rst"
+repository = "https://github.com/DiamondLightSource/httomolib"
+license = "BSD 3-Clause"
+authors = [
+    "Daniil Kazantsev <daniil.kazantsev@diamond.ac.uk>",
+    "Yousef Moazzam   <yousef.moazzam@diamond.ac.uk>",
+    "Naman Gera       <naman.gera@diamond.ac.uk>",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: BSD 3-clause",
+    "Programming Language :: Python :: 3.10",
+]
+
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "-v -ra -q"
