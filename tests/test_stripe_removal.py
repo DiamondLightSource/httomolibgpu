@@ -2,11 +2,8 @@ import cupy as cp
 import numpy as np
 from cupy.testing import assert_allclose, assert_array_equal
 
-from httomolib.normalisation import normalize_cupy
-from httomolib.stripe_removal import (
-    remove_stripe_based_sorting_cupy,
-    remove_stripes_tomocupy,
-)
+from httomolib.prep.normalize import normalize_cupy
+from httomolib.prep.stripe import remove_stripe_based_sorting_cupy, remove_stripes_titarenko_cupy
 
 def test_stripe_removal():
     in_file = 'data/tomo_standard.npz'
@@ -21,7 +18,7 @@ def test_stripe_removal():
     data = normalize_cupy(data, flats, darks)
 
     #--- testing the CuPy implementation from TomoCupy ---#
-    data_after_stripe_removal = remove_stripes_tomocupy(data)
+    data_after_stripe_removal = remove_stripes_titarenko_cupy(data)
     for _ in range(10):
         assert_allclose(cp.mean(data_after_stripe_removal), 0.28924704,
                         rtol=1e-05)

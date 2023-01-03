@@ -1,31 +1,63 @@
-import cupy
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# ---------------------------------------------------------------------------
+# Copyright 2022 Diamond Light Source Ltd.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ---------------------------------------------------------------------------
+# Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
+# Created Date: 01 November 2022
+# version ='0.1'
+# ---------------------------------------------------------------------------
+"""Modules for stripes removal using CuPy API"""
+import cupy as cp
+from cupy import abs, mean, ndarray
 from cupyx.scipy.ndimage import median_filter
 
 
-# CuPy implementation from TomoCuPy
-def remove_stripes_tomocupy(data: cupy.ndarray) -> cupy.ndarray:
-    """Removes stripes with the method of V. Titarenko (TomoCuPy).
-    Args:
-        data: A cupy array of projections.
-    Returns:
-        cupy.ndarray: A cupy array of projections with stripes removed.
+def remove_stripes_titarenko_cupy(data: ndarray,
+                             beta: float = 0.1) -> ndarray:
     """
-    beta = 0.1  # lowering the value increases the filter strength
-    gamma = beta * ((1 - beta) / (1 + beta)) ** cupy.abs(
-        cupy.fft.fftfreq(data.shape[-1]) * data.shape[-1]
+    Removes stripes with the method of V. Titarenko (TomoCuPy implementation)
+
+    Parameters
+    ----------
+    arr : ndarray
+        3D stack of projections as a CuPy array.
+    beta : float, optional
+        filter parameter, lower values increase the filter strength.
+
+    Returns
+    -------
+    ndarray
+        3D CuPy array of de-striped projections.
+    """
+    gamma = beta * ((1 - beta) / (1 + beta)) ** abs(
+        cp.fft.fftfreq(data.shape[-1]) * data.shape[-1]
     )
     gamma[0] -= 1
-    v = cupy.mean(data, axis=0)
+    v = mean(data, axis=0)
     v = v - v[:, 0:1]
-    v = cupy.fft.irfft(cupy.fft.rfft(v) * cupy.fft.rfft(gamma))
+    v = cp.fft.irfft(cp.fft.rfft(v) * cp.fft.rfft(gamma))
     data[:] += v
 
     return data
 
 
 # Naive CuPy port of the NumPy implementation in TomoPy
-def remove_stripe_based_sorting_cupy(tomo: cupy.ndarray, size: int = None,
-                                     dim: int = 1) -> cupy.ndarray:
+def remove_stripe_based_sorting_cupy(tomo: ndarray,
+                                     size: int = None,
+                                     dim: int = 1) -> ndarray:
     """
     Remove full and partial stripe artifacts from sinogram using Nghia Vo's
     approach :cite:`Vo:18` (algorithm 3).
@@ -61,24 +93,23 @@ def _create_matindex(nrow, ncol):
     """
     Create a 2D array of indexes used for the sorting technique.
     """
-    listindex = cupy.arange(0.0, ncol, 1.0)
-    matindex = cupy.tile(listindex, (nrow, 1))
+    listindex = cp.arange(0.0, ncol, 1.0)
+    matindex = cp.tile(listindex, (nrow, 1))
     return matindex
-
 
 def _rs_sort(sinogram, size, matindex, dim):
     """
     Remove stripes using the sorting technique.
     """
-    sinogram = cupy.transpose(sinogram)
-    matcomb = cupy.asarray(cupy.dstack((matindex, sinogram)))
-    matsort = cupy.asarray(
+    sinogram = cp.transpose(sinogram)
+    matcomb = cp.asarray(cp.dstack((matindex, sinogram)))
+    matsort = cp.asarray(
         [row[row[:, 1].argsort()] for row in matcomb])
     if dim == 1:
         matsort[:, :, 1] = median_filter(matsort[:, :, 1], (size, 1))
     else:
         matsort[:, :, 1] = median_filter(matsort[:, :, 1], (size, size))
-    matsortback = cupy.asarray(
+    matsortback = cp.asarray(
         [row[row[:, 0].argsort()] for row in matsort])
     sino_corrected = matsortback[:, :, 1]
-    return cupy.transpose(sino_corrected)
+    return cp.transpose(sino_corrected)

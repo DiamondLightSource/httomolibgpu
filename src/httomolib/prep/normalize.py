@@ -16,10 +16,10 @@
 # limitations under the License.
 # ---------------------------------------------------------------------------
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
-# Created Date: 01/november/2022
+# Created Date: 01 November 2022
 # version ='0.1'
 # ---------------------------------------------------------------------------
-"""Modules for raw projection data normalization using CuPy API""" 
+"""Modules for raw projection data normalization using CuPy API"""
 
 import cupy as cp
 from cupy import float32, log, mean, ndarray
@@ -29,7 +29,7 @@ def normalize_raw_cuda(data: ndarray,
                       darks: ndarray,
                       cutoff: float = 10.) -> ndarray:
     """
-    Normalize raw projection data using the flat and dark field projections. 
+    Normalize raw projection data using the flat and dark field projections.
     Raw CUDA kernel implementation with CuPy wrappers. 
 
     Parameters
@@ -41,7 +41,7 @@ def normalize_raw_cuda(data: ndarray,
     darks : ndarray
         3D dark field data as a CuPy array.
     cutoff : float, optional
-        Permitted maximum vaue for the normalized data.
+        Permitted maximum value for the normalized data.
 
     Returns
     -------
@@ -103,8 +103,8 @@ def normalize_cupy(data: ndarray,
                    darks: ndarray,
                    cutoff: float = 10.) -> ndarray:
     """
-    Normalize raw projection data using the flat and dark field projections. 
-    CuPy implementation with higher memory footprint than normalize_raw_cuda. 
+    Normalize raw projection data using the flat and dark field projections.
+    CuPy implementation with higher memory footprint than normalize_raw_cuda.
 
     Parameters
     ----------
@@ -115,7 +115,7 @@ def normalize_cupy(data: ndarray,
     darks : ndarray
         3D dark field data as a CuPy array.
     cutoff : float, optional
-        Permitted maximum vaue for the normalized data.
+        Permitted maximum value for the normalized data.
 
     Returns
     -------
