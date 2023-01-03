@@ -2,9 +2,8 @@ import cupy as cp
 import numpy as np
 from cupy.testing import assert_allclose
 
-from httomolib.centering import find_center_of_rotation
-from httomolib.normalisation import normalize_cupy
-from httomolib.stripe_removal import remove_stripes_tomocupy
+from httomolib.recon.rotation import find_center_vo_cupy
+from httomolib.prep.normalize import normalize_cupy
 
 def test_find_center_of_rotation():
     in_file = 'data/tomo_standard.npz'
@@ -18,13 +17,12 @@ def test_find_center_of_rotation():
     darks = cp.asarray(host_darks)
     data = normalize_cupy(data, flats, darks)
 
-    data_after_stripe_removal = remove_stripes_tomocupy(data)
-
     #--- testing the center of rotation on tomo_standard ---#
-    cor = find_center_of_rotation(data_after_stripe_removal)
+    cor = find_center_vo_cupy(data)
     for _ in range(10):
         assert_allclose(cor, 79.5)
 
     # free up GPU memory by no longer referencing the variables
-    data, flats, darks, data_after_stripe_removal = None, None, None, None
+    data, flats, darks = None, None, None
     cp._default_memory_pool.free_all_blocks()
+

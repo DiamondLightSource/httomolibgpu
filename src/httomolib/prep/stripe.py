@@ -26,7 +26,7 @@ from cupyx.scipy.ndimage import median_filter
 
 
 def remove_stripes_titarenko_cupy(data: ndarray,
-                             beta: float = 0.1) -> ndarray:
+                                  beta: float = 0.1) -> ndarray:
     """
     Removes stripes with the method of V. Titarenko (TomoCuPy implementation)
 
