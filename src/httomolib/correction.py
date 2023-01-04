@@ -4,6 +4,10 @@ from typing import Dict, List
 import cupy as cp
 from cupyx.scipy.ndimage import map_coordinates
 
+__all__ = [
+    'correct_distortion',
+]
+
 
 # CuPy implementation of distortion correction from Savu
 def correct_distortion(data: cp.ndarray, metadata_path: str,

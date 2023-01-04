@@ -2,6 +2,11 @@ import math
 
 import cupy as cp
 
+__all__ = [
+    'fresnel_filter',
+    'paganin_filter',
+]
+
 
 # CuPy implementation of Fresnel filter ported from Savu
 def fresnel_filter(mat: cp.ndarray, pattern: str, ratio: float,

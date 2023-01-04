@@ -27,6 +27,9 @@ import cupy as cp
 from cupy import ndarray
 from cupyx.scipy.ndimage import gaussian_filter, shift
 
+__all__ = [
+    'find_center_vo_cupy',
+]
 
 def find_center_vo_cupy(data: ndarray,
                         ind: int = None,

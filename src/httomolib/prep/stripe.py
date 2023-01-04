@@ -24,6 +24,11 @@ import cupy as cp
 from cupy import abs, mean, ndarray
 from cupyx.scipy.ndimage import median_filter
 
+__all__ = [
+    'remove_stripes_titarenko_cupy',
+    'remove_stripe_based_sorting_cupy',
+]
+
 
 def remove_stripes_titarenko_cupy(data: ndarray,
                                   beta: float = 0.1) -> ndarray:
@@ -96,6 +101,7 @@ def _create_matindex(nrow, ncol):
     listindex = cp.arange(0.0, ncol, 1.0)
     matindex = cp.tile(listindex, (nrow, 1))
     return matindex
+
 
 def _rs_sort(sinogram, size, matindex, dim):
     """
