@@ -3,7 +3,11 @@ import numpy as np
 from cupy.testing import assert_allclose, assert_array_equal
 
 from httomolib.prep.normalize import normalize_cupy
-from httomolib.prep.stripe import remove_stripe_based_sorting_cupy, remove_stripes_titarenko_cupy
+from httomolib.prep.stripe import (
+    remove_stripe_based_sorting_cupy,
+    remove_stripes_titarenko_cupy,
+)
+
 
 def test_stripe_removal():
     in_file = 'data/tomo_standard.npz'

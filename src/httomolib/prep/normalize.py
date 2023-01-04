@@ -24,6 +24,7 @@
 import cupy as cp
 from cupy import float32, log, mean, ndarray
 
+
 def normalize_raw_cuda(data: ndarray,
                       flats: ndarray,
                       darks: ndarray,

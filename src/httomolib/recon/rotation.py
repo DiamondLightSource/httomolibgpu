@@ -22,9 +22,11 @@
 """Modules for finding the axis of rotation using cp API"""
 
 from typing import Optional
-from cupyx.scipy.ndimage import gaussian_filter, shift
+
 import cupy as cp
 from cupy import ndarray
+from cupyx.scipy.ndimage import gaussian_filter, shift
+
 
 def find_center_vo_cupy(data: ndarray,
                         ind: int = None,
