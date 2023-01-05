@@ -5,9 +5,8 @@ from cupy.testing import assert_allclose
 from httomolib.prep.normalize import normalize_cupy
 from httomolib.recon.rotation import find_center_vo_cupy
 
-
 def test_find_center_of_rotation():
-    in_file = 'data/tomo_standard.npz'
+    in_file = 'tests/test_data/tomo_standard.npz'
     datafile = np.load(in_file) #keys: data, flats, darks, angles, angles_total, detector_y, detector_x
     host_data = datafile['data']
     host_flats = datafile['flats']

@@ -19,7 +19,7 @@
 # Created Date: 01 November 2022
 # version ='0.1'
 # ---------------------------------------------------------------------------
-"""Modules for finding the axis of rotation using cp API"""
+"""Modules for finding the axis of rotation"""
 
 from typing import Optional
 

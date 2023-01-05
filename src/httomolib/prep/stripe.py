@@ -19,7 +19,7 @@
 # Created Date: 01 November 2022
 # version ='0.1'
 # ---------------------------------------------------------------------------
-"""Modules for stripes removal using CuPy API"""
+"""Modules for stripes removal"""
 import cupy as cp
 from cupy import abs, mean, ndarray
 from cupyx.scipy.ndimage import median_filter

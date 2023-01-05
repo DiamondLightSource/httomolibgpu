@@ -1,10 +1,10 @@
 import cupy as cp
 import numpy as np
 
-from httomolib.normalisation import normalize_cupy
+from httomolib.prep.normalize import normalize_cupy, normalize_raw_cuda
 
 # Load the projection data
-in_file = 'data/tomo_standard.npz'
+in_file = 'tests/test_data/tomo_standard.npz'
 datafile = np.load(in_file)
 host_data = datafile['data']
 host_flats = datafile['flats']

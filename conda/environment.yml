@@ -8,5 +8,6 @@ dependencies:
   - conda-forge::python
   - conda-forge::pytest
   - conda-forge::pytest-xdist
+  - conda-forge::imageio
   - anaconda::ipython
   - anaconda::h5py

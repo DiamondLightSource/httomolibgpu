@@ -10,7 +10,7 @@ from httomolib.prep.stripe import (
 
 
 def test_stripe_removal():
-    in_file = 'data/tomo_standard.npz'
+    in_file = 'tests/test_data/tomo_standard.npz'
     datafile = np.load(in_file) #keys: data, flats, darks, angles, angles_total, detector_y, detector_x
     host_data = datafile['data']
     host_flats = datafile['flats']

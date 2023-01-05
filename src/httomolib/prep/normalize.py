@@ -19,7 +19,7 @@
 # Created Date: 01 November 2022
 # version ='0.1'
 # ---------------------------------------------------------------------------
-"""Modules for raw projection data normalization using CuPy API"""
+"""Modules for raw projection data normalization"""
 
 import cupy as cp
 from cupy import float32, log, mean, ndarray
