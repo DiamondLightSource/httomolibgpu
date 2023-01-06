@@ -32,8 +32,9 @@ __all__ = [
 ]
 
 
-# CuPy implementation of distortion correction from Savu
-def correct_distortion(data: cp.ndarray, metadata_path: str,
+# CuPy implementation of distortion correction from Savu 
+# TODO: Needs to be implementation from TomoPy
+def distortion_correction_proj_cupy(data: cp.ndarray, metadata_path: str,
                        preview: Dict[str, List[int]],
                        center_from_left: float = None,
                        center_from_top: float = None,

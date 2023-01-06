@@ -21,7 +21,7 @@ def test_normalize():
     data_max = cp.array(2.7530956, dtype=cp.float32)
 
     #--- testing normalize_cupy  ---#
-    data_normalize_cupy = normalize_cupy(data, flats, darks)
+    data_normalize_cupy = normalize_cupy(data, flats, darks, cutoff = 10, minus_log = True)
     for _ in range(10):
         assert_allclose(cp.min(data_normalize_cupy), data_min, rtol=1e-05)
         assert_allclose(cp.max(data_normalize_cupy), data_max, rtol=1e-05)
