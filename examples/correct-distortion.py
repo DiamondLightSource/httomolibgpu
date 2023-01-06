@@ -1,10 +1,12 @@
 import cupy as cp
 from imageio.v2 import imread, imwrite
+from pathlib import Path
 
-from httomolib.misc.corr import correct_distortion
+from httomolib.prep.alignment import distortion_correction_proj_cupy
 
 # Load image to be corrected
-file_path = "tests/test_data/distortion-correction/dot_pattern_03.tif"
+data_folder = Path("../tests/test_data/")
+file_path = data_folder / "distortion-correction/dot_pattern_03.tif"
 im_host = imread(file_path)
 im = cp.asarray(im_host)
 
@@ -17,11 +19,11 @@ PREVIEW = {
 
 # Point to the file containing the distortion coefficients (assumed to be
 # calculated in advance of the main processing pipeline)
-distortion_coeffs_file_path = 'tests/test_data/distortion-correction/distortion-coeffs.txt'
+distortion_coeffs_file_path = data_folder / 'distortion-correction/distortion-coeffs.txt'
 
 # Apply distortion correction
 corrected_images = \
-    correct_distortion(im, distortion_coeffs_file_path, PREVIEW)
+    distortion_correction_proj_cupy(im, distortion_coeffs_file_path, PREVIEW)
 corrected_images = cp.squeeze(corrected_images)
 
 # Save corrected image if desired
