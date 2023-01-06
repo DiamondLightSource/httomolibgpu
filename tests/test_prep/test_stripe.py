@@ -19,7 +19,7 @@ def test_stripe_removal():
     data = cp.asarray(host_data)
     flats = cp.asarray(host_flats)
     darks = cp.asarray(host_darks)
-    data = normalize_cupy(data, flats, darks)
+    data = normalize_cupy(data, flats, darks, cutoff = 10, minus_log = True)
 
     #--- testing the CuPy implementation from TomoCupy ---#
     data_after_stripe_removal = remove_stripes_titarenko_cupy(data)

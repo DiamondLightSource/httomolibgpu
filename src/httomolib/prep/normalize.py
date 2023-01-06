@@ -103,14 +103,14 @@ def normalize_raw_cuda(data: ndarray,
     return out
 
 
-# CuPy implementation
+# CuPy implementation with higher memory footprint than normalize_raw_cuda.
 def normalize_cupy(data: ndarray,
                    flats: ndarray,
                    darks: ndarray,
-                   cutoff: float = 10.) -> ndarray:
+                   cutoff: float = 10.0,
+                   minus_log: bool = False) -> ndarray:
     """
-    Normalize raw projection data using the flat and dark field projections.
-    CuPy implementation with higher memory footprint than normalize_raw_cuda.
+    Normalize raw projection data using the flat and dark field projections.    
 
     Parameters
     ----------
@@ -122,6 +122,8 @@ def normalize_cupy(data: ndarray,
         3D dark field data as a CuPy array.
     cutoff : float, optional
         Permitted maximum value for the normalized data.
+    minus_log : bool, optional
+        Apply negative log to the normalised
 
     Returns
     -------
@@ -138,14 +140,6 @@ def normalize_cupy(data: ndarray,
     data = (data - dark0) / denom
     data[data > cutoff] = cutoff
     data[data <= 0.0] = eps
-    data = -log(data)
-
-    # old version
-    # -----------
-    # data = (data - dark0) / (flat0 - dark0 + 1e-3)
-    # data[data<=0] = 1
-    # data  = -log(data)
-    # data[isnan(data)] = 6.0
-    # data[isinf(data)] = 0
-
+    if minus_log:
+      data = -log(data)
     return data
