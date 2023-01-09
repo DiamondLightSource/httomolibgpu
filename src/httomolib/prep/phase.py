@@ -32,13 +32,19 @@ __all__ = [
 
 
 # CuPy implementation of Fresnel filter ported from Savu
-def fresnel_filter(mat: cp.ndarray, pattern: str, ratio: float,
-                   apply_log: bool = True):
-    """Apply Fresnel filter.
+def fresnel_filter(
+    data: cp.ndarray,
+    pattern: str,
+    ratio: float,
+    apply_log: bool = True
+) -> cp.ndarray:
+
+    """
+    Apply Fresnel filter on a stack of 2D projections.
 
     Parameters
     ----------
-    mat : cp.ndarray
+    data : cp.ndarray
         The data to apply filtering to.
 
     pattern : str
@@ -48,7 +54,7 @@ def fresnel_filter(mat: cp.ndarray, pattern: str, ratio: float,
     ratio : float
         Control the strength of the filter. Greater is stronger.
 
-    apply_log : optional, bool
+    apply_log : bool, optional
         Apply negative log function to data being filtered.
 
     Returns
@@ -56,11 +62,19 @@ def fresnel_filter(mat: cp.ndarray, pattern: str, ratio: float,
     cp.ndarray
         The filtered data.
     """
+
+    if data.ndim == 2:
+        data = cp.expand_dims(data, 0)
+
+    if data.ndim != 3:
+        raise ValueError(f"Invalid number of dimensions in data: {data.ndim},"
+                         " please provide a stack of 2D projections.")
+
     if apply_log is True:
-        mat = -cp.log(mat)
+        data = -cp.log(data)
 
     # Define window
-    (depth1, height1, width1) = mat.shape[:3]
+    (_, height1, width1) = data.shape[:3]
     window = _make_window(height1, width1, ratio, pattern)
     pad_width = min(150, int(0.1 * width1))
 
@@ -69,39 +83,40 @@ def fresnel_filter(mat: cp.ndarray, pattern: str, ratio: float,
     # dimension 1, columns in dimension 2 (ie, for projection images, `nrow` is
     # the number of rows in a projection image, and for sinogram images, `nrow`
     # is the number of rows in a sinogram image).
-    (_, nrow, ncol) = mat.shape
+    (_, nrow, ncol) = data.shape
 
     # Define array to hold result. Note that, due to the padding applied, the
     # shape of the filtered images are different to the shape of the
     # original/unfiltered images.
-    padded_height = mat.shape[1] + pad_width * 2
+    padded_height = data.shape[1] + pad_width * 2
     res_height = min(nrow, padded_height - pad_width)
-    padded_width = mat.shape[2] + pad_width * 2
+    padded_width = data.shape[2] + pad_width * 2
     res_width = min(ncol, padded_width - pad_width)
-    res = cp.zeros((mat.shape[0], res_height, res_width))
+    res = cp.zeros((data.shape[0], res_height, res_width))
 
     # Loop over images and apply filter
-    for i in range(mat.shape[0]):
+    for i in range(data.shape[0]):
         if pattern == "PROJECTION":
             top_drop = 10  # To remove the time stamp in some data
-            mat_pad = cp.pad(mat[i][top_drop:], (
-                (pad_width + top_drop, pad_width), (pad_width, pad_width)),
+            data_pad = cp.pad(data[i][top_drop:], (
+                (pad_width + top_drop, pad_width),
+                (pad_width, pad_width)),
                 mode="edge")
             win_pad = cp.pad(window, pad_width, mode="edge")
-            mat_dec = \
-                cp.fft.ifft2(cp.fft.fft2(mat_pad) / cp.fft.ifftshift(win_pad))
-            mat_dec = cp.real(
-                mat_dec[pad_width:pad_width + nrow, pad_width:pad_width + ncol])
-            res[i] = mat_dec
+            data_dec = \
+                cp.fft.ifft2(cp.fft.fft2(data_pad) / cp.fft.ifftshift(win_pad))
+            data_dec = cp.real(
+                data_dec[pad_width:pad_width + nrow, pad_width:pad_width + ncol])
+            res[i] = data_dec
         else:
-            mat_pad = \
-                cp.pad(mat[i], ((0, 0), (pad_width, pad_width)), mode='edge')
+            data_pad = \
+                cp.pad(data[i], ((0, 0), (pad_width, pad_width)), mode='edge')
             win_pad = cp.pad(window, ((0, 0), (pad_width, pad_width)),
                              mode="edge")
-            mat_fft = cp.fft.fftshift(cp.fft.fft(mat_pad), axes=1) / win_pad
-            mat_dec = cp.fft.ifft(cp.fft.ifftshift(mat_fft, axes=1))
-            mat_dec = cp.real(mat_dec[:, pad_width:pad_width + ncol])
-            res[i] = mat_dec
+            data_fft = cp.fft.fftshift(cp.fft.fft(data_pad), axes=1) / win_pad
+            data_dec = cp.fft.ifft(cp.fft.ifftshift(data_fft, axes=1))
+            data_dec = cp.real(data_dec[:, pad_width:pad_width + ncol])
+            res[i] = data_dec
 
     if apply_log is True:
         res = cp.exp(-res)
@@ -110,6 +125,9 @@ def fresnel_filter(mat: cp.ndarray, pattern: str, ratio: float,
 
 
 def _make_window(height, width, ratio, pattern):
+    """
+    Helper function to create a window for the Fresnel filter.
+    """
     center_hei = int(cp.ceil((height - 1) * 0.5))
     center_wid = int(cp.ceil((width - 1) * 0.5))
     if pattern == "PROJECTION":
@@ -125,40 +143,48 @@ def _make_window(height, width, ratio, pattern):
 
 
 #: CuPy implementation of Paganin filter from Savu
-def paganin_filter(data: cp.ndarray, ratio: float = 250.0, energy: float = 53.0,
-                   distance: float = 1.0, resolution: float = 1.28, pad_y: int = 100,
-                   pad_x: int = 100, pad_method: str = 'edge',
-                   increment: float = 0.0):
-    """Apply Paganin filter (for denoising or contrast enhancement) to
-    projections.
+def paganin_filter(
+    data: cp.ndarray,
+    ratio: float = 250.0,
+    energy: float = 53.0,
+    distance: float = 1.0,
+    resolution: float = 1.28,
+    pad_y: int = 100,
+    pad_x: int = 100,
+    pad_method: str = 'edge',
+    increment: float = 0.0
+) -> cp.ndarray:
+    """
+    Apply Paganin filter (for denoising or contrast enhancement) to
+    a stack of 2D projections.
 
     Parameters
     ----------
     data : cp.ndarray
         The stack of projections to filter.
 
-    ratio : optional, float
+    ratio : float, optional
         Ratio of delta/beta.
 
-    energy : optional, float
+    energy : float, optional
         Beam energy in keV.
 
-    distance : optional, float
+    distance : float, optional
         Distance from sample to detector in metres.
 
-    resolution : optional, float
+    resolution : float, optional
         Pixel size in microns.
 
-    pad_y : optional, int
+    pad_y : int, optional
         Pad the top and bottom of projections.
 
-    pad_x : optional, int
+    pad_x : int, optional
         Pad the left and right of projections.
 
-    pad_method : optional, str
+    pad_method : str, optional
         Numpy pad method.
 
-    increment : optional, float
+    increment : float, optional
         Increment all values by this amount before taking the log.
 
     Returns

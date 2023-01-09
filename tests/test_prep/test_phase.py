@@ -29,8 +29,11 @@ def test_fresnel_filter():
         assert_allclose(cp.max(filtered_data), 1063.7007)
         assert_allclose(cp.min(filtered_data), 87.91508)
 
+    _data = cp.ones(10)
+    pytest.raises(ValueError, lambda: fresnel_filter(_data, pattern, ratio))
+
     # free up GPU memory by no longer referencing the variable
-    filtered_data = None
+    filtered_data = _data = None
     cp._default_memory_pool.free_all_blocks()
 
 
