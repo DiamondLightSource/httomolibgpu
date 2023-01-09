@@ -28,7 +28,8 @@ __all__ = [
     'remove_stripes_titarenko_cupy',
     'remove_stripe_based_sorting_cupy',
 ]
-
+# TODO: port 'remove_all_stripe', 'remove_large_stripe' and 'remove_dead_stripe'
+# from https://github.com/tomopy/tomopy/blob/master/source/tomopy/prep/stripe.py
 
 def remove_stripes_titarenko_cupy(data: ndarray,
                                   beta: float = 0.1) -> ndarray:

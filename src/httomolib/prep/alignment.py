@@ -28,7 +28,7 @@ import cupy as cp
 from cupyx.scipy.ndimage import map_coordinates
 
 __all__ = [
-    'correct_distortion',
+    'distortion_correction_proj_cupy',
 ]
 
 
