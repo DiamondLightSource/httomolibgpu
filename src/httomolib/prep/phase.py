@@ -31,6 +31,7 @@ __all__ = [
 ]
 
 
+## %%%%%%%%%%%%%%%%%%%%%%%fresnel_filter%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 # CuPy implementation of Fresnel filter ported from Savu
 def fresnel_filter(mat: cp.ndarray, pattern: str, ratio: float,
                    apply_log: bool = True):
@@ -122,8 +123,9 @@ def _make_window(height, width, ratio, pattern):
         win1d = 1.0 + ratio * ulist ** 2
         win2d = cp.tile(win1d, (height, 1))
     return win2d
+## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 
-
+## %%%%%%%%%%%%%%%%%%%%%%%paganin_filter%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 #: CuPy implementation of Paganin filter from Savu
 def paganin_filter(data: cp.ndarray, ratio: float = 250.0, energy: float = 53.0,
                    distance: float = 1.0, resolution: float = 1.28, pad_y: int = 100,
@@ -221,3 +223,4 @@ def paganin_filter(data: cp.ndarray, ratio: float = 250.0, energy: float = 53.0,
         res[i] = proj[pad_y: pad_y + height, pad_x: pad_x + width]
 
     return res
+## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##

@@ -21,45 +21,18 @@
 # ---------------------------------------------------------------------------
 """Modules for stripes removal"""
 import cupy as cp
+import numpy as np
 from cupy import abs, mean, ndarray
 from cupyx.scipy.ndimage import median_filter
 
 __all__ = [
-    'remove_stripes_titarenko_cupy',
     'remove_stripe_based_sorting_cupy',
+    'remove_stripes_titarenko_cupy',    
 ]
 # TODO: port 'remove_all_stripe', 'remove_large_stripe' and 'remove_dead_stripe'
 # from https://github.com/tomopy/tomopy/blob/master/source/tomopy/prep/stripe.py
 
-def remove_stripes_titarenko_cupy(data: ndarray,
-                                  beta: float = 0.1) -> ndarray:
-    """
-    Removes stripes with the method of V. Titarenko (TomoCuPy implementation)
-
-    Parameters
-    ----------
-    arr : ndarray
-        3D stack of projections as a CuPy array.
-    beta : float, optional
-        filter parameter, lower values increase the filter strength.
-
-    Returns
-    -------
-    ndarray
-        3D CuPy array of de-striped projections.
-    """
-    gamma = beta * ((1 - beta) / (1 + beta)) ** abs(
-        cp.fft.fftfreq(data.shape[-1]) * data.shape[-1]
-    )
-    gamma[0] -= 1
-    v = mean(data, axis=0)
-    v = v - v[:, 0:1]
-    v = cp.fft.irfft(cp.fft.rfft(v) * cp.fft.rfft(gamma))
-    data[:] += v
-
-    return data
-
-
+## %%%%%%%%%%%%%%%%%remove_stripe_based_sorting_cupy%%%%%%%%%%%%%%%%%%%%%  ##
 # Naive CuPy port of the NumPy implementation in TomoPy
 def remove_stripe_based_sorting_cupy(tomo: ndarray,
                                      size: int = None,
@@ -94,7 +67,6 @@ def remove_stripe_based_sorting_cupy(tomo: ndarray,
         tomo[:, m, :] = _rs_sort(sino, size, matindex, dim)
     return tomo
 
-
 def _create_matindex(nrow, ncol):
     """
     Create a 2D array of indexes used for the sorting technique.
@@ -120,3 +92,100 @@ def _rs_sort(sinogram, size, matindex, dim):
         [row[row[:, 0].argsort()] for row in matsort])
     sino_corrected = matsortback[:, :, 1]
     return cp.transpose(sino_corrected)
+    
+## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+
+## %%%%%%%%%%%%%%%%%%%remove_stripes_titarenko_cupy%%%%%%%%%%%%%%%%%%%%%%%  ##
+def remove_stripes_titarenko_cupy(data: ndarray,
+                                  beta: float = 0.1) -> ndarray:
+    """
+    Removes stripes with the method of V. Titarenko (TomoCuPy implementation)
+
+    Parameters
+    ----------
+    arr : ndarray
+        3D stack of projections as a CuPy array.
+    beta : float, optional
+        filter parameter, lower values increase the filter strength.
+
+    Returns
+    -------
+    ndarray
+        3D CuPy array of de-striped projections.
+    """
+    gamma = beta * ((1 - beta) / (1 + beta)) ** abs(
+        cp.fft.fftfreq(data.shape[-1]) * data.shape[-1]
+    )
+    gamma[0] -= 1
+    v = mean(data, axis=0)
+    v = v - v[:, 0:1]
+    v = cp.fft.irfft(cp.fft.rfft(v) * cp.fft.rfft(gamma))
+    data[:] += v
+
+    return data
+## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+
+
+## %%%%%%%%%%%%%%%%%%%%%%%%detect_stripes%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+def detect_stripes(data: ndarray,
+                   search_window_dims: tuple = (1,9,1),
+                   vert_window_size: float = 5,
+                   gradient_gap: int = 2,
+                   ncore: int = 1) -> ndarray: 
+    """module to detect stripes in sinograms (2D) OR projection data (3D). 
+    1. Taking first derrivative of the input in the direction orthogonal to stripes.
+    2. Slide horizontal rectangular window orthogonal to stripes direction to accenuate outliers (stripes) using median.
+    3. Slide the vertical thin (1 pixel) window to calculate a mean (further accenuates stripes).
+
+    Args:
+        data (ndarray): sinogram (2D) [angles x detectorsX] OR projection data (3D) [angles x detectorsY x detectorsX]
+        search_window_dims (tuple, optional): searching rectangular window for weights calculation, 
+        of a size (detectors_window_height, detectors_window_width, angles_window_depth). Defaults to (1,9,1).
+        vert_window_size (float, optional): the half size of the vertical 1D window to calculate mean. Given in percents relative to the size of the angle dimension. Defaults to 5.
+        gradient_gap (int, optional):  the gap in pixels with the neighbour while calculating a gradient (1 is the normal gradient). Defaults to 2.
+        ncore (int, optional): _description_. Defaults to 1.
+
+    Returns:
+        ndarray: The associated weights (needed for thresholding)
+    """       
+    from larix.methods.misc import STRIPES_DETECT
+    
+    # calculate weights for stripes
+    (stripe_weights, stats_vec) = STRIPES_DETECT(data, search_window_dims, vert_window_size, gradient_gap, ncore)
+       
+    return stripe_weights
+## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+
+## %%%%%%%%%%%%%%%%%%%%%%%%merge_stripes%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+def merge_stripes(data: ndarray,
+                   stripe_width_max_perc: float = 5,
+                   mask_dilate: int = 2,
+                   threshold_stripes: float = 0.1,
+                   ncore: int = 1) -> ndarray:
+    """module to threshold the obtained stripe weights in sinograms (2D) OR projection data (3D) and merge stripes that are close to each other. 
+    
+    Args:
+        data (ndarray): weigths for sinogram (2D) [angles x detectorsX] OR projection data (3D) [angles x detectorsY x detectorsX]
+        stripe_width_max_perc (float, optional):  the maximum width of stripes in the data, given in percents relative to the size of the DetectorX. Defaults to 5.
+        mask_dilate (int, optional): the number of pixels/voxels to dilate the obtained mask. Defaults to 2.
+        threshold_stripes (float, optional): Threshold the obtained weights to get a binary mask, larger vaules are more sensitive to stripes. Defaults to 0.1.
+        ncore (int, optional): _description_. Defaults to 1.
+
+    Returns:
+        ndarray: mask_stripe
+    """       
+    from larix.methods.misc import STRIPES_MERGE
+    
+    gradientX = _gradient(data, 2)    
+    med_val = np.median(np.abs(gradientX).flatten(), axis=0)
+    
+    # we get a local stats here, needs to be adopted for global stats
+    mask_stripe = np.zeros_like(data,dtype="uint8")    
+    mask_stripe[data > med_val/threshold_stripes] = 1
+    
+    # merge stripes that are close to each other
+
+def _gradient(data, axis):
+    return np.gradient(data, axis=axis)
+## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+    
