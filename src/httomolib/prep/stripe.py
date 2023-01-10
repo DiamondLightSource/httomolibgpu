@@ -184,6 +184,10 @@ def merge_stripes(data: ndarray,
     mask_stripe[data > med_val/threshold_stripes] = 1
     
     # merge stripes that are close to each other
+    mask_stripe_merged = STRIPES_MERGE(mask_stripe, stripe_width_max_perc, mask_dilate, ncore)
+    
+    return mask_stripe_merged
+
 
 def _gradient(data, axis):
     return np.gradient(data, axis=axis)
