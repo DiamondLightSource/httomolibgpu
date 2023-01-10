@@ -63,9 +63,9 @@ def save_to_images(data: ndarray,
     file_format : str, optional
         Specify file format, e.g. "png", "jpeg" or "tiff".
     bits : int, optional
-            Specify the number of bits (8, 16 or 32-bit).
+        Specify the number of bits (8, 16, or 32-bit).
     jpeg_quality : int, optional
-            Specify the quality of the jpeg image.
+        Specify the quality of the jpeg image.
         
     """ 
     if bits not in [8,16,32]:
