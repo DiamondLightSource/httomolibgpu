@@ -29,7 +29,7 @@ __all__ = [
     'normalize_cupy'
 ]
 
-
+## %%%%%%%%%%%%%%%%%%%%%%%normalize_raw_cuda%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 def normalize_raw_cuda(data: ndarray,
                       flats: ndarray,
                       darks: ndarray,
@@ -102,7 +102,9 @@ def normalize_raw_cuda(data: ndarray,
 
     return out
 
+## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 
+## %%%%%%%%%%%%%%%%%%%%%%%normalize_cupy%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 # CuPy implementation with higher memory footprint than normalize_raw_cuda.
 def normalize_cupy(data: ndarray,
                    flats: ndarray,
@@ -143,3 +145,4 @@ def normalize_cupy(data: ndarray,
     if minus_log:
       data = -log(data)
     return data
+## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##

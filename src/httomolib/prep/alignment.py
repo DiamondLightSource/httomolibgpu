@@ -32,6 +32,7 @@ __all__ = [
 ]
 
 
+## %%%%%%%%%%%%%%%%%%%%%%%%%distortion_correction_proj_cupy%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 # CuPy implementation of distortion correction from Savu 
 # TODO: Needs to be implementation from TomoPy
 def distortion_correction_proj_cupy(data: cp.ndarray, metadata_path: str,
@@ -188,3 +189,4 @@ def _load_metadata_txt(file_path):
     ycenter = list_data[1]
     list_fact = list_data[2:]
     return xcenter, ycenter, list_fact
+## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
