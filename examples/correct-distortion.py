@@ -1,6 +1,7 @@
+from pathlib import Path
+
 import cupy as cp
 from imageio.v2 import imread, imwrite
-from pathlib import Path
 
 from httomolib.prep.alignment import distortion_correction_proj_cupy
 

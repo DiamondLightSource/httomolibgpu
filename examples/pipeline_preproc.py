@@ -1,16 +1,16 @@
 # A pre-processing pipeline using GPU that leads to data reconstruction
 
+import timeit
+from pathlib import Path
+
 import cupy as cp
 import numpy as np
-from pathlib import Path
-import timeit
 
-from httomolib.prep.normalize import normalize_cupy
-from httomolib.prep.stripe import remove_stripe_based_sorting_cupy
-from httomolib.prep.phase import paganin_filter
 from httomolib.prep.alignment import distortion_correction_proj_cupy
+from httomolib.prep.normalize import normalize_cupy
+from httomolib.prep.phase import paganin_filter
+from httomolib.prep.stripe import remove_stripe_based_sorting_cupy
 from httomolib.recon.rotation import find_center_vo_cupy
-
 
 data_folder = Path("../tests/test_data/")
 

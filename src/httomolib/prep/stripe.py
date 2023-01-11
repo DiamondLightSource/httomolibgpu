@@ -149,7 +149,7 @@ def detect_stripes(data: ndarray,
         ndarray: The associated weights (needed for thresholding)
     """       
     from larix.methods.misc import STRIPES_DETECT
-    
+
     # calculate weights for stripes
     (stripe_weights, stats_vec) = STRIPES_DETECT(data, search_window_dims, vert_window_size, gradient_gap, ncore)
        
@@ -192,4 +192,3 @@ def merge_stripes(data: ndarray,
 def _gradient(data, axis):
     return np.gradient(data, axis=axis)
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-    

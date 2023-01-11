@@ -24,6 +24,7 @@
 import numpy as np
 from numpy import ndarray
 
+
 def median_filter3d(data: ndarray,
                     radius_kernel: int = 1,
                     ncore: int = 1) -> ndarray:
