@@ -47,7 +47,7 @@ def binary_thresholding(
     val_intensity: float, optional
         The grayscale intensity value that defines the binary threshold.
         Defaults to 0.1
-    otsu: str, optional
+    otsu: bool, optional
         If set to True, val_intensity will be overwritten by Otsu method.
     foreground : bool, optional
         Get the foreground, otherwise background.
