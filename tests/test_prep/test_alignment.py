@@ -18,7 +18,8 @@ def test_correct_distortion():
         'stops': [im.shape[0], im.shape[1]],
         'steps': [1, 1]
     }
-    corrected_data = distortion_correction_proj_cupy(im, distortion_coeffs_path, preview)
+    corrected_data = distortion_correction_proj_cupy(
+        im, distortion_coeffs_path, preview)
 
     for _ in range(5):
         assert_allclose(cp.mean(corrected_data), 200.16733869461675)
@@ -26,7 +27,8 @@ def test_correct_distortion():
 
     peppers_path = "tests/test_data/distortion-correction/peppers.tif"
     im = cp.asarray(imread(peppers_path))
-    corrected_data = distortion_correction_proj_cupy(im, distortion_coeffs_path, preview)
+    corrected_data = distortion_correction_proj_cupy(
+        im, distortion_coeffs_path, preview)
 
     for _ in range(5):
         assert_allclose(cp.mean(corrected_data), 95.51871109008789)
@@ -34,7 +36,8 @@ def test_correct_distortion():
 
     cameraman_path = "tests/test_data/distortion-correction/cameraman.tif"
     im = cp.asarray(imread(cameraman_path))
-    corrected_data = distortion_correction_proj_cupy(im, distortion_coeffs_path, preview)
+    corrected_data = distortion_correction_proj_cupy(
+        im, distortion_coeffs_path, preview)
 
     for _ in range(5):
         assert_allclose(cp.mean(corrected_data), 122.2400016784668)

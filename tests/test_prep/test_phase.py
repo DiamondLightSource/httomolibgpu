@@ -6,13 +6,15 @@ from cupy.testing import assert_allclose
 from httomolib.prep.phase import fresnel_filter, paganin_filter
 
 in_file = 'tests/test_data/tomo_standard.npz'
-datafile = np.load(in_file) #keys: data, flats, darks, angles, angles_total, detector_y, detector_x
+# keys: data, flats, darks, angles, angles_total, detector_y, detector_x
+datafile = np.load(in_file)
 host_data = datafile['data']
 data = cp.array(host_data)
 eps = 1e-6
 
+
 def test_fresnel_filter():
-    #--- testing the Fresnel filter on tomo_standard ---#
+    # --- testing the Fresnel filter on tomo_standard ---#
     pattern = 'PROJECTION'
     ratio = 100.0
     filtered_data = fresnel_filter(data, pattern, ratio)
@@ -35,7 +37,7 @@ def test_fresnel_filter():
 
 
 def test_paganin_filter():
-    #--- testing the Paganin filter on tomo_standard ---#
+    # --- testing the Paganin filter on tomo_standard ---#
     filtered_data = paganin_filter(data)
 
     for _ in range(5):
