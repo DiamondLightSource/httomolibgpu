@@ -21,12 +21,13 @@
 # ---------------------------------------------------------------------------
 """Modules for loading/saving images""" 
 
-import numpy as np
-from numpy import ndarray
-from mpi4py.MPI import Comm
 import os
-from PIL import Image
+
+import numpy as np
 import skimage.exposure as exposure
+from mpi4py.MPI import Comm
+from numpy import ndarray
+from PIL import Image
 
 __all__ = [
     'save_to_images',

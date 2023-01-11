@@ -4,6 +4,7 @@ from imageio.v2 import imread
 
 from httomolib.prep.alignment import distortion_correction_proj_cupy
 
+
 def test_correct_distortion():
     distortion_coeffs_path = \
         'tests/test_data/distortion-correction/distortion-coeffs.txt'
