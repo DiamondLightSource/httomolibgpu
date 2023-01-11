@@ -17,6 +17,6 @@ def test_binary_thresholding():
         assert np.all(_binary_mask == 0)
 
     #: testing binary_thresholding on tomo_standard data
-    binary_mask = binary_thresholding(host_data, 0.1)
+    binary_mask = binary_thresholding(host_data, 0.1, otsu=True, axis=2)
     for _ in range(5):
-        assert np.all(binary_mask == 1)
+        assert np.sum(binary_mask) == 2694904
