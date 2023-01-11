@@ -29,24 +29,28 @@ __all__ = [
     'binary_thresholding',
 ]
 
-## %%%%%%%%%%%%%%%%%%%%%%%%%%binary_thresholding%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-def binary_thresholding(data: ndarray,
-                        val_intensity: float = 0.1,
-                        otsu: bool = False,
-                        foreground: bool = True,
-                        axis: int = 1) -> ndarray:
-    """Performs a binary thresholding of the input data 
+
+def binary_thresholding(
+    data: ndarray,
+    val_intensity: float = 0.1,
+    otsu: bool = False,
+    foreground: bool = True,
+    axis: int = 1
+) -> ndarray:
+    """
+    Performs binary thresholding to the input data
 
     Parameters
     ----------
     data : ndarray
         Input array.
-    val_intensity: float
-        The grayscale intensity value that defines the binary threshold.      
+    val_intensity: float, optional
+        The grayscale intensity value that defines the binary threshold.
+        Defaults to 0.1
     otsu: str, optional
         If set to True, val_intensity will be overwritten by Otsu method.
     foreground : bool, optional
-        get the foreground, otherwise background.
+        Get the foreground, otherwise background.
     axis : int, optional
         Specify the axis to use to slice the data (if data is the 3D array).        
 
@@ -61,23 +65,20 @@ def binary_thresholding(data: ndarray,
 
     data_full_shape = np.shape(data)
     if data.ndim == 3:
-        slice_dim_size=data_full_shape[axis]
-        for i in range(slice_dim_size):
+        slice_dim_size = data_full_shape[axis]
+        for _ in range(slice_dim_size):
             _get_mask(data, mask, val_intensity, otsu, foreground)
     else:
         _get_mask(data, mask, val_intensity, otsu, foreground)
-    return mask    
+
+    return mask
+
 
 def _get_mask(data, mask, val_intensity, otsu, foreground):
-    """gets data binary segmented into a mask  
-    
-    """
+    """ Helper function to get the data binary segmented into a mask """
     if otsu:
         # get the intensity value based on Otsu
         val_intensity = filters.threshold_otsu(data)
-    if foreground:
-        mask[data > val_intensity] = 1
-    else:
-        mask[data <= val_intensity] = 1
+
+    mask[data > val_intensity if foreground else data <= val_intensity] = 1
     return mask
-## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
