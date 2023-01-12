@@ -188,5 +188,6 @@ def _load_metadata_txt(file_path):
     xcenter = list_data[0]
     ycenter = list_data[1]
     list_fact = list_data[2:]
+
     return xcenter, ycenter, list_fact
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##

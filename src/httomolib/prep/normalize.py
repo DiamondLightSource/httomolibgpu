@@ -25,35 +25,38 @@ import cupy as cp
 from cupy import float32, log, mean, ndarray
 
 __all__ = [
+    'normalize_cupy',
     'normalize_raw_cuda',
-    'normalize_cupy'
 ]
 
-## %%%%%%%%%%%%%%%%%%%%%%%normalize_raw_cuda%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-def normalize_raw_cuda(data: ndarray,
-                      flats: ndarray,
-                      darks: ndarray,
-                      cutoff: float = 10.) -> ndarray:
+
+def normalize_raw_cuda(
+    data: ndarray,
+    flats: ndarray,
+    darks: ndarray,
+    cutoff: float = 10.
+) -> ndarray:
     """
     Normalize raw projection data using the flat and dark field projections.
-    Raw CUDA kernel implementation with CuPy wrappers. 
+    This is a raw CUDA kernel implementation with CuPy wrappers.
 
     Parameters
     ----------
-    arr : ndarray
-        3D stack of projections as a CuPy array.
-    flats : ndarray
+    data : cp.ndarray
+        Projection data as a CuPy array.
+    flats : cp.ndarray
         3D flat field data as a CuPy array.
-    darks : ndarray
+    darks : cp.ndarray
         3D dark field data as a CuPy array.
     cutoff : float, optional
-        Permitted maximum value for the normalized data.
+        Permitted maximum value for the normalised data.
 
     Returns
     -------
-    ndarray
-        Normalized 3D tomographic data as a CuPy array.
+    cp.ndarray
+        Normalised 3D tomographic data as a CuPy array.
     """
+
     dark0 = mean(darks, axis=0, dtype=float32)
     flat0 = mean(flats, axis=0, dtype=float32)
     out = cp.zeros(data.shape, dtype=float32)
@@ -104,33 +107,34 @@ def normalize_raw_cuda(data: ndarray,
 
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 
-## %%%%%%%%%%%%%%%%%%%%%%%normalize_cupy%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-# CuPy implementation with higher memory footprint than normalize_raw_cuda.
-def normalize_cupy(data: ndarray,
-                   flats: ndarray,
-                   darks: ndarray,
-                   cutoff: float = 10.0,
-                   minus_log: bool = False) -> ndarray:
+#: CuPy implementation with higher memory footprint than normalize_raw_cuda.
+def normalize_cupy(
+    data: ndarray,
+    flats: ndarray,
+    darks: ndarray,
+    cutoff: float = 10.0,
+    minus_log: bool = False
+) -> ndarray:
     """
     Normalize raw projection data using the flat and dark field projections.    
 
     Parameters
     ----------
-    arr : ndarray
-        3D stack of projections as a CuPy array.
+    data : ndarray
+        3D Projection data as a CuPy array.
     flats : ndarray
         3D flat field data as a CuPy array.
     darks : ndarray
         3D dark field data as a CuPy array.
     cutoff : float, optional
-        Permitted maximum value for the normalized data.
+        Permitted maximum value for the normalised data.
     minus_log : bool, optional
         Apply negative log to the normalised
 
     Returns
     -------
     ndarray
-        Normalized 3D tomographic data as a CuPy array.
+        Normalised 3D tomographic data as a CuPy array.
     """
     dark0 = mean(darks, axis=0, dtype=float32)
     flat0 = mean(flats, axis=0, dtype=float32)
@@ -142,7 +146,5 @@ def normalize_cupy(data: ndarray,
     data = (data - dark0) / denom
     data[data > cutoff] = cutoff
     data[data <= 0.0] = eps
-    if minus_log:
-      data = -log(data)
-    return data
-## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+
+    return -log(data) if minus_log else data
