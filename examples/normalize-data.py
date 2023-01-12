@@ -1,6 +1,7 @@
+from pathlib import Path
+
 import cupy as cp
 import numpy as np
-from pathlib import Path
 
 from httomolib.prep.normalize import normalize_cupy, normalize_raw_cuda
 

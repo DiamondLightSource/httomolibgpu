@@ -31,10 +31,16 @@ __all__ = [
 ]
 
 
+## %%%%%%%%%%%%%%%%%%%%%%%fresnel_filter%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 # CuPy implementation of Fresnel filter ported from Savu
-def fresnel_filter(mat: cp.ndarray, pattern: str, ratio: float,
-                   apply_log: bool = True):
-    """Apply Fresnel filter.
+def fresnel_filter(
+    mat: cp.ndarray,
+    pattern: str,
+    ratio: float,
+    apply_log: bool = True
+) -> cp.ndarray:
+    """
+    Apply Fresnel filter.
 
     Parameters
     ----------
@@ -48,14 +54,22 @@ def fresnel_filter(mat: cp.ndarray, pattern: str, ratio: float,
     ratio : float
         Control the strength of the filter. Greater is stronger.
 
-    apply_log : optional, bool
-        Apply negative log function to data being filtered.
+    apply_log : bool, optional
+        Apply negative log function to the data being filtered.
 
     Returns
     -------
     cp.ndarray
         The filtered data.
     """
+
+    if mat.ndim == 2:
+        mat = cp.expand_dims(mat, 0)
+
+    if mat.ndim != 3:
+        raise ValueError(f"Invalid number of dimensions in data: {mat.ndim},"
+                         " please provide a stack of 2D projections.")
+
     if apply_log is True:
         mat = -cp.log(mat)
 
@@ -122,14 +136,24 @@ def _make_window(height, width, ratio, pattern):
         win1d = 1.0 + ratio * ulist ** 2
         win2d = cp.tile(win1d, (height, 1))
     return win2d
+## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 
 
+## %%%%%%%%%%%%%%%%%%%%%%% paganin_filter %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 #: CuPy implementation of Paganin filter from Savu
-def paganin_filter(data: cp.ndarray, ratio: float = 250.0, energy: float = 53.0,
-                   distance: float = 1.0, resolution: float = 1.28, pad_y: int = 100,
-                   pad_x: int = 100, pad_method: str = 'edge',
-                   increment: float = 0.0):
-    """Apply Paganin filter (for denoising or contrast enhancement) to
+def paganin_filter(
+    data: cp.ndarray,
+    ratio: float = 250.0,
+    energy: float = 53.0,
+    distance: float = 1.0,
+    resolution: float = 1.28,
+    pad_y: int = 100,
+    pad_x: int = 100,
+    pad_method: str = 'edge',
+    increment: float = 0.0
+) -> cp.ndarray:
+    """
+    Apply Paganin filter (for denoising or contrast enhancement) to
     projections.
 
     Parameters
@@ -137,28 +161,28 @@ def paganin_filter(data: cp.ndarray, ratio: float = 250.0, energy: float = 53.0,
     data : cp.ndarray
         The stack of projections to filter.
 
-    ratio : optional, float
+    ratio : float, optional
         Ratio of delta/beta.
 
-    energy : optional, float
+    energy : float, optional
         Beam energy in keV.
 
-    distance : optional, float
+    distance : float, optional
         Distance from sample to detector in metres.
 
-    resolution : optional, float
+    resolution : float, optional
         Pixel size in microns.
 
-    pad_y : optional, int
+    pad_y : int, optional
         Pad the top and bottom of projections.
 
-    pad_x : optional, int
+    pad_x : int, optional
         Pad the left and right of projections.
 
-    pad_method : optional, str
-        Numpy pad method.
+    pad_method : str, optional
+        Numpy pad method to use.
 
-    increment : optional, float
+    increment : float, optional
         Increment all values by this amount before taking the log.
 
     Returns
@@ -166,6 +190,7 @@ def paganin_filter(data: cp.ndarray, ratio: float = 250.0, energy: float = 53.0,
     cp.ndarray
         The stack of filtered projections.
     """
+    # Check the input data is valid
     if data.ndim == 2:
         data = cp.expand_dims(data, 0)
 
@@ -221,3 +246,4 @@ def paganin_filter(data: cp.ndarray, ratio: float = 250.0, energy: float = 53.0,
         res[i] = proj[pad_y: pad_y + height, pad_x: pad_x + width]
 
     return res
+## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
