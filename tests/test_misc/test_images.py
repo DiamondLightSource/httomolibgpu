@@ -1,5 +1,7 @@
-import numpy as np
 import os
+
+import numpy as np
+from PIL import Image
 
 from httomolib.misc.images import save_to_images
 
@@ -22,6 +24,11 @@ def test_save_to_images():
     #: check that all files are tif
     for file in os.listdir('save_to_images/images/images8bit_tif/'):
         assert file.endswith('.tif')
+
+    #: check that the image size is correct
+    imarray = np.array(
+        Image.open('save_to_images/images/images8bit_tif/00015.tif'))
+    assert imarray.shape == (128, 160)
 
     #--- Test for bits=4423
     save_to_images(host_data, 'save_to_images',
