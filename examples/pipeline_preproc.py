@@ -12,7 +12,7 @@ from httomolib.prep.phase import paganin_filter
 from httomolib.prep.stripe import remove_stripe_based_sorting_cupy
 from httomolib.recon.rotation import find_center_vo_cupy
 
-data_folder = Path("../tests/test_data/")
+data_folder = Path("tests/test_data/")
 
 # Load the projection data
 in_file =  data_folder / 'tomo_standard.npz'

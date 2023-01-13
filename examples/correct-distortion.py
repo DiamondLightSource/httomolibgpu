@@ -6,7 +6,7 @@ from imageio.v2 import imread, imwrite
 from httomolib.prep.alignment import distortion_correction_proj_cupy
 
 # Load image to be corrected
-data_folder = Path("../tests/test_data/")
+data_folder = Path("tests/test_data/")
 file_path = data_folder / "distortion-correction/dot_pattern_03.tif"
 im_host = imread(file_path)
 im = cp.asarray(im_host)
