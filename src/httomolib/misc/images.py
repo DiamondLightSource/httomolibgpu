@@ -147,7 +147,7 @@ def _save_single_img(array2d, glob_stats, bits, jpeg_quality, path_to_out_file):
             array2d,
             in_range=(data_min, data_max),
             out_range=(data_min, data_max)
-        ).astype(np.float32)
+        ).astype(np.uint32)
 
     img = Image.fromarray(array2d)
     img.save(path_to_out_file, quality=jpeg_quality)
