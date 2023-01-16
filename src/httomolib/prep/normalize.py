@@ -34,6 +34,7 @@ def normalize_raw_cuda(
     data: ndarray,
     flats: ndarray,
     darks: ndarray,
+    gpu_id : int = 0,
     cutoff: float = 10.
 ) -> ndarray:
     """
@@ -48,6 +49,8 @@ def normalize_raw_cuda(
         3D flat field data as a CuPy array.
     darks : cp.ndarray
         3D dark field data as a CuPy array.
+    gpu_id : int, optional
+        A GPU device index to perform operation on.        
     cutoff : float, optional
         Permitted maximum value for the normalised data.
 
@@ -57,6 +60,7 @@ def normalize_raw_cuda(
         Normalised 3D tomographic data as a CuPy array.
     """
 
+    cp.cuda.Device(gpu_id).use()
     dark0 = mean(darks, axis=0, dtype=float32)
     flat0 = mean(flats, axis=0, dtype=float32)
     out = cp.zeros(data.shape, dtype=float32)
@@ -111,6 +115,7 @@ def normalize_cupy(
     data: ndarray,
     flats: ndarray,
     darks: ndarray,
+    gpu_id : int = 0,
     cutoff: float = 10.0,
     minus_log: bool = False
 ) -> ndarray:
@@ -125,21 +130,34 @@ def normalize_cupy(
         2D or 3D flat field data as a CuPy array.
     darks : ndarray
         2D or 3D dark field data as a CuPy array.
+    gpu_id : int, optional
+        A GPU device index to perform operation on.
     cutoff : float, optional
         Permitted maximum value for the normalised data.
     minus_log : bool, optional
-        Apply negative log to the normalised data
+        Apply negative log to the normalised data.
+    nonnegativity : bool, optional
+        Remove negative values in the normalised data.
+    remove_nans : bool, optional
+        Remove NaN values in the normalised data.
 
     Returns
     -------
     ndarray
         Normalised 3D tomographic data as a CuPy array.
     """
+    cp.cuda.Device(gpu_id).use()
     data = cp.asarray(data, dtype=cp.float32)
-    eps = cp.float32(1e-6)
+    darks = mean(darks, axis=0, dtype=float32)
+    flats = mean(flats, axis=0, dtype=float32)
 
     if data.ndim != 3:
         raise ValueError("Input data must be a 3D stack of projections")
+
+    if flats.ndim == 2:
+        flats = flats[cp.newaxis, :, :]
+    if darks.ndim == 2:
+        darks = darks[cp.newaxis, :, :]
 
     if flats.ndim not in (2, 3):
         raise ValueError("Input flats must be 2D or 3D data only")
@@ -147,18 +165,18 @@ def normalize_cupy(
     if darks.ndim not in (2, 3):
         raise ValueError("Input darks must be 2D or 3D data only")
 
-    if flats.ndim == 2:
-        flats = flats[cp.newaxis, :, :]
-    if darks.ndim == 2:
-        darks = darks[cp.newaxis, :, :]
-
-    darks = mean(darks, axis=0, dtype=float32)
-    flats = mean(flats, axis=0, dtype=float32)
-
     # replicates tomopy implementation
     denom = (flats - darks)
-    denom[denom < eps] = eps
+    denom[denom < 1.0] = 1.0
+    # implicitly assumes as if flats/darks is integer data type
     data = (data - darks) / denom
     data[data > cutoff] = cutoff
 
-    return -log(data) if minus_log else data
+    if minus_log:
+        data = -log(data)
+    if nonnegativity:
+        data[data < 0.0] = 0.0
+    if remove_nans:
+        data[cp.isnan(data)] = 0
+
+    return data
