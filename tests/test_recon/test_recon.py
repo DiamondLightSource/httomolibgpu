@@ -25,6 +25,10 @@ def test_find_center_vo_cupy():
     for _ in range(10):
         assert_allclose(cor, 79.5)
 
+    mat = cp.ones(shape=(103, 450, 230))
+    cor = find_center_vo_cupy(mat)
+    assert_allclose(cor, 59.0)
+
     # free up GPU memory by no longer referencing the variables
     data, flats, darks = None, None, None
     cp._default_memory_pool.free_all_blocks()
