@@ -6,3 +6,4 @@ from httomolib.prep.normalize import *
 from httomolib.prep.phase import *
 from httomolib.prep.stripe import *
 from httomolib.recon.rotation import *
+from httomolib.recon.algorithm import *
