@@ -2,7 +2,10 @@ import cupy as cp
 from cupy.testing import assert_allclose
 from imageio.v2 import imread
 
-from httomolib.prep.alignment import distortion_correction_proj_cupy
+from httomolib.prep.alignment import (
+    distortion_correction_proj_cupy,
+    distortion_correction_proj_discorpy_cupy,
+)
 
 
 def test_correct_distortion():
@@ -25,6 +28,13 @@ def test_correct_distortion():
         assert_allclose(cp.mean(corrected_data), 200.16733869461675)
         assert cp.max(corrected_data) == 255
 
+    #: test the implementation from tomopy
+    corrected_data = distortion_correction_proj_discorpy_cupy(
+        im, distortion_coeffs_path, preview)
+    for _ in range(5):
+        assert_allclose(cp.mean(corrected_data), 200.193982357142)
+        assert cp.max(corrected_data) == 255
+
     peppers_path = "tests/test_data/distortion-correction/peppers.tif"
     im = cp.asarray(imread(peppers_path))
     corrected_data = distortion_correction_proj_cupy(
@@ -32,6 +42,13 @@ def test_correct_distortion():
 
     for _ in range(5):
         assert_allclose(cp.mean(corrected_data), 95.51871109008789)
+        assert cp.max(corrected_data) == 228
+
+    #: test the implementation from tomopy
+    corrected_data = distortion_correction_proj_discorpy_cupy(
+        im, distortion_coeffs_path, preview)
+    for _ in range(5):
+        assert_allclose(cp.mean(corrected_data), 87.76617813110352)
         assert cp.max(corrected_data) == 228
 
     cameraman_path = "tests/test_data/distortion-correction/cameraman.tif"
