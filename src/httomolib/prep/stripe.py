@@ -45,8 +45,14 @@ def remove_stripe_based_sorting_cupy(
 ) -> ndarray:
     """
     Remove full and partial stripe artifacts from sinogram using Nghia Vo's
-    approach :cite:`Vo:18` (algorithm 3).
-    Suitable for removing partial stripes.
+    approach, algorithm 3 in Ref. [1]. Angular direction is along the axis 0.
+    This algorithm works particularly well for removing partial stripes.
+
+    Steps of the algorithm:
+    1. Sort each column of the sinogram by its grayscale values.
+    2. Apply a smoothing (median) filter on the sorted image along each row.
+    3. Re-sort the smoothed image columns to the original rows to
+       get the corrected sinogram.
 
     Parameters
     ----------
@@ -61,6 +67,10 @@ def remove_stripe_based_sorting_cupy(
     -------
     cupy.ndarray
         Corrected 3D tomographic data.
+
+    References
+    ----------
+    .. [1] https://doi.org/10.1364/OE.26.028396
     """
 
     matindex = _create_matindex(tomo.shape[2], tomo.shape[0])
@@ -92,15 +102,23 @@ def _rs_sort(sinogram, size, matindex, dim):
     """
     sinogram = cp.transpose(sinogram)
     matcomb = cp.asarray(cp.dstack((matindex, sinogram)))
+
+    #: Sort each column of the sinogram by its grayscale values
     matsort = cp.asarray(
         [row[row[:, 1].argsort()] for row in matcomb])
+
+    #: Now apply the median filter on the sorted image along each row
     if dim == 1:
         matsort[:, :, 1] = median_filter(matsort[:, :, 1], (size, 1))
     else:
         matsort[:, :, 1] = median_filter(matsort[:, :, 1], (size, size))
+
+    #: step 3: re-sort the smoothed image columns to the original rows
     matsortback = cp.asarray(
         [row[row[:, 0].argsort()] for row in matsort])
+
     sino_corrected = matsortback[:, :, 1]
+
     return cp.transpose(sino_corrected)
 
 
