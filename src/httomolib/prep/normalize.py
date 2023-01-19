@@ -116,14 +116,8 @@ def normalize_raw_cuda(
 
     grids = (32, 32, 1)
     blocks = (data.shape[0], 1, 1)
-    take_log_param = 0
-    if minus_log:
-        take_log_param = 1
-    nonnegativity_param = 0
-    if nonnegativity:
-        nonnegativity_param = 1
     params = (data, flat0, dark0, out, float32(cutoff),
-              take_log_param, nonnegativity_param, data.shape[1], data.shape[2])
+              minus_log, nonnegativity, data.shape[1], data.shape[2])
     norm_kernel(grids, blocks, params)
 
     return out
