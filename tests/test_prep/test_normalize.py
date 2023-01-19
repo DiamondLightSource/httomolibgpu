@@ -25,15 +25,15 @@ def test_normalize():
     # --- testing normalize_cupy  ---#
     data_normalize_cupy = normalize_cupy(data, flats, darks, cutoff=10, minus_log=True)
     for _ in range(10):
-        assert_allclose(cp.min(data_normalize_cupy), data_min, rtol=1e-05)
-        assert_allclose(cp.max(data_normalize_cupy), data_max, rtol=1e-05)
+        assert_allclose(cp.min(data_normalize_cupy), data_min, rtol=1e-06)
+        assert_allclose(cp.max(data_normalize_cupy), data_max, rtol=1e-06)
 
     # --- testing normalize_raw_cuda  ---#
     # TODO: fix the normalize_raw_cuda test failing at max assert
-    # data_normalize_raw_cuda = normalize_raw_cuda(data, flats, darks)
-    # for _ in range(10):
-    #    assert_allclose(cp.min(data_normalize_raw_cuda), data_min, rtol=1e-05)
-    #    assert_allclose(cp.max(data_normalize_raw_cuda), data_max, rtol=1e-05)
+    #data_normalize_raw_cuda = normalize_raw_cuda(data, flats, darks, cutoff=10, minus_log=True)
+    #for _ in range(10):
+        #assert_allclose(cp.min(data_normalize_raw_cuda), data_min, rtol=1e-05)
+        #assert_allclose(cp.max(data_normalize_raw_cuda), data_max, rtol=1e-06)
 
     # free up GPU memory by no longer referencing the variables
     # data_normalize_cupy = data_normalize_raw_cuda = flats = darks = data_min = data_max = None
