@@ -22,3 +22,7 @@ addopts = "-v -ra -q"
 testpaths = [
     "tests",
 ]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::scipy.stats.ConstantInputWarning",
+]
