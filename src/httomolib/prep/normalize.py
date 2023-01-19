@@ -35,7 +35,9 @@ def normalize_raw_cuda(
     flats: ndarray,
     darks: ndarray,
     gpu_id : int = 0,
-    cutoff: float = 10.
+    cutoff: float = 10.0,
+    minus_log: bool = False,
+    nonnegativity: bool = False
 ) -> ndarray:
     """
     Normalize raw projection data using the flat and dark field projections.
@@ -53,6 +55,10 @@ def normalize_raw_cuda(
         A GPU device index to perform operation on.        
     cutoff : float, optional
         Permitted maximum value for the normalised data.
+    minus_log : bool, optional
+        Apply negative log to the normalised data.
+    nonnegativity : bool, optional
+        Remove negative values in the normalised data.          
 
     Returns
     -------
@@ -61,50 +67,63 @@ def normalize_raw_cuda(
     """
 
     cp.cuda.Device(gpu_id).use()
+    
     dark0 = mean(darks, axis=0, dtype=float32)
     flat0 = mean(flats, axis=0, dtype=float32)
-    out = cp.zeros(data.shape, dtype=float32)
+    out = cp.zeros(data.shape, dtype=float32)    
 
     norm_kernel = cp.RawKernel(
         """extern "C" __global__ void normalize(const unsigned short* data,
            const float* flat,
            const float* dark,
-           float* out, float eps, float cutoff, int A, int B)
+           float* out, float cutoff, int take_log_param, int nonnegativity_param, int A, int B)
            {
              int bid = blockIdx.x;
              int tx = threadIdx.x;
              int ty = threadIdx.y;
              data += bid * A * B;
              out += bid * A * B;
+             long long index;            
              
              for (int a = ty; a < A; a += blockDim.y)
     	     {
  	     #pragma unroll(4)
-	     for (int b = tx; b < B; b += blockDim.x)
-	        {
-                float denom = flat[a * B + b] - dark[a * B + b];
-                if (denom < eps)
-                {
-                  denom = eps;
-                }
-                float tmp = (float(data[a * B + b]) - dark[a * B + b]) / denom;
-                if (tmp > cutoff)
-                {
-                  tmp = cutoff;
-                }
-                if (tmp <= 0.0)
-                {
-                  tmp = eps;
-                }
-	        out[a * B + b] = -log(tmp);
+	            for (int b = tx; b < B; b += blockDim.x)
+	            {
+                    index = a * B + b;
+                    float denom = flat[index] - dark[index];
+                    if (denom < 1.0f)
+                    {
+                    denom = 1.0f;
+                    }
+                    float tmp = (float(data[index]) - dark[index]) / denom;
+                    if (tmp > cutoff)
+                    {
+                    tmp = cutoff;
+                    }      
+                    if (take_log_param == 1)
+                    {
+                        tmp = -logf(tmp);
+                    }
+                    if (nonnegativity_param == 1)
+                    {
+                        if (tmp < 0.0f) {tmp = 0.0f;}
+                    }
+	        out[index] = tmp;
     	        }
-	     }
+	        }
            }""", "normalize")
 
     grids = (32, 32, 1)
     blocks = (data.shape[0], 1, 1)
-    params = (data, flat0, dark0, out, float32(1e-6),
-              float32(cutoff), data.shape[1], data.shape[2])
+    take_log_param = 0
+    if minus_log:
+        take_log_param = 1
+    nonnegativity_param = 0
+    if nonnegativity:
+        nonnegativity_param = 1
+    params = (data, flat0, dark0, out, float32(cutoff),
+              take_log_param, nonnegativity_param, data.shape[1], data.shape[2])
     norm_kernel(grids, blocks, params)
 
     return out
@@ -117,7 +136,9 @@ def normalize_cupy(
     darks: ndarray,
     gpu_id : int = 0,
     cutoff: float = 10.0,
-    minus_log: bool = False
+    minus_log: bool = False,
+    nonnegativity: bool = False,
+    remove_nans: bool = False
 ) -> ndarray:
     """
     Normalize raw projection data using the flat and dark field projections.    
@@ -140,7 +161,7 @@ def normalize_cupy(
         Remove negative values in the normalised data.
     remove_nans : bool, optional
         Remove NaN values in the normalised data.
-
+        
     Returns
     -------
     ndarray
