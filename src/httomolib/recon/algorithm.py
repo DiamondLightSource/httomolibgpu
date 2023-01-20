@@ -24,7 +24,6 @@
 from typing import Optional
 
 import cupy as cp
-import scipy.fftpack
 import numpy as np
 
 __all__ = [
