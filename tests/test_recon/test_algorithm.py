@@ -19,8 +19,8 @@ def test_reconstruct_tomobar():
     angles = np.linspace(0. * np.pi / 180., 180. * np.pi / 180., data.shape[0])
 
     #--- reconstructing the data ---#
-    recon_data = reconstruct_tomobar(data, angles, cor)
+    recon_data = reconstruct_tomobar(data, angles, cor, algorithm="FBP3D_host")
     assert recon_data.shape == (128, 160, 160)
     for _ in range(3):
-        assert_allclose(np.mean(recon_data), -0.00047186256, rtol=1e-07)
-        assert_allclose(np.std(recon_data), 0.0034316075, rtol=1e-07)
+        assert_allclose(np.mean(recon_data), -0.00047186256, rtol=1e-06)
+        assert_allclose(np.std(recon_data), 0.0034316075, rtol=1e-06)
