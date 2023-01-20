@@ -122,27 +122,26 @@ def _filtersinc3D_cupy(projection3D):
         ndarray: a CuPy array of filtered projection data.
     """
     a = 1.1
-    [DetectorsLengthV, projectionsNum, DetectorsLengthH] = np.shape(projection3D)
-    w = np.linspace(-np.pi,np.pi-(2*np.pi)/DetectorsLengthH, DetectorsLengthH,dtype='float32')
+    [DetectorsLengthV, projectionsNum, DetectorsLengthH] = cp.shape(projection3D)
+    w = cp.linspace(-cp.pi,cp.pi-(2*cp.pi)/DetectorsLengthH, DetectorsLengthH,dtype='float32')
     
     # prepearing a ramp-like filter to apply to every projection
-    rn1 = np.abs(2.0/a*np.sin(a*w/2.0))
-    rn2 = np.sin(a*w/2.0)
+    rn1 = cp.abs(2.0/a*cp.sin(a*w/2.0))
+    rn2 = cp.sin(a*w/2.0)
     rd = (a*w)/2.0
-    rd_c = np.zeros([1,DetectorsLengthH])
+    rd_c = cp.zeros([1,DetectorsLengthH])
     rd_c[0,:] = rd
-    r = rn1*(np.dot(rn2, np.linalg.pinv(rd_c)))**2
+    r = rn1*(cp.dot(rn2, cp.linalg.pinv(rd_c)))**2
     multiplier = (1.0/projectionsNum)
-    f = scipy.fftpack.fftshift(r)
-    f_2d = np.zeros((DetectorsLengthV,DetectorsLengthH), dtype='float32') # 2d filter
-    f_2d[0::,:] = f
-    filter_gpu = cp.asarray(f_2d)
+    f = cp.fft.fftshift(r)
+    filter_2d = cp.zeros((DetectorsLengthV,DetectorsLengthH), dtype='float32') # 2d filter
+    filter_2d[0::,:] = f
     
     filtered = cp.zeros(cp.shape(projection3D), dtype='float32') # convert to cupy array
 
     for i in range(0,projectionsNum):
         IMG = cp.fft.fft2(projection3D[:,i,:])
-        fimg = IMG*filter_gpu
+        fimg = IMG*filter_2d
         filtered[:,i,:] = cp.real(cp.fft.ifft2(fimg))
     return multiplier*filtered
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
