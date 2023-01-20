@@ -23,7 +23,8 @@
 import cupy as cp
 import numpy as np
 from cupy import abs, mean, ndarray
-from cupyx.scipy.ndimage import median_filter, binary_dilation
+from cupyx.scipy.ndimage import median_filter, binary_dilation, uniform_filter1d
+from ._rgi import interpn
 
 __all__ = [
     'detect_stripes',
@@ -32,7 +33,7 @@ __all__ = [
     'remove_stripes_titarenko_cupy',
 ]
 
-# TODO: port 'remove_all_stripe' and 'remove_dead_stripe' from
+# TODO: port 'remove_all_stripe' from
 # https://github.com/tomopy/tomopy/blob/master/source/tomopy/prep/stripe.py
 
 
@@ -146,6 +147,80 @@ def _detect_stripe(listdata: ndarray, snr: float) -> ndarray:
         lower_thresh = numt1 - noiselevel * snr * 0.5
         listmask[listdata <= lower_thresh] = 1.0
     return listmask
+
+
+## %%%%%%%%%%%%%%%%%%%%% remove_dead_stripe_cupy %%%%%%%%%%%%%%%%%%%%%%%%%  ##
+## Naive CuPy port of the NumPy implementation in TomoPy
+def remove_dead_stripe_cupy(tomo: ndarray, snr: float=3, size: int=51,
+                            norm: bool=True) -> ndarray:
+    """
+    Remove unresponsive and fluctuating stripe artifacts from sinogram using
+    Nghia Vo's approach :cite:`Vo:18` (algorithm 6).
+
+    Parameters
+    ----------
+    tomo : ndarray
+        3D tomographic data.
+
+    snr  : float
+        Ratio used to detect locations of large stripes.
+        Greater is less sensitive.
+
+    size : int
+        Window size of the median filter.
+
+    norm : bool, optional
+        Remove residual stripes if True.
+
+    Returns
+    -------
+    ndarray
+        Corrected 3D tomographic data.
+    """
+    matindex = _create_matindex(tomo.shape[2], tomo.shape[0])
+    for m in range(tomo.shape[1]):
+        sino = tomo[:, m, :]
+        tomo[:, m, :] = _rs_dead(sino, snr, size, matindex, norm)
+    return tomo
+
+
+def _rs_dead(sinogram, snr, size, matindex, norm=True):
+    """
+    Remove unresponsive and fluctuating stripes.
+    """
+    (nrow, _) = sinogram.shape
+    sinosmooth = cp.apply_along_axis(uniform_filter1d, 0, sinogram, 10)
+    listdiff = cp.sum(abs(sinogram - sinosmooth), axis=0)
+    listdiffbck = median_filter(listdiff, size)
+    # TODO: Same situation as the analagous part in `_rs_large()`, see that
+    # function's comment when using `cp.divide()`.
+    listfact = cp.divide(listdiff, listdiffbck,
+                         #out=np.ones_like(listdiff),
+                         #where=listdiffbck != 0
+                         )
+    listmask = _detect_stripe(listfact, snr)
+    listmask = binary_dilation(listmask, iterations=1).astype(listmask.dtype)
+    listmask[0:2] = 0.0
+    listmask[-2:] = 0.0
+    # TODO: Same situation as the analagous part in `_rs_large()`, see that
+    # function's comment when using `cp.where()`.
+    listx = cp.where(listmask < 1.0)[0]
+    listy = cp.arange(nrow)
+    matz = sinogram[:, listx]
+    points = (listy, listx)
+    # Uses N-dimensional interpolation function copied from CuPy source code of
+    # v12.0.0b3 pre-release
+    finter = interpn(points, matz, tuple(cp.meshgrid(listy, listx)),
+                     method='linear')
+    # TODO: Same situation as the analagous part in `_rs_large()`, see that
+    # function's comment when using `cp.where()`.
+    listxmiss = cp.where(listmask > 0.0)[0]
+    if len(listxmiss) > 0:
+        sinogram[:, listxmiss] = finter(listxmiss, listy)
+    # Remove residual stripes
+    if norm is True:
+        sinogram = _rs_large(sinogram, snr, size, matindex)
+    return sinogram
 
 
 ## %%%%%%%%%%%%%%%%% remove_stripe_based_sorting_cupy %%%%%%%%%%%%%%%%%%%%%  ##
