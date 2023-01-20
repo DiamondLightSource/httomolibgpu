@@ -24,32 +24,32 @@
 from typing import Optional
 
 import cupy as cp
-#from cupy import ndarray, swapaxes
 import scipy.fftpack
 import numpy as np
-from numpy import ndarray
 
 __all__ = [
     'reconstruct_tomobar',
+    'reconstruct_tomopy',
 ]
 
 ## %%%%%%%%%%%%%%%%%%%%%%% ToMoBAR reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 def reconstruct_tomobar(
-    data: ndarray,
-    angles: ndarray,
+    data: cp.ndarray,
+    angles: np.ndarray,
     center: float = None,
     objsize: int = None,
     algorithm: str = 'FBP3D_device',
     gpu_id : int = 0
-    ) -> ndarray:
+    ) -> cp.ndarray:
     """
-    Perform reconstruction using ToMoBAR wrappers around ASTRA toolbox. 
+    Perform reconstruction using ToMoBAR wrappers around ASTRA toolbox.
+    This is a 3D recon using 3D astra geometry routines.
 
     Parameters
     ----------
     data : cp.ndarray
         Projection data as a CuPy array.
-    angles : cp.ndarray
+    angles : np.ndarray
         An array of angles given in radians.
     center : float, optional
         The center of rotation (CoR).
@@ -63,7 +63,7 @@ def reconstruct_tomobar(
     Returns
     -------
     cp.ndarray
-        The reconstructed volumes a CuPy array.
+        The reconstructed volume as cp or np array.
     """
     from tomobar.methodsDIR import RecToolsDIR    
     from tomobar.supp.astraOP import AstraTools3D
@@ -84,10 +84,10 @@ def reconstruct_tomobar(
         # ------------------------------------------------------- # 
         # performs 3D FBP with filtering on the CPU (host (filtering) -> device (backprojection) -> host (if needed))
                 
-        reconstruction = RectoolsDIR.FBP(np.swapaxes(cp.asnumpy(data), 0, 1))
+        reconstruction = RectoolsDIR.FBP(np.swapaxes(cp.asnumpy(data), 0, 1)) # the output stored as a numpy array
         
         # ------------------------------------------------------- #     
-    if algorithm == "FBP3D_device":
+    elif algorithm == "FBP3D_device":
         # Perform filtering of the data on the GPU and then pass a pointer to CuPy array to do backprojection, i.e.
         # (host -> device (filtering) -> device (backprojection) -> host (if needed))
         cp.cuda.Device(gpu_id).use()
@@ -106,9 +106,10 @@ def reconstruct_tomobar(
         cp._default_memory_pool.free_all_blocks()       
         
         reconstruction = Atools.backprojCuPy(data) # backproject the filtered data while keeping data on the GPU
-        #reconstruction = cp.asnumpy(reconstruction) # if needed
         cp._default_memory_pool.free_all_blocks()
-        # ------------------------------------------------------- # 
+        # ------------------------------------------------------- #
+    else:
+        raise ValueError("Unknown algorithm type, please specify FBP3D_device or FBP3D_host")
     return reconstruction
 
 def _filtersinc3D_cupy(projection3D):
@@ -144,4 +145,50 @@ def _filtersinc3D_cupy(projection3D):
         fimg = IMG*filter_gpu
         filtered[:,i,:] = cp.real(cp.fft.ifft2(fimg))
     return multiplier*filtered
+## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+
+
+## %%%%%%%%%%%%%%%%%%%%%%% Tomopy/ASTRA reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+def reconstruct_tomopy(
+    data: np.ndarray,
+    angles: np.ndarray,
+    center: float = None,
+    algorithm: str = 'FBP_CUDA',
+    gpu_id : int = 0
+    ) -> np.ndarray:
+    """
+    Perform reconstruction using tomopy with wrappers around ASTRA toolbox.
+    This is a 3D recon using 2D (slice-by-slice) astra geometry routines.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Projection data as a numpy array.
+    angles : np.ndarray
+        An array of angles given in radians.
+    center : float, optional
+        The center of rotation (CoR).
+    algorithm : str, optional
+        The name of the reconstruction method, see available ASTRA methods.
+    gpu_id : int, optional
+        A GPU device index to perform operation on.
+
+    Returns
+    -------
+    np.ndarray
+        The reconstructed volume.
+    """
+    from tomopy import astra, recon
+    
+    reconstruction = recon(cp.asnumpy(data),
+                           theta=angles,
+                           center=center,
+                           algorithm=astra,
+                           options={
+                               "method": algorithm,
+                               "proj_type": "cuda",
+                               "gpu_list": [gpu_id],},
+                           ncore=1,)   
+    
+    return reconstruction
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
