@@ -67,6 +67,8 @@ def reconstruct_tomobar(
     from tomobar.methodsDIR import RecToolsDIR    
     from tomobar.supp.astraOP import AstraTools3D
     
+    cp._default_memory_pool.free_all_blocks()
+    
     if center is None:
         center = 0.0
     if objsize is None:
@@ -75,7 +77,7 @@ def reconstruct_tomobar(
         # set parameters and initiate a TomoBar class object for direct reconstruction
         RectoolsDIR = RecToolsDIR(DetectorsDimH=data.shape[2],  # DetectorsDimH # detector dimension (horizontal)
                                 DetectorsDimV=data.shape[1],  # DetectorsDimV # detector dimension (vertical) for 3D case only
-                                CenterRotOffset=data.shape[2] * 0.5 - center,  # The center of rotation combined with the shift offsets
+                                CenterRotOffset=data.shape[2] / 2 - center - 0.5,  # The center of rotation combined with the shift offsets
                                 AnglesVec=-angles,  # the vector of angles in radians
                                 ObjSize=objsize,  # a scalar to define the reconstructed object dimensions
                                 device_projector=gpu_id)
@@ -95,14 +97,13 @@ def reconstruct_tomobar(
         Atools = AstraTools3D(DetectorsDimH=data.shape[2],  # DetectorsDimH # detector dimension (horizontal)
                                 DetectorsDimV=data.shape[1],  # DetectorsDimV # detector dimension (vertical) for 3D case only
                                 AnglesVec=-angles,  # the vector of angles in radians
-                                CenterRotOffset=data.shape[2] * 0.5 - center,  # The center of rotation combined with the shift offsets                              
+                                CenterRotOffset=data.shape[2] / 2 - center - 0.5,  # The center of rotation combined with the shift offsets                              
                                 ObjSize=objsize,  # a scalar to define the reconstructed object dimensions
                                 OS_number = 1, # OS recon disabled
                                 device_projector = 'gpu',
                                 GPUdevice_index=gpu_id)    
         # ------------------------------------------------------- # 
-        data = _filtersinc3D_cupy(cp.swapaxes(data, 0, 1)) # filter the data on the GPU and keep the result there
-        cp._default_memory_pool.free_all_blocks()       
+        data = _filtersinc3D_cupy(cp.swapaxes(data, 0, 1)) # filter the data on the GPU and keep the result there        
         
         reconstruction = Atools.backprojCuPy(data) # backproject the filtered data while keeping data on the GPU
         cp._default_memory_pool.free_all_blocks()
@@ -142,6 +143,9 @@ def _filtersinc3D_cupy(projection3D):
         IMG = cp.fft.fft2(projection3D[:,i,:])
         fimg = IMG*filter_2d
         filtered[:,i,:] = cp.real(cp.fft.ifft2(fimg))
+
+    del projection3D
+    cp._default_memory_pool.free_all_blocks()
     return multiplier*filtered
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 

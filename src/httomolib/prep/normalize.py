@@ -162,7 +162,7 @@ def normalize_cupy(
         Normalised 3D tomographic data as a CuPy array.
     """
     cp.cuda.Device(gpu_id).use()
-    data = cp.asarray(data, dtype=cp.float32)
+    
     darks = mean(darks, axis=0, dtype=float32)
     flats = mean(flats, axis=0, dtype=float32)
 
