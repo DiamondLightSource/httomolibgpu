@@ -116,19 +116,12 @@ def normalize_raw_cuda(
 
     grids = (32, 32, 1)
     blocks = (data.shape[0], 1, 1)
-    take_log_param = 0
-    if minus_log:
-        take_log_param = 1
-    nonnegativity_param = 0
-    if nonnegativity:
-        nonnegativity_param = 1
     params = (data, flat0, dark0, out, float32(cutoff),
-              take_log_param, nonnegativity_param, data.shape[1], data.shape[2])
+              minus_log, nonnegativity, data.shape[1], data.shape[2])
     norm_kernel(grids, blocks, params)
 
     return out
 
-## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 
 #: CuPy implementation with higher memory footprint than normalize_raw_cuda.
 def normalize_cupy(
@@ -147,11 +140,11 @@ def normalize_cupy(
     Parameters
     ----------
     data : ndarray
-        3D Projection data as a CuPy array.
+        3D stack of projections as a CuPy array.
     flats : ndarray
-        3D flat field data as a CuPy array.
+        2D or 3D flat field data as a CuPy array.
     darks : ndarray
-        3D dark field data as a CuPy array.
+        2D or 3D dark field data as a CuPy array.
     gpu_id : int, optional
         A GPU device index to perform operation on.
     cutoff : float, optional
@@ -169,18 +162,36 @@ def normalize_cupy(
         Normalised 3D tomographic data as a CuPy array.
     """
     cp.cuda.Device(gpu_id).use()
-    dark0 = mean(darks, axis=0, dtype=float32)
-    flat0 = mean(flats, axis=0, dtype=float32)
-    
+    data = cp.asarray(data, dtype=cp.float32)
+    darks = mean(darks, axis=0, dtype=float32)
+    flats = mean(flats, axis=0, dtype=float32)
+
+    if data.ndim != 3:
+        raise ValueError("Input data must be a 3D stack of projections")
+
+    if flats.ndim == 2:
+        flats = flats[cp.newaxis, :, :]
+    if darks.ndim == 2:
+        darks = darks[cp.newaxis, :, :]
+
+    if flats.ndim not in (2, 3):
+        raise ValueError("Input flats must be 2D or 3D data only")
+
+    if darks.ndim not in (2, 3):
+        raise ValueError("Input darks must be 2D or 3D data only")
+
     # replicates tomopy implementation
-    denom = (flat0 - dark0)
-    denom[denom < 1.0] = 1.0 # implicitly assumes as if flats/darks is integer data type
-    data = (data - dark0) / denom
+    denom = (flats - darks)
+    denom[denom < 1.0] = 1.0
+    # implicitly assumes as if flats/darks is integer data type
+    data = (data - darks) / denom
     data[data > cutoff] = cutoff
+
     if minus_log:
         data = -log(data)
     if nonnegativity:
         data[data < 0.0] = 0.0
     if remove_nans:
         data[cp.isnan(data)] = 0
+
     return data
