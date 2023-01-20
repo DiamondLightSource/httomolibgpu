@@ -33,8 +33,44 @@ __all__ = [
     'remove_stripes_titarenko_cupy',
 ]
 
-# TODO: port 'remove_all_stripe' from
-# https://github.com/tomopy/tomopy/blob/master/source/tomopy/prep/stripe.py
+## %%%%%%%%%%%%%%%%%%%%% remove_all_stripe_cupy %%%%%%%%%%%%%%%%%%%%%%%%%  ##
+## Naive CuPy port of the NumPy implementation in TomoPy
+def remove_all_stripe_cupy(tomo: ndarray, snr: float=3, la_size: int=61,
+                           sm_size: int=21, dim: int=1):
+    """
+    Remove all types of stripe artifacts from sinogram using Nghia Vo's
+    approach :cite:`Vo:18` (combination of algorithm 3,4,5, and 6).
+
+    Parameters
+    ----------
+    tomo : ndarray
+        3D tomographic data.
+
+    snr  : float
+        Ratio used to locate large stripes.
+        Greater is less sensitive.
+
+    la_size : int
+        Window size of the median filter to remove large stripes.
+
+    sm_size : int
+        Window size of the median filter to remove small-to-medium stripes.
+
+    dim : {1, 2}, optional
+        Dimension of the window.
+
+    Returns
+    -------
+    ndarray
+        Corrected 3D tomographic data.
+    """
+    matindex = _create_matindex(tomo.shape[2], tomo.shape[0])
+    for m in range(tomo.shape[1]):
+        sino = tomo[:, m, :]
+        sino = _rs_dead(sino, snr, la_size, matindex)
+        sino = _rs_sort(sino, sm_size, matindex, dim)
+        tomo[:, m, :] = sino
+    return tomo
 
 
 ## %%%%%%%%%%%%%%%%%%%%% remove_large_stripe_cupy %%%%%%%%%%%%%%%%%%%%%%%%%  ##
