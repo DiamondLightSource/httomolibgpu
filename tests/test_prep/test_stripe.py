@@ -18,6 +18,7 @@ host_flats = datafile['flats']
 host_darks = datafile['darks']
 
 
+@cp.testing.gpu
 def test_stripe_removal():
     data = cp.asarray(host_data)
     flats = cp.asarray(host_flats)

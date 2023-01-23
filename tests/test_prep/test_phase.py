@@ -13,6 +13,7 @@ data = cp.array(host_data)
 eps = 1e-6
 
 
+@cp.testing.gpu
 def test_fresnel_filter():
     # --- testing the Fresnel filter on tomo_standard ---#
     pattern = 'PROJECTION'
@@ -39,6 +40,7 @@ def test_fresnel_filter():
     cp._default_memory_pool.free_all_blocks()
 
 
+@cp.testing.gpu
 def test_paganin_filter():
     # --- testing the Paganin filter on tomo_standard ---#
     filtered_data = paganin_filter(data)

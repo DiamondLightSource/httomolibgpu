@@ -16,3 +16,4 @@ dependencies:
   - anaconda::h5py
   - astra-toolbox::astra-toolbox
   - savu-dep::tomobar
+  - savu-dep::larix
