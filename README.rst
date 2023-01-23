@@ -22,4 +22,6 @@ Input data for methods
 
 Run tests
 =========
-* Run tests with :code:`$ pytest`. To increase verbosity, use :code:`$ pytest -v`.
+* Run all tests with :code:`$ pytest`. To increase verbosity, use :code:`$ pytest -v`.
+* Run GPU tests separately with :code:`$ pytest -v -m gpu`.
+* Run CPU tests separately with :code:`$ pytest -v -m "not gpu"`.

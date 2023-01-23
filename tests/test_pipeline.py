@@ -12,6 +12,7 @@ from tomopy.prep.stripe import remove_stripe_based_sorting
 from tomopy.recon.rotation import find_center_vo
 
 
+@cp.testing.gpu
 def test_cpu_vs_gpu():
     #--- GPU pipeline tested on `tomo_standard` ---#
 

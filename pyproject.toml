@@ -24,5 +24,6 @@ testpaths = [
 ]
 filterwarnings = [
     "ignore::DeprecationWarning",
+    "ignore::pytest.PytestUnknownMarkWarning",
     "ignore::scipy.stats.ConstantInputWarning",
 ]
