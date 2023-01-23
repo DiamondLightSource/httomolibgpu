@@ -69,6 +69,7 @@ def test_paganin_filter():
     cp._default_memory_pool.free_all_blocks()
 
 
+@cp.testing.gpu
 def test_retrieve_phase():
     #: testing the phase retrieval on tomo_standard
     _data = cp.ones(10)
