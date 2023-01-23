@@ -32,6 +32,7 @@ jobs:
           conda env create httomolib --file conda/environment.yml
           conda run -n httomolib python setup.py develop
 
-      - name: Run CPU tests with pytest
+      # run tests
+      - name: Run CPU and GPU tests
         run: |
-          pytest -v -m "not gpu"
+          conda run -n httomolib pytest -v
