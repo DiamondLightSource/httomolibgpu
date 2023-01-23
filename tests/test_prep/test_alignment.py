@@ -8,6 +8,7 @@ from httomolib.prep.alignment import (
 )
 
 
+@cp.testing.gpu
 def test_correct_distortion():
     distortion_coeffs_path = \
         'tests/test_data/distortion-correction/distortion-coeffs.txt'
