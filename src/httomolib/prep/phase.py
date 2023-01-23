@@ -28,7 +28,14 @@ import cupy as cp
 __all__ = [
     'fresnel_filter',
     'paganin_filter',
+    'retrieve_phase',
 ]
+
+# Define constants used in phase retrieval method
+BOLTZMANN_CONSTANT = 1.3806488e-16  # [erg/k]
+SPEED_OF_LIGHT = 299792458e+2  # [cm/s]
+PI = 3.14159265359
+PLANCK_CONSTANT = 6.58211928e-19  # [keV*s]
 
 
 # CuPy implementation of Fresnel filter ported from Savu
@@ -247,25 +254,23 @@ def paganin_filter(
     return res
 
 
-# Define constants used in phase retrieval method
-BOLTZMANN_CONSTANT = 1.3806488e-16  # [erg/k]
-SPEED_OF_LIGHT = 299792458e+2  # [cm/s]
-PI = 3.14159265359
-PLANCK_CONSTANT = 6.58211928e-19  # [keV*s]
-
-
 ## %%%%%%%%%%%%%%%%%%%%%%% retrieve_phase %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 #: CuPy implementation of retrieve_phase from TomoPy
-def retrieve_phase(tomo: cp.ndarray, pixel_size: float=1e-4, dist: float=50,
-                   energy: float=20, alpha: float=1e-3, pad: bool=True
-                   ) -> cp.ndarray:
+def retrieve_phase(
+    tomo: cp.ndarray,
+    pixel_size: float = 1e-4,
+    dist: float = 50.,
+    energy: float = 20.,
+    alpha: float = 1e-3,
+    pad: bool = True
+) -> cp.ndarray:
     """
     Perform single-step phase retrieval from phase-contrast measurements
     :cite:`Paganin:02`.
 
     Parameters
     ----------
-    tomo : ndarray
+    tomo : cp.ndarray
         3D tomographic data.
     pixel_size : float, optional
         Detector pixel size in cm.
@@ -280,9 +285,18 @@ def retrieve_phase(tomo: cp.ndarray, pixel_size: float=1e-4, dist: float=50,
 
     Returns
     -------
-    ndarray
+    cp.ndarray
         Approximated 3D tomographic phase data.
     """
+
+    # Check the input data is valid
+    if tomo.ndim == 2:
+        tomo = cp.expand_dims(tomo, 0)
+
+    if tomo.ndim != 3:
+        raise ValueError(f"Invalid number of dimensions in data: {tomo.ndim},"
+                         " please provide a stack of 2D projections.")
+
     # New dimensions and pad value after padding.
     py, pz, val = _calc_pad(tomo, pixel_size, dist, energy, pad)
 
@@ -294,14 +308,20 @@ def retrieve_phase(tomo: cp.ndarray, pixel_size: float=1e-4, dist: float=50,
     phase_filter = cp.fft.fftshift(
         _paganin_filter_factor(energy, dist, alpha, w2))
 
-    prj = cp.full((dy + 2 * py, dz + 2 * pz), val, dtype=cp.float32)
+    prj = cp.full((dy + 2*py, dz + 2*pz), val, dtype=cp.float32)
 
     # Apply phase retrieval
     return _retrieve_phase(tomo, phase_filter, py, pz, prj, pad)
 
 
-def _retrieve_phase(tomo: cp.ndarray, phase_filter: cp.ndarray, px: int,
-                    py: int, prj: cp.ndarray, pad: bool) -> cp.ndarray:
+def _retrieve_phase(
+    tomo: cp.ndarray,
+    phase_filter: cp.ndarray,
+    px: int,
+    py: int,
+    prj: cp.ndarray,
+    pad: bool
+) -> cp.ndarray:
     _, dy, dz = tomo.shape
     num_projs = tomo.shape[0]
     normalized_phase_filter = phase_filter / phase_filter.max()
@@ -434,6 +454,6 @@ def _reciprocal_coord(pixel_size: float, num_grid: int) -> cp.ndarray:
         Grid coordinates.
     """
     n = num_grid - 1
-    rc = cp.arange(-n, num_grid, 2, dtype = cp.float32)
+    rc = cp.arange(-n, num_grid, 2, dtype=cp.float32)
     rc *= 0.5 / (n * pixel_size)
     return  rc
