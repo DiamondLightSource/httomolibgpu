@@ -39,9 +39,10 @@ __all__ = [
 ## %%%%%%%%%%%%%%%%% remove_stripe_based_sorting_cupy %%%%%%%%%%%%%%%%%%%%%  ##
 ## Naive CuPy port of the NumPy implementation in TomoPy
 def remove_stripe_based_sorting_cupy(
-    tomo: ndarray,
-    size: int = None,
-    dim: int = 1
+    data: ndarray,
+    size: int = 11,
+    dim: int = 1,
+    gpu_id : int = 0
 ) -> ndarray:
     """
     Remove full and partial stripe artifacts from sinogram using Nghia Vo's
@@ -56,12 +57,14 @@ def remove_stripe_based_sorting_cupy(
 
     Parameters
     ----------
-    tomo : cupy.ndarray
+    data : cupy.ndarray
         3D tomographic data.
     size : int, optional
         Window size of the median filter.
     dim : {1, 2}, optional
         Dimension of the window.
+    gpu_id : int, optional
+        A GPU device index to perform operation on.      
 
     Returns
     -------
@@ -72,19 +75,20 @@ def remove_stripe_based_sorting_cupy(
     ----------
     .. [1] https://doi.org/10.1364/OE.26.028396
     """
+    cp.cuda.Device(gpu_id).use()
 
-    matindex = _create_matindex(tomo.shape[2], tomo.shape[0])
+    matindex = _create_matindex(data.shape[2], data.shape[0])
     if size is None:
-        if tomo.shape[2] > 2000:
+        if data.shape[2] > 2000:
             size = 21
         else:
-            size = max(5, int(0.01 * tomo.shape[2]))
+            size = max(5, int(0.01 * data.shape[2]))
 
-    for m in range(tomo.shape[1]):
-        sino = tomo[:, m, :]
-        tomo[:, m, :] = _rs_sort(sino, size, matindex, dim)
+    for m in range(data.shape[1]):
+        sino = data[:, m, :]
+        data[:, m, :] = _rs_sort(sino, size, matindex, dim)
 
-    return tomo
+    return data
 
 
 def _create_matindex(nrow, ncol):
@@ -125,7 +129,8 @@ def _rs_sort(sinogram, size, matindex, dim):
 ## %%%%%%%%%%%%%%%%%%% remove_stripes_titarenko_cupy %%%%%%%%%%%%%%%%%%%%%%%  ##
 def remove_stripes_titarenko_cupy(
     data: ndarray,
-    beta: float = 0.1
+    beta: float = 0.1,
+    gpu_id : int = 0
 ) -> np.ndarray:
     """
     Removes stripes with the method of V. Titarenko (TomoCuPy implementation)
@@ -136,13 +141,16 @@ def remove_stripes_titarenko_cupy(
         3D stack of projections as a CuPy array.
     beta : float, optional
         filter parameter, lower values increase the filter strength.
-        Default is 0.1
+        Default is 0.1.
+    gpu_id : int, optional
+        A GPU device index to perform operation on.          
 
     Returns
     -------
     ndarray
         3D CuPy array of de-striped projections.
     """
+    cp.cuda.Device(gpu_id).use()
 
     gamma = beta * ((1 - beta) / (1 + beta)) ** abs(
         cp.fft.fftfreq(data.shape[-1]) * data.shape[-1]
