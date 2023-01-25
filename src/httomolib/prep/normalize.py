@@ -101,11 +101,11 @@ def normalize_raw_cuda(
                     {
                     tmp = cutoff;
                     }      
-                    if (take_log_param == 1)
+                    if (minus_log)
                     {
                         tmp = -logf(tmp);
                     }
-                    if (nonnegativity_param == 1)
+                    if (nonnegativity)
                     {
                         if (tmp < 0.0f) {tmp = 0.0f;}
                     }
