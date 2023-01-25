@@ -70,7 +70,7 @@ def normalize_raw_cuda(
     
     dark0 = mean(darks, axis=0, dtype=float32)
     flat0 = mean(flats, axis=0, dtype=float32)
-    out = cp.zeros(data.shape, dtype=float32)    
+    out = cp.zeros(data.shape, dtype=float32)
 
     norm_kernel = cp.RawKernel(
         """extern "C" __global__ void normalize(const unsigned short* data,
