@@ -67,7 +67,9 @@ def normalize_raw_cuda(
     """
 
     cp.cuda.Device(gpu_id).use()
-    
+
+    if data.ndim != 3:
+        raise ValueError("Input data must be a 3D stack of projections")
     dark0 = mean(darks, axis=0, dtype=float32)
     flat0 = mean(flats, axis=0, dtype=float32)
     out = cp.zeros(data.shape, dtype=float32)
