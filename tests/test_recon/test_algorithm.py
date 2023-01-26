@@ -20,12 +20,13 @@ def test_reconstruct_methods():
 
     #--- reconstructing the data ---#
     recon_data = reconstruct_tomobar(data, angles, cor, algorithm="FBP3D_host")
-    
     recon_data_tomopy = reconstruct_tomopy(data, angles, cor, algorithm="FBP_CUDA")
     assert recon_data.shape == (128, 160, 160)
+
     for _ in range(3):
-        assert_allclose(np.mean(recon_data), -0.00047186256, rtol=1e-06)
-        assert_allclose(np.std(recon_data), 0.0034316075, rtol=1e-06)
+        assert_allclose(np.mean(recon_data), -0.00047175083, rtol=1e-07)
+        assert_allclose(np.std(recon_data), 0.0034436132, rtol=1e-07)
+
     for _ in range(3):              
-        assert_allclose(np.mean(recon_data_tomopy), 0.008697214, rtol=1e-06)
-        assert_allclose(np.std(recon_data_tomopy), 0.009089365, rtol=1e-06)
+        assert_allclose(np.mean(recon_data_tomopy), 0.008697214, rtol=1e-07)
+        assert_allclose(np.std(recon_data_tomopy), 0.009089365, rtol=1e-07)
