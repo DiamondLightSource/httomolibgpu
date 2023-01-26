@@ -2,6 +2,7 @@ name: httomolib
 channels:
   - conda-forge
   - anaconda
+  - astra-toolbox
   - savu-dep
 dependencies:
   - conda-forge::cupy
