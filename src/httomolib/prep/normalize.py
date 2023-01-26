@@ -56,7 +56,8 @@ def normalize_raw_cuda(
     cp.ndarray
         Normalised 3D tomographic data as a CuPy array.
     """
-
+    if data.ndim:
+        raise ValueError("Input data must be a 3D stack of projections")
     dark0 = mean(darks, axis=0, dtype=float32)
     flat0 = mean(flats, axis=0, dtype=float32)
     out = cp.zeros(data.shape, dtype=float32)
