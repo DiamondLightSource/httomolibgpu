@@ -94,9 +94,9 @@ def normalize_raw_cuda(
 	            {
                     index = a * B + b;
                     float denom = flat[index] - dark[index];
-                    if (denom < 1.0f)
+                    if (denom < 1e-6)
                     {
-                    denom = 1.0f;
+                    denom = 1e-6;
                     }
                     float tmp = (float(data[index]) - dark[index]) / denom;
                     if (tmp > cutoff)
@@ -167,7 +167,7 @@ def normalize_cupy(
     
     darks = mean(darks, axis=0, dtype=float32)
     flats = mean(flats, axis=0, dtype=float32)
-
+    
     if data.ndim != 3:
         raise ValueError("Input data must be a 3D stack of projections")
 
@@ -183,9 +183,9 @@ def normalize_cupy(
         raise ValueError("Input darks must be 2D or 3D data only")
 
     # replicates tomopy implementation
+    lowval_threshold = cp.float32(1e-6)
     denom = (flats - darks)
-    denom[denom < 1.0] = 1.0
-    # implicitly assumes as if flats/darks is integer data type
+    denom[denom < lowval_threshold] = lowval_threshold    
     data = (data - darks) / denom
     data[data > cutoff] = cutoff
 
