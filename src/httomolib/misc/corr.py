@@ -55,7 +55,7 @@ def median_filter3d_cupy(data: ndarray,
 
     """
     input_type = data.dtype
-    if (input_type != 'float32') and (input_type != 'uint16'):
+    if input_type not in ["float32", "uint16"]:
         raise ValueError("The input data should be either float32 or uint16 data type")
     out = cp.zeros(data.shape, dtype=input_type, order="C")
 
