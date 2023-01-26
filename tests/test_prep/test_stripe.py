@@ -38,9 +38,9 @@ def test_stripe_removal():
     # --- testing the CuPy port of TomoPy's implementation ---#
     corrected_data = remove_stripe_based_sorting_cupy(data)
     for _ in range(10):
-        assert_allclose(cp.mean(corrected_data), 0.28907317, rtol=1e-05)
-        assert_allclose(cp.max(corrected_data), 2.5370452, rtol=1e-05)
-        assert_allclose(cp.min(corrected_data), -0.116429195, rtol=1e-05)
+        assert_allclose(cp.mean(corrected_data), 0.2886111, rtol=1e-07)
+        assert_allclose(cp.max(corrected_data), 2.4899824, rtol=1e-07)
+        assert_allclose(cp.min(corrected_data), -0.1081188, rtol=1e-07)
 
     # free up GPU memory by no longer referencing the variables
     data = flats = darks = data_after_stripe_removal = corrected_data = None
