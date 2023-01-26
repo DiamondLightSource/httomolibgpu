@@ -78,7 +78,7 @@ def normalize_raw_cuda(
         """extern "C" __global__ void normalize(const unsigned short* data,
            const float* flat,
            const float* dark,
-           float* out, float cutoff, int take_log_param, int nonnegativity_param, int A, int B)
+           float* out, float cutoff, bool minus_log, bool nonnegativity, int A, int B)
            {
              int bid = blockIdx.x;
              int tx = threadIdx.x;
