@@ -22,12 +22,12 @@
 """ Module for data correction """
 
 import numpy as np
+import cupy as cp
 from numpy import ndarray
 
 __all__ = [
     'inpainting_filter3d',
 ]
-
 
 def inpainting_filter3d(
     data: ndarray,
