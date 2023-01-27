@@ -18,13 +18,13 @@ def test_cpu_vs_gpu():
 
     in_file = 'tests/test_data/tomo_standard.npz'
     datafile = np.load(in_file)
-    host_data = datafile['data']
-    host_flats = datafile['flats']
-    host_darks = datafile['darks']
+    host_data = np.float32(datafile['data'])
+    host_flats = np.float32(datafile['flats'])
+    host_darks = np.float32(datafile['darks'])
 
-    data = cp.asarray(host_data)
-    flats = cp.asarray(host_flats)
-    darks = cp.asarray(host_darks)
+    data = cp.asarray(host_data, dtype="float32")
+    flats = cp.asarray(host_flats, dtype="float32")
+    darks = cp.asarray(host_darks, dtype="float32")
 
     #: Normalize the data first
     data_normalize_cupy = normalize_cupy(data, flats, darks, cutoff=15.0)

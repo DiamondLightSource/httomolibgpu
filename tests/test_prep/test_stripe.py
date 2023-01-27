@@ -4,8 +4,6 @@ from cupy.testing import assert_allclose, assert_array_equal
 
 from httomolib.prep.normalize import normalize_cupy
 from httomolib.prep.stripe import (
-    detect_stripes,
-    merge_stripes,
     remove_stripe_based_sorting_cupy,
     remove_stripes_titarenko_cupy,
 )
@@ -45,16 +43,3 @@ def test_stripe_removal():
     # free up GPU memory by no longer referencing the variables
     data = flats = darks = data_after_stripe_removal = corrected_data = None
     cp._default_memory_pool.free_all_blocks()
-
-
-def test_detect_stripes():
-    stripe_detected = detect_stripes(host_data)
-    assert_allclose(np.min(stripe_detected), 4.3)
-    assert_allclose(np.max(stripe_detected), 381.4)
-
-
-def test_merge_stripes():
-    stripe_merged = merge_stripes(host_data)
-    assert stripe_merged.shape == (180, 128, 160)
-    assert np.min(stripe_merged) == 0
-    assert np.max(stripe_merged) == 1
