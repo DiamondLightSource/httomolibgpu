@@ -87,7 +87,7 @@ def normalize_cupy(
     # replicates tomopy implementation
     lowval_threshold = cp.float32(1e-6)
     denom = (flats - darks)
-    denom[denom < lowval_threshold] = lowval_threshold    
+    denom[denom < lowval_threshold] = lowval_threshold
     data = (data - darks) / denom
     data[data > cutoff] = cutoff
 
