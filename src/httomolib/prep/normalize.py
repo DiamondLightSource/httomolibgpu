@@ -218,15 +218,18 @@ extern "C" __global__ void normalize(const unsigned short* data,
             tmp = cutoff;
         }
 
-        // Takes out zero and negative values
-        if (nonnegativity && tmp <= 0.0) {
-            tmp = eps;
-        }
-
         // Apply negative log
         if (minus_log) {
-            out[tid] = -log(tmp);
+            tmp = -log(tmp);
         }
+
+        // Takes out zero and negative values
+        if (nonnegativity && tmp < 0.0) {
+            tmp = 0.0;
+        }
+
+        out[tid] = tmp;
+
     }
 }""", "normalize")
 
