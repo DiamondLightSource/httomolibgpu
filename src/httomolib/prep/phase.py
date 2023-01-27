@@ -28,7 +28,14 @@ import cupy as cp
 __all__ = [
     'fresnel_filter',
     'paganin_filter',
+    'retrieve_phase',
 ]
+
+# Define constants used in phase retrieval method
+BOLTZMANN_CONSTANT = 1.3806488e-16  # [erg/k]
+SPEED_OF_LIGHT = 299792458e+2  # [cm/s]
+PI = 3.14159265359
+PLANCK_CONSTANT = 6.58211928e-19  # [keV*s]
 
 
 # CuPy implementation of Fresnel filter ported from Savu
@@ -245,3 +252,208 @@ def paganin_filter(
         res[i] = proj[pad_y: pad_y + height, pad_x: pad_x + width]
 
     return res
+
+
+## %%%%%%%%%%%%%%%%%%%%%%% retrieve_phase %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+#: CuPy implementation of retrieve_phase from TomoPy
+def retrieve_phase(
+    tomo: cp.ndarray,
+    pixel_size: float = 1e-4,
+    dist: float = 50.,
+    energy: float = 20.,
+    alpha: float = 1e-3,
+    pad: bool = True
+) -> cp.ndarray:
+    """
+    Perform single-step phase retrieval from phase-contrast measurements
+    :cite:`Paganin:02`.
+
+    Parameters
+    ----------
+    tomo : cp.ndarray
+        3D tomographic data.
+    pixel_size : float, optional
+        Detector pixel size in cm.
+    dist : float, optional
+        Propagation distance of the wavefront in cm.
+    energy : float, optional
+        Energy of incident wave in keV.
+    alpha : float, optional
+        Regularization parameter.
+    pad : bool, optional
+        If True, extend the size of the projections by padding with zeros.
+
+    Returns
+    -------
+    cp.ndarray
+        Approximated 3D tomographic phase data.
+    """
+
+    # Check the input data is valid
+    if tomo.ndim == 2:
+        tomo = cp.expand_dims(tomo, 0)
+
+    if tomo.ndim != 3:
+        raise ValueError(f"Invalid number of dimensions in data: {tomo.ndim},"
+                         " please provide a stack of 2D projections.")
+
+    # New dimensions and pad value after padding.
+    py, pz, val = _calc_pad(tomo, pixel_size, dist, energy, pad)
+
+    # Compute the reciprocal grid.
+    _, dy, dz = tomo.shape
+    w2 = _reciprocal_grid(pixel_size, dy + 2 * py, dz + 2 * pz)
+
+    # Filter in Fourier space.
+    phase_filter = cp.fft.fftshift(
+        _paganin_filter_factor(energy, dist, alpha, w2))
+
+    prj = cp.full((dy + 2*py, dz + 2*pz), val, dtype=cp.float32)
+
+    # Apply phase retrieval
+    return _retrieve_phase(tomo, phase_filter, py, pz, prj, pad)
+
+
+def _retrieve_phase(
+    tomo: cp.ndarray,
+    phase_filter: cp.ndarray,
+    px: int,
+    py: int,
+    prj: cp.ndarray,
+    pad: bool
+) -> cp.ndarray:
+    _, dy, dz = tomo.shape
+    num_projs = tomo.shape[0]
+    normalized_phase_filter = phase_filter / phase_filter.max()
+    for m in range(num_projs):
+        prj[px:dy + px, py:dz + py] = tomo[m]
+        prj[:px] = prj[px]
+        prj[-px:] = prj[-px-1]
+        prj[:, :py] = prj[:, py][:, cp.newaxis]
+        prj[:, -py:] = prj[:, -py-1][:, cp.newaxis]
+        # TomoPy has its own 2D FFT implementations
+        # https://github.com/tomopy/tomopy/blob/master/source/tomopy/util/misc.py,
+        # the NumPy equivalent in CuPy has been used as an alternative
+        # https://docs.cupy.dev/en/stable/reference/generated/cupy.fft.fft2.html#.
+        fproj = cp.fft.fft2(prj)
+        fproj *= normalized_phase_filter
+        proj = cp.real(cp.fft.ifft2(fproj))
+        if pad:
+            proj = proj[px:dy + px, py:dz + py]
+        tomo[m] = proj
+    return tomo
+
+
+def _calc_pad(tomo: cp.ndarray, pixel_size: float, dist: float, energy: float,
+              pad: bool) -> tuple[int, int, float]:
+    """
+    Calculate new dimensions and pad value after padding.
+
+    Parameters
+    ----------
+    tomo : ndarray
+        3D tomographic data.
+    pixel_size : float
+        Detector pixel size in cm.
+    dist : float
+        Propagation distance of the wavefront in cm.
+    energy : float
+        Energy of incident wave in keV.
+    pad : bool
+        If True, extend the size of the projections by padding with zeros.
+
+    Returns
+    -------
+    int
+        Pad amount in projection axis.
+    int
+        Pad amount in sinogram axis.
+    float
+        Pad value.
+    """
+    _, dy, dz = tomo.shape
+    wavelength = _wavelength(energy)
+    py, pz, val = 0, 0, 0
+    if pad:
+        val = _calc_pad_val(tomo)
+        py = _calc_pad_width(dy, pixel_size, wavelength, dist)
+        pz = _calc_pad_width(dz, pixel_size, wavelength, dist)
+    return py, pz, val
+
+
+def _wavelength(energy: float) -> float:
+    return 2 * PI * PLANCK_CONSTANT * SPEED_OF_LIGHT / energy
+
+
+def _paganin_filter_factor(energy: float, dist: float, alpha: float,
+                           w2: cp.ndarray) -> cp.ndarray:
+    return 1 / (_wavelength(energy) * dist * w2 / (4 * PI) + alpha)
+
+
+def _calc_pad_width(dim: int, pixel_size: float, wavelength: float,
+                    dist: float) -> int:
+    pad_pix = cp.ceil(PI * wavelength * dist / pixel_size ** 2)
+    return int((pow(2, cp.ceil(cp.log2(dim + pad_pix))) - dim) * 0.5)
+
+
+def _calc_pad_val(tomo: cp.ndarray) -> float:
+    return cp.mean((tomo[..., 0] + tomo[..., -1]) * 0.5)
+
+
+def _reciprocal_grid(pixel_size: float, nx: int, ny: int) -> cp.ndarray:
+    """
+    Calculate reciprocal grid.
+
+    Parameters
+    ----------
+    pixel_size : float
+        Detector pixel size in cm.
+    nx, ny : int
+        Size of the reciprocal grid along x and y axes.
+
+    Returns
+    -------
+    ndarray
+        Grid coordinates.
+    """
+    # Sampling in reciprocal space.
+    indx = _reciprocal_coord(pixel_size, nx)
+    indy = _reciprocal_coord(pixel_size, ny)
+    cp.square(indx, out=indx)
+    cp.square(indy, out=indy)
+    # TODO: Explicitly generate the result equivalent to `np.add.outer()` using
+    # nested loops, since CuPy doesn't yet have a released version which
+    # provides `ufunc.outer`, see https://github.com/cupy/cupy/pull/7049,
+    # https://github.com/cupy/cupy/issues/7082, and
+    # https://github.com/cupy/cupy/issues/6866.
+    #
+    # When `ufunc.outer` is supported in CuPy, this code can be updated
+    # accordingly.
+    grid = cp.empty((len(indx),len(indy)))
+    for i in range(len(indx)):
+        for j in range(len(indy)):
+            grid[i,j] = cp.add(indx[i], indy[j])
+    return grid
+
+
+def _reciprocal_coord(pixel_size: float, num_grid: int) -> cp.ndarray:
+    """
+    Calculate reciprocal grid coordinates for a given pixel size
+    and discretization.
+
+    Parameters
+    ----------
+    pixel_size : float
+        Detector pixel size in cm.
+    num_grid : int
+        Size of the reciprocal grid.
+
+    Returns
+    -------
+    ndarray
+        Grid coordinates.
+    """
+    n = num_grid - 1
+    rc = cp.arange(-n, num_grid, 2, dtype=cp.float32)
+    rc *= 0.5 / (n * pixel_size)
+    return  rc
