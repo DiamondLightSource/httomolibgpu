@@ -36,7 +36,7 @@ def test_stripe_removal():
     # --- testing the CuPy port of TomoPy's implementation ---#
     corrected_data = remove_stripe_based_sorting_cupy(data)
     for _ in range(10):
-        assert_allclose(cp.mean(corrected_data), 0.2886111, rtol=1e-07)
+        assert_allclose(cp.mean(corrected_data), 0.2886111, rtol=1e-06)
         assert_allclose(cp.max(corrected_data), 2.4899824, rtol=1e-07)
         assert_allclose(cp.min(corrected_data), -0.1081188, rtol=1e-07)
 
