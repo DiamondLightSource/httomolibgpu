@@ -22,8 +22,10 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "License :: OSI Approved :: BSD 3-clause",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.9",
+    "Environment :: GPU :: NVIDIA CUDA"
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 dynamic = ["version"]
 dependencies = [
     "cupy",
