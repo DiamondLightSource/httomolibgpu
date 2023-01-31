@@ -8,10 +8,16 @@ dependencies:
   - conda-forge::cupy
   - conda-forge::numpy
   - conda-forge::tomopy
+  - conda-forge::scipy
   - conda-forge::python
   - conda-forge::pytest
   - conda-forge::pytest-xdist
+  - conda-forge::pytest-cov
+  - conda-forge::flake8
+  - conda-forge::Flak8-pyproject
+  - conda-forge::pydocstyle
   - conda-forge::imageio
+  - conda-forge::toml
   - anaconda::ipython
   - anaconda::h5py
   - astra-toolbox::astra-toolbox
