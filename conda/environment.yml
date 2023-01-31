@@ -14,7 +14,7 @@ dependencies:
   - conda-forge::pytest-xdist
   - conda-forge::pytest-cov
   - conda-forge::flake8
-  - conda-forge::Flake8-pyproject
+  - conda-forge::pyproject-flake8
   - conda-forge::pydocstyle
   - conda-forge::imageio
   - conda-forge::toml

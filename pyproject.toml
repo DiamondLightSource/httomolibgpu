@@ -40,7 +40,7 @@ dev = [
   "pytest-cov",
   "pytest-xdist",
   "flake8",
-  "Flake8-pyproject",
+  "pyproject-flake8",
   "pydocstyle",
   "toml",
   "imageio",
