@@ -6,7 +6,7 @@ Setup
 * Clone the repository from GitHub using :code:`git clone git@github.com:DiamondLightSource/httomolib.git`
 * Install dependencies from the environment file :code:`conda env create httomolib --file conda/environment.yml`
 * Activate the environment with :code:`conda activate httomolib`
-* Install the environment in development mode with :code:`python setup.py develop`
+* Install the environment in development mode with :code:`pip install -e .[dev]`
 
 An example of using the API
 ===========================
