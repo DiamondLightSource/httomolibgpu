@@ -18,7 +18,7 @@ def test_find_center_vo_cupy(data, flats, darks):
 
 
 @cp.testing.gpu
-def test_find_center_vo_cupy(ensure_clean_memory):
+def test_find_center_vo_cupy_ones(ensure_clean_memory):
     mat = cp.ones(shape=(103, 450, 230))
     cor = find_center_vo_cupy(mat).get()
     assert_allclose(cor, 59.0)
