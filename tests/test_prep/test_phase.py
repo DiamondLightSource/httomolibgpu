@@ -93,10 +93,7 @@ def test_retrieve_phase(data):
 
 @cp.testing.gpu
 def test_retrieve_phase_energy100_nopad(data):
-    # TODO: retrieve_phase modifies data in-place, and reference data was generated
-    # from calling it without params first. The reference should be re-based
-    retrieve_phase(data)
     phase_data = retrieve_phase(data, dist=34.3, energy=100.0, pad=False).get()
 
-    assert_allclose(np.mean(phase_data), 978.7444444444444, rtol=1e-7)
-    assert_allclose(np.std(phase_data), 8.995135859774523, rtol=1e-7)
+    assert_allclose(np.mean(phase_data), 979.527778, rtol=1e-7)
+    assert_allclose(np.std(phase_data), 30.053735, rtol=1e-7)

@@ -24,10 +24,8 @@ def test_stripe_removal_titarenko_cupy(data, flats, darks):
 def test_stripe_removal_sorting_cupy(data, flats, darks):
     # --- testing the CuPy port of TomoPy's implementation ---#
     data = normalize_cupy(data, flats, darks, cutoff=10, minus_log=True)
-    # TODO: modifies data in place - should make test independent
-    remove_stripes_titarenko_cupy(data)  
     corrected_data = remove_stripe_based_sorting_cupy(data).get()
 
-    assert_allclose(np.mean(corrected_data), 0.2886111, rtol=1e-06)
-    assert_allclose(np.max(corrected_data), 2.4899824, rtol=1e-07)
-    assert_allclose(np.min(corrected_data), -0.1081188, rtol=1e-07)
+    assert_allclose(np.mean(corrected_data), 0.288198, rtol=1e-06)
+    assert_allclose(np.max(corrected_data), 2.5242403, rtol=1e-07)
+    assert_allclose(np.min(corrected_data), -0.10906063, rtol=1e-07)
