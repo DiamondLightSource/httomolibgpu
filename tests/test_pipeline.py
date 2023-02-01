@@ -1,30 +1,26 @@
 import cupy as cp
-import h5py
 import numpy as np
 from cupy.testing import assert_allclose
-
 from httomolib.prep.normalize import normalize_cupy
 from httomolib.prep.stripe import remove_stripe_based_sorting_cupy
 from httomolib.recon.rotation import find_center_vo_cupy
-
 from tomopy.prep.normalize import normalize
 from tomopy.prep.stripe import remove_stripe_based_sorting
 from tomopy.recon.rotation import find_center_vo
 
 
 @cp.testing.gpu
-def test_cpu_vs_gpu():
+def test_cpu_vs_gpu(host_data, host_flats, host_darks):
     #--- GPU pipeline tested on `tomo_standard` ---#
 
-    in_file = 'tests/test_data/tomo_standard.npz'
-    datafile = np.load(in_file)
-    host_data = np.float32(datafile['data'])
-    host_flats = np.float32(datafile['flats'])
-    host_darks = np.float32(datafile['darks'])
+    host_data = np.float32(host_data)
+    host_flats = np.float32(host_flats)
+    host_darks = np.float32(host_darks)
 
-    data = cp.asarray(host_data, dtype="float32")
-    flats = cp.asarray(host_flats, dtype="float32")
-    darks = cp.asarray(host_darks, dtype="float32")
+    # transferring explicitly here to keep the float32 type (instead of using fixture)
+    data = cp.asarray(host_data)
+    flats = cp.asarray(host_flats)
+    darks = cp.asarray(host_darks)
 
     #: Normalize the data first
     data_normalize_cupy = normalize_cupy(data, flats, darks, cutoff=15.0)
