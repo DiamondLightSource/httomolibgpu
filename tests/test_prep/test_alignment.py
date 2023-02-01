@@ -1,14 +1,14 @@
 import os
+
 import cupy as cp
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
-from imageio.v2 import imread
-
 from httomolib.prep.alignment import (
     distortion_correction_proj_cupy,
     distortion_correction_proj_discorpy_cupy,
 )
+from imageio.v2 import imread
+from numpy.testing import assert_allclose
 
 
 @cp.testing.gpu

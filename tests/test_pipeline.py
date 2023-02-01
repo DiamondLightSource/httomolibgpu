@@ -1,11 +1,9 @@
 import cupy as cp
 import numpy as np
 from cupy.testing import assert_allclose
-
 from httomolib.prep.normalize import normalize_cupy
 from httomolib.prep.stripe import remove_stripe_based_sorting_cupy
 from httomolib.recon.rotation import find_center_vo_cupy
-
 from tomopy.prep.normalize import normalize
 from tomopy.prep.stripe import remove_stripe_based_sorting
 from tomopy.recon.rotation import find_center_vo

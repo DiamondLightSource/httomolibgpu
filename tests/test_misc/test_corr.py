@@ -1,7 +1,6 @@
 import numpy as np
-from numpy.testing import assert_allclose
-
 from httomolib.misc.corr import inpainting_filter3d
+from numpy.testing import assert_allclose
 
 eps = 1e-6
 

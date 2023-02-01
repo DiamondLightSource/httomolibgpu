@@ -1,8 +1,8 @@
-import numpy as np
-from PIL import Image
 import pathlib
 
+import numpy as np
 from httomolib.misc.images import save_to_images
+from PIL import Image
 
 
 def test_save_to_images_8bit(host_data, tmp_path: pathlib.Path):

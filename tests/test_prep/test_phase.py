@@ -1,13 +1,8 @@
 import cupy as cp
 import numpy as np
 import pytest
+from httomolib.prep.phase import fresnel_filter, paganin_filter, retrieve_phase
 from numpy.testing import assert_allclose
-
-from httomolib.prep.phase import (
-    fresnel_filter,
-    paganin_filter,
-    retrieve_phase,
-)
 
 eps = 1e-6
 

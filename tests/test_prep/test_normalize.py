@@ -1,9 +1,8 @@
 import cupy as cp
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
-
 from httomolib.prep.normalize import normalize_cupy
+from numpy.testing import assert_allclose
 
 
 @cp.testing.gpu

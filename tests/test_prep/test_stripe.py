@@ -1,12 +1,11 @@
 import cupy as cp
 import numpy as np
-from numpy.testing import assert_allclose
-
 from httomolib.prep.normalize import normalize_cupy
 from httomolib.prep.stripe import (
     remove_stripe_based_sorting_cupy,
     remove_stripes_titarenko_cupy,
 )
+from numpy.testing import assert_allclose
 
 
 @cp.testing.gpu

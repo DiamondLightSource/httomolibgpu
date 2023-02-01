@@ -1,9 +1,10 @@
 # Defines common fixtures and makes them available to all tests
 
-import pytest
 import os
-import numpy as np
+
 import cupy as cp
+import numpy as np
+import pytest
 
 CUR_DIR = os.path.abspath(os.path.dirname(__file__))
 

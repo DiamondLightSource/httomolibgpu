@@ -1,5 +1,4 @@
 import numpy as np
-
 from httomolib.misc.segm import binary_thresholding
 
 

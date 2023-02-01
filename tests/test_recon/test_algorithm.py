@@ -1,8 +1,6 @@
 import numpy as np
-from numpy.testing import assert_allclose
-
 from httomolib.recon.algorithm import reconstruct_tomobar, reconstruct_tomopy
-
+from numpy.testing import assert_allclose
 from tomopy.prep.normalize import normalize
 
 
