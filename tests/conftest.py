@@ -23,6 +23,7 @@ def distortion_correction_path(test_data_path):
 @pytest.fixture(scope="session")
 def data_file(test_data_path):
     in_file = os.path.join(test_data_path, "tomo_standard.npz")
+    # keys: data, flats, darks, angles, angles_total, detector_y, detector_x
     return np.load(in_file)
 
 

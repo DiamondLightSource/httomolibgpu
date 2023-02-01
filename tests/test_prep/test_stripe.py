@@ -1,6 +1,6 @@
 import cupy as cp
 import numpy as np
-from cupy.testing import assert_allclose, assert_array_equal
+from numpy.testing import assert_allclose
 
 from httomolib.prep.normalize import normalize_cupy
 from httomolib.prep.stripe import (
@@ -8,38 +8,26 @@ from httomolib.prep.stripe import (
     remove_stripes_titarenko_cupy,
 )
 
-# --- Tomo standard data ---#
-in_file = 'tests/test_data/tomo_standard.npz'
-datafile = np.load(in_file)
-host_data = datafile['data']
-host_flats = datafile['flats']
-host_darks = datafile['darks']
+
+@cp.testing.gpu
+def test_stripe_removal_titarenko_cupy(data, flats, darks):
+    # --- testing the CuPy implementation from TomoCupy ---#
+    data = normalize_cupy(data, flats, darks, cutoff=10, minus_log=True)
+    data_after_stripe_removal = remove_stripes_titarenko_cupy(data).get()
+
+    assert_allclose(np.mean(data_after_stripe_removal), 0.28924704, rtol=1e-05)
+    assert_allclose(np.max(data_after_stripe_removal), 2.715983, rtol=1e-05)
+    assert_allclose(np.min(data_after_stripe_removal), -0.15378489, rtol=1e-05)
 
 
 @cp.testing.gpu
-def test_stripe_removal():
-    data = cp.asarray(host_data)
-    flats = cp.asarray(host_flats)
-    darks = cp.asarray(host_darks)
-    data = normalize_cupy(data, flats, darks, cutoff=10, minus_log=True)
-
-    # --- testing the CuPy implementation from TomoCupy ---#
-    data_after_stripe_removal = remove_stripes_titarenko_cupy(data)
-    for _ in range(10):
-        assert_allclose(cp.mean(data_after_stripe_removal), 0.28924704,
-                        rtol=1e-05)
-        assert_allclose(cp.max(data_after_stripe_removal), 2.715983,
-                        rtol=1e-05)
-        assert_allclose(cp.min(data_after_stripe_removal), -0.15378489,
-                        rtol=1e-05)
-
+def test_stripe_removal_sorting_cupy(data, flats, darks):
     # --- testing the CuPy port of TomoPy's implementation ---#
-    corrected_data = remove_stripe_based_sorting_cupy(data)
-    for _ in range(10):
-        assert_allclose(cp.mean(corrected_data), 0.2886111, rtol=1e-06)
-        assert_allclose(cp.max(corrected_data), 2.4899824, rtol=1e-07)
-        assert_allclose(cp.min(corrected_data), -0.1081188, rtol=1e-07)
+    data = normalize_cupy(data, flats, darks, cutoff=10, minus_log=True)
+    # TODO: modifies data in place - should make test independent
+    remove_stripes_titarenko_cupy(data)  
+    corrected_data = remove_stripe_based_sorting_cupy(data).get()
 
-    # free up GPU memory by no longer referencing the variables
-    data = flats = darks = data_after_stripe_removal = corrected_data = None
-    cp._default_memory_pool.free_all_blocks()
+    assert_allclose(np.mean(corrected_data), 0.2886111, rtol=1e-06)
+    assert_allclose(np.max(corrected_data), 2.4899824, rtol=1e-07)
+    assert_allclose(np.min(corrected_data), -0.1081188, rtol=1e-07)
