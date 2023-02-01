@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 from cupy.testing import assert_allclose
 
-from httomolib.prep.normalize import normalize_cupy
+from httomolib.prep.normalize import normalize_cupy, normalize_raw_cuda
 
 
 @cp.testing.gpu
@@ -36,6 +36,14 @@ def test_normalize():
         assert_allclose(cp.min(data_normalize_cupy), data_min, rtol=1e-06)
         assert_allclose(cp.max(data_normalize_cupy), data_max, rtol=1e-06)
 
+    #--- testing normalize_raw_cuda ---#
+    data_normalize_raw_cuda = \
+        normalize_raw_cuda(data, flats, darks, cutoff=10, minus_log=True)
+    for _ in range(10):
+        assert_allclose(cp.min(data_normalize_raw_cuda), data_min, rtol=1e-06)
+        assert_allclose(cp.max(data_normalize_raw_cuda), data_max, rtol=1e-06)
+
     #: free up GPU memory by no longer referencing the variables
-    data_normalize_cupy = flats = darks = data_min = data_max = _data_1d = None
+    data_normalize_cupy = data_normalize_raw_cuda = flats = darks = \
+        data_min = data_max = _data_1d = None
     cp._default_memory_pool.free_all_blocks()
