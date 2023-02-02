@@ -22,6 +22,10 @@ def test_stripe_removal_titarenko_cupy(data, flats, darks):
 @cp.testing.gpu
 def test_stripe_removal_sorting_cupy(data, flats, darks):
     # --- testing the CuPy port of TomoPy's implementation ---#
+    mempool = cp.get_default_memory_pool()
+    pinned_mempool = cp.get_default_pinned_memory_pool()
+    print(pinned_mempool.n_free_blocks())
+
     data = normalize_cupy(data, flats, darks, cutoff=10, minus_log=True)
     corrected_data = remove_stripe_based_sorting_cupy(data).get()
 
