@@ -36,6 +36,8 @@ def test_fresnel_filter_1D_raises(ensure_clean_memory):
     with pytest.raises(ValueError):
         fresnel_filter(_data, "SINOGRAM", 100.0)
 
+    _data = None #: free up GPU memory
+
 
 @cp.testing.gpu
 def test_paganin_filter(data):
@@ -69,6 +71,8 @@ def test_paganin_filter_1D_raises(ensure_clean_memory):
     with pytest.raises(ValueError):
         paganin_filter(_data)
 
+    _data = None #: free up GPU memory
+
 
 @cp.testing.gpu
 def test_retrieve_phase_1D_raises(ensure_clean_memory):
@@ -76,6 +80,8 @@ def test_retrieve_phase_1D_raises(ensure_clean_memory):
     _data = cp.ones(10)
     with pytest.raises(ValueError):
         retrieve_phase(_data)
+
+    _data = None #: free up GPU memory
 
 
 @cp.testing.gpu

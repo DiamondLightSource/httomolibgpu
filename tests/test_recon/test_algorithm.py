@@ -4,7 +4,12 @@ from numpy.testing import assert_allclose
 from tomopy.prep.normalize import normalize
 
 
-def test_reconstruct_methods(host_data, host_flats, host_darks):
+def test_reconstruct_methods(
+    host_data,
+    host_flats,
+    host_darks,
+    ensure_clean_memory
+):
     cor = 79.5 #: center of rotation for tomo_standard
     data = normalize(host_data, host_flats, host_darks, cutoff=15.0)
     angles = np.linspace(0. * np.pi / 180., 180. * np.pi / 180., data.shape[0])
