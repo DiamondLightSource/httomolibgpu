@@ -10,7 +10,12 @@ from tomopy.recon.rotation import find_center_vo
 
 
 @cp.testing.gpu
-def test_cpu_vs_gpu(host_data, host_flats, host_darks):
+def test_cpu_vs_gpu(
+    host_data,
+    host_flats,
+    host_darks,
+    ensure_clean_memory
+):
     #--- GPU pipeline tested on `tomo_standard` ---#
 
     host_data = np.float32(host_data)
@@ -62,3 +67,4 @@ def test_cpu_vs_gpu(host_data, host_flats, host_darks):
 
     #: TEST 4: check if the center of rotation matches for both CPU and GPU
     assert_allclose(tomopy_cor, cor)
+

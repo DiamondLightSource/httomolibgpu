@@ -21,7 +21,8 @@ def test_normalize_1D_raises(data, flats, darks):
 @cp.testing.gpu
 def test_normalize(data, flats, darks):
     #--- testing normalize_cupy  ---#
-    data_normalize = cp.asnumpy(normalize_cupy(data, flats, darks, cutoff=10, minus_log=True))
+    data_normalize = cp.asnumpy(
+        normalize_cupy(data, flats, darks, cutoff=10, minus_log=True))
     
     assert_allclose(np.min(data_normalize), -0.16163824, rtol=1e-06)
     assert_allclose(np.max(data_normalize), 2.7530956, rtol=1e-06)
