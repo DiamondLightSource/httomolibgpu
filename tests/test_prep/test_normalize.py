@@ -6,7 +6,7 @@ from numpy.testing import assert_allclose
 
 
 @cp.testing.gpu
-def test_normalize_1D_raises(data, flats, darks, ensure_clean_memory):
+def test_normalize_1D_raises(data, flats, darks):
     _data_1d = cp.ones(10)
 
     #: data cannot be a 1D array
@@ -16,8 +16,6 @@ def test_normalize_1D_raises(data, flats, darks, ensure_clean_memory):
     #: flats cannot be a 1D array
     with pytest.raises(ValueError):
         normalize_cupy(data, _data_1d, darks)
-
-    _data_1d = None #: free up GPU memory
 
 
 @cp.testing.gpu

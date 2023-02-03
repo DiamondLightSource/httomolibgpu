@@ -32,7 +32,10 @@ def data_file(test_data_path):
 def ensure_clean_memory():
     cp.get_default_memory_pool().free_all_blocks()
     cp.get_default_pinned_memory_pool().free_all_blocks()
-    return None
+    yield None
+    cp.get_default_memory_pool().free_all_blocks()
+    cp.get_default_pinned_memory_pool().free_all_blocks()
+
 
 
 @pytest.fixture

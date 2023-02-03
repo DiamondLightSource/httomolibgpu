@@ -68,4 +68,3 @@ def test_cpu_vs_gpu(
     #: TEST 4: check if the center of rotation matches for both CPU and GPU
     assert_allclose(tomopy_cor, cor)
 
-    data = flats = darks = data_normalize_cupy = corrected_data = None
