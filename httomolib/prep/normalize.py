@@ -23,11 +23,13 @@
 
 import cupy as cp
 from cupy import float32, log, mean, ndarray
+import nvtx
 
 __all__ = [
     'normalize_cupy',
 ]
 
+@nvtx.annotate()
 def normalize_cupy(
     data: ndarray,
     flats: ndarray,
@@ -65,6 +67,15 @@ def normalize_cupy(
     ndarray
         Normalised 3D tomographic data as a CuPy array.
     """
+    print(f"""normalize_cupy:
+            data={data.shape}, {data.dtype}, min={cp.min(data)}, max{cp.max(data)}
+            flats={flats.shape}, {flats.dtype}, min={cp.min(flats)}, max{cp.max(flats)}
+            darks={darks.shape}, {darks.dtype}, min={cp.min(darks)}, max{cp.max(darks)}
+            cutoff={cutoff}
+            minus_log={minus_log}
+            nonnegativity={nonnegativity}
+            remove_nans={remove_nans}
+            """)
     cp.cuda.Device(gpu_id).use()
     
     darks = mean(darks, axis=0, dtype=float32)

@@ -26,6 +26,7 @@ from typing import Dict, List
 
 import cupy as cp
 from cupyx.scipy.ndimage import map_coordinates
+import nvtx
 
 __all__ = [
     'distortion_correction_proj_cupy',
@@ -35,6 +36,7 @@ __all__ = [
 ## %%%%%%%%%%%%%%%%%%%%%%%%%distortion_correction_proj_cupy%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 # CuPy implementation of distortion correction from Savu 
 # TODO: Needs to be implementation from TomoPy
+@nvtx.annotate()
 def distortion_correction_proj_cupy(data: cp.ndarray, metadata_path: str,
                        preview: Dict[str, List[int]],
                        center_from_left: float = None,
@@ -166,6 +168,7 @@ def distortion_correction_proj_cupy(data: cp.ndarray, metadata_path: str,
 # (which is the same as the TomoPy version
 # https://github.com/tomopy/tomopy/blob/c236a2969074f5fc70189fb5545f0a165924f916/source/tomopy/prep/alignment.py#L950-L981
 # but with the additional params `order` and `mode`).
+@nvtx.annotate()
 def distortion_correction_proj_discorpy_cupy(data: cp.ndarray,
                                              metadata_path: str,
                                              preview: Dict[str, List[int]],

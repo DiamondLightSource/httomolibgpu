@@ -24,6 +24,7 @@ import cupy as cp
 import numpy as np
 from cupy import abs, mean, ndarray
 from cupyx.scipy.ndimage import median_filter
+import nvtx
 
 __all__ = [
     'remove_stripe_based_sorting_cupy',
@@ -36,6 +37,7 @@ __all__ = [
 
 ## %%%%%%%%%%%%%%%%% remove_stripe_based_sorting_cupy %%%%%%%%%%%%%%%%%%%%%  ##
 ## Naive CuPy port of the NumPy implementation in TomoPy
+@nvtx.annotate()
 def remove_stripe_based_sorting_cupy(
     data: ndarray,
     size: int = 11,
@@ -73,6 +75,12 @@ def remove_stripe_based_sorting_cupy(
     ----------
     .. [1] https://doi.org/10.1364/OE.26.028396
     """
+    print(f"""remove_stripe_based_sorting_cupy:
+            data={data.shape}, {data.dtype}, min={cp.min(data)}, max{cp.max(data)}
+            size={size}
+            dim={dim}
+            gpu_id={gpu_id}
+            """)
     cp.cuda.Device(gpu_id).use()
 
     matindex = _create_matindex(data.shape[2], data.shape[0])
@@ -125,6 +133,7 @@ def _rs_sort(sinogram, size, matindex, dim):
 
 
 ## %%%%%%%%%%%%%%%%%%% remove_stripes_titarenko_cupy %%%%%%%%%%%%%%%%%%%%%%%  ##
+@nvtx.annotate()
 def remove_stripes_titarenko_cupy(
     data: ndarray,
     beta: float = 0.1,

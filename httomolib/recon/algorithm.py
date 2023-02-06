@@ -25,6 +25,7 @@ from typing import Optional
 
 import cupy as cp
 import numpy as np
+import nvtx
 
 __all__ = [
     'reconstruct_tomobar',
@@ -32,6 +33,7 @@ __all__ = [
 ]
 
 ## %%%%%%%%%%%%%%%%%%%%%%% ToMoBAR reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+@nvtx.annotate()
 def reconstruct_tomobar(
     data: cp.ndarray,
     angles: np.ndarray,
@@ -40,6 +42,13 @@ def reconstruct_tomobar(
     algorithm: str = 'FBP3D_device',
     gpu_id : int = 0
     ) -> cp.ndarray:
+    print(f"""reconstruct_tomobar:
+            data={data.shape}, {data.dtype}, min={cp.min(data)}, max{cp.max(data)}
+            angles={angles.shape}, {angles.dtype}, min={np.min(angles)}, max={np.max(angles)}
+            center={center}
+            objsize={objsize}
+            algorithm={algorithm}
+            """)
     """
     Perform reconstruction using ToMoBAR wrappers around ASTRA toolbox.
     This is a 3D recon using 3D astra geometry routines.
@@ -151,6 +160,7 @@ def _filtersinc3D_cupy(projection3D):
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% Tomopy/ASTRA reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+@nvtx.annotate()
 def reconstruct_tomopy(
     data: np.ndarray,
     angles: np.ndarray,

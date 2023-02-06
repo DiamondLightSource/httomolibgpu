@@ -29,6 +29,7 @@ import scipy.ndimage as ndi
 from cupy import ndarray
 from cupyx.scipy.ndimage import gaussian_filter, shift
 from scipy import stats
+import nvtx
 
 __all__ = [
     'find_center_vo_cupy',
@@ -36,6 +37,7 @@ __all__ = [
 ]
 
 
+@nvtx.annotate()
 def find_center_vo_cupy(
     data: ndarray,
     ind: int = None,
@@ -77,6 +79,16 @@ def find_center_vo_cupy(
     float
         Rotation axis location.
     """
+    print(f"""find_center_vo_cupy:
+            data={data.shape}, {data.dtype}
+            ind={ind}
+            smin={smin}
+            smax={smax}
+            srad={srad}
+            step={step}
+            ratio={ratio}
+            drop={drop}
+            """)
     return _find_center_vo_gpu(data, ind, smin, smax, srad, step, ratio, drop)
 
 
@@ -345,6 +357,7 @@ def _downsample(sino, level, axis):
 
 
 #--- Center of rotation (COR) estimation method ---#
+@nvtx.annotate()
 def find_center_360(
     sino_360: np.ndarray,
     win_width: int = 10,
