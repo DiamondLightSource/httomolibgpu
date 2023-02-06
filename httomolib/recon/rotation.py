@@ -27,9 +27,9 @@ import cupy as cp
 import numpy as np
 import scipy.ndimage as ndi
 from cupy import ndarray
+from cupy.cuda import nvtx
 from cupyx.scipy.ndimage import gaussian_filter, shift
 from scipy import stats
-import nvtx
 
 __all__ = [
     'find_center_vo_cupy',
@@ -111,7 +111,7 @@ def _find_center_vo_gpu(sino, ind, smin, smax, srad, step, ratio, drop):
         init_cen = _search_coarse(_sino_cs, smin, smax, ratio, drop)
         fine_cen = _search_fine(_sino_fs, srad, step, init_cen, ratio, drop)
 
-    return fine_cen
+    return fine_cen.astype(cp.float32)
 
 
 def _search_coarse(sino, smin, smax, ratio, drop):

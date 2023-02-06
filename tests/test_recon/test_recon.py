@@ -16,6 +16,9 @@ def test_find_center_vo_cupy(data, flats, darks):
     data = None #: free up GPU memory
     assert_allclose(cor, 79.5)
 
+    #: Check that we only get a float32 output
+    assert cor.dtype == np.float32
+
 
 @cp.testing.gpu
 def test_find_center_vo_cupy_ones(ensure_clean_memory):

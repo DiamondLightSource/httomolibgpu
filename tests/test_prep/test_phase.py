@@ -1,8 +1,9 @@
 import time
+
 import cupy as cp
-from cupy.cuda import nvtx
 import numpy as np
 import pytest
+from cupy.cuda import nvtx
 from httomolib.prep.phase import fresnel_filter, paganin_filter, retrieve_phase
 from numpy.testing import assert_allclose
 
@@ -20,6 +21,9 @@ def test_fresnel_filter_projection(data):
     assert_allclose(np.max(filtered_data), 1039.5293)
     assert_allclose(np.min(filtered_data), 95.74562)
 
+    #: make sure the output is float32
+    assert filtered_data.dtype == np.float32
+
 
 @cp.testing.gpu
 def test_fresnel_filter_sinogram(data):
@@ -30,6 +34,9 @@ def test_fresnel_filter_sinogram(data):
     assert_allclose(np.mean(filtered_data), 806.74347, rtol=eps)
     assert_allclose(np.max(filtered_data), 1063.7007)
     assert_allclose(np.min(filtered_data), 87.91508)
+
+    #: make sure the output is float32
+    assert filtered_data.dtype == np.float32
 
 
 @cp.testing.gpu
@@ -50,6 +57,9 @@ def test_paganin_filter(data):
     assert_allclose(np.mean(filtered_data), -770.5339, rtol=eps)
     assert_allclose(np.max(filtered_data), -679.80945, rtol=eps)
 
+    #: make sure the output is float32
+    assert filtered_data.dtype == np.float32
+
 
 @cp.testing.gpu
 def test_paganin_filter_energy100(data):
@@ -57,6 +67,9 @@ def test_paganin_filter_energy100(data):
 
     assert_allclose(np.mean(filtered_data), -778.61926, rtol=1e-05)
     assert_allclose(np.min(filtered_data), -808.9013, rtol=eps)
+
+    assert filtered_data.ndim == 3
+    assert filtered_data.dtype == np.float32
 
 
 @cp.testing.gpu
@@ -146,6 +159,12 @@ def test_retrieve_phase(data):
     assert np.sum(phase_data) == 2994544952
     assert_allclose(np.mean(phase_data), 812.3223068576389, rtol=1e-7)
 
+    #: retrieve_phase can give uint16 or float32 output
+    assert phase_data.dtype == np.uint16
+
+    float32_phase_data = retrieve_phase(data.astype(cp.float32)).get()
+    assert float32_phase_data.dtype == np.float32
+
 
 @cp.testing.gpu
 def test_retrieve_phase_energy100_nopad(data):
@@ -153,3 +172,5 @@ def test_retrieve_phase_energy100_nopad(data):
 
     assert_allclose(np.mean(phase_data), 979.527778, rtol=1e-7)
     assert_allclose(np.std(phase_data), 30.053735, rtol=1e-7)
+
+    assert phase_data.dtype == np.uint16

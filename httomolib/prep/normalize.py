@@ -23,7 +23,7 @@
 
 import cupy as cp
 from cupy import float32, log, mean, ndarray
-import nvtx
+from cupy.cuda import nvtx
 
 __all__ = [
     'normalize_cupy',

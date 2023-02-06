@@ -25,8 +25,8 @@ import os
 from typing import Dict, List
 
 import cupy as cp
+from cupy.cuda import nvtx
 from cupyx.scipy.ndimage import map_coordinates
-import nvtx
 
 __all__ = [
     'distortion_correction_proj_cupy',

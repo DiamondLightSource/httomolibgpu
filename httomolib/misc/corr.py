@@ -21,8 +21,8 @@
 # ---------------------------------------------------------------------------
 """ Module for data correction """
 
-import numpy as np
 import cupy as cp
+import numpy as np
 from numpy import ndarray
 
 __all__ = [

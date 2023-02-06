@@ -19,6 +19,9 @@ def test_stripe_removal_titarenko_cupy(data, flats, darks):
     assert_allclose(np.max(data_after_stripe_removal), 2.715983, rtol=1e-05)
     assert_allclose(np.min(data_after_stripe_removal), -0.15378489, rtol=1e-05)
 
+    # make sure the output is float32
+    assert data_after_stripe_removal.dtype == np.float32
+
 
 @cp.testing.gpu
 def test_stripe_removal_sorting_cupy(data, flats, darks):
@@ -30,3 +33,6 @@ def test_stripe_removal_sorting_cupy(data, flats, darks):
     assert_allclose(np.mean(corrected_data), 0.288198, rtol=1e-06)
     assert_allclose(np.max(corrected_data), 2.5242403, rtol=1e-07)
     assert_allclose(np.min(corrected_data), -0.10906063, rtol=1e-07)
+
+    # make sure the output is float32
+    assert corrected_data.dtype == np.float32

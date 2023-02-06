@@ -25,7 +25,7 @@ from typing import Optional
 
 import cupy as cp
 import numpy as np
-import nvtx
+from cupy.cuda import nvtx
 
 __all__ = [
     'reconstruct_tomobar',
@@ -66,7 +66,7 @@ def reconstruct_tomobar(
     cp.ndarray
         The reconstructed volume as cp or np array.
     """
-    from tomobar.methodsDIR import RecToolsDIR    
+    from tomobar.methodsDIR import RecToolsDIR
     from tomobar.supp.astraOP import AstraTools3D
     
     cp._default_memory_pool.free_all_blocks()

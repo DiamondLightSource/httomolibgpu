@@ -23,8 +23,8 @@
 import cupy as cp
 import numpy as np
 from cupy import abs, mean, ndarray
+from cupy.cuda import nvtx
 from cupyx.scipy.ndimage import median_filter
-import nvtx
 
 __all__ = [
     'remove_stripe_based_sorting_cupy',

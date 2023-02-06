@@ -48,3 +48,4 @@ def test_correct_distortion(
     assert_allclose(np.mean(corrected_data), mean_value)
     assert np.max(corrected_data) == max_value
 
+    assert corrected_data.dtype == np.uint8
