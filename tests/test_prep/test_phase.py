@@ -160,6 +160,12 @@ def test_retrieve_phase(data):
     assert np.sum(phase_data) == 2994544952
     assert_allclose(np.mean(phase_data), 812.3223068576389, rtol=1e-7)
 
+    #: retrieve_phase can give uint16 or float32 output
+    assert phase_data.dtype == np.uint16
+
+    float32_phase_data = retrieve_phase(data.astype(cp.float32)).get()
+    assert float32_phase_data.dtype == np.float32
+
 
 @cp.testing.gpu
 def test_retrieve_phase_energy100_nopad(data):
@@ -167,3 +173,5 @@ def test_retrieve_phase_energy100_nopad(data):
 
     assert_allclose(np.mean(phase_data), 979.527778, rtol=1e-7)
     assert_allclose(np.std(phase_data), 30.053735, rtol=1e-7)
+
+    assert phase_data.dtype == np.uint16
