@@ -42,13 +42,6 @@ def reconstruct_tomobar(
     algorithm: str = 'FBP3D_device',
     gpu_id : int = 0
     ) -> cp.ndarray:
-    print(f"""reconstruct_tomobar:
-            data={data.shape}, {data.dtype}, min={cp.min(data)}, max{cp.max(data)}
-            angles={angles.shape}, {angles.dtype}, min={np.min(angles)}, max={np.max(angles)}
-            center={center}
-            objsize={objsize}
-            algorithm={algorithm}
-            """)
     """
     Perform reconstruction using ToMoBAR wrappers around ASTRA toolbox.
     This is a 3D recon using 3D astra geometry routines.

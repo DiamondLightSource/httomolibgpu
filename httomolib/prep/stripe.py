@@ -75,12 +75,6 @@ def remove_stripe_based_sorting_cupy(
     ----------
     .. [1] https://doi.org/10.1364/OE.26.028396
     """
-    print(f"""remove_stripe_based_sorting_cupy:
-            data={data.shape}, {data.dtype}, min={cp.min(data)}, max{cp.max(data)}
-            size={size}
-            dim={dim}
-            gpu_id={gpu_id}
-            """)
     cp.cuda.Device(gpu_id).use()
 
     matindex = _create_matindex(data.shape[2], data.shape[0])

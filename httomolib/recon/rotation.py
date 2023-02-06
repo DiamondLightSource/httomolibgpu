@@ -79,16 +79,6 @@ def find_center_vo_cupy(
     float
         Rotation axis location.
     """
-    print(f"""find_center_vo_cupy:
-            data={data.shape}, {data.dtype}
-            ind={ind}
-            smin={smin}
-            smax={smax}
-            srad={srad}
-            step={step}
-            ratio={ratio}
-            drop={drop}
-            """)
     return _find_center_vo_gpu(data, ind, smin, smax, srad, step, ratio, drop)
 
 
