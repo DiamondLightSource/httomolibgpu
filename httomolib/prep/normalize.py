@@ -22,8 +22,8 @@
 """Modules for raw projection data normalization"""
 
 import cupy as cp
+import nvtx
 from cupy import float32, log, mean, ndarray
-from cupy.cuda import nvtx
 
 __all__ = [
     'normalize_cupy',

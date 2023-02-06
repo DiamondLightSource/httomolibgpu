@@ -26,7 +26,7 @@ import math
 import cupy as cp
 import cupyx
 import numpy as np
-from cupy.cuda import nvtx
+import nvtx
 
 __all__ = [
     'fresnel_filter',
