@@ -20,6 +20,9 @@ def test_fresnel_filter_projection(data):
     assert_allclose(np.max(filtered_data), 1039.5293)
     assert_allclose(np.min(filtered_data), 95.74562)
 
+    #: make sure the output is float32
+    assert filtered_data.dtype == np.float32
+
 
 @cp.testing.gpu
 def test_fresnel_filter_sinogram(data):
@@ -30,6 +33,9 @@ def test_fresnel_filter_sinogram(data):
     assert_allclose(np.mean(filtered_data), 806.74347, rtol=eps)
     assert_allclose(np.max(filtered_data), 1063.7007)
     assert_allclose(np.min(filtered_data), 87.91508)
+
+    #: make sure the output is float32
+    assert filtered_data.dtype == np.float32
 
 
 @cp.testing.gpu
@@ -50,6 +56,9 @@ def test_paganin_filter(data):
     assert_allclose(np.mean(filtered_data), -770.5339, rtol=eps)
     assert_allclose(np.max(filtered_data), -679.80945, rtol=eps)
 
+    #: make sure the output is float32
+    assert filtered_data.dtype == np.float32
+
 
 @cp.testing.gpu
 def test_paganin_filter_energy100(data):
@@ -57,6 +66,9 @@ def test_paganin_filter_energy100(data):
 
     assert_allclose(np.mean(filtered_data), -778.61926, rtol=1e-05)
     assert_allclose(np.min(filtered_data), -808.9013, rtol=eps)
+
+    assert filtered_data.ndim == 3
+    assert filtered_data.dtype == np.float32
 
 
 @cp.testing.gpu
@@ -118,6 +130,8 @@ def test_paganin_filter_performance(ensure_clean_memory):
     duration_ms = float(time.perf_counter_ns() - start) * 1e-6 / 10
 
     assert "performance in ms" == duration_ms
+
+    assert filtered_data.dtype == np.float32
 
 
 @cp.testing.gpu
