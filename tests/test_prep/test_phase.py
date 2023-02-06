@@ -1,4 +1,6 @@
+import time
 import cupy as cp
+from cupy.cuda import nvtx
 import numpy as np
 import pytest
 from httomolib.prep.phase import fresnel_filter, paganin_filter, retrieve_phase
@@ -63,6 +65,59 @@ def test_paganin_filter_padmean(data):
 
     assert_allclose(np.mean(filtered_data), -765.3401, rtol=eps)
     assert_allclose(np.min(filtered_data), -793.68787, rtol=eps)
+    # test a few other slices to ensure shifting etc is right
+    assert_allclose(
+        filtered_data[0, 50, 1:5],
+        [-785.60736, -786.20215, -786.7521, -787.25494],
+        rtol=eps,
+    )
+    assert_allclose(filtered_data[0, 50, 40:42], 
+        [-776.6436, -775.1906], rtol=eps, atol=1e-5)
+    assert_allclose(filtered_data[0, 60:63, 90],
+        [-737.75104, -736.6097, -735.49884], rtol=eps, atol=1e-5)
+
+@cp.testing.gpu
+@pytest.mark.perf
+def test_paganin_filter_performance(ensure_clean_memory):
+    # Note: low/high and size values taken from sample2_medium.yaml real run
+    data_host = np.random.random_sample(size=(1801, 5, 2560)).astype(np.float32) * 2.0
+    data = cp.asarray(data_host, dtype=np.float32)
+
+    # run code and time it
+    # cold run first
+    paganin_filter(
+        data,
+        ratio=250.0,
+        energy=53.0,
+        distance=1.0,
+        resolution=1.28,
+        pad_y=100,
+        pad_x=100,
+        pad_method="edge",
+        increment=0.0,
+    )
+    dev = cp.cuda.Device()
+    dev.synchronize()
+
+    start = time.perf_counter_ns()
+    nvtx.RangePush("Core")
+    for _ in range(10):
+        paganin_filter(
+            data,
+            ratio=250.0,
+            energy=53.0,
+            distance=1.0,
+            resolution=1.28,
+            pad_y=100,
+            pad_x=100,
+            pad_method="edge",
+            increment=0.0,
+        )
+    nvtx.RangePop()
+    dev.synchronize()
+    duration_ms = float(time.perf_counter_ns() - start) * 1e-6 / 10
+
+    assert "performance in ms" == duration_ms
 
 
 @cp.testing.gpu

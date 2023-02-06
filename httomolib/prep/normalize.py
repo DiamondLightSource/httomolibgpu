@@ -23,11 +23,13 @@
 
 import cupy as cp
 from cupy import float32, log, mean, ndarray
+import nvtx
 
 __all__ = [
     'normalize_cupy',
 ]
 
+@nvtx.annotate()
 def normalize_cupy(
     data: ndarray,
     flats: ndarray,

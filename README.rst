@@ -25,3 +25,6 @@ Run tests
 * Run all tests with :code:`$ pytest`. To increase verbosity, use :code:`$ pytest -v`.
 * Run GPU tests separately with :code:`$ pytest -v -m gpu`.
 * Run CPU tests separately with :code:`$ pytest -v -m "not gpu"`.
+* Run performance tests (only) with :code:`$ pytest --performance`
+  (note that performance tests always fail - they report the execution time in an assertion
+  to see them in the summary easily)

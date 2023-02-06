@@ -25,6 +25,7 @@ from typing import Optional
 
 import cupy as cp
 import numpy as np
+import nvtx
 
 __all__ = [
     'reconstruct_tomobar',
@@ -32,6 +33,7 @@ __all__ = [
 ]
 
 ## %%%%%%%%%%%%%%%%%%%%%%% ToMoBAR reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+@nvtx.annotate()
 def reconstruct_tomobar(
     data: cp.ndarray,
     angles: np.ndarray,
@@ -151,6 +153,7 @@ def _filtersinc3D_cupy(projection3D):
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% Tomopy/ASTRA reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+@nvtx.annotate()
 def reconstruct_tomopy(
     data: np.ndarray,
     angles: np.ndarray,
