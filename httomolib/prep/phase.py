@@ -21,8 +21,6 @@
 # ---------------------------------------------------------------------------
 """Modules for phase retrieval and phase-contrast enhancement"""
 
-import math
-
 import cupy as cp
 import cupyx
 import numpy as np
@@ -210,50 +208,124 @@ def paganin_filter(
 
     # Setup various values for the filter
     _, height, width = data.shape
-    micron = 10 ** (-6)
+    micron = 1e-6
     keV = 1000.0
     energy *= keV
     resolution *= micron
-    wavelength = (1240.0 / energy) * 10.0 ** (-9)
+    wavelength = (1240.0 / energy) * 1e-9
 
     height1 = height + 2 * pad_y
     width1 = width + 2 * pad_x
-    centery = cp.ceil(height1 / 2.0) - 1.0
-    centerx = cp.ceil(width1 / 2.0) - 1.0
 
     # Define the paganin filter, taking into account the padding that will be
     # applied to the projections (if any)
-    dpx = 1.0 / (width1 * resolution)
-    dpy = 1.0 / (height1 * resolution)
-    pxlist = (cp.arange(width1) - centerx) * dpx
-    pylist = (cp.arange(height1) - centery) * dpy
-    pxx = cp.zeros((height1, width1), dtype=cp.float32)
-    pxx[:, 0:width1] = pxlist
-    pyy = cp.zeros((height1, width1), dtype=cp.float32)
-    pyy[0:height1, :] = cp.reshape(pylist, (height1, 1))
-    pd = (pxx * pxx + pyy * pyy) * wavelength * distance * math.pi
+    
+    # Using RawKernel her as indexing is direct and it avoids a lot of temporaries
+    # and tiny kernels
+    kernel = cp.RawKernel(r"""
+    #include <cupy/complex.cuh>
 
-    filter1 = 1.0 + ratio * pd
-    filtercomplex = filter1 + filter1 * 1j
+    extern "C" __global__
+    void paganin_filter_gen(int width1, int height1, float resolution,
+                            float wavelength, float distance, float ratio,
+                            complex<float>* filtercomplex) {
+        int px = threadIdx.x + blockIdx.x * blockDim.x;
+        int py = threadIdx.y + blockIdx.y * blockDim.y;
+        if (px >= width1) return;
+        if (py >= height1) return;
+
+        float dpx = 1.0f / (width1 * resolution);
+        float dpy = 1.0f / (height1 * resolution);
+        float centerx = ceil(width1 / 2.0f) - 1.0f;
+        float centery = ceil(height1 / 2.0f) - 1.0f;
+
+        float pxx = (px - centerx) * dpx;
+        float pyy = (py - centery) * dpy;
+        float pd = (pxx*pxx + pyy*pyy) * wavelength * distance * 3.1415926535897932384626433832795f;
+        float filter1 = 1.0f + ratio * pd;
+
+        complex<float> value = 1.0f / complex<float>(filter1, filter1);
+
+        // iffshifting positions
+        int xshift = width1 / 2;
+        if (width1 % 2 != 0) {
+            xshift++;
+        }
+        int yshift = height1 / 2;
+        if (height1 % 2 != 0) {
+            yshift++;
+        }
+        int outX = (px + xshift) % width1;
+        int outY = (py + yshift) % height1;
+
+        filtercomplex[outY * width1 + outX] = value;
+    }
+    """, "paganin_filter_gen")
+    filtercomplex = cp.empty((height1, width1), dtype=np.complex64)
+    bx = 16
+    by = 8
+    gx = (width1 + bx - 1) // bx
+    gy = (height1 + by - 1) // by
+    kernel(grid=(gx, gy, 1), block=(bx, by, 1), 
+        args=(cp.int32(width1), 
+                cp.int32(height1), 
+                cp.float32(resolution), 
+                cp.float32(wavelength), 
+                cp.float32(distance), 
+                cp.float32(ratio), 
+                filtercomplex))
 
     # Apply padding to all the 2D projections
-    data = cp.pad(data, ((0, 0), (pad_y, pad_y), (pad_x, pad_x)),
-                  mode=pad_method)
+    # Note: this takes considerable time on GPU...
+    data = cp.pad(data, ((0, 0), (pad_y, pad_y), (pad_x, pad_x)), mode=pad_method)
 
     # Define array to hold result, which will not have the padding applied to it
-    res = cp.zeros((data.shape[0], height, width), dtype=cp.float32)
+    precond_kernel_float = cp.ElementwiseKernel(
+        "T data",
+        "T out",
+        """
+        if (isnan(data)) {
+            out = T(0); 
+        } else if (isinf(data)) {
+            out = data < 0.0 ? -3.402823e38f : 3.402823e38f;  // FLT_MAX, not available in cupy
+        } else if (data == 0.0) {
+            out = 1.0;
+        } else {
+            out = data;
+        }
+        """,
+        name="paganin_precond_float",
+        no_return=True,
+    )
+    precond_kernel_int = cp.ElementwiseKernel(
+        "T data",
+        "T out",
+        """out = data == 0 ? 1 : data""",
+        name="paganin_precond_int",
+        no_return=True,
+    )
 
-    # Loop over projections and apply the filter
-    for i in range(data.shape[0]):
-        # Noted performance <- COMMENT PRESERVED FROM SAVU CODE, NOT SURE WHAT IT
-        # MEANS YET THOUGH...
-        proj = cp.nan_to_num(data[i])
-        proj[proj == 0] = 1.0
-        pci1 = cp.fft.fft2(cp.asarray(proj, dtype=cp.float32))
-        pci2 = cp.fft.fftshift(pci1) / filtercomplex
-        fpci = cp.abs(cp.fft.ifft2(pci2))
-        proj = -0.5 * ratio * cp.log(fpci + increment)
-        res[i] = proj[pad_y: pad_y + height, pad_x: pad_x + width]
+    if data.dtype == cp.float32 or data.dtype == cp.float64:
+        precond_kernel_float(data, data)
+    else:
+        precond_kernel_int(data, data)
+
+    pci1 = cupyx.scipy.fft.fft2(data, axes=(-2, -1))
+    data = None  # allow clearing memory
+    pci1 *= filtercomplex
+    cupyx.scipy.fft.ifft2(pci1, axes=(-2, -1), overwrite_x=True)
+
+    post_kernel = cp.ElementwiseKernel(
+        "C pci1, raw float32 increment, raw float32 ratio",
+        "T out",
+        "out = -0.5 * ratio * log(abs(pci1) + increment)",
+        name="paganin_post_proc",
+        no_return=True,
+    )
+    res = cp.empty((pci1.shape[0], height, width), dtype=np.float32)
+    post_kernel(
+        pci1[:, pad_y : pad_y + height, pad_x : pad_x + width], increment, ratio, res
+    )
 
     return res
 
