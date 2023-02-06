@@ -29,7 +29,7 @@ import scipy.ndimage as ndi
 from cupy import ndarray
 from cupyx.scipy.ndimage import gaussian_filter, shift
 from scipy import stats
-import nvtx
+from cupy.cuda import nvtx
 
 __all__ = [
     'find_center_vo_cupy',

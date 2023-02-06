@@ -25,7 +25,7 @@ from typing import Optional
 
 import cupy as cp
 import numpy as np
-import nvtx
+from cupy.cuda import nvtx
 
 __all__ = [
     'reconstruct_tomobar',
