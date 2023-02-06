@@ -54,7 +54,7 @@ def median_filter3d_cupy(data: ndarray,
         raise ValueError("The input data should be either float32 or uint16 data type")
     out = cp.zeros(data.shape, dtype=input_type, order="C")
 
-    # convert the full kernel size (odd int) to a half size as the C function requires it
+    # convert the full kernel size (odd int) to a half size
     kernel_half_size = (max(int(size), 3) - 1) // 2
 
     if data.ndim == 3:
@@ -67,8 +67,26 @@ def median_filter3d_cupy(data: ndarray,
     #TODO: The code bellow needs further work in terms of:
     # 1. Templating for different kernel sizes as in here https://github.com/dkazanc/larix/blob/06f3952504dc97b84ec0688b6ab8dbdf1b6bdfc1/src/Core/GPU_modules/MedianFilt_GPU_core.cu#L101
     # 2. Adding the template for uint18 data type
+    code_test = r'''
+    template <int radius>
+    __global__ void test_func_kernel(const float* in, float* out, int Z, int M, int N, long num_total) 
+    {
+        const long i = blockDim.x * blockIdx.x + threadIdx.x;
+        const long j = blockDim.y * blockIdx.y + threadIdx.y;
+        const long k = blockDim.z * blockIdx.z + threadIdx.z;
+        
+        const unsigned long long index = (unsigned long long)i + (unsigned long long)N*(unsigned long long)j + (unsigned long long)N*(unsigned long long)M*(unsigned long long)k;
+        if (index < num_total && i < N && j < M && k < Z)
+        { 
+        out[index] = radius;
+        }
+    }
+    '''
+    
+    
     loaded_from_source = r'''
-        extern "C" {
+        extern "C" 
+    {
         inline __device__ void sort_bubble(float *x, int n_size)
         {
             for (int i = 0; i < n_size - 1; i++)
@@ -127,14 +145,12 @@ def median_filter3d_cupy(data: ndarray,
             out[index] = ValVec[midpoint];
             }
         }
-        }'''          
+    }'''          
     module = cp.RawModule(code=loaded_from_source)
     median_filter32 = module.get_function('medianfilter_float32')
 
     # setting grid/block parameters
-    # TODO: check that this is correct bellow as the output is not correct
-    blockdimen = 8
-    
+    blockdimen = 8    
     block_x = blockdimen
     block_y = blockdimen
     block_z = blockdimen
@@ -145,10 +161,23 @@ def median_filter3d_cupy(data: ndarray,
     grid_dims = (grid_x, grid_y, grid_z) 
 
     params = (cp.asarray((data), order="C"), out, dz, dy, dx, dx*dy*dz)
+    
+    name_exp = ['test_func_kernel<3>', 'test_func_kernel<5>']
+    module2 = cp.RawModule(code=code_test, options=('-std=c++11',), 
+                           name_expressions=name_exp) 
+    
 
     if (input_type == 'float32'):    
         print("medianfilter_float_kernel")
-        median_filter32(grid_dims, block_dims, params)
+        if kernel_half_size == 1:
+            median_template = module2.get_function(name_exp[0])
+        elif kernel_half_size == 2:
+            median_template = module2.get_function(name_exp[1])
+        else:
+            print("no template yet")
+        #median_filter32(grid_dims, block_dims, params)
+        median_template(grid_dims, block_dims, params)
+        
     else:
         print("medianfilter_uint16_kernel")
         # TODO: median filter kernel to work with uint16
