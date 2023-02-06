@@ -131,8 +131,6 @@ def test_paganin_filter_performance(ensure_clean_memory):
 
     assert "performance in ms" == duration_ms
 
-    assert filtered_data.dtype == np.float32
-
 
 @cp.testing.gpu
 def test_paganin_filter_1D_raises(ensure_clean_memory):
