@@ -25,7 +25,7 @@ import os
 from typing import Dict, List
 
 import cupy as cp
-from cupy.cuda import nvtx
+import nvtx
 from cupyx.scipy.ndimage import map_coordinates
 
 __all__ = [

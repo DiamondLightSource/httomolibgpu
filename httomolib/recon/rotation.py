@@ -25,9 +25,9 @@ from typing import Optional
 
 import cupy as cp
 import numpy as np
+import nvtx
 import scipy.ndimage as ndi
 from cupy import ndarray
-from cupy.cuda import nvtx
 from cupyx.scipy.ndimage import gaussian_filter, shift
 from scipy import stats
 

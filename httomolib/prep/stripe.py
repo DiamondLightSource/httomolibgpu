@@ -22,8 +22,8 @@
 """Modules for stripes removal"""
 import cupy as cp
 import numpy as np
+import nvtx
 from cupy import abs, mean, ndarray
-from cupy.cuda import nvtx
 from cupyx.scipy.ndimage import median_filter
 
 __all__ = [
