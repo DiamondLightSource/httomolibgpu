@@ -66,7 +66,7 @@ def reconstruct_tomobar(
     cp.ndarray
         The reconstructed volume as cp or np array.
     """
-    from tomobar.methodsDIR import RecToolsDIR    
+    from tomobar.methodsDIR import RecToolsDIR
     from tomobar.supp.astraOP import AstraTools3D
     
     cp._default_memory_pool.free_all_blocks()

@@ -5,7 +5,6 @@ from pathlib import Path
 
 import cupy as cp
 import numpy as np
-
 from httomolib.prep.alignment import distortion_correction_proj_cupy
 from httomolib.prep.normalize import normalize_cupy
 from httomolib.prep.phase import paganin_filter

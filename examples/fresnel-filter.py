@@ -2,7 +2,6 @@ from pathlib import Path
 
 import cupy as cp
 import numpy as np
-
 from httomolib.prep.phase import fresnel_filter
 
 # Load data

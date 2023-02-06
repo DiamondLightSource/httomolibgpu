@@ -1,8 +1,9 @@
 import time
+
 import cupy as cp
-from cupy.cuda import nvtx
 import numpy as np
 import pytest
+from cupy.cuda import nvtx
 from httomolib.prep.phase import fresnel_filter, paganin_filter, retrieve_phase
 from numpy.testing import assert_allclose
 
