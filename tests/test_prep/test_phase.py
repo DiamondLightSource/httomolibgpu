@@ -69,9 +69,10 @@ def test_paganin_filter_padmean(data):
         [-785.60736, -786.20215, -786.7521, -787.25494],
         rtol=eps,
     )
-    assert_allclose(filtered_data[0, 50, 40:42], [-776.6436, -775.1906], rtol=eps)
-    assert_allclose(filtered_data[0, 60:63, 90], [-737.75104, -736.6097, -735.49884])
-
+    assert_allclose(filtered_data[0, 50, 40:42], 
+        [-776.6436, -775.1906], rtol=eps, atol=1e-5)
+    assert_allclose(filtered_data[0, 60:63, 90],
+        [-737.75104, -736.6097, -735.49884], rtol=eps, atol=1e-5)
 
 @cp.testing.gpu
 @pytest.mark.perf

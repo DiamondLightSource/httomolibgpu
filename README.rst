@@ -26,5 +26,5 @@ Run tests
 * Run GPU tests separately with :code:`$ pytest -v -m gpu`.
 * Run CPU tests separately with :code:`$ pytest -v -m "not gpu"`.
 * Run performance tests (only) with :code:`$ pytest --performance`
-  (note that performance tests always fail - the report the execution time in an assertion
+  (note that performance tests always fail - they report the execution time in an assertion
   to see them in the summary easily)
