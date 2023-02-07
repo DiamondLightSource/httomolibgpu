@@ -236,8 +236,8 @@ def paganin_filter(
 
         float dpx = 1.0f / (width1 * resolution);
         float dpy = 1.0f / (height1 * resolution);
-        float centerx = ceil(width1 / 2.0f) - 1.0f;
-        float centery = ceil(height1 / 2.0f) - 1.0f;
+        int centerx = (width1 + 1) / 2 - 1;
+        int centery = (height1 + 1) / 2 - 1;
 
         float pxx = (px - centerx) * dpx;
         float pyy = (py - centery) * dpy;
@@ -246,15 +246,9 @@ def paganin_filter(
 
         complex<float> value = 1.0f / complex<float>(filter1, filter1);
 
-        // iffshifting positions
-        int xshift = width1 / 2;
-        if (width1 % 2 != 0) {
-            xshift++;
-        }
-        int yshift = height1 / 2;
-        if (height1 % 2 != 0) {
-            yshift++;
-        }
+        // ifftshifting positions
+        int xshift = (width1 + 1) / 2;
+        int yshift = (height1 + 1) / 2;
         int outX = (px + xshift) % width1;
         int outY = (py + yshift) % height1;
 
