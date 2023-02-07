@@ -24,17 +24,17 @@
 import cupy as cp
 import numpy as np
 
-
 __all__ = [    
     'median_filter3d_cupy',
     'remove_outlier3d_cupy',
     'inpainting_filter3d',
 ]
 
-def median_filter3d_cupy(data: cp.ndarray,
-                         kernel_size: int = 3,
-                         dif: float = 0.0,
-                         ) -> cp.ndarray:
+def median_filter3d_cupy(
+    data: cp.ndarray,
+    kernel_size: int = 3,
+    dif: float = 0.0
+) -> cp.ndarray:
     """
     Apply 3D median or dezinger (when dif>0) filter to a 3D array.
     Parameters
@@ -183,10 +183,12 @@ def median_filter3d_cupy(data: cp.ndarray,
     median3d(grid_dims, block_dims, params)
     return out
 
-def remove_outlier3d_cupy(data: cp.ndarray,
-                         kernel_size: int = 3,
-                         dif: float = 0.1,
-                         ) -> cp.ndarray:
+
+def remove_outlier3d_cupy(
+    data: cp.ndarray,
+    kernel_size: int = 3,
+    dif: float = 0.1
+) -> cp.ndarray:
     """
     Selectively applies 3D median filter to a 3D array to remove outliers. Also called a dezinger.
     Parameters
