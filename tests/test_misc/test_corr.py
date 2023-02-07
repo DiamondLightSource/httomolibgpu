@@ -25,14 +25,16 @@ def test_inpainting_filter3d(host_data):
 
 
 @cp.testing.gpu
-def test_median_filter3d_cupy_vs_scipy(host_data, ensure_clean_memory):
+def test_median_filter3d_cupy_vs_scipy_on_arange(ensure_clean_memory):
     mat = np.arange(4*5*6).reshape(4, 5, 6)
     assert_equal(
         scipy.ndimage.median_filter(np.float32(mat), size=3),
         median_filter3d_cupy(cp.asarray(mat, dtype=cp.float32), kernel_size=3).get()
     )
 
-    #: now test with tomo_standard
+
+@cp.testing.gpu
+def test_median_filter3d_cupy_vs_scipy(host_data, ensure_clean_memory):
     assert_equal(
         scipy.ndimage.median_filter(np.float32(host_data), size=3),
         median_filter3d_cupy(cp.asarray(host_data, dtype=cp.float32), kernel_size=3).get()
