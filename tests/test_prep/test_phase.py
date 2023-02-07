@@ -80,7 +80,17 @@ def test_paganin_filter_padmean(data):
 @pytest.mark.perf
 def test_paganin_filter_performance(ensure_clean_memory):
     # Note: low/high and size values taken from sample2_medium.yaml real run
-    data_host = np.random.random_sample(size=(1801, 5, 2560)).astype(np.float32) * 2.0
+    
+    # this test needs ~20GB of memory with 1801 - we'll divide depending on GPU memory
+    dev = cp.cuda.Device()
+    mem_80percent = 0.8 * dev.mem_info[0]
+    size = 1801
+    required_mem = 40 * 1024*1024*1024
+    if mem_80percent < required_mem:
+        size = int(np.ceil(size / required_mem * mem_80percent))
+        print(f'Using smaller size of ({size}, 5, 2560) due to memory restrictions')
+
+    data_host = np.random.random_sample(size=(size, 5, 2560)).astype(np.float32) * 2.0
     data = cp.asarray(data_host, dtype=np.float32)
 
     # run code and time it

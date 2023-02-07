@@ -310,10 +310,9 @@ def paganin_filter(
     else:
         precond_kernel_int(data, data)
 
-    pci1 = cupyx.scipy.fft.fft2(data, axes=(-2, -1))
-    data = None  # allow clearing memory
-    pci1 *= filtercomplex
-    cupyx.scipy.fft.ifft2(pci1, axes=(-2, -1), overwrite_x=True)
+    data = cupyx.scipy.fft.fft2(data, axes=(-2, -1), overwrite_x=True)
+    data *= filtercomplex
+    data = cupyx.scipy.fft.ifft2(data, axes=(-2, -1), overwrite_x=True)
 
     post_kernel = cp.ElementwiseKernel(
         "C pci1, raw float32 increment, raw float32 ratio",
@@ -322,9 +321,9 @@ def paganin_filter(
         name="paganin_post_proc",
         no_return=True,
     )
-    res = cp.empty((pci1.shape[0], height, width), dtype=np.float32)
+    res = cp.empty((data.shape[0], height, width), dtype=np.float32)
     post_kernel(
-        pci1[:, pad_y : pad_y + height, pad_x : pad_x + width], increment, ratio, res
+        data[:, pad_y : pad_y + height, pad_x : pad_x + width], increment, ratio, res
     )
 
     return res
