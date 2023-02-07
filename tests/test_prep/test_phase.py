@@ -85,7 +85,7 @@ def test_paganin_filter_performance(ensure_clean_memory):
     dev = cp.cuda.Device()
     mem_80percent = 0.8 * dev.mem_info[0]
     size = 1801
-    required_mem = 40 * 1024*1024*1024
+    required_mem = 20 * 1024*1024*1024
     if mem_80percent < required_mem:
         size = int(np.ceil(size / required_mem * mem_80percent))
         print(f'Using smaller size of ({size}, 5, 2560) due to memory restrictions')
