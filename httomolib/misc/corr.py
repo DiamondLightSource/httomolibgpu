@@ -30,10 +30,11 @@ __all__ = [
     'inpainting_filter3d',
 ]
 
-def median_filter3d_cupy(data: cp.ndarray,
-                         kernel_size: int = 3,
-                         dif: float = 0.0,
-                         ) -> cp.ndarray:
+def median_filter3d_cupy(
+    data: cp.ndarray,
+    kernel_size: int = 3,
+    dif: float = 0.0
+) -> cp.ndarray:
     """
     Apply 3D median or dezinger (when dif>0) filter to a 3D array.
     Parameters
