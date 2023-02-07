@@ -64,8 +64,7 @@ def median_filter3d_cupy(data: cp.ndarray,
         out = cp.copy(data, order="C")
 
     if data.ndim == 3:
-        dz, dy, dx = data.shape
-        if (dz == 0) or (dy == 0) or (dx == 0):
+        if 0 in data.shape:
             raise ValueError("The length of one of dimensions is equal to zero")
     else:
         raise ValueError("The input array must be a 3D array")
