@@ -24,7 +24,6 @@
 import cupy as cp
 import numpy as np
 
-
 __all__ = [    
     'median_filter3d_cupy',
     'remove_outlier3d_cupy',
