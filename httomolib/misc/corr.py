@@ -142,42 +142,46 @@ def median_filter3d_cupy(data: cp.ndarray,
 
     params = (data, out, dif, dz, dy, dx, dx*dy*dz)
     
-    if input_type == "float32":
-        templates = ['median_general_kernel<float,1,3,13>',
-                        'median_general_kernel<float,2,5,62>',
-                        'median_general_kernel<float,3,7,171>',
-                        'median_general_kernel<float,4,9,364>',
-                        'median_general_kernel<float,5,11,665>',
-                        'median_general_kernel<float,6,13,1098>']
+    # switches for different kernel sizes
+    if kernel_size == 3:
+        if input_type == "float32":
+            templates = ['median_general_kernel<float,1,3,13>']
+        else:
+            templates = ['median_general_kernel<unsigned short,1,3,13>']
+    elif kernel_size == 5:
+        if input_type == "float32":
+            templates = ['median_general_kernel<float,2,5,62>']
+        else:
+            templates = ['median_general_kernel<unsigned short,2,5,62>']
+    elif kernel_size == 7:
+        if input_type == "float32":
+            templates = ['median_general_kernel<float,3,7,171>']
+        else:
+            templates = ['median_general_kernel<unsigned short,3,7,171>']
+    elif kernel_size == 9:
+        if input_type == "float32":
+            templates = ['median_general_kernel<float,4,9,364>']
+        else:
+            templates = ['median_general_kernel<unsigned short,4,9,364>']
+    elif kernel_size == 11:
+        if input_type == "float32":
+            templates = ['median_general_kernel<float,5,11,665>']
+        else:
+            templates = ['median_general_kernel<unsigned short,5,11,665>']
+    elif kernel_size == 13:
+        if input_type == "float32":
+            templates = ['median_general_kernel<float,6,13,1098>']
+        else:
+            templates = ['median_general_kernel<unsigned short,6,13,1098>']
     else:
-        templates = ['median_general_kernel<unsigned short,1,3,13>',
-                'median_general_kernel<unsigned short,2,5,62>',
-                'median_general_kernel<unsigned short,3,7,171>',
-                'median_general_kernel<unsigned short,4,9,364>',
-                'median_general_kernel<unsigned short,5,11,665>',
-                'median_general_kernel<unsigned short,6,13,1098>']
+        raise ValueError("Please select a correct kernel size: 3,5,7,9,11,13")  
 
     module = cp.RawModule(code=median_kernel, options=('-std=c++11',),
                         name_expressions=templates)        
-  
-    # switches for different kernel sizes
-    if kernel_size == 3:
-        median3d = module.get_function(templates[0])
-    elif kernel_size == 5:
-        median3d = module.get_function(templates[1])
-    elif kernel_size == 7:
-        median3d = module.get_function(templates[2])
-    elif kernel_size == 9:
-        median3d = module.get_function(templates[3])
-    elif kernel_size == 11:
-        median3d = module.get_function(templates[4])
-    elif kernel_size == 13:
-        median3d = module.get_function(templates[5])            
-    else:
-        raise ValueError("Please select a correct kernel size: 3,5,7,9,11,13")        
+    
+    median3d = module.get_function(templates[0])
     median3d(grid_dims, block_dims, params)
     return out
-
 
 def remove_outlier3d_cupy(data: cp.ndarray,
                          kernel_size: int = 3,
