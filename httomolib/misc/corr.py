@@ -179,10 +179,11 @@ def median_filter3d_cupy(
     return out
 
 
-def remove_outlier3d_cupy(data: cp.ndarray,
-                         kernel_size: int = 3,
-                         dif: float = 0.1,
-                         ) -> cp.ndarray:
+def remove_outlier3d_cupy(
+    data: cp.ndarray,
+    kernel_size: int = 3,
+    dif: float = 0.1
+) -> cp.ndarray:
     """
     Selectively applies 3D median filter to a 3D array to remove outliers. Also called a dezinger.
     Parameters
