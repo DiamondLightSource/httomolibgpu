@@ -21,8 +21,9 @@
 # ---------------------------------------------------------------------------
 """ Module for data correction """
 
-import numpy as np
 import cupy as cp
+import numpy as np
+
 
 __all__ = [    
     'median_filter3d_cupy',

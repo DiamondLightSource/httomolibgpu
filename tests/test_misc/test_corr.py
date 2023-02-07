@@ -12,3 +12,6 @@ def test_inpainting_filter3d(host_data):
     assert_allclose(np.min(filtered_data), 62.0)
     assert_allclose(np.max(filtered_data), 1136.0)
     assert_allclose(np.mean(filtered_data), 809.04987, rtol=eps)
+
+    #: make sure the output is float32
+    assert filtered_data.dtype == np.float32

@@ -1,9 +1,8 @@
 from pathlib import Path
 
 import cupy as cp
-from imageio.v2 import imread, imwrite
-
 from httomolib.prep.alignment import distortion_correction_proj_cupy
+from imageio.v2 import imread, imwrite
 
 # Load image to be corrected
 data_folder = Path("tests/test_data/")

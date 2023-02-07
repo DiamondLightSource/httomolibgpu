@@ -9,6 +9,32 @@ import pytest
 CUR_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
+def pytest_addoption(parser):
+    parser.addoption(
+        "--performance",
+        action="store_true",
+        default=False,
+        help="run performance tests only",
+    )
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "perf: mark test as performance test")
+
+
+def pytest_collection_modifyitems(config, items):
+    if config.getoption("--performance"):
+        skip_other = pytest.mark.skip(reason="not a performance test")
+        for item in items:
+            if "perf" not in item.keywords:
+                item.add_marker(skip_other)
+    else:
+        skip_perf = pytest.mark.skip(reason="performance test - use '--performance' to run")
+        for item in items:
+            if "perf" in item.keywords:
+                item.add_marker(skip_perf)
+
+
 @pytest.fixture(scope="session")
 def test_data_path():
     return os.path.join(CUR_DIR, "test_data")

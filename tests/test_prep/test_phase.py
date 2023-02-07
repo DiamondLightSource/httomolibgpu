@@ -1,6 +1,9 @@
+import time
+
 import cupy as cp
 import numpy as np
 import pytest
+from cupy.cuda import nvtx
 from httomolib.prep.phase import fresnel_filter, paganin_filter, retrieve_phase
 from numpy.testing import assert_allclose
 
@@ -18,6 +21,9 @@ def test_fresnel_filter_projection(data):
     assert_allclose(np.max(filtered_data), 1039.5293)
     assert_allclose(np.min(filtered_data), 95.74562)
 
+    #: make sure the output is float32
+    assert filtered_data.dtype == np.float32
+
 
 @cp.testing.gpu
 def test_fresnel_filter_sinogram(data):
@@ -28,6 +34,9 @@ def test_fresnel_filter_sinogram(data):
     assert_allclose(np.mean(filtered_data), 806.74347, rtol=eps)
     assert_allclose(np.max(filtered_data), 1063.7007)
     assert_allclose(np.min(filtered_data), 87.91508)
+
+    #: make sure the output is float32
+    assert filtered_data.dtype == np.float32
 
 
 @cp.testing.gpu
@@ -48,6 +57,9 @@ def test_paganin_filter(data):
     assert_allclose(np.mean(filtered_data), -770.5339, rtol=eps)
     assert_allclose(np.max(filtered_data), -679.80945, rtol=eps)
 
+    #: make sure the output is float32
+    assert filtered_data.dtype == np.float32
+
 
 @cp.testing.gpu
 def test_paganin_filter_energy100(data):
@@ -56,6 +68,9 @@ def test_paganin_filter_energy100(data):
     assert_allclose(np.mean(filtered_data), -778.61926, rtol=1e-05)
     assert_allclose(np.min(filtered_data), -808.9013, rtol=eps)
 
+    assert filtered_data.ndim == 3
+    assert filtered_data.dtype == np.float32
+
 
 @cp.testing.gpu
 def test_paganin_filter_padmean(data):
@@ -63,6 +78,59 @@ def test_paganin_filter_padmean(data):
 
     assert_allclose(np.mean(filtered_data), -765.3401, rtol=eps)
     assert_allclose(np.min(filtered_data), -793.68787, rtol=eps)
+    # test a few other slices to ensure shifting etc is right
+    assert_allclose(
+        filtered_data[0, 50, 1:5],
+        [-785.60736, -786.20215, -786.7521, -787.25494],
+        rtol=eps,
+    )
+    assert_allclose(filtered_data[0, 50, 40:42], 
+        [-776.6436, -775.1906], rtol=eps, atol=1e-5)
+    assert_allclose(filtered_data[0, 60:63, 90],
+        [-737.75104, -736.6097, -735.49884], rtol=eps, atol=1e-5)
+
+@cp.testing.gpu
+@pytest.mark.perf
+def test_paganin_filter_performance(ensure_clean_memory):
+    # Note: low/high and size values taken from sample2_medium.yaml real run
+    data_host = np.random.random_sample(size=(1801, 5, 2560)).astype(np.float32) * 2.0
+    data = cp.asarray(data_host, dtype=np.float32)
+
+    # run code and time it
+    # cold run first
+    paganin_filter(
+        data,
+        ratio=250.0,
+        energy=53.0,
+        distance=1.0,
+        resolution=1.28,
+        pad_y=100,
+        pad_x=100,
+        pad_method="edge",
+        increment=0.0,
+    )
+    dev = cp.cuda.Device()
+    dev.synchronize()
+
+    start = time.perf_counter_ns()
+    nvtx.RangePush("Core")
+    for _ in range(10):
+        paganin_filter(
+            data,
+            ratio=250.0,
+            energy=53.0,
+            distance=1.0,
+            resolution=1.28,
+            pad_y=100,
+            pad_x=100,
+            pad_method="edge",
+            increment=0.0,
+        )
+    nvtx.RangePop()
+    dev.synchronize()
+    duration_ms = float(time.perf_counter_ns() - start) * 1e-6 / 10
+
+    assert "performance in ms" == duration_ms
 
 
 @cp.testing.gpu
@@ -91,6 +159,12 @@ def test_retrieve_phase(data):
     assert np.sum(phase_data) == 2994544952
     assert_allclose(np.mean(phase_data), 812.3223068576389, rtol=1e-7)
 
+    #: retrieve_phase can give uint16 or float32 output
+    assert phase_data.dtype == np.uint16
+
+    float32_phase_data = retrieve_phase(data.astype(cp.float32)).get()
+    assert float32_phase_data.dtype == np.float32
+
 
 @cp.testing.gpu
 def test_retrieve_phase_energy100_nopad(data):
@@ -98,3 +172,5 @@ def test_retrieve_phase_energy100_nopad(data):
 
     assert_allclose(np.mean(phase_data), 979.527778, rtol=1e-7)
     assert_allclose(np.std(phase_data), 30.053735, rtol=1e-7)
+
+    assert phase_data.dtype == np.uint16

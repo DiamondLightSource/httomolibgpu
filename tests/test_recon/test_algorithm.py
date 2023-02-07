@@ -24,3 +24,7 @@ def test_reconstruct_methods(
 
     assert_allclose(np.mean(recon_data_tomopy), 0.008697214, rtol=1e-07, atol=1e-8)
     assert_allclose(np.std(recon_data_tomopy), 0.009089365, rtol=1e-07, atol=1e-8)
+
+    #: check that the reconstructed data is of type float32
+    assert recon_data.dtype == np.float32
+    assert recon_data_tomopy.dtype == np.float32

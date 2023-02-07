@@ -24,6 +24,9 @@
 import math
 
 import cupy as cp
+import cupyx
+import numpy as np
+import nvtx
 
 __all__ = [
     'fresnel_filter',
@@ -147,6 +150,7 @@ def _make_window(height, width, ratio, pattern):
 
 ## %%%%%%%%%%%%%%%%%%%%%%% paganin_filter %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 #: CuPy implementation of Paganin filter from Savu
+@nvtx.annotate()
 def paganin_filter(
     data: cp.ndarray,
     ratio: float = 250.0,
@@ -256,6 +260,7 @@ def paganin_filter(
 
 ## %%%%%%%%%%%%%%%%%%%%%%% retrieve_phase %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 #: CuPy implementation of retrieve_phase from TomoPy
+@nvtx.annotate()
 def retrieve_phase(
     tomo: cp.ndarray,
     pixel_size: float = 1e-4,

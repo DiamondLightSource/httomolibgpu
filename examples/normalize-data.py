@@ -2,7 +2,6 @@ from pathlib import Path
 
 import cupy as cp
 import numpy as np
-
 from httomolib.prep.normalize import normalize_cupy, normalize_raw_cuda
 
 # Load the projection data
