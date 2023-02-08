@@ -2,7 +2,6 @@ import cupy as cp
 import numpy as np
 from httomolib.prep.normalize import normalize_cupy
 from httomolib.recon.algorithm import (
-    _filtersinc3D_cupy,
     reconstruct_tomobar,
     reconstruct_tomopy,
 )
@@ -66,15 +65,3 @@ def test_reconstruct_tomopy_fbp_cuda(
 
     #: check that the reconstructed data is of type float32
     assert recon_data_tomopy.dtype == np.float32
-
-
-@cp.testing.gpu
-def test__filtersinc3D_cupy(data, ensure_clean_memory):
-    #: testing this private function only to check if
-    #: its optimisation/refactoring is done right!
-    data = _filtersinc3D_cupy(data).get()
-
-    assert data.shape == (180, 128, 160)
-    assert_allclose(np.mean(data), 8.278423e-12, rtol=1e-07, atol=1e-6)
-    assert_allclose(np.std(data), 0.187047, rtol=1e-07, atol=1e-6)
-    assert data.dtype == np.float32
