@@ -255,20 +255,7 @@ def paganin_filter(
         filtercomplex[outY * width1 + outX] = value;
     }
     """, "paganin_filter_gen")
-    filtercomplex = cp.empty((height1, width1), dtype=np.complex64)
-    bx = 16
-    by = 8
-    gx = (width1 + bx - 1) // bx
-    gy = (height1 + by - 1) // by
-    kernel(grid=(gx, gy, 1), block=(bx, by, 1), 
-        args=(cp.int32(width1), 
-                cp.int32(height1), 
-                cp.float32(resolution), 
-                cp.float32(wavelength), 
-                cp.float32(distance), 
-                cp.float32(ratio), 
-                filtercomplex))
-
+    
     # Apply padding to all the 2D projections
     # Note: this takes considerable time on GPU...
     data = cp.pad(data, ((0, 0), (pad_y, pad_y), (pad_x, pad_x)), mode=pad_method)
@@ -304,20 +291,38 @@ def paganin_filter(
     else:
         precond_kernel_int(data, data)
 
-    data = cupyx.scipy.fft.fft2(data, axes=(-2, -1), overwrite_x=True)
+    # avoid normalising in both directions - we include multiplier in the post_kernel
+    data = cupyx.scipy.fft.fft2(data, axes=(-2, -1), overwrite_x=True, norm="backward")
+    
+    # prepare filter here, while the GPU is busy with the FFT
+    filtercomplex = cp.empty((height1, width1), dtype=np.complex64)
+    bx = 16
+    by = 8
+    gx = (width1 + bx - 1) // bx
+    gy = (height1 + by - 1) // by
+    kernel(grid=(gx, gy, 1), block=(bx, by, 1), 
+        args=(cp.int32(width1), 
+                cp.int32(height1), 
+                cp.float32(resolution), 
+                cp.float32(wavelength), 
+                cp.float32(distance), 
+                cp.float32(ratio), 
+                filtercomplex))
     data *= filtercomplex
-    data = cupyx.scipy.fft.ifft2(data, axes=(-2, -1), overwrite_x=True)
+
+    data = cupyx.scipy.fft.ifft2(data, axes=(-2, -1), overwrite_x=True, norm="forward")
 
     post_kernel = cp.ElementwiseKernel(
-        "C pci1, raw float32 increment, raw float32 ratio",
+        "C pci1, raw float32 increment, raw float32 ratio, raw float32 fft_scale",
         "T out",
-        "out = -0.5 * ratio * log(abs(pci1) + increment)",
+        "out = -0.5 * ratio * log(abs(pci1 * fft_scale) + increment)",
         name="paganin_post_proc",
         no_return=True,
     )
+    fft_scale = 1.0/(data.shape[1] * data.shape[2])
     res = cp.empty((data.shape[0], height, width), dtype=np.float32)
     post_kernel(
-        data[:, pad_y : pad_y + height, pad_x : pad_x + width], increment, ratio, res
+        data[:, pad_y : pad_y + height, pad_x : pad_x + width], np.float32(increment), np.float32(ratio), np.float32(fft_scale), res
     )
 
     return res
