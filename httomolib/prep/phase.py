@@ -315,7 +315,7 @@ def paganin_filter(
     post_kernel = cp.ElementwiseKernel(
         "C pci1, raw float32 increment, raw float32 ratio, raw float32 fft_scale",
         "T out",
-        "out = -0.5 * ratio * log(abs(pci1 * fft_scale) + increment)",
+        "out = -0.5 * ratio * log(abs(pci1) * fft_scale + increment)",
         name="paganin_post_proc",
         no_return=True,
     )
