@@ -19,6 +19,7 @@ def test_inpainting_filter3d(host_data):
     assert_allclose(np.min(filtered_data), 62.0)
     assert_allclose(np.max(filtered_data), 1136.0)
     assert_allclose(np.mean(filtered_data), 809.04987, rtol=eps)
+    assert_allclose(np.mean(filtered_data, axis=(1, 2)).sum(), 145628.98)
 
     #: make sure the output is float32
     assert filtered_data.dtype == np.float32
@@ -73,10 +74,27 @@ def test_median_filter3d_cupy(data):
 
     assert filtered_data.ndim == 3
     assert_allclose(np.mean(filtered_data), 808.753494, rtol=eps)
+    assert_allclose(np.mean(filtered_data, axis=(1, 2)).sum(), 145575.628906)
     assert_allclose(np.max(filtered_data), 1028.0)
     assert_allclose(np.min(filtered_data), 89.0)
 
     assert filtered_data.dtype == np.uint16
 
     assert median_filter3d_cupy(
+        data.astype(cp.float32), kernel_size=5, dif=1.5).get().dtype == np.float32
+
+
+@cp.testing.gpu
+def test_remove_outlier3d_cupy(data):
+    filtered_data = remove_outlier3d_cupy(data, kernel_size=3, dif=1.5).get()
+
+    assert filtered_data.ndim == 3
+    assert_allclose(np.mean(filtered_data), 808.753494, rtol=eps)
+    assert_allclose(np.mean(filtered_data, axis=(1, 2)).sum(), 145575.628906)
+    assert_allclose(np.median(filtered_data), 976.)
+    assert_allclose(np.median(filtered_data, axis=(1, 2)).sum(), 175741.5)
+
+    assert filtered_data.dtype == np.uint16
+
+    assert remove_outlier3d_cupy(
         data.astype(cp.float32), kernel_size=5, dif=1.5).get().dtype == np.float32

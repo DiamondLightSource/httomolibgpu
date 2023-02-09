@@ -30,6 +30,7 @@ __all__ = [
     'inpainting_filter3d',
 ]
 
+
 def median_filter3d_cupy(
     data: cp.ndarray,
     kernel_size: int = 3,
@@ -37,6 +38,7 @@ def median_filter3d_cupy(
 ) -> cp.ndarray:
     """
     Apply 3D median or dezinger (when dif>0) filter to a 3D array.
+
     Parameters
     ----------
     data : cp.ndarray
@@ -46,18 +48,22 @@ def median_filter3d_cupy(
     dif : float, optional
         Expected difference value between outlier value and the 
         median value of the array, leave equal to 0 for classical median.
+
     Returns
     -------
     ndarray
         Median filtered 3D CuPy array either float32 or uint16 data type.
+
     Raises
     ------
     ValueError
         If the input array is not three dimensional.
     """
     input_type = data.dtype
+
     if input_type not in ["float32", "uint16"]:
         raise ValueError("The input data should be either float32 or uint16 data type")
+
     if dif == 0.0:
         out = cp.zeros(data.shape, dtype=input_type, order="C")
     else:
@@ -70,63 +76,67 @@ def median_filter3d_cupy(
         raise ValueError("The input array must be a 3D array")
 
     median_kernel = r'''
-    template <typename Type, int radius, int diameter, int midpoint>
-    __global__ void median_general_kernel(const Type* in, Type* out, float dif, int Z, int M, int N, long num_total)
-    {   
-        Type ValVec[diameter*diameter*diameter];
-        long i1, j1, k1, i_m, j_m, k_m, counter;
-        int x, y;
-        Type temp;
-        
-        const long i = blockDim.x * blockIdx.x + threadIdx.x;
-        const long j = blockDim.y * blockIdx.y + threadIdx.y;
-        const long k = blockDim.z * blockIdx.z + threadIdx.z;
-        
-        const unsigned long long index = (unsigned long long)i + (unsigned long long)N*(unsigned long long)j + (unsigned long long)N*(unsigned long long)M*(unsigned long long)k;          
-        if (index < num_total && i < N && j < M && k < Z)     
-        {            
-            counter = 0l;
-            for(i_m=-radius; i_m<=radius; i_m++) 
+        template <typename Type, int radius, int diameter, int midpoint>
+        __global__ void median_general_kernel(
+            const Type* in, Type* out, float dif, int Z, int M, int N, long num_total)
+        {
+            Type ValVec[diameter*diameter*diameter];
+            long i1, j1, k1, i_m, j_m, k_m, counter;
+            int x, y;
+            Type temp;
+            const long i = blockDim.x * blockIdx.x + threadIdx.x;
+            const long j = blockDim.y * blockIdx.y + threadIdx.y;
+            const long k = blockDim.z * blockIdx.z + threadIdx.z;
+
+            const unsigned long long index = i + N*j + N*M*k;
+
+            if (index < num_total && i < N && j < M && k < Z)
             {
-                i1 = i + i_m;
-                if ((i1 < 0) || (i1 >= N)) 
-                    i1 = i;
-                for(j_m=-radius; j_m<=radius; j_m++) 
+                counter = 0l;
+                for(i_m=-radius; i_m<=radius; i_m++)
                 {
-                    j1 = j + j_m;
-                    if ((j1 < 0) || (j1 >= M)) 
-                        j1 = j;
-                    for(k_m=-radius; k_m<=radius; k_m++) 
+                    i1 = i + i_m;
+                    if ((i1 < 0) || (i1 >= N))
+                        i1 = i;
+                    for(j_m=-radius; j_m<=radius; j_m++)
                     {
-                        k1 = k + k_m;
-                        if ((k1 < 0) || (k1 >= Z)) 
-                            k1 = k;
-                        ValVec[counter] = in[i1 + N*j1 + N*M*k1];
-                        counter++;
+                        j1 = j + j_m;
+                        if ((j1 < 0) || (j1 >= M))
+                            j1 = j;
+                        for(k_m=-radius; k_m<=radius; k_m++)
+                        {
+                            k1 = k + k_m;
+                            if ((k1 < 0) || (k1 >= Z))
+                                k1 = k;
+                            ValVec[counter] = in[i1 + N*j1 + N*M*k1];
+                            counter++;
+                        }
                     }
                 }
-            }
-            /* do bubble sort here */
-            for (x = 0; x < diameter*diameter*diameter - 1; x++)
-            {
-                for(y = 0; y < diameter*diameter*diameter - x - 1; y++)
+                /* do bubble sort here */
+                for (x = 0; x < diameter*diameter*diameter - 1; x++)
                 {
-                    if (ValVec[y] > ValVec[y+1])
+                    for(y = 0; y < diameter*diameter*diameter - x - 1; y++)
                     {
-                        temp = ValVec[y];
-                        ValVec[y] = ValVec[y+1];
-                        ValVec[y+1] = temp;
+                        if (ValVec[y] > ValVec[y+1])
+                        {
+                            temp = ValVec[y];
+                            ValVec[y] = ValVec[y+1];
+                            ValVec[y+1] = temp;
+                        }
                     }
                 }
-            }
-            if (dif == 0.0f) out[index] = ValVec[midpoint];  /* perform median filtration */
-            else 
-            {
-                /* perform dezingering */
-                if (fabsf(in[index] - ValVec[midpoint]) >= dif) out[index] = ValVec[midpoint];
+                /* perform median filtration */
+                if (dif == 0.0f)
+                    out[index] = ValVec[midpoint];
+                else
+                {
+                    /* perform dezingering */
+                    if (fabsf(in[index] - ValVec[midpoint]) >= dif)
+                        out[index] = ValVec[midpoint];
+                }
             }
         }
-    }  
     '''
     dz, dy, dx = data.shape
     # setting grid/block parameters
@@ -141,46 +151,26 @@ def median_filter3d_cupy(
     grid_dims = (grid_x, grid_y, grid_z) 
 
     params = (data, out, dif, dz, dy, dx, dx*dy*dz)
-    
-    # switches for different kernel sizes
-    if kernel_size == 3:
-        if input_type == "float32":
-            templates = ['median_general_kernel<float,1,3,13>']
-        else:
-            templates = ['median_general_kernel<unsigned short,1,3,13>']
-    elif kernel_size == 5:
-        if input_type == "float32":
-            templates = ['median_general_kernel<float,2,5,62>']
-        else:
-            templates = ['median_general_kernel<unsigned short,2,5,62>']
-    elif kernel_size == 7:
-        if input_type == "float32":
-            templates = ['median_general_kernel<float,3,7,171>']
-        else:
-            templates = ['median_general_kernel<unsigned short,3,7,171>']
-    elif kernel_size == 9:
-        if input_type == "float32":
-            templates = ['median_general_kernel<float,4,9,364>']
-        else:
-            templates = ['median_general_kernel<unsigned short,4,9,364>']
-    elif kernel_size == 11:
-        if input_type == "float32":
-            templates = ['median_general_kernel<float,5,11,665>']
-        else:
-            templates = ['median_general_kernel<unsigned short,5,11,665>']
-    elif kernel_size == 13:
-        if input_type == "float32":
-            templates = ['median_general_kernel<float,6,13,1098>']
-        else:
-            templates = ['median_general_kernel<unsigned short,6,13,1098>']
-    else:
-        raise ValueError("Please select a correct kernel size: 3,5,7,9,11,13")  
 
-    module = cp.RawModule(code=median_kernel, options=('-std=c++11',),
-                        name_expressions=templates)        
+    if kernel_size in [3, 5, 7, 9, 11, 13]:
+        kernel_args = "median_general_kernel<{0}, {1}, {2}, {3}>".format(
+            "float" if input_type == "float32" else "unsigned short",
+            kernel_size//2,
+            kernel_size,
+            kernel_size**3//2
+        )
+    else:
+        raise ValueError("Please select a correct kernel size: 3, 5, 7, 9, 11, 13")
+
+    module = cp.RawModule(
+        code=median_kernel,
+        options=('-std=c++11',),
+        name_expressions=[kernel_args]
+    )
     
-    median3d = module.get_function(templates[0])
+    median3d = module.get_function(kernel_args)
     median3d(grid_dims, block_dims, params)
+
     return out
 
 
@@ -191,6 +181,7 @@ def remove_outlier3d_cupy(
 ) -> cp.ndarray:
     """
     Selectively applies 3D median filter to a 3D array to remove outliers. Also called a dezinger.
+
     Parameters
     ----------
     data : cp.ndarray
@@ -200,18 +191,23 @@ def remove_outlier3d_cupy(
     dif : float, optional
         Expected difference value between outlier value and the 
         median value of the array.
+
     Returns
     -------
     ndarray
         Dezingered filtered 3D CuPy array either float32 or uint16 data type.
+
     Raises
     ------
     ValueError
         If the input array is not three dimensional.
     """                        
-    return median_filter3d_cupy(data = data,
-                                kernel_size=kernel_size,
-                                dif = dif)
+    return median_filter3d_cupy(
+        data = data,
+        kernel_size=kernel_size,
+        dif = dif
+    )
+
 
 def inpainting_filter3d(
     data: np.ndarray,
