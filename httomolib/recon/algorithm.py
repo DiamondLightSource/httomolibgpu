@@ -103,7 +103,7 @@ def reconstruct_tomobar(
                                 ObjSize=objsize,  # a scalar to define the reconstructed object dimensions
                                 OS_number = 1, # OS recon disabled
                                 device_projector = 'gpu',
-                                GPUdevice_index=gpu_id)    
+                                GPUdevice_index=gpu_id)
         # ------------------------------------------------------- # 
         data = _filtersinc3D_cupy(cp.swapaxes(data, 0, 1)) # filter the data on the GPU and keep the result there        
         
@@ -190,7 +190,7 @@ def reconstruct_tomopy(
     np.ndarray
         The reconstructed volume.
     """
-    from tomopy import astra, recon    
+    from tomopy import astra, recon
    
     reconstruction = recon(cp.asnumpy(data),
                            theta=angles,
@@ -200,7 +200,7 @@ def reconstruct_tomopy(
                                "method": algorithm,
                                "proj_type": proj_type,
                                "gpu_list": [gpu_id],},
-                           ncore=ncore,)   
+                           ncore=ncore,)
     
     return reconstruction
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
