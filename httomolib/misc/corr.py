@@ -203,9 +203,9 @@ def remove_outlier3d_cupy(
         If the input array is not three dimensional.
     """                        
     return median_filter3d_cupy(
-        data = data,
+        data=data,
         kernel_size=kernel_size,
-        dif = dif
+        dif=dif
     )
 
 
