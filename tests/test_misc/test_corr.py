@@ -89,13 +89,13 @@ def test_median_filter3d_cupy(data):
 
 @cp.testing.gpu
 def test_remove_outlier3d_cupy(data):
-    filtered_data = remove_outlier3d_cupy(data, kernel_size=3, dif=1.5).get()
+    filtered_data = remove_outlier3d_cupy(data, kernel_size=9, dif=1.5).get()
 
     assert filtered_data.ndim == 3
-    assert_allclose(np.mean(filtered_data), 808.753494, rtol=eps)
-    assert_allclose(np.mean(filtered_data, axis=(1, 2)).sum(), 145575.628906)
-    assert_allclose(np.median(filtered_data), 976.)
-    assert_allclose(np.median(filtered_data, axis=(1, 2)).sum(), 175741.5)
+    assert_allclose(np.mean(filtered_data), 809.023452, rtol=eps)
+    assert_allclose(np.mean(filtered_data, axis=(1, 2)).sum(), 145624.221436)
+    assert_allclose(np.median(filtered_data), 980.)
+    assert_allclose(np.median(filtered_data, axis=(1, 2)).sum(), 176400.)
 
     assert filtered_data.dtype == np.uint16
 
