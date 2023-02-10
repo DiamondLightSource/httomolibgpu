@@ -1,7 +1,10 @@
+import time
+
 import cupy as cp
 import numpy as np
 import pytest
 import scipy
+from cupy.cuda import nvtx
 from httomolib.misc.corr import (
     inpainting_filter3d,
     median_filter3d_cupy,
@@ -98,3 +101,25 @@ def test_remove_outlier3d_cupy(data):
 
     assert remove_outlier3d_cupy(
         data.astype(cp.float32), kernel_size=5, dif=1.5).get().dtype == np.float32
+
+
+@cp.testing.gpu
+@pytest.mark.perf
+def test_median_filter3d_cupy_performance(ensure_clean_memory):
+    dev = cp.cuda.Device()
+    data_host = np.random.random_sample(size=(1801, 5, 2560)).astype(np.float32) * 2.0
+    data = cp.asarray(data_host, dtype=cp.float32)
+
+    # warm up
+    median_filter3d_cupy(data, kernel_size=3)
+    dev.synchronize()
+
+    start = time.perf_counter_ns()
+    nvtx.RangePush("Core")
+    for _ in range(10):
+        median_filter3d_cupy(data, kernel_size=3)
+    nvtx.RangePop()
+    dev.synchronize()
+    duration_ms = float(time.perf_counter_ns() - start) * 1e-6 / 10
+
+    assert "performance in ms" == duration_ms
