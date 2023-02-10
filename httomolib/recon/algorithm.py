@@ -35,11 +35,11 @@ __all__ = [
 ## %%%%%%%%%%%%%%%%%%%%%%% ToMoBAR reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 @nvtx.annotate()
 def reconstruct_tomobar(
-    data: cp.ndarray,
-    angles: np.ndarray,
-    center: float = None,
-    objsize: int = None,
-    algorithm: str = 'FBP3D_device',
+    data : cp.ndarray,
+    angles : np.ndarray,
+    center : float = None,
+    objsize : int = None,
+    algorithm : str = 'FBP3D_device',
     gpu_id : int = 0
     ) -> cp.ndarray:
     """
@@ -87,7 +87,7 @@ def reconstruct_tomobar(
         # ------------------------------------------------------- # 
         # performs 3D FBP with filtering on the CPU (host (filtering) -> device (backprojection) -> host (if needed))
                 
-        reconstruction = RectoolsDIR.FBP(np.swapaxes(cp.asnumpy(data), 0, 1)) # the output stored as a numpy array
+        reconstruction = RectoolsDIR.FBP(np.swapaxes(data, 0, 1)) # the output stored as a numpy array
         
         # ------------------------------------------------------- #     
     elif algorithm == "FBP3D_device":
@@ -103,7 +103,7 @@ def reconstruct_tomobar(
                                 ObjSize=objsize,  # a scalar to define the reconstructed object dimensions
                                 OS_number = 1, # OS recon disabled
                                 device_projector = 'gpu',
-                                GPUdevice_index=gpu_id)    
+                                GPUdevice_index=gpu_id)
         # ------------------------------------------------------- # 
         data = _filtersinc3D_cupy(cp.swapaxes(data, 0, 1)) # filter the data on the GPU and keep the result there        
         
@@ -155,11 +155,13 @@ def _filtersinc3D_cupy(projection3D):
 ## %%%%%%%%%%%%%%%%%%%%%%% Tomopy/ASTRA reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 @nvtx.annotate()
 def reconstruct_tomopy(
-    data: np.ndarray,
-    angles: np.ndarray,
-    center: float = None,
-    algorithm: str = 'FBP_CUDA',
-    gpu_id : int = 0
+    data : np.ndarray,
+    angles : np.ndarray,
+    center : float = None,
+    algorithm : str = 'FBP_CUDA',
+    proj_type : str = "cuda",
+    gpu_id : int = 0,
+    ncore : int = 1
     ) -> np.ndarray:
     """
     Perform reconstruction using tomopy with wrappers around ASTRA toolbox.
@@ -175,8 +177,13 @@ def reconstruct_tomopy(
         The center of rotation (CoR).
     algorithm : str, optional
         The name of the reconstruction method, see available ASTRA methods.
+    proj_type : str, optional
+        Define projector type, e.g., "cuda" for "FBP_CUDA" algorithm 
+        or "linear" for "FBP" (CPU) algorithm, see more available ASTRA projectors.
     gpu_id : int, optional
         A GPU device index to perform operation on.
+    ncore : int, optional
+        Number of cores that will be assigned to jobs.
 
     Returns
     -------
@@ -184,16 +191,16 @@ def reconstruct_tomopy(
         The reconstructed volume.
     """
     from tomopy import astra, recon
-    
+   
     reconstruction = recon(cp.asnumpy(data),
                            theta=angles,
                            center=center,
                            algorithm=astra,
                            options={
                                "method": algorithm,
-                               "proj_type": "cuda",
+                               "proj_type": proj_type,
                                "gpu_list": [gpu_id],},
-                           ncore=1,)   
+                           ncore=ncore,)
     
     return reconstruction
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
