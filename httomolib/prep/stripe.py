@@ -42,7 +42,6 @@ def remove_stripe_based_sorting_cupy(
     data: ndarray,
     size: int = 11,
     dim: int = 1,
-    gpu_id : int = 0
 ) -> ndarray:
     """
     Remove full and partial stripe artifacts from sinogram using Nghia Vo's
@@ -75,7 +74,6 @@ def remove_stripe_based_sorting_cupy(
     ----------
     .. [1] https://doi.org/10.1364/OE.26.028396
     """
-    cp.cuda.Device(gpu_id).use()
 
     matindex = _create_matindex(data.shape[2], data.shape[0])
     if size is None:
@@ -131,7 +129,6 @@ def _rs_sort(sinogram, size, matindex, dim):
 def remove_stripes_titarenko_cupy(
     data: ndarray,
     beta: float = 0.1,
-    gpu_id : int = 0
 ) -> np.ndarray:
     """
     Removes stripes with the method of V. Titarenko (TomoCuPy implementation)
@@ -151,7 +148,6 @@ def remove_stripes_titarenko_cupy(
     ndarray
         3D CuPy array of de-striped projections.
     """
-    cp.cuda.Device(gpu_id).use()
 
     gamma = beta * ((1 - beta) / (1 + beta)) ** abs(
         cp.fft.fftfreq(data.shape[-1]) * data.shape[-1]

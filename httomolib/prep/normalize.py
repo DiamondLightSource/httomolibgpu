@@ -34,7 +34,6 @@ def normalize_raw_cuda(
     data: ndarray,
     flats: ndarray,
     darks: ndarray,
-    gpu_id : int = 0,
     cutoff: float = 10.0,
     minus_log: bool = False,
     nonnegativity: bool = False
@@ -51,8 +50,6 @@ def normalize_raw_cuda(
         3D flat field data as a CuPy array.
     darks : cp.ndarray
         3D dark field data as a CuPy array.
-    gpu_id : int, optional
-        A GPU device index to perform operation on.
     cutoff : float, optional
         Permitted maximum value for the normalised data.
     minus_log : bool, optional
@@ -65,7 +62,6 @@ def normalize_raw_cuda(
     cp.ndarray
         Normalised 3D tomographic data as a CuPy array.
     """
-    cp.cuda.Device(gpu_id).use()
 
     if data.ndim != 3:
         raise ValueError("Input data must be a 3D stack of projections")
@@ -145,7 +141,6 @@ def normalize_cupy(
     data: ndarray,
     flats: ndarray,
     darks: ndarray,
-    gpu_id : int = 0,
     cutoff: float = 10.0,
     minus_log: bool = False,
     nonnegativity: bool = False,
@@ -178,7 +173,6 @@ def normalize_cupy(
     ndarray
         Normalised 3D tomographic data as a CuPy array.
     """
-    cp.cuda.Device(gpu_id).use()
     
     darks = mean(darks, axis=0, dtype=float32)
     flats = mean(flats, axis=0, dtype=float32)

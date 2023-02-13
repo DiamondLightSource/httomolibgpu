@@ -68,9 +68,7 @@ def reconstruct_tomobar(
     """
     from tomobar.methodsDIR import RecToolsDIR
     from tomobar.supp.astraOP import AstraTools3D
-    
-    cp._default_memory_pool.free_all_blocks()
-    
+        
     if center is None:
         center = 0.0
     if objsize is None:
@@ -93,7 +91,6 @@ def reconstruct_tomobar(
     elif algorithm == "FBP3D_device":
         # Perform filtering of the data on the GPU and then pass a pointer to CuPy array to do backprojection, i.e.
         # (host -> device (filtering) -> device (backprojection) -> host (if needed))
-        cp.cuda.Device(gpu_id).use()
         
         # initiate a 3D ASTRA class object    
         Atools = AstraTools3D(DetectorsDimH=data.shape[2],  # DetectorsDimH # detector dimension (horizontal)
