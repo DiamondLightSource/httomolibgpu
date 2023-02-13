@@ -1,5 +1,8 @@
+import time
 import cupy as cp
+from cupy.cuda import nvtx
 import numpy as np
+import pytest
 from httomolib.prep.normalize import normalize_cupy
 from httomolib.prep.stripe import (
     remove_stripe_based_sorting_cupy,
@@ -36,3 +39,26 @@ def test_stripe_removal_sorting_cupy(data, flats, darks):
 
     # make sure the output is float32
     assert corrected_data.dtype == np.float32
+
+@cp.testing.gpu
+@pytest.mark.perf
+def test_stripe_removal_sorting_cupy_performance():
+    data_host = np.random.random_sample(size=(1801, 5, 2560)).astype(np.float32) * 2.0 + 0.001
+    data = cp.asarray(data_host, dtype=np.float32)
+
+    # do a cold run first
+    remove_stripe_based_sorting_cupy(cp.copy(data))
+
+    dev = cp.cuda.Device()
+    dev.synchronize()
+
+    start = time.perf_counter_ns()
+    nvtx.RangePush("Core")
+    for _ in range(10):
+        # have to take copy, as data is modified in-place
+        remove_stripe_based_sorting_cupy(cp.copy(data))
+    nvtx.RangePop()
+    dev.synchronize()
+    duration_ms = float(time.perf_counter_ns() - start) * 1e-6 / 10
+
+    assert "performance in ms" == duration_ms

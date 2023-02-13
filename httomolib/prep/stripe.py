@@ -77,7 +77,6 @@ def remove_stripe_based_sorting_cupy(
     """
     cp.cuda.Device(gpu_id).use()
 
-    matindex = _create_matindex(data.shape[2], data.shape[0])
     if size is None:
         if data.shape[2] > 2000:
             size = 21
@@ -85,43 +84,29 @@ def remove_stripe_based_sorting_cupy(
             size = max(5, int(0.01 * data.shape[2]))
 
     for m in range(data.shape[1]):
-        sino = data[:, m, :]
-        data[:, m, :] = _rs_sort(sino, size, matindex, dim)
+        data[:, m, :] = _rs_sort(data[:, m, :], size, dim)
 
     return data
 
 
-def _create_matindex(nrow, ncol):
-    """
-    Create a 2D array of indexes used for the sorting technique.
-    """
-    listindex = cp.arange(0.0, ncol, 1.0)
-    matindex = cp.tile(listindex, (nrow, 1))
-    return matindex
-
-
-def _rs_sort(sinogram, size, matindex, dim):
+@nvtx.annotate()
+def _rs_sort(sinogram, size, dim):
     """
     Remove stripes using the sorting technique.
     """
     sinogram = cp.transpose(sinogram)
-    matcomb = cp.asarray(cp.dstack((matindex, sinogram)))
 
     #: Sort each column of the sinogram by its grayscale values
-    matsort = cp.asarray(
-        [row[row[:, 1].argsort()] for row in matcomb])
+    #: Keep track of the sorting indices so we can reverse it below
+    sortvals = cp.argsort(sinogram, axis=1)
+    sortvals_reverse = cp.argsort(sortvals, axis=1)
+    sino_sort = cp.take_along_axis(sinogram, sortvals, axis=1)
 
     #: Now apply the median filter on the sorted image along each row
-    if dim == 1:
-        matsort[:, :, 1] = median_filter(matsort[:, :, 1], (size, 1))
-    else:
-        matsort[:, :, 1] = median_filter(matsort[:, :, 1], (size, size))
-
+    sino_sort = median_filter(sino_sort, (size, 1) if dim == 1 else (size, size))
+    
     #: step 3: re-sort the smoothed image columns to the original rows
-    matsortback = cp.asarray(
-        [row[row[:, 0].argsort()] for row in matsort])
-
-    sino_corrected = matsortback[:, :, 1]
+    sino_corrected = cp.take_along_axis(sino_sort, sortvals_reverse, axis=1)
 
     return cp.transpose(sino_corrected)
 
