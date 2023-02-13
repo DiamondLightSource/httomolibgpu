@@ -22,6 +22,7 @@
 """Modules for stripes removal"""
 import cupy as cp
 import numpy as np
+import nvtx
 from cupy import abs, mean, ndarray
 from cupyx.scipy.ndimage import median_filter
 
@@ -36,6 +37,7 @@ __all__ = [
 
 ## %%%%%%%%%%%%%%%%% remove_stripe_based_sorting_cupy %%%%%%%%%%%%%%%%%%%%%  ##
 ## Naive CuPy port of the NumPy implementation in TomoPy
+@nvtx.annotate()
 def remove_stripe_based_sorting_cupy(
     data: ndarray,
     size: int = 11,
@@ -125,6 +127,7 @@ def _rs_sort(sinogram, size, matindex, dim):
 
 
 ## %%%%%%%%%%%%%%%%%%% remove_stripes_titarenko_cupy %%%%%%%%%%%%%%%%%%%%%%%  ##
+@nvtx.annotate()
 def remove_stripes_titarenko_cupy(
     data: ndarray,
     beta: float = 0.1,

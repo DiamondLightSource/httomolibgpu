@@ -22,13 +22,13 @@
 """Modules for raw projection data normalization"""
 
 import cupy as cp
+import nvtx
 from cupy import float32, log, mean, ndarray
 
 __all__ = [
     'normalize_cupy',
     'normalize_raw_cuda'
 ]
-
 
 def normalize_raw_cuda(
     data: ndarray,
@@ -140,6 +140,7 @@ extern "C" __global__ void normalize(const unsigned short* data,
 
 
 #: CuPy implementation with higher memory footprint than normalize_raw_cuda.
+@nvtx.annotate()
 def normalize_cupy(
     data: ndarray,
     flats: ndarray,
