@@ -3,10 +3,11 @@ import time
 import cupy as cp
 import numpy as np
 import pytest
-from cupy.cuda import nvtx
-from httomolib.prep.normalize import normalize_cupy
-from numpy.testing import assert_allclose
 
+from cupy.testing import assert_allclose
+from numpy.testing import assert_allclose
+from httomolib.prep.normalize import normalize_cupy, normalize_raw_cuda
+from cupy.cuda import nvtx
 
 @cp.testing.gpu
 def test_normalize_1D_raises(data, flats, darks):
@@ -57,4 +58,17 @@ def test_normalize_performance(ensure_clean_memory):
     end = time.perf_counter_ns()
     duration_ms = float(end - start) * 1e-6 / 10
 
+    #--- testing normalize_raw_cuda ---#
+    data_normalize_raw_cuda = \
+        normalize_raw_cuda(data, flats, darks, cutoff=10, minus_log=True)
+    for _ in range(10):
+        assert_allclose(cp.min(data_normalize_raw_cuda), data_min, rtol=1e-06)
+        assert_allclose(cp.max(data_normalize_raw_cuda), data_max, rtol=1e-06)
+
+    #: free up GPU memory by no longer referencing the variables
+    data_normalize_cupy = data_normalize_raw_cuda = flats = darks = \
+        data_min = data_max = _data_1d = None
+    cp._default_memory_pool.free_all_blocks()
+
     assert "performance in ms" == duration_ms
+
