@@ -7,6 +7,9 @@ from httomolib.recon.algorithm import (
 )
 from numpy.testing import assert_allclose
 from tomopy.prep.normalize import normalize
+import time
+import pytest
+from cupy.cuda import nvtx
 
 
 def test_reconstruct_tomobar_fbp3d_host(
@@ -46,7 +49,7 @@ def test_reconstruct_tomobar_fbp3d_host(
 
 
 @cp.testing.gpu
-def test_reconstruct_tomobar_fbp3d_device(
+def test_reconstruct_tomobar_fbp3d_device_1(
     data,
     flats,
     darks,
@@ -65,6 +68,14 @@ def test_reconstruct_tomobar_fbp3d_device(
     assert_allclose(np.median(recon_data), -0.000555, rtol=1e-07, atol=1e-6)
     assert recon_data.dtype == np.float32
 
+
+@cp.testing.gpu
+def test_reconstruct_tomobar_fbp3d_device_2(
+    data,
+    flats,
+    darks,
+    ensure_clean_memory
+):
     recon_data = reconstruct_tomobar(
         normalize_cupy(data, flats, darks, cutoff=20.5, minus_log=False),
         np.linspace(5. * np.pi / 360., 180. * np.pi / 360., data.shape[0]),
@@ -96,3 +107,27 @@ def test_reconstruct_tomopy_fbp_cuda(
 
     #: check that the reconstructed data is of type float32
     assert recon_data_tomopy.dtype == np.float32
+
+
+@cp.testing.gpu
+@pytest.mark.perf
+def test_reconstruct_tomobar_performance(ensure_clean_memory):
+    dev = cp.cuda.Device()
+    data_host = np.random.random_sample(size=(1801, 5, 2560)).astype(np.float32) * 2.0
+    data = cp.asarray(data_host, dtype=np.float32)
+    angles = np.linspace(0. * np.pi / 180., 180. * np.pi / 180., data.shape[0])
+    cor = 79.5
+
+    # cold run first
+    reconstruct_tomobar(data, angles, cor, algorithm="FBP3D_device")
+    dev.synchronize()
+
+    start = time.perf_counter_ns()
+    nvtx.RangePush("Core")
+    for _ in range(10):
+        reconstruct_tomobar(data, angles, cor, algorithm="FBP3D_device")
+    nvtx.RangePop()
+    dev.synchronize()
+    duration_ms = float(time.perf_counter_ns() - start) * 1e-6 / 10
+
+    assert "performance in ms" == duration_ms
