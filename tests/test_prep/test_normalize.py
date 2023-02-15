@@ -10,7 +10,7 @@ from httomolib.prep.normalize import normalize_cupy, normalize_raw_cuda
 from cupy.cuda import nvtx
 
 @cp.testing.gpu
-def test_normalize_1D_raises(data, flats, darks):
+def test_normalize_cupy_1D_raises(data, flats, darks):
     _data_1d = cp.ones(10)
 
     #: data cannot be a 1D array
@@ -23,15 +23,39 @@ def test_normalize_1D_raises(data, flats, darks):
 
 
 @cp.testing.gpu
-def test_normalize(data, flats, darks):
+def test_normalize_raw_cuda_1D_raises(data, flats, darks):
+    _data_1d = cp.ones(10)
+
+    #: data cannot be a 1D array
+    with pytest.raises(ValueError):
+        normalize_raw_cuda(_data_1d, flats, darks)
+
+
+@cp.testing.gpu
+def test_normalize_cupy(data, flats, darks):
     #--- testing normalize_cupy  ---#
-    data_normalize = cp.asnumpy(
-        normalize_cupy(data, flats, darks, cutoff=10, minus_log=True))
+    data_normalize = normalize_cupy(data, flats, darks, minus_log=True).get()
 
     assert data_normalize.dtype == np.float32
 
-    assert_allclose(np.min(data_normalize), -0.16163824, rtol=1e-06)
-    assert_allclose(np.max(data_normalize), 2.7530956, rtol=1e-06)
+    assert_allclose(np.mean(data_normalize), 0.2892469, rtol=1e-06)
+    assert_allclose(np.mean(data_normalize, axis=(1, 2)).sum(), 52.064465, rtol=1e-06)
+    assert_allclose(np.median(data_normalize), 0.01723744, rtol=1e-06)
+    assert_allclose(np.std(data_normalize), 0.524382, rtol=1e-06)
+
+
+@cp.testing.gpu
+def test_normalize_raw_cuda(data, flats, darks):
+    #--- testing normalize_raw_cuda  ---#
+    data_normalize = normalize_raw_cuda(data, flats, darks, minus_log=True).get()
+
+    assert data_normalize.dtype == np.float32
+
+    assert_allclose(np.mean(data_normalize), 0.2892469, rtol=1e-06)
+    assert_allclose(np.mean(data_normalize, axis=(1, 2)).sum(), 52.064465, rtol=1e-06)
+    assert_allclose(np.median(data_normalize), 0.01723744, rtol=1e-06)
+    assert_allclose(np.std(data_normalize), 0.524382, rtol=1e-06)
+
 
 @cp.testing.gpu
 @pytest.mark.perf
@@ -57,18 +81,6 @@ def test_normalize_performance(ensure_clean_memory):
     dev.synchronize()
     end = time.perf_counter_ns()
     duration_ms = float(end - start) * 1e-6 / 10
-
-    #--- testing normalize_raw_cuda ---#
-    data_normalize_raw_cuda = \
-        normalize_raw_cuda(data, flats, darks, cutoff=10, minus_log=True)
-    for _ in range(10):
-        assert_allclose(cp.min(data_normalize_raw_cuda), data_min, rtol=1e-06)
-        assert_allclose(cp.max(data_normalize_raw_cuda), data_max, rtol=1e-06)
-
-    #: free up GPU memory by no longer referencing the variables
-    data_normalize_cupy = data_normalize_raw_cuda = flats = darks = \
-        data_min = data_max = _data_1d = None
-    cp._default_memory_pool.free_all_blocks()
 
     assert "performance in ms" == duration_ms
 
