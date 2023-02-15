@@ -60,7 +60,6 @@ addopts = [
    "-ra", 
    "-q",
    "--tb=native",
-   "--cov=httomolib", 
    "--cov-report=term", 
    "--cov-report=xml:cov.xml",
 ]
