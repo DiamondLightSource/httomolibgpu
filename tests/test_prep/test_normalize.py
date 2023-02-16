@@ -4,13 +4,13 @@ import cupy as cp
 import numpy as np
 import pytest
 
-from cupy.testing import assert_allclose
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 from httomolib.prep.normalize import normalize_cupy, normalize_raw_cuda
 from cupy.cuda import nvtx
 
+
 @cp.testing.gpu
-def test_normalize_cupy_1D_raises(data, flats, darks):
+def test_normalize_cupy_1D_raises(data, flats, darks, ensure_clean_memory):
     _data_1d = cp.ones(10)
 
     #: data cannot be a 1D array
@@ -23,18 +23,21 @@ def test_normalize_cupy_1D_raises(data, flats, darks):
 
 
 @cp.testing.gpu
-def test_normalize_raw_cuda_1D_raises(data, flats, darks):
+def test_normalize_raw_cuda_1D_raises(data, flats, darks, ensure_clean_memory):
     _data_1d = cp.ones(10)
 
     #: data cannot be a 1D array
     with pytest.raises(ValueError):
         normalize_raw_cuda(_data_1d, flats, darks)
 
+    with pytest.raises(ValueError):
+        normalize_raw_cuda(data, _data_1d, _data_1d)
+
 
 @cp.testing.gpu
-def test_normalize_cupy(data, flats, darks):
+def test_normalize_cupy(data, flats, darks, ensure_clean_memory):
     #--- testing normalize_cupy  ---#
-    data_normalize = normalize_cupy(data, flats, darks, minus_log=True).get()
+    data_normalize = normalize_cupy(cp.copy(data), flats, darks, minus_log=True).get()
 
     assert data_normalize.dtype == np.float32
 
@@ -45,7 +48,7 @@ def test_normalize_cupy(data, flats, darks):
 
 
 @cp.testing.gpu
-def test_normalize_raw_cuda(data, flats, darks):
+def test_normalize_raw_cuda(data, flats, darks, ensure_clean_memory):
     #--- testing normalize_raw_cuda  ---#
     data_normalize = normalize_raw_cuda(data, flats, darks, minus_log=True).get()
 
@@ -55,6 +58,16 @@ def test_normalize_raw_cuda(data, flats, darks):
     assert_allclose(np.mean(data_normalize, axis=(1, 2)).sum(), 52.064465, rtol=1e-06)
     assert_allclose(np.median(data_normalize), 0.01723744, rtol=1e-06)
     assert_allclose(np.std(data_normalize), 0.524382, rtol=1e-06)
+
+
+@cp.testing.gpu
+def test_normalize_raw_cuda_vs_normalize_cupy(data, ensure_clean_memory):
+    flats = cp.ones(shape=data.shape) + 100
+    darks = cp.random.randint(low=64, high=117, size=data.shape, dtype=cp.uint16)
+    assert_equal(
+        normalize_cupy(cp.copy(data), flats, darks, minus_log=True, nonnegativity=True).get(),
+        normalize_raw_cuda(data, flats, darks, minus_log=True, nonnegativity=True).get()
+    )
 
 
 @cp.testing.gpu

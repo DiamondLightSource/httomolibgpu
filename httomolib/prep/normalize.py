@@ -62,9 +62,8 @@ def normalize_raw_cuda(
     cp.ndarray
         Normalised 3D tomographic data as a CuPy array.
     """
+    _check_valid_input(data, flats, darks)
 
-    if data.ndim != 3:
-        raise ValueError("Input data must be a 3D stack of projections")
     dark0 = mean(darks, axis=0, dtype=float32)
     flat0 = mean(flats, axis=0, dtype=float32)
     out = cp.zeros(data.shape, dtype=float32)
@@ -135,6 +134,23 @@ extern "C" __global__ void normalize(const unsigned short* data,
 }""", "normalize")
 
 
+def _check_valid_input(data, flats, darks) -> None:
+    '''Helper function to check the validity of inputs to normalisation functions'''
+    if data.ndim != 3:
+        raise ValueError("Input data must be a 3D stack of projections")
+
+    if flats.ndim == 2:
+        flats = flats[cp.newaxis, :, :]
+    if darks.ndim == 2:
+        darks = darks[cp.newaxis, :, :]
+
+    if flats.ndim not in (2, 3):
+        raise ValueError("Input flats must be 2D or 3D data only")
+
+    if darks.ndim not in (2, 3):
+        raise ValueError("Input darks must be 2D or 3D data only")
+
+
 #: CuPy implementation with higher memory footprint than normalize_raw_cuda.
 @nvtx.annotate()
 def normalize_cupy(
@@ -173,23 +189,10 @@ def normalize_cupy(
     ndarray
         Normalised 3D tomographic data as a CuPy array.
     """
-    
+    _check_valid_input(data, flats, darks)
+
     darks = mean(darks, axis=0, dtype=float32)
     flats = mean(flats, axis=0, dtype=float32)
-    
-    if data.ndim != 3:
-        raise ValueError("Input data must be a 3D stack of projections")
-
-    if flats.ndim == 2:
-        flats = flats[cp.newaxis, :, :]
-    if darks.ndim == 2:
-        darks = darks[cp.newaxis, :, :]
-
-    if flats.ndim not in (2, 3):
-        raise ValueError("Input flats must be 2D or 3D data only")
-
-    if darks.ndim not in (2, 3):
-        raise ValueError("Input darks must be 2D or 3D data only")
 
     # replicates tomopy implementation
     lowval_threshold = cp.float32(1e-6)
