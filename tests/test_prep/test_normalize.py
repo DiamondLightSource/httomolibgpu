@@ -72,7 +72,7 @@ def test_normalize_raw_cuda_vs_normalize_cupy(data, ensure_clean_memory):
 
 @cp.testing.gpu
 @pytest.mark.perf
-def test_normalize_performance(ensure_clean_memory):
+def test_normalize_cupy_performance(ensure_clean_memory):
     # Note: low/high and size values taken from sample2_medium.yaml real run
     data_host = np.random.randint(low=7515, high=37624, size=(1801, 5, 2560), dtype=np.uint16)
     flats_host = np.random.randint(low=43397, high=52324, size=(50, 5, 2560), dtype=np.uint16)
@@ -97,3 +97,26 @@ def test_normalize_performance(ensure_clean_memory):
 
     assert "performance in ms" == duration_ms
 
+
+@cp.testing.gpu
+@pytest.mark.perf
+def test_normalize_raw_cuda_performance(ensure_clean_memory):
+    data = cp.random.randint(low=7515, high=37624, size=(1801, 5, 2560), dtype=cp.uint16)
+    flats = cp.random.randint(low=43397, high=52324, size=(50, 5, 2560), dtype=cp.uint16)
+    darks = cp.random.randint(low=64, high=117, size=(20, 5,2560), dtype=cp.uint16)
+
+    # run code and time it
+    # do a cold run for warmup
+    normalize_raw_cuda(data, flats, darks, cutoff=10.0, minus_log=True, nonnegativity=True)
+    dev = cp.cuda.Device()
+    dev.synchronize()
+    start = time.perf_counter_ns()
+    nvtx.RangePush('Core')
+    for _ in range(10):
+        normalize_raw_cuda(data, flats, darks, cutoff=10.0, minus_log=True, nonnegativity=True)
+    nvtx.RangePop()
+    dev.synchronize()
+    end = time.perf_counter_ns()
+    duration_ms = float(end - start) * 1e-6 / 10
+
+    assert "performance in ms" == duration_ms
