@@ -30,13 +30,15 @@ __all__ = [
     'normalize_raw_cuda'
 ]
 
+
 def normalize_raw_cuda(
-    data: ndarray,
-    flats: ndarray,
-    darks: ndarray,
+    data: cp.ndarray,
+    flats: cp.ndarray,
+    darks: cp.ndarray,
     cutoff: float = 10.0,
     minus_log: bool = False,
-    nonnegativity: bool = False
+    nonnegativity: bool = False,
+    remove_nans: bool = False
 ) -> ndarray:
     """
     Normalize raw projection data using the flat and dark field projections.
@@ -56,91 +58,77 @@ def normalize_raw_cuda(
         Apply negative log to the normalised data.
     nonnegativity : bool, optional
         Remove negative values in the normalised data.
+    remove_nans : bool, optional
+        Remove NaN values in the normalised data.
 
     Returns
     -------
     cp.ndarray
         Normalised 3D tomographic data as a CuPy array.
     """
+    _check_valid_input(data, flats, darks)
 
-    if data.ndim != 3:
-        raise ValueError("Input data must be a 3D stack of projections")
+    data = data.astype(float32)
     dark0 = mean(darks, axis=0, dtype=float32)
     flat0 = mean(flats, axis=0, dtype=float32)
-    out = cp.zeros(data.shape, dtype=float32)
+    out = cp.empty(data.shape, dtype=float32)
 
-    # Define grid dims based on:
-    # - Size of image
-    # - Hardcoded thread block dims 8x8
-    block_x = 8
-    block_y = 8
-    block_z = 8
-    block_dims = (block_x, block_y, block_z)
-    # Calculate grid dims based on wanting to cover all projections during
-    # normalisation
-    grid_x = int(cp.ceil(data.shape[2] / block_x))
-    grid_y = int(cp.ceil(data.shape[1] / block_y))
-    grid_z = int(cp.ceil(data.shape[0] / block_z))
-    grid_dims = (grid_x, grid_y, grid_z)
-    params = (data, flat0, dark0, out, float32(1e-6),
-              float32(cutoff), minus_log, nonnegativity, data.shape[0],
-              data.shape[1], data.shape[2])
-    norm_kernel(grid_dims, block_dims, params)
+    normalisation_kernel = cp.ElementwiseKernel(
+        "T data, T flats, T darks, float32 cutoff, bool minus_log, bool nonnegativity, bool remove_nans",
+        "T out",
+        """
+        T denom = flats - darks;
+        if (denom < eps) {
+            denom = eps;
+        }
+        out = (data - darks)/denom;
+        if (out > cutoff) {
+            out = cutoff;
+        }
+        if (minus_log) {
+            out = -log(out);
+        }
+        if (nonnegativity and out < 0.0f) {
+            out = 0.0f;
+        }
+        if (remove_nans and isnan(out)) {
+            out = 0.0f;
+        }
+        """,
+        "normalisation_kernel",
+        options=("-std=c++17",),
+        loop_prep="float eps { 1.0e-07 };"
+    )
+
+    normalisation_kernel(data, flat0, dark0, float32(cutoff), minus_log,
+                         nonnegativity, remove_nans, out)
 
     return out
 
 
-norm_kernel = cp.RawKernel(r"""
-extern "C" __global__ void normalize(const unsigned short* data,
-                                     const float* flat, const float* dark,
-                                     float* out, float eps, float cutoff,
-                                     bool minus_log, bool nonnegativity,
-                                     int num_angles, int height, int width) {
-    int i = blockDim.x * blockIdx.x + threadIdx.x;
-    int j = blockDim.y * blockIdx.y + threadIdx.y;
-    int k = blockDim.z * blockIdx.z + threadIdx.z;
-    int tid = i + (j * width) + (height * width * k);
+def _check_valid_input(data, flats, darks) -> None:
+    '''Helper function to check the validity of inputs to normalisation functions'''
+    if data.ndim != 3:
+        raise ValueError("Input data must be a 3D stack of projections")
 
-    // TODO: calculate mean of darks along axis 0 (ie, the average of all darks
-    // images)
+    if flats.ndim not in (2, 3):
+        raise ValueError("Input flats must be 2D or 3D data only")
 
-    // TODO: calculate mean of flats along axis 0 (ie, the average of all flats
-    // images)
+    if darks.ndim not in (2, 3):
+        raise ValueError("Input darks must be 2D or 3D data only")
 
-    if (tid < width * height * num_angles) {
-        float denom = flat[i + (j * width)] - dark[i + (j * width)];
-        if (denom < eps) {
-            denom = eps;
-        }
-
-        // Apply cutoff
-        float tmp = (float(data[tid]) - dark[i + (j * width)]) / denom;
-        if (tmp > cutoff) {
-            tmp = cutoff;
-        }
-
-        // Apply negative log
-        if (minus_log) {
-            tmp = -log(tmp);
-        }
-
-        // Takes out zero and negative values
-        if (nonnegativity && tmp < 0.0) {
-            tmp = 0.0;
-        }
-
-        out[tid] = tmp;
-
-    }
-}""", "normalize")
+    if flats.ndim == 2:
+        flats = flats[cp.newaxis, :, :]
+    if darks.ndim == 2:
+        darks = darks[cp.newaxis, :, :]
 
 
 #: CuPy implementation with higher memory footprint than normalize_raw_cuda.
 @nvtx.annotate()
 def normalize_cupy(
-    data: ndarray,
-    flats: ndarray,
-    darks: ndarray,
+    data: cp.ndarray,
+    flats: cp.ndarray,
+    darks: cp.ndarray,
     cutoff: float = 10.0,
     minus_log: bool = False,
     nonnegativity: bool = False,
@@ -173,23 +161,10 @@ def normalize_cupy(
     ndarray
         Normalised 3D tomographic data as a CuPy array.
     """
-    
+    _check_valid_input(data, flats, darks)
+
     darks = mean(darks, axis=0, dtype=float32)
     flats = mean(flats, axis=0, dtype=float32)
-    
-    if data.ndim != 3:
-        raise ValueError("Input data must be a 3D stack of projections")
-
-    if flats.ndim == 2:
-        flats = flats[cp.newaxis, :, :]
-    if darks.ndim == 2:
-        darks = darks[cp.newaxis, :, :]
-
-    if flats.ndim not in (2, 3):
-        raise ValueError("Input flats must be 2D or 3D data only")
-
-    if darks.ndim not in (2, 3):
-        raise ValueError("Input darks must be 2D or 3D data only")
 
     # replicates tomopy implementation
     lowval_threshold = cp.float32(1e-6)
