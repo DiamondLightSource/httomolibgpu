@@ -71,7 +71,7 @@ def normalize_raw_cuda(
     data = data.astype(float32)
     dark0 = mean(darks, axis=0, dtype=float32)
     flat0 = mean(flats, axis=0, dtype=float32)
-    out = cp.zeros(data.shape, dtype=float32)
+    out = cp.empty(data.shape, dtype=float32)
 
     normalisation_kernel = cp.ElementwiseKernel(
         "T data, T flats, T darks, float32 cutoff, bool minus_log, bool nonnegativity, bool remove_nans",
