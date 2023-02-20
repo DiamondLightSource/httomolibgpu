@@ -31,6 +31,7 @@ __all__ = [
 ]
 
 
+@nvtx.annotate()
 def normalize_raw_cuda(
     data: cp.ndarray,
     flats: cp.ndarray,
@@ -68,40 +69,45 @@ def normalize_raw_cuda(
     """
     _check_valid_input(data, flats, darks)
 
-    data = data.astype(float32)
-    dark0 = mean(darks, axis=0, dtype=float32)
-    flat0 = mean(flats, axis=0, dtype=float32)
+    dark0 = cp.empty(darks.shape[1:], dtype=float32)
+    flat0 = cp.empty(flats.shape[1:], dtype=float32)
     out = cp.empty(data.shape, dtype=float32)
-
-    normalisation_kernel = cp.ElementwiseKernel(
-        "T data, T flats, T darks, float32 cutoff, bool minus_log, bool nonnegativity, bool remove_nans",
-        "T out",
-        """
-        T denom = flats - darks;
+    mean(darks, axis=0, dtype=float32, out=dark0)
+    mean(flats, axis=0, dtype=float32, out=flat0)
+    
+    kernel_name = "normalisation"
+    kernel = r"""
+        float denom = float(flats) - float(darks);
         if (denom < eps) {
             denom = eps;
         }
-        out = (data - darks)/denom;
-        if (out > cutoff) {
-            out = cutoff;
+        float v = (float(data) - float(darks))/denom;
+        if (v > cutoff) {
+            v = cutoff;
         }
-        if (minus_log) {
-            out = -log(out);
-        }
-        if (nonnegativity and out < 0.0f) {
-            out = 0.0f;
-        }
-        if (remove_nans and isnan(out)) {
-            out = 0.0f;
-        }
-        """,
-        "normalisation_kernel",
-        options=("-std=c++17",),
-        loop_prep="float eps { 1.0e-07 };"
+        """
+    if minus_log: 
+        kernel += "v = -log(v);\n"
+        kernel_name += "_mlog"
+    if nonnegativity:
+        kernel += "if (v < 0.0f) v = 0.0f;\n"
+        kernel_name += "_nneg"
+    if remove_nans:
+        kernel += "if (isnan(v)) v = 0.0f;\n"
+        kernel_name += "_remnan"
+    kernel += "out = v;\n"
+
+    normalisation_kernel = cp.ElementwiseKernel(
+        "T data, U flats, V darks, raw float32 cutoff",
+        "float32 out",
+        kernel,
+        kernel_name,
+        options=("-std=c++11",),
+        loop_prep="constexpr float eps = 1.0e-07;",
+        no_return=True
     )
 
-    normalisation_kernel(data, flat0, dark0, float32(cutoff), minus_log,
-                         nonnegativity, remove_nans, out)
+    normalisation_kernel(data, flat0, dark0, float32(cutoff), out)
 
     return out
 
