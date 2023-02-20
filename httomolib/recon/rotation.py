@@ -364,7 +364,7 @@ def find_center_360(
     Parameters
     ----------
     data : ndarray
-        3D tomographic data as a CuPy array.
+        3D tomographic data as a Numpy array.
     ind : int, optional
         Index of the slice to be used for estimate the CoR and the overlap.        
     win_width : int, optional
@@ -642,3 +642,60 @@ def _correlation_metric(mat1, mat2):
     """
     return np.abs(
         1.0 - stats.pearsonr(mat1.flatten('F'), mat2.flatten('F'))[0])
+
+
+#--- Center of rotation (COR) estimation method ---#
+@nvtx.annotate()
+def find_center_360_cupy(
+    data: cp.ndarray,
+    ind: int = None,
+    win_width: int = 10,
+    side: set = None,
+    denoise: bool = True,
+    norm: bool = False,
+    use_overlap: bool = False
+) -> tuple[float, float, int, float]:
+    """
+    Find the center-of-rotation (COR) in a 360-degree scan with offset COR use
+    the method presented in Ref. [1] by Nghia Vo.
+
+    Parameters
+    ----------
+    data : ndarray
+        3D tomographic data as a CuPy array.
+    ind : int, optional
+        Index of the slice to be used for estimate the CoR and the overlap.        
+    win_width : int, optional
+        Window width used for finding the overlap area.
+    side : {None, 0, 1}, optional
+        Overlap size. Only there options: None, 0, or 1. "None" corresponds
+        to fully automated determination. "0" corresponds to the left side.
+        "1" corresponds to the right side.
+    denoise : bool, optional
+        Apply the Gaussian filter if True.
+    norm : bool, optional
+        Apply the normalisation if True.
+    use_overlap : bool, optional
+        Use the combination of images in the overlap area for calculating
+        correlation coefficients if True.
+
+    Returns
+    -------
+    cor : float
+        Center-of-rotation.
+    overlap : float
+        Width of the overlap area between two halves of the sinogram.
+    side : int
+        Overlap side between two halves of the sinogram.
+    overlap_position : float
+        Position of the window in the first image giving the best
+        correlation metric.
+
+    References
+    ----------
+    [1] : https://doi.org/10.1364/OE.418448
+    """
+    if data.ndim != 3:
+        raise ValueError("A 3D array must be provided")
+
+    raise NotImplementedError("CUDA implementation still pending")

@@ -34,6 +34,34 @@ def pytest_collection_modifyitems(config, items):
             if "perf" in item.keywords:
                 item.add_marker(skip_perf)
 
+@pytest.fixture
+def have_gpu_noskip():
+    """Returns true or false depending if a GPU is available"""
+    try:
+        import cupy
+        return True
+    except ImportError:
+        return False
+
+
+@cp.testing.gpu
+@pytest.fixture
+def have_gpu(have_gpu_noskip):
+    """Skips the test if GPU is not available"""
+    if not have_gpu_noskip:
+        pytest.skip()
+    return have_gpu_noskip
+
+
+@pytest.fixture(params=[pytest.param(True, marks=pytest.mark.gpu), False], ids=["cupy", "numpy"])
+def gpu(request, have_gpu_noskip):
+    """Parametrized fixture to run tests for both cupy and numpy,
+       skipping the cupy one if no GPU is available
+    """
+    if request.param and not have_gpu_noskip:
+        pytest.skip()
+    return request.param
+
 
 @pytest.fixture(scope="session")
 def test_data_path():
