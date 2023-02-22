@@ -20,6 +20,8 @@
 # version ='0.1'
 # ---------------------------------------------------------------------------
 """Modules for stripes removal"""
+from typing import Union
+
 import cupy as cp
 import numpy as np
 import nvtx
@@ -111,9 +113,9 @@ def _rs_sort(sinogram, size, dim):
 
 @nvtx.annotate()
 def remove_stripe_ti(
-    data: ndarray,
+    data: Union[cp.ndarray, np.ndarray],
     beta: float = 0.1,
-) -> ndarray:
+) -> Union[cp.ndarray, np.ndarray]:
     """
     Removes stripes with the method of V. Titarenko (TomoCuPy implementation)
 
