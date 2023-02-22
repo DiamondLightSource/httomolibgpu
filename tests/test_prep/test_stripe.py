@@ -6,21 +6,23 @@ import pytest
 from httomolib.prep.normalize import normalize_cupy
 from httomolib.prep.stripe import (
     remove_stripe_based_sorting_cupy,
-    remove_stripes_titarenko_cupy,
+    remove_stripe_ti,
 )
 from numpy.testing import assert_allclose
 
 
 @cp.testing.gpu
-def test_stripe_removal_titarenko_cupy(data, flats, darks):
+def test_remove_stripe_ti(data, flats, darks):
     # --- testing the CuPy implementation from TomoCupy ---#
     data = normalize_cupy(data, flats, darks, cutoff=10, minus_log=True)
-    data_after_stripe_removal = remove_stripes_titarenko_cupy(data).get()
+    data_after_stripe_removal = remove_stripe_ti(data).get()
 
     data = None  #: free up GPU memory
     assert_allclose(np.mean(data_after_stripe_removal), 0.28924704, rtol=1e-05)
+    assert_allclose(np.mean(data_after_stripe_removal, axis=(1, 2)).sum(),
+        52.064457, rtol=1e-06)
+    assert_allclose(np.median(data_after_stripe_removal), 0.026177486, rtol=1e-05)
     assert_allclose(np.max(data_after_stripe_removal), 2.715983, rtol=1e-05)
-    assert_allclose(np.min(data_after_stripe_removal), -0.15378489, rtol=1e-05)
 
     # make sure the output is float32
     assert data_after_stripe_removal.dtype == np.float32
@@ -39,6 +41,7 @@ def test_stripe_removal_sorting_cupy(data, flats, darks):
 
     # make sure the output is float32
     assert corrected_data.dtype == np.float32
+
 
 @cp.testing.gpu
 @pytest.mark.perf
