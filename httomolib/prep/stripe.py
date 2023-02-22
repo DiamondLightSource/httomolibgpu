@@ -137,7 +137,7 @@ def remove_stripe_ti(
     gamma[0] -= 1
     v = xp.mean(data, axis=0)
     v = v - v[:, 0:1]
-    v = xp.fft.irfft(xp.fft.rfft(v) * xp.fft.rfft(gamma))
+    v = xp.fft.irfft(xp.fft.rfft(v) * xp.fft.rfft(gamma)).astype(data.dtype)
     data[:] += v
 
     return data

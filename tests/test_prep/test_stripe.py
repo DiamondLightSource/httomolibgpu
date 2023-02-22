@@ -12,7 +12,7 @@ from numpy.testing import assert_allclose
 
 
 @cp.testing.gpu
-def test_remove_stripe_ti(data, flats, darks):
+def test_remove_stripe_ti_on_data(data, flats, darks):
     # --- testing the CuPy implementation from TomoCupy ---#
     data = normalize_cupy(data, flats, darks, cutoff=10, minus_log=True)
     data_after_stripe_removal = remove_stripe_ti(data).get()
@@ -26,6 +26,15 @@ def test_remove_stripe_ti(data, flats, darks):
 
     # make sure the output is float32
     assert data_after_stripe_removal.dtype == np.float32
+
+
+def test_remove_stripe_ti_on_flats(host_flats):
+    #: testing that numpy uint16 arrays can be passed
+    corrected_data = remove_stripe_ti(host_flats)
+    assert_allclose(np.mean(corrected_data), 976.558447, rtol=1e-7)
+    assert_allclose(np.mean(corrected_data, axis=(1, 2)).sum(),
+        19531.168945, rtol=1e-7)
+    assert_allclose(np.median(corrected_data), 976., rtol=1e-7)
 
 
 @cp.testing.gpu
