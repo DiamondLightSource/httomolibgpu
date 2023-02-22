@@ -15,7 +15,7 @@ from numpy.testing import assert_allclose
 def test_remove_stripe_ti_on_data(data, flats, darks):
     # --- testing the CuPy implementation from TomoCupy ---#
     data = normalize_cupy(data, flats, darks, cutoff=10, minus_log=True)
-    data_after_stripe_removal = remove_stripe_ti(data).get()
+    data_after_stripe_removal = remove_stripe_ti(cp.copy(data)).get()
 
     data = None  #: free up GPU memory
     assert_allclose(np.mean(data_after_stripe_removal), 0.28924704, rtol=1e-05)
@@ -30,7 +30,7 @@ def test_remove_stripe_ti_on_data(data, flats, darks):
 
 def test_remove_stripe_ti_on_flats(host_flats):
     #: testing that numpy uint16 arrays can be passed
-    corrected_data = remove_stripe_ti(host_flats)
+    corrected_data = remove_stripe_ti(np.copy(host_flats))
     assert_allclose(np.mean(corrected_data), 976.558447, rtol=1e-7)
     assert_allclose(np.mean(corrected_data, axis=(1, 2)).sum(),
         19531.168945, rtol=1e-7)
@@ -54,7 +54,7 @@ def test_stripe_removal_sorting_cupy(data, flats, darks):
 
 @cp.testing.gpu
 @pytest.mark.perf
-def test_stripe_removal_sorting_cupy_performance():
+def test_stripe_removal_sorting_cupy_performance(ensure_clean_memory):
     data_host = np.random.random_sample(size=(1801, 5, 2560)).astype(np.float32) * 2.0 + 0.001
     data = cp.asarray(data_host, dtype=np.float32)
 
@@ -69,6 +69,30 @@ def test_stripe_removal_sorting_cupy_performance():
     for _ in range(10):
         # have to take copy, as data is modified in-place
         remove_stripe_based_sorting_cupy(cp.copy(data))
+    nvtx.RangePop()
+    dev.synchronize()
+    duration_ms = float(time.perf_counter_ns() - start) * 1e-6 / 10
+
+    assert "performance in ms" == duration_ms
+
+
+@cp.testing.gpu
+@pytest.mark.perf
+def test_remove_stripe_ti_performance(ensure_clean_memory):
+    data_host = np.random.random_sample(size=(1801, 5, 2560)).astype(np.float32) * 2.0 + 0.001
+    data = cp.asarray(data_host, dtype=np.float32)
+
+    # do a cold run first
+    remove_stripe_ti(cp.copy(data))
+
+    dev = cp.cuda.Device()
+    dev.synchronize()
+
+    start = time.perf_counter_ns()
+    nvtx.RangePush("Core")
+    for _ in range(10):
+        # have to take copy, as data is modified in-place
+        remove_stripe_ti(cp.copy(data))
     nvtx.RangePop()
     dev.synchronize()
     duration_ms = float(time.perf_counter_ns() - start) * 1e-6 / 10
