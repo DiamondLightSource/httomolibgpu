@@ -94,12 +94,20 @@ def save_to_images(
         if not os.path.isdir(path_to_images_dir):
             raise
 
+    data = np.nan_to_num(
+        data,
+        copy=False,
+        nan=0.0,
+        posinf=0,
+        neginf=0
+    )
+
     if glob_stats is None:
         glob_stats = (
-            np.percentile(data, perc_range_min),
-            np.percentile(data, perc_range_max),
-            np.mean(data),
-            np.std(data)
+            np.nanpercentile(data, perc_range_min),
+            np.nanpercentile(data, perc_range_max),
+            np.nanmean(data),
+            np.nanstd(data)
         )
 
     data_full_shape = np.shape(data)
@@ -118,13 +126,6 @@ def save_to_images(
 
 def _save_single_img(array2d, glob_stats, bits, jpeg_quality, path_to_out_file):
     """ Rescales to the bit chosen and saves the image. """
-    array2d = np.nan_to_num(
-        array2d,
-        copy=False,
-        nan=0.0,
-        posinf=0,
-        neginf=0
-    )
     data_min = glob_stats[0]
     data_max = glob_stats[1]
 
