@@ -38,6 +38,19 @@ def test_remove_stripe_ti_on_flats(host_flats):
 
 
 @cp.testing.gpu
+def test_remove_stripe_ti_numpy_vs_cupy_on_random_data():
+    host_data = np.random.random_sample(size=(181, 5, 256)).astype(np.float32) * 2.0
+    corrected_host_data = remove_stripe_ti(np.copy(host_data))
+    corrected_data = remove_stripe_ti(cp.copy(
+        cp.asarray(host_data, dtype=cp.float32))).get()
+
+    assert_allclose(
+        np.sum(corrected_data), np.sum(corrected_host_data))
+    assert_allclose(
+        np.median(corrected_data), np.median(corrected_host_data), rtol=1e-6)
+
+
+@cp.testing.gpu
 def test_stripe_removal_sorting_cupy(data, flats, darks):
     # --- testing the CuPy port of TomoPy's implementation ---#
     data = normalize_cupy(data, flats, darks, cutoff=10, minus_log=True)
