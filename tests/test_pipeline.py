@@ -2,7 +2,7 @@ import cupy as cp
 import numpy as np
 from cupy.testing import assert_allclose
 from httomolib.prep.normalize import normalize_cupy
-from httomolib.prep.stripe import remove_stripe_based_sorting_cupy
+from httomolib.prep.stripe import remove_stripe_based_sorting as remove_stripes
 from httomolib.recon.rotation import find_center_vo_cupy
 from tomopy.prep.normalize import normalize
 from tomopy.prep.stripe import remove_stripe_based_sorting
@@ -32,7 +32,7 @@ def test_cpu_vs_gpu(
     assert data_normalize_cupy.shape == (180, 128, 160)
 
     #: Now do the stripes removal
-    corrected_data = remove_stripe_based_sorting_cupy(data_normalize_cupy)
+    corrected_data = remove_stripes(data_normalize_cupy)
 
     #: Apply Fresnel/Paganin filtering
 
@@ -67,4 +67,3 @@ def test_cpu_vs_gpu(
 
     #: TEST 4: check if the center of rotation matches for both CPU and GPU
     assert_allclose(tomopy_cor, cor)
-

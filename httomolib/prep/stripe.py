@@ -25,11 +25,9 @@ from typing import Union
 import cupy as cp
 import numpy as np
 import nvtx
-from cupy import abs, mean, ndarray
-from cupyx.scipy.ndimage import median_filter
 
 __all__ = [
-    'remove_stripe_based_sorting_cupy',
+    'remove_stripe_based_sorting',
     'remove_stripe_ti',
 ]
 
@@ -37,14 +35,12 @@ __all__ = [
 # from https://github.com/tomopy/tomopy/blob/master/source/tomopy/prep/stripe.py
 
 
-## %%%%%%%%%%%%%%%%% remove_stripe_based_sorting_cupy %%%%%%%%%%%%%%%%%%%%%  ##
-## Naive CuPy port of the NumPy implementation in TomoPy
 @nvtx.annotate()
-def remove_stripe_based_sorting_cupy(
-    data: ndarray,
+def remove_stripe_based_sorting(
+    data: Union[cp.ndarray, np.ndarray],
     size: int = 11,
     dim: int = 1,
-) -> ndarray:
+) -> Union[cp.ndarray, np.ndarray]:
     """
     Remove full and partial stripe artifacts from sinogram using Nghia Vo's
     approach, algorithm 3 in Ref. [1]. Angular direction is along the axis 0.
@@ -58,19 +54,17 @@ def remove_stripe_based_sorting_cupy(
 
     Parameters
     ----------
-    data : cupy.ndarray
-        3D tomographic data.
+    data : ndarray
+        3D tomographic data as a CuPy or NumPy array.
     size : int, optional
         Window size of the median filter.
     dim : {1, 2}, optional
         Dimension of the window.
-    gpu_id : int, optional
-        A GPU device index to perform operation on.      
 
     Returns
     -------
-    cupy.ndarray
-        Corrected 3D tomographic data.
+    ndarray
+        Corrected 3D tomographic data as a CuPy or NumPy array.
 
     References
     ----------
@@ -94,21 +88,27 @@ def _rs_sort(sinogram, size, dim):
     """
     Remove stripes using the sorting technique.
     """
-    sinogram = cp.transpose(sinogram)
+    xp = cp.get_array_module(sinogram)
+    sinogram = xp.transpose(sinogram)
 
     #: Sort each column of the sinogram by its grayscale values
     #: Keep track of the sorting indices so we can reverse it below
-    sortvals = cp.argsort(sinogram, axis=1)
-    sortvals_reverse = cp.argsort(sortvals, axis=1)
-    sino_sort = cp.take_along_axis(sinogram, sortvals, axis=1)
+    sortvals = xp.argsort(sinogram, axis=1)
+    sortvals_reverse = xp.argsort(sortvals, axis=1)
+    sino_sort = xp.take_along_axis(sinogram, sortvals, axis=1)
 
     #: Now apply the median filter on the sorted image along each row
-    sino_sort = median_filter(sino_sort, (size, 1) if dim == 1 else (size, size))
-    
-    #: step 3: re-sort the smoothed image columns to the original rows
-    sino_corrected = cp.take_along_axis(sino_sort, sortvals_reverse, axis=1)
+    if xp.__name__ == "cupy":
+        from cupyx.scipy.ndimage import median_filter
+    else:
+        from scipy.ndimage import median_filter
 
-    return cp.transpose(sino_corrected)
+    sino_sort = median_filter(sino_sort, (size, 1) if dim == 1 else (size, size))
+
+    #: step 3: re-sort the smoothed image columns to the original rows
+    sino_corrected = xp.take_along_axis(sino_sort, sortvals_reverse, axis=1)
+
+    return xp.transpose(sino_corrected)
 
 
 @nvtx.annotate()

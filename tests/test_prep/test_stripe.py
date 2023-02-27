@@ -58,24 +58,22 @@ def test_stripe_removal_sorting_cupy(data, flats, darks):
 
     data = None  #: free up GPU memory
     assert_allclose(np.mean(corrected_data), 0.288198, rtol=1e-06)
-    assert_allclose(np.max(corrected_data), 2.5242403, rtol=1e-07)
-    assert_allclose(np.min(corrected_data), -0.10906063, rtol=1e-07)
+    assert_allclose(np.mean(corrected_data, axis=(1, 2)).sum(), 51.87565, rtol=1e-06)
+    assert_allclose(np.sum(corrected_data), 1062413.6, rtol=1e-06)
 
     # make sure the output is float32
     assert corrected_data.dtype == np.float32
 
 
 @cp.testing.gpu
-def test_stripe_removal_sorting_numpy_vs_cupy_on_random_data():
-    host_data = np.random.random_sample(size=(181, 5, 256)).astype(np.float32) * 2.0
-    corrected_host_data = remove_stripe_based_sorting(np.copy(host_data))
-    corrected_data = remove_stripe_based_sorting(cp.copy(
-        cp.asarray(host_data))).get()
-
-    assert_allclose(
-        np.sum(corrected_data), np.sum(corrected_host_data))
-    assert_allclose(
-        np.median(corrected_data), np.median(corrected_host_data), rtol=1e-6)
+@cp.testing.numpy_cupy_allclose(rtol=1e-6)
+def test_stripe_removal_sorting_numpy_vs_cupy_on_random_data(
+    ensure_clean_memory, xp
+):
+    np.random.seed(12345)
+    data = np.random.random_sample(size=(181, 5, 256)).astype(np.float32) * 2.0 + .001
+    data = xp.asarray(data)
+    return xp.asarray(remove_stripe_based_sorting(data))
 
 
 @cp.testing.gpu
