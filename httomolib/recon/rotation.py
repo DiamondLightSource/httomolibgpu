@@ -400,6 +400,10 @@ def find_center_360(
     if data.ndim != 3:
         raise ValueError("A 3D array must be provided")
     
+    xp = cp.get_array_module(data)
+    if xp.__name__ != "numpy":
+        raise NotImplementedError("Cuda implementation not implemented")
+
     # this method works with a 360-degree sinogram.
     if ind is None:
         _sino = data[:, 0, :]        
@@ -462,22 +466,22 @@ def _find_overlap(mat1, mat2, win_width, side=None, denoise=True, norm=False,
     win_width = np.int16(np.clip(win_width, 6, min(ncol1, ncol2) // 2))
 
     if side == 1:
-        (list_metric, offset) = _search_overlap(mat1, mat2, win_width, side,
-                                               denoise, norm, use_overlap)
+        (list_metric, offset) = _search_overlap(mat1, mat2, win_width, side=side,
+                                               denoise=denoise, norm=norm, use_overlap=use_overlap)
         overlap_position = _calculate_curvature(list_metric)[1]
         overlap_position += offset
         overlap = ncol1 - overlap_position + win_width // 2
     elif side == 0:
-        (list_metric, offset) = _search_overlap(mat1, mat2, win_width, side,
-                                               denoise, norm, use_overlap)
+        (list_metric, offset) = _search_overlap(mat1, mat2, win_width, side=side,
+                                               denoise=denoise, norm=norm, use_overlap=use_overlap)
         overlap_position = _calculate_curvature(list_metric)[1]
         overlap_position += offset
         overlap = overlap_position + win_width // 2
     else:
-        (list_metric1, offset1) = _search_overlap(mat1, mat2, win_width, 1,
-                                                 norm, denoise, use_overlap)
-        (list_metric2, offset2) = _search_overlap(mat1, mat2, win_width, 0,
-                                                 norm, denoise, use_overlap)
+        (list_metric1, offset1) = _search_overlap(mat1, mat2, win_width, side=1,
+                                                 denoise=denoise, norm=norm, use_overlap=use_overlap)
+        (list_metric2, offset2) = _search_overlap(mat1, mat2, win_width, side=0,
+                                                 denoise=denoise, norm=norm, use_overlap=use_overlap)
 
         (curvature1, overlap_position1) = _calculate_curvature(list_metric1)
         overlap_position1 += offset1
