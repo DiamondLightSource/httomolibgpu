@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 from httomolib.prep.normalize import normalize_cupy
 from httomolib.prep.stripe import (
-    remove_stripe_based_sorting_cupy,
+    remove_stripe_based_sorting,
     remove_stripe_ti,
 )
 from numpy.testing import assert_allclose
@@ -54,7 +54,7 @@ def test_remove_stripe_ti_numpy_vs_cupy_on_random_data():
 def test_stripe_removal_sorting_cupy(data, flats, darks):
     # --- testing the CuPy port of TomoPy's implementation ---#
     data = normalize_cupy(data, flats, darks, cutoff=10, minus_log=True)
-    corrected_data = remove_stripe_based_sorting_cupy(data).get()
+    corrected_data = remove_stripe_based_sorting(data).get()
 
     data = None  #: free up GPU memory
     assert_allclose(np.mean(corrected_data), 0.288198, rtol=1e-06)
@@ -66,13 +66,26 @@ def test_stripe_removal_sorting_cupy(data, flats, darks):
 
 
 @cp.testing.gpu
+def test_stripe_removal_sorting_numpy_vs_cupy_on_random_data():
+    host_data = np.random.random_sample(size=(181, 5, 256)).astype(np.float32) * 2.0
+    corrected_host_data = remove_stripe_based_sorting(np.copy(host_data))
+    corrected_data = remove_stripe_based_sorting(cp.copy(
+        cp.asarray(host_data))).get()
+
+    assert_allclose(
+        np.sum(corrected_data), np.sum(corrected_host_data))
+    assert_allclose(
+        np.median(corrected_data), np.median(corrected_host_data), rtol=1e-6)
+
+
+@cp.testing.gpu
 @pytest.mark.perf
 def test_stripe_removal_sorting_cupy_performance(ensure_clean_memory):
     data_host = np.random.random_sample(size=(1801, 5, 2560)).astype(np.float32) * 2.0 + 0.001
     data = cp.asarray(data_host, dtype=np.float32)
 
     # do a cold run first
-    remove_stripe_based_sorting_cupy(cp.copy(data))
+    remove_stripe_based_sorting(cp.copy(data))
 
     dev = cp.cuda.Device()
     dev.synchronize()
@@ -81,7 +94,7 @@ def test_stripe_removal_sorting_cupy_performance(ensure_clean_memory):
     nvtx.RangePush("Core")
     for _ in range(10):
         # have to take copy, as data is modified in-place
-        remove_stripe_based_sorting_cupy(cp.copy(data))
+        remove_stripe_based_sorting(cp.copy(data))
     nvtx.RangePop()
     dev.synchronize()
     duration_ms = float(time.perf_counter_ns() - start) * 1e-6 / 10
