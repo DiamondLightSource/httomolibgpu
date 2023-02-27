@@ -24,11 +24,32 @@ def test_find_center_vo_cupy(data, flats, darks):
 
 @cp.testing.gpu
 def test_find_center_vo_cupy_ones(ensure_clean_memory):
-    mat = cp.ones(shape=(103, 450, 230))
+    mat = cp.ones(shape=(103, 450, 230), dtype=cp.float32)
     cor = find_center_vo_cupy(mat).get()
 
     assert_allclose(cor, 59.0)
     mat = None #: free up GPU memory
+
+
+@cp.testing.gpu
+@pytest.mark.perf
+def test_find_center_vo_cupy_performance():
+    dev = cp.cuda.Device()
+    data_host = np.random.random_sample(size=(1801, 5, 2560)).astype(np.float32) * 2.0
+    data = cp.asarray(data_host, dtype=np.float32)
+    
+    # cold run first
+    find_center_vo_cupy(data)
+
+    start = time.perf_counter_ns()
+    nvtx.RangePush("Core")
+    for _ in range(10):
+        find_center_vo_cupy(data)
+    nvtx.RangePop()
+    dev.synchronize()
+    duration_ms = float(time.perf_counter_ns() - start) * 1e-6 / 10
+
+    assert "performance in ms" == duration_ms
 
 
 def test_find_center_360_ones(gpu):
@@ -116,4 +137,6 @@ def test_find_center_360_1D_raises(host_data, gpu):
     
     with pytest.raises(ValueError):
         find_center_360(xp.ones(10))
-        
+
+
+

@@ -20,6 +20,8 @@
 # version ='0.1'
 # ---------------------------------------------------------------------------
 """Modules for stripes removal"""
+from typing import Union
+
 import cupy as cp
 import numpy as np
 import nvtx
@@ -28,7 +30,7 @@ from cupyx.scipy.ndimage import median_filter
 
 __all__ = [
     'remove_stripe_based_sorting_cupy',
-    'remove_stripes_titarenko_cupy',
+    'remove_stripe_ti',
 ]
 
 # TODO: port 'remove_all_stripe', 'remove_large_stripe' and 'remove_dead_stripe'
@@ -109,12 +111,11 @@ def _rs_sort(sinogram, size, dim):
     return cp.transpose(sino_corrected)
 
 
-## %%%%%%%%%%%%%%%%%%% remove_stripes_titarenko_cupy %%%%%%%%%%%%%%%%%%%%%%%  ##
 @nvtx.annotate()
-def remove_stripes_titarenko_cupy(
-    data: ndarray,
+def remove_stripe_ti(
+    data: Union[cp.ndarray, np.ndarray],
     beta: float = 0.1,
-) -> np.ndarray:
+) -> Union[cp.ndarray, np.ndarray]:
     """
     Removes stripes with the method of V. Titarenko (TomoCuPy implementation)
 
@@ -125,22 +126,20 @@ def remove_stripes_titarenko_cupy(
     beta : float, optional
         filter parameter, lower values increase the filter strength.
         Default is 0.1.
-    gpu_id : int, optional
-        A GPU device index to perform operation on.          
 
     Returns
     -------
     ndarray
-        3D CuPy array of de-striped projections.
+        3D array of de-striped projections.
     """
-
-    gamma = beta * ((1 - beta) / (1 + beta)) ** abs(
-        cp.fft.fftfreq(data.shape[-1]) * data.shape[-1]
+    xp = cp.get_array_module(data)
+    gamma = beta * ((1 - beta) / (1 + beta)) ** xp.abs(
+        xp.fft.fftfreq(data.shape[-1]) * data.shape[-1]
     )
     gamma[0] -= 1
-    v = mean(data, axis=0)
+    v = xp.mean(data, axis=0)
     v = v - v[:, 0:1]
-    v = cp.fft.irfft(cp.fft.rfft(v) * cp.fft.rfft(gamma))
+    v = xp.fft.irfft(xp.fft.rfft(v) * xp.fft.rfft(gamma)).astype(data.dtype)
     data[:] += v
 
     return data
