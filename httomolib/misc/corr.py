@@ -21,7 +21,11 @@
 # ---------------------------------------------------------------------------
 """ Module for data correction """
 
-import cupy as cp
+try:
+    import cupy as cp
+except ImportError:
+    print('Cupy might be required for some methods in this module')    
+
 import numpy as np
 
 __all__ = [    

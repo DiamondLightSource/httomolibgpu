@@ -97,9 +97,7 @@ def save_to_images(
     if glob_stats is None:
         glob_stats = (
             np.percentile(data, perc_range_min),
-            np.percentile(data, perc_range_max),
-            np.mean(data),
-            np.std(data)
+            np.percentile(data, perc_range_max)
         )
 
     data_full_shape = np.shape(data)
