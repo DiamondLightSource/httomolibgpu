@@ -33,7 +33,7 @@ def test_find_center_vo_cupy_ones(ensure_clean_memory):
 
 def test_find_center_360_ones():
     mat = np.ones(shape=(100, 100, 100))
-    (cor, overlap, side, overlap_position) = find_center_360(mat[:, 2, :])
+    (cor, overlap, side, overlap_position) = find_center_360(mat)
 
     assert_allclose(cor, 5.0)
     assert_allclose(overlap, 12.0)
@@ -43,11 +43,11 @@ def test_find_center_360_ones():
 
 def test_find_center_360_data(host_data):
     eps = 1e-5
-    (cor, overlap, side, overlap_pos) = find_center_360(host_data[:, 10, :])
-    assert_allclose(cor, 118.56627, rtol=eps)
-    assert_allclose(overlap, 80.86746, rtol=eps)
+    (cor, overlap, side, overlap_pos) = find_center_360(host_data)
+    assert_allclose(cor, 132.45317, rtol=eps)
+    assert_allclose(overlap, 53.093666, rtol=eps)
     assert side == 1
-    assert_allclose(overlap_pos, 84.13254, rtol=eps)
+    assert_allclose(overlap_pos, 111.906334, rtol=eps)
 
     #: Check that we only get a float32 output
     assert cor.dtype == np.float32
@@ -55,10 +55,10 @@ def test_find_center_360_data(host_data):
 
 
 def test_find_center_360_1D_raises(host_data):
-    #: 360-degree sinogram must be a 2d array
+    #: 360-degree sinogram must be a 3d array
 
     with pytest.raises(ValueError):
-        find_center_360(host_data[:, 10, 10])
+        find_center_360(host_data[:, 10, :])
     with pytest.raises(ValueError):
         find_center_360(np.ones(10))
 

@@ -58,7 +58,7 @@ def find_center_vo_cupy(
     data : ndarray
         3D tomographic data or a 2D sinogram as a CuPy array.
     ind : int, optional
-        Index of the slice to be used for reconstruction.
+        Index of the slice to be used to estimate the CoR.
     smin : int, optional
         Coarse search radius. Reference to the horizontal center of
         the sinogram.
@@ -83,21 +83,21 @@ def find_center_vo_cupy(
     return _find_center_vo_gpu(data, ind, smin, smax, srad, step, ratio, drop)
 
 
-def _find_center_vo_gpu(sino, ind, smin, smax, srad, step, ratio, drop):
-    if sino.ndim == 2:
-        sino = cp.expand_dims(sino, 1)
+def _find_center_vo_gpu(data, ind, smin, smax, srad, step, ratio, drop):
+    if data.ndim == 2:
+        data = cp.expand_dims(data, 1)
         ind = 0
 
-    height = sino.shape[1]
+    height = data.shape[1]
 
     if ind is None:
         ind = height // 2
         if height > 10:
-            _sino = cp.mean(sino[:, ind - 5: ind + 5, :], axis=1)
+            _sino = cp.mean(data[:, ind - 5: ind + 5, :], axis=1)
         else:
-            _sino = sino[:, ind, :]
+            _sino = data[:, ind, :]
     else:
-        _sino = sino[:, ind, :]
+        _sino = data[:, ind, :]
 
     with nvtx.annotate("gaussian_filter_1", color="green"):
         _sino_cs = gaussian_filter(_sino, (3, 1), mode="reflect")
@@ -435,7 +435,8 @@ def _downsample(sino, level, axis):
 #--- Center of rotation (COR) estimation method ---#
 @nvtx.annotate()
 def find_center_360(
-    sino_360: np.ndarray,
+    data: np.ndarray,
+    ind: int = None,
     win_width: int = 10,
     side: set = None,
     denoise: bool = True,
@@ -448,8 +449,10 @@ def find_center_360(
 
     Parameters
     ----------
-    sino_360 : ndarray
-        2D array, a 360-degree sinogram.
+    data : ndarray
+        3D tomographic data as a CuPy array.
+    ind : int, optional
+        Index of the slice to be used for estimate the CoR and the overlap.        
     win_width : int, optional
         Window width used for finding the overlap area.
     side : {None, 0, 1}, optional
@@ -480,13 +483,19 @@ def find_center_360(
     ----------
     [1] : https://doi.org/10.1364/OE.418448
     """
-    if sino_360.ndim != 2:
-        raise ValueError("360-degree sinogram must be a 2D array.")
-
-    (nrow, ncol) = sino_360.shape
+    if data.ndim != 3:
+        raise ValueError("A 3D array must be provided")
+    
+    # this method works with a 360-degree sinogram.
+    if ind is None:
+        _sino = data[:, 0, :]        
+    else:
+        _sino = data[:, ind, :]  
+    
+    (nrow, ncol) = _sino.shape
     nrow_180 = nrow // 2 + 1
-    sino_top = sino_360[0:nrow_180, :]
-    sino_bot = np.fliplr(sino_360[-nrow_180:, :])
+    sino_top = _sino[0:nrow_180, :]
+    sino_bot = np.fliplr(_sino[-nrow_180:, :])
     (overlap, side, overlap_position) = _find_overlap(
         sino_top, sino_bot, win_width, side, denoise, norm, use_overlap)
     if side == 0:
