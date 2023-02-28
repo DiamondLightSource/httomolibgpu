@@ -1,0 +1,43 @@
+{% set name = "httomolib" %}
+{% set version = "0.0.1" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+build:
+  preserve_egg_dir: False
+  script: {{ PYTHON }} -m pip install -e .
+  number: 0
+
+requirements:
+  host:
+    - python
+    - pip
+  run:
+    - python
+    - cupy
+    - numpy
+    - scipy
+    - pillow
+    - scikit-image
+
+test:
+  imports:
+    - httomolib
+    - httomolib.tests
+  requires:
+    - pip
+  commands:
+    - pip check
+    - pytest
+
+about:
+  home: https://github.com/DiamondLightSource/httomolib
+  summary: 'A library of data processing and reconstruction methods for tomography'
+  description: |
+    A library of data processing and reconstruction methods for tomography
+
+extra:
+  recipe-maintainers:
+    - namannimmo10
