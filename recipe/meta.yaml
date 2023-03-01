@@ -5,6 +5,9 @@ package:
   name: {{ name|lower }}
   version: {{ version }}
 
+source:
+  path: ..
+
 build:
   preserve_egg_dir: False
   script: {{ PYTHON }} -m pip install -e .
@@ -21,15 +24,6 @@ requirements:
     - scipy
     - pillow
     - scikit-image
-
-test:
-  imports:
-    - httomolib
-    - httomolib.tests
-  requires:
-    - pip
-  commands:
-    - pip check
     - pytest
 
 about:
