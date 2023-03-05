@@ -6,14 +6,14 @@ from httomolib.prep.normalize import normalize_cupy, normalize_raw_cuda
 
 # Load the projection data
 data_folder = Path("tests/test_data/")
-in_file = data_folder / 'tomo_standard.npz'
+in_file = data_folder / "tomo_standard.npz"
 datafile = np.load(in_file)
-host_data = datafile['data']
-host_flats = datafile['flats']
-host_darks = datafile['darks']
+host_data = datafile["data"]
+host_flats = datafile["flats"]
+host_darks = datafile["darks"]
 
 # Apply CuPy implementation of normalisation to data
 data = cp.asarray(host_data)
 flats = cp.asarray(host_flats)
 darks = cp.asarray(host_darks)
-data = normalize_cupy(data, flats, darks, cutoff = 10, minus_log = True)
+data = normalize_cupy(data, flats, darks, cutoff=10, minus_log=True)

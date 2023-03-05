@@ -24,17 +24,15 @@
 import cupy as cp
 import numpy as np
 
-__all__ = [    
-    'median_filter3d_cupy',
-    'remove_outlier3d_cupy',
-    'inpainting_filter3d',
+__all__ = [
+    "median_filter3d_cupy",
+    "remove_outlier3d_cupy",
+    "inpainting_filter3d",
 ]
 
 
 def median_filter3d_cupy(
-    data: cp.ndarray,
-    kernel_size: int = 3,
-    dif: float = 0.0
+    data: cp.ndarray, kernel_size: int = 3, dif: float = 0.0
 ) -> cp.ndarray:
     """
     Apply 3D median or dezinger (when dif>0) filter to a 3D array.
@@ -46,7 +44,7 @@ def median_filter3d_cupy(
     kernel_size : int, optional
         The size of the filter's kernel.
     dif : float, optional
-        Expected difference value between outlier value and the 
+        Expected difference value between outlier value and the
         median value of the array, leave equal to 0 for classical median.
 
     Returns
@@ -64,7 +62,6 @@ def median_filter3d_cupy(
     if input_type not in ["float32", "uint16"]:
         raise ValueError("The input data should be either float32 or uint16 data type")
 
-    
     if data.ndim == 3:
         if 0 in data.shape:
             raise ValueError("The length of one of dimensions is equal to zero")
@@ -72,8 +69,8 @@ def median_filter3d_cupy(
         raise ValueError("The input array must be a 3D array")
 
     out = cp.empty(data.shape, dtype=input_type, order="C")
-    
-    median_kernel = r'''
+
+    median_kernel = r"""
         template <typename Type, int diameter>
         __global__ void median_general_kernel(
             const Type* in, Type* out, float dif, int Z, int M, int N)
@@ -137,7 +134,7 @@ def median_filter3d_cupy(
             }
         
         }
-    '''
+    """
     dz, dy, dx = data.shape
     # setting grid/block parameters
     block_x = 128
@@ -147,24 +144,21 @@ def median_filter3d_cupy(
     grid_x = (dx + block_x - 1) // block_x
     grid_y = dy
     grid_z = dz
-    grid_dims = (grid_x, grid_y, grid_z) 
+    grid_dims = (grid_x, grid_y, grid_z)
 
-    params = (data, out, dif, dz, dy, dx, dx*dy*dz)
+    params = (data, out, dif, dz, dy, dx, dx * dy * dz)
 
     if kernel_size in [3, 5, 7, 9, 11, 13]:
         kernel_args = "median_general_kernel<{0}, {1}>".format(
-            "float" if input_type == "float32" else "unsigned short",
-            kernel_size
+            "float" if input_type == "float32" else "unsigned short", kernel_size
         )
     else:
         raise ValueError("Please select a correct kernel size: 3, 5, 7, 9, 11, 13")
 
     module = cp.RawModule(
-        code=median_kernel,
-        options=('-std=c++11',),
-        name_expressions=[kernel_args]
+        code=median_kernel, options=("-std=c++11",), name_expressions=[kernel_args]
     )
-    
+
     median3d = module.get_function(kernel_args)
     median3d(grid_dims, block_dims, params)
 
@@ -172,9 +166,7 @@ def median_filter3d_cupy(
 
 
 def remove_outlier3d_cupy(
-    data: cp.ndarray,
-    kernel_size: int = 3,
-    dif: float = 0.1
+    data: cp.ndarray, kernel_size: int = 3, dif: float = 0.1
 ) -> cp.ndarray:
     """
     Selectively applies 3D median filter to a 3D array to remove outliers. Also called a dezinger.
@@ -186,7 +178,7 @@ def remove_outlier3d_cupy(
     kernel_size : int, optional
         The size of the filter's kernel.
     dif : float, optional
-        Expected difference value between outlier value and the 
+        Expected difference value between outlier value and the
         median value of the array.
 
     Returns
@@ -198,12 +190,8 @@ def remove_outlier3d_cupy(
     ------
     ValueError
         If the input array is not three dimensional.
-    """                        
-    return median_filter3d_cupy(
-        data=data,
-        kernel_size=kernel_size,
-        dif=dif
-    )
+    """
+    return median_filter3d_cupy(data=data, kernel_size=kernel_size, dif=dif)
 
 
 def inpainting_filter3d(
@@ -212,7 +200,7 @@ def inpainting_filter3d(
     iter: int = 3,
     windowsize_half: int = 5,
     method_type: str = "random",
-    ncore: int = 1
+    ncore: int = 1,
 ) -> np.ndarray:
     """
     Inpainting filter for 3D data, taken from the Larix toolbox
@@ -247,5 +235,5 @@ def inpainting_filter3d(
     """
 
     from larix.methods.misc import INPAINT_EUCL_WEIGHTED
-  
+
     return INPAINT_EUCL_WEIGHTED(data, mask, iter, windowsize_half, method_type, ncore)

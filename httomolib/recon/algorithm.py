@@ -29,20 +29,21 @@ import numpy as np
 import nvtx
 
 __all__ = [
-    'reconstruct_tomobar',
-    'reconstruct_tomopy',
+    "reconstruct_tomobar",
+    "reconstruct_tomopy",
 ]
+
 
 ## %%%%%%%%%%%%%%%%%%%%%%% ToMoBAR reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 @nvtx.annotate()
 def reconstruct_tomobar(
-    data : cp.ndarray,
-    angles : np.ndarray,
-    center : float = None,
-    objsize : int = None,
-    algorithm : str = 'FBP3D_device',
-    gpu_id : int = 0
-    ) -> cp.ndarray:
+    data: cp.ndarray,
+    angles: np.ndarray,
+    center: float = None,
+    objsize: int = None,
+    algorithm: str = "FBP3D_device",
+    gpu_id: int = 0,
+) -> cp.ndarray:
     """
     Perform reconstruction using ToMoBAR wrappers around ASTRA toolbox.
     This is a 3D recon using 3D astra geometry routines.
@@ -69,51 +70,76 @@ def reconstruct_tomobar(
     """
     from tomobar.methodsDIR import RecToolsDIR
     from tomobar.supp.astraOP import AstraTools3D
-        
+
     if center is None:
         center = 0.0
     if objsize is None:
         objsize = data.shape[2]
     if algorithm == "FBP3D_host":
         # set parameters and initiate a TomoBar class object for direct reconstruction
-        RectoolsDIR = RecToolsDIR(DetectorsDimH=data.shape[2],  # DetectorsDimH # detector dimension (horizontal)
-                                DetectorsDimV=data.shape[1],  # DetectorsDimV # detector dimension (vertical) for 3D case only
-                                CenterRotOffset=data.shape[2] / 2 - center - 0.5,  # The center of rotation combined with the shift offsets
-                                AnglesVec=-angles,  # the vector of angles in radians
-                                ObjSize=objsize,  # a scalar to define the reconstructed object dimensions
-                                device_projector=gpu_id)
-        
-        # ------------------------------------------------------- # 
+        RectoolsDIR = RecToolsDIR(
+            DetectorsDimH=data.shape[
+                2
+            ],  # DetectorsDimH # detector dimension (horizontal)
+            DetectorsDimV=data.shape[
+                1
+            ],  # DetectorsDimV # detector dimension (vertical) for 3D case only
+            CenterRotOffset=data.shape[2] / 2
+            - center
+            - 0.5,  # The center of rotation combined with the shift offsets
+            AnglesVec=-angles,  # the vector of angles in radians
+            ObjSize=objsize,  # a scalar to define the reconstructed object dimensions
+            device_projector=gpu_id,
+        )
+
+        # ------------------------------------------------------- #
         # performs 3D FBP with filtering on the CPU (host (filtering) -> device (backprojection) -> host (if needed))
-                
-        reconstruction = RectoolsDIR.FBP(np.swapaxes(data, 0, 1)) # the output stored as a numpy array
-        
-        # ------------------------------------------------------- #     
+
+        reconstruction = RectoolsDIR.FBP(
+            np.swapaxes(data, 0, 1)
+        )  # the output stored as a numpy array
+
+        # ------------------------------------------------------- #
     elif algorithm == "FBP3D_device":
         # Perform filtering of the data on the GPU and then pass a pointer to CuPy array to do backprojection, i.e.
         # (host -> device (filtering) -> device (backprojection) -> host (if needed))
-        
-        # initiate a 3D ASTRA class object    
-        Atools = AstraTools3D(DetectorsDimH=data.shape[2],  # DetectorsDimH # detector dimension (horizontal)
-                                DetectorsDimV=data.shape[1],  # DetectorsDimV # detector dimension (vertical) for 3D case only
-                                AnglesVec=-angles,  # the vector of angles in radians
-                                CenterRotOffset=data.shape[2] / 2 - center - 0.5,  # The center of rotation combined with the shift offsets                              
-                                ObjSize=objsize,  # a scalar to define the reconstructed object dimensions
-                                OS_number = 1, # OS recon disabled
-                                device_projector = 'gpu',
-                                GPUdevice_index=gpu_id)
-        # ------------------------------------------------------- # 
-        data = _filtersinc3D_cupy(data) # filter the data on the GPU and keep the result there
-        # the Astra toolbox requires C-contiguous arrays, and swapaxes seems to return a sliced view which 
-        # is neither C nor F contiguous. 
+
+        # initiate a 3D ASTRA class object
+        Atools = AstraTools3D(
+            DetectorsDimH=data.shape[
+                2
+            ],  # DetectorsDimH # detector dimension (horizontal)
+            DetectorsDimV=data.shape[
+                1
+            ],  # DetectorsDimV # detector dimension (vertical) for 3D case only
+            AnglesVec=-angles,  # the vector of angles in radians
+            CenterRotOffset=data.shape[2] / 2
+            - center
+            - 0.5,  # The center of rotation combined with the shift offsets
+            ObjSize=objsize,  # a scalar to define the reconstructed object dimensions
+            OS_number=1,  # OS recon disabled
+            device_projector="gpu",
+            GPUdevice_index=gpu_id,
+        )
+        # ------------------------------------------------------- #
+        data = _filtersinc3D_cupy(
+            data
+        )  # filter the data on the GPU and keep the result there
+        # the Astra toolbox requires C-contiguous arrays, and swapaxes seems to return a sliced view which
+        # is neither C nor F contiguous.
         # So we have to make it C-contiguous first
         data = cp.ascontiguousarray(cp.swapaxes(data, 0, 1))
-        reconstruction = Atools.backprojCuPy(data) # backproject the filtered data while keeping data on the GPU
+        reconstruction = Atools.backprojCuPy(
+            data
+        )  # backproject the filtered data while keeping data on the GPU
         cp._default_memory_pool.free_all_blocks()
         # ------------------------------------------------------- #
     else:
-        raise ValueError("Unknown algorithm type, please specify FBP3D_device or FBP3D_host")
+        raise ValueError(
+            "Unknown algorithm type, please specify FBP3D_device or FBP3D_host"
+        )
     return reconstruction
+
 
 @nvtx.annotate()
 def _filtersinc3D_cupy(projection3D):
@@ -125,7 +151,7 @@ def _filtersinc3D_cupy(projection3D):
     Returns:
         ndarray: a CuPy array of filtered projection data.
     """
-    
+
     # prepearing a ramp-like filter to apply to every projection
     filter_prep = cp.RawKernel(
         r"""
@@ -206,44 +232,55 @@ def _filtersinc3D_cupy(projection3D):
                 f[outidx] = r * multiplier;
             }
         }
-        """, "generate_filtersinc"
+        """,
+        "generate_filtersinc",
     )
-
 
     # since the fft is complex-to-complex, it makes a copy of the real input array anyway,
     # so we do that copy here explicitly, and then do everything in-place
     projection3D = projection3D.astype(cp.complex64)
-    projection3D = cupyx.scipy.fft.fft2(projection3D, axes=(1, 2), overwrite_x=True, norm="backward")
-    
+    projection3D = cupyx.scipy.fft.fft2(
+        projection3D, axes=(1, 2), overwrite_x=True, norm="backward"
+    )
+
     # generating the filter here so we can schedule/allocate while FFT is keeping the GPU busy
     a = 1.1
     (projectionsNum, DetectorsLengthV, DetectorsLengthH) = cp.shape(projection3D)
-    f = cp.empty((1,1,DetectorsLengthH), dtype=np.float32)
+    f = cp.empty((1, 1, DetectorsLengthH), dtype=np.float32)
     bx = 256
     # because FFT is linear, we can apply the FFT scaling + multiplier in the filter
-    multiplier = 1.0/projectionsNum/DetectorsLengthV/DetectorsLengthH
-    filter_prep(grid=(1, 1, 1), block=(bx, 1, 1), 
-                args=(cp.float32(a), f, np.int32(DetectorsLengthH), np.float32(multiplier)),
-                shared_mem=bx*4)
+    multiplier = 1.0 / projectionsNum / DetectorsLengthV / DetectorsLengthH
+    filter_prep(
+        grid=(1, 1, 1),
+        block=(bx, 1, 1),
+        args=(cp.float32(a), f, np.int32(DetectorsLengthH), np.float32(multiplier)),
+        shared_mem=bx * 4,
+    )
     # actual filtering
     projection3D *= f
-    
+
     # avoid normalising here - we have included that in the filter
-    return cp.real(cupyx.scipy.fft.ifft2(projection3D, axes=(1, 2), overwrite_x=True, norm="forward"))
+    return cp.real(
+        cupyx.scipy.fft.ifft2(
+            projection3D, axes=(1, 2), overwrite_x=True, norm="forward"
+        )
+    )
+
+
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% Tomopy/ASTRA reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 @nvtx.annotate()
 def reconstruct_tomopy(
-    data : np.ndarray,
-    angles : np.ndarray,
-    center : float = None,
-    algorithm : str = 'FBP_CUDA',
-    proj_type : str = "cuda",
-    gpu_id : int = 0,
-    ncore : int = 1
-    ) -> np.ndarray:
+    data: np.ndarray,
+    angles: np.ndarray,
+    center: float = None,
+    algorithm: str = "FBP_CUDA",
+    proj_type: str = "cuda",
+    gpu_id: int = 0,
+    ncore: int = 1,
+) -> np.ndarray:
     """
     Perform reconstruction using tomopy with wrappers around ASTRA toolbox.
     This is a 3D recon using 2D (slice-by-slice) astra geometry routines.
@@ -259,7 +296,7 @@ def reconstruct_tomopy(
     algorithm : str, optional
         The name of the reconstruction method, see available ASTRA methods.
     proj_type : str, optional
-        Define projector type, e.g., "cuda" for "FBP_CUDA" algorithm 
+        Define projector type, e.g., "cuda" for "FBP_CUDA" algorithm
         or "linear" for "FBP" (CPU) algorithm, see more available ASTRA projectors.
     gpu_id : int, optional
         A GPU device index to perform operation on.
@@ -272,16 +309,21 @@ def reconstruct_tomopy(
         The reconstructed volume.
     """
     from tomopy import astra, recon
-   
-    reconstruction = recon(cp.asnumpy(data),
-                           theta=angles,
-                           center=center,
-                           algorithm=astra,
-                           options={
-                               "method": algorithm,
-                               "proj_type": proj_type,
-                               "gpu_list": [gpu_id],},
-                           ncore=ncore,)
-    
+
+    reconstruction = recon(
+        cp.asnumpy(data),
+        theta=angles,
+        center=center,
+        algorithm=astra,
+        options={
+            "method": algorithm,
+            "proj_type": proj_type,
+            "gpu_list": [gpu_id],
+        },
+        ncore=ncore,
+    )
+
     return reconstruction
+
+
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##

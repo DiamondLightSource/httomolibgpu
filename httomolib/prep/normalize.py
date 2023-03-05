@@ -25,10 +25,7 @@ import cupy as cp
 import nvtx
 from cupy import float32, log, mean, ndarray
 
-__all__ = [
-    'normalize_cupy',
-    'normalize_raw_cuda'
-]
+__all__ = ["normalize_cupy", "normalize_raw_cuda"]
 
 
 @nvtx.annotate()
@@ -39,7 +36,7 @@ def normalize_raw_cuda(
     cutoff: float = 10.0,
     minus_log: bool = False,
     nonnegativity: bool = False,
-    remove_nans: bool = False
+    remove_nans: bool = False,
 ) -> ndarray:
     """
     Normalize raw projection data using the flat and dark field projections.
@@ -74,7 +71,7 @@ def normalize_raw_cuda(
     out = cp.empty(data.shape, dtype=float32)
     mean(darks, axis=0, dtype=float32, out=dark0)
     mean(flats, axis=0, dtype=float32, out=flat0)
-    
+
     kernel_name = "normalisation"
     kernel = r"""
         float denom = float(flats) - float(darks);
@@ -86,7 +83,7 @@ def normalize_raw_cuda(
             v = cutoff;
         }
         """
-    if minus_log: 
+    if minus_log:
         kernel += "v = -log(v);\n"
         kernel_name += "_mlog"
     if nonnegativity:
@@ -104,7 +101,7 @@ def normalize_raw_cuda(
         kernel_name,
         options=("-std=c++11",),
         loop_prep="constexpr float eps = 1.0e-07;",
-        no_return=True
+        no_return=True,
     )
 
     normalisation_kernel(data, flat0, dark0, float32(cutoff), out)
@@ -113,7 +110,7 @@ def normalize_raw_cuda(
 
 
 def _check_valid_input(data, flats, darks) -> None:
-    '''Helper function to check the validity of inputs to normalisation functions'''
+    """Helper function to check the validity of inputs to normalisation functions"""
     if data.ndim != 3:
         raise ValueError("Input data must be a 3D stack of projections")
 
@@ -138,10 +135,10 @@ def normalize_cupy(
     cutoff: float = 10.0,
     minus_log: bool = False,
     nonnegativity: bool = False,
-    remove_nans: bool = False
+    remove_nans: bool = False,
 ) -> ndarray:
     """
-    Normalize raw projection data using the flat and dark field projections.    
+    Normalize raw projection data using the flat and dark field projections.
 
     Parameters
     ----------
@@ -161,7 +158,7 @@ def normalize_cupy(
         Remove negative values in the normalised data.
     remove_nans : bool, optional
         Remove NaN values in the normalised data.
-        
+
     Returns
     -------
     ndarray
@@ -174,7 +171,7 @@ def normalize_cupy(
 
     # replicates tomopy implementation
     lowval_threshold = cp.float32(1e-6)
-    denom = (flats - darks)
+    denom = flats - darks
     denom[denom < lowval_threshold] = lowval_threshold
     data = (data - darks) / denom
     data[data > cutoff] = cutoff
