@@ -17,6 +17,7 @@ requirements:
   host:
     - python
     - pip
+    - setuptools
   run:
     - python
     - cupy
@@ -24,6 +25,21 @@ requirements:
     - scipy
     - pillow
     - scikit-image
+    - pytest
+
+test:
+  requires:
+    - pip
+    - pytest
+  imports:
+    - httomolib
+    - httomolib.misc
+    - httomolib.prep
+    - httomolib.recon
+  source_files:
+    - tests/*
+  commands:
+    - pip check
     - pytest
 
 about:
@@ -35,3 +51,4 @@ about:
 extra:
   recipe-maintainers:
     - namannimmo10
+    - dkazanc
