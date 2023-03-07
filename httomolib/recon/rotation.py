@@ -22,15 +22,16 @@
 """Modules for finding the axis of rotation"""
 
 import math
-from typing import Optional
+from typing import Optional, Tuple, Union
 
 import cupy as cp
 import numpy as np
 import nvtx
-import scipy.ndimage as ndi
+import cupyx.scipy.ndimage as cpndi
 from cupy import ndarray
 from cupyx.scipy.ndimage import gaussian_filter, shift
-from scipy import stats
+
+from httomolib.cuda_kernels import load_cuda_module
 
 __all__ = [
     'find_center_vo_cupy',
@@ -435,22 +436,25 @@ def _downsample(sino, level, axis):
 #--- Center of rotation (COR) estimation method ---#
 @nvtx.annotate()
 def find_center_360(
-    data: np.ndarray,
+    data: cp.ndarray,
     ind: int = None,
     win_width: int = 10,
     side: set = None,
     denoise: bool = True,
     norm: bool = False,
     use_overlap: bool = False
-) -> tuple[float, float, int, float]:
+) -> Tuple[float, float, int, float]:
     """
     Find the center-of-rotation (COR) in a 360-degree scan with offset COR use
     the method presented in Ref. [1] by Nghia Vo.
 
+    This function supports both numpy and cupy - the implementation is selected
+    by where the input data array resides.
+
     Parameters
     ----------
-    data : ndarray
-        3D tomographic data as a CuPy array.
+    data : cp.ndarray
+        3D tomographic data as a Cupy array.
     ind : int, optional
         Index of the slice to be used for estimate the CoR and the overlap.        
     win_width : int, optional
@@ -485,17 +489,18 @@ def find_center_360(
     """
     if data.ndim != 3:
         raise ValueError("A 3D array must be provided")
-    
+
     # this method works with a 360-degree sinogram.
     if ind is None:
         _sino = data[:, 0, :]        
     else:
-        _sino = data[:, ind, :]  
+        _sino = data[:, ind, :]
+    
     
     (nrow, ncol) = _sino.shape
     nrow_180 = nrow // 2 + 1
     sino_top = _sino[0:nrow_180, :]
-    sino_bot = np.fliplr(_sino[-nrow_180:, :])
+    sino_bot = cp.fliplr(_sino[-nrow_180:, :])
     (overlap, side, overlap_position) = _find_overlap(
         sino_top, sino_bot, win_width, side, denoise, norm, use_overlap)
     if side == 0:
@@ -503,7 +508,7 @@ def find_center_360(
     else:
         cor = ncol - overlap / 2.0 - 1.0
 
-    return np.float32(cor), np.float32(overlap), side, np.float32(overlap_position)
+    return cp.float32(cor), cp.float32(overlap), side, cp.float32(overlap_position)
 
 
 def _find_overlap(mat1, mat2, win_width, side=None, denoise=True, norm=False,
@@ -545,25 +550,25 @@ def _find_overlap(mat1, mat2, win_width, side=None, denoise=True, norm=False,
     """
     ncol1 = mat1.shape[1]
     ncol2 = mat2.shape[1]
-    win_width = np.int16(np.clip(win_width, 6, min(ncol1, ncol2) // 2))
+    win_width = int(np.clip(win_width, 6, min(ncol1, ncol2) // 2))
 
     if side == 1:
-        (list_metric, offset) = _search_overlap(mat1, mat2, win_width, side,
-                                               denoise, norm, use_overlap)
+        (list_metric, offset) = _search_overlap(mat1, mat2, win_width, side=side,
+                                               denoise=denoise, norm=norm, use_overlap=use_overlap)
         overlap_position = _calculate_curvature(list_metric)[1]
         overlap_position += offset
         overlap = ncol1 - overlap_position + win_width // 2
     elif side == 0:
-        (list_metric, offset) = _search_overlap(mat1, mat2, win_width, side,
-                                               denoise, norm, use_overlap)
+        (list_metric, offset) = _search_overlap(mat1, mat2, win_width, side=side,
+                                               denoise=denoise, norm=norm, use_overlap=use_overlap)
         overlap_position = _calculate_curvature(list_metric)[1]
         overlap_position += offset
         overlap = overlap_position + win_width // 2
     else:
-        (list_metric1, offset1) = _search_overlap(mat1, mat2, win_width, 1,
-                                                 norm, denoise, use_overlap)
-        (list_metric2, offset2) = _search_overlap(mat1, mat2, win_width, 0,
-                                                 norm, denoise, use_overlap)
+        (list_metric1, offset1) = _search_overlap(mat1, mat2, win_width, side=1,
+                                                 denoise=denoise, norm=norm, use_overlap=use_overlap)
+        (list_metric2, offset2) = _search_overlap(mat1, mat2, win_width, side=0,
+                                                 denoise=denoise, norm=norm, use_overlap=use_overlap)
 
         (curvature1, overlap_position1) = _calculate_curvature(list_metric1)
         overlap_position1 += offset1
@@ -582,6 +587,8 @@ def _find_overlap(mat1, mat2, win_width, side=None, denoise=True, norm=False,
     return overlap, side, overlap_position
 
 
+
+@nvtx.annotate()
 def _search_overlap(mat1, mat2, win_width, side, denoise=True, norm=False,
                    use_overlap=False):
     """
@@ -618,62 +625,73 @@ def _search_overlap(mat1, mat2, win_width, side, denoise=True, norm=False,
         corresponds to the center of the window.
     """
     if denoise is True:
-        mat1 = ndi.gaussian_filter(mat1, (2, 2), mode='reflect')
-        mat2 = ndi.gaussian_filter(mat2, (2, 2), mode='reflect')
+        # note: the filtering makes the output contiguous
+        with nvtx.annotate("denoise_filter", color="green"):
+            mat1 = cpndi.gaussian_filter(mat1, (2, 2), mode='reflect')
+            mat2 = cpndi.gaussian_filter(mat2, (2, 2), mode='reflect')
+    else:
+        mat1 = cp.ascontiguousarray(mat1, dtype=cp.float32)
+        mat2 = cp.ascontiguousarray(mat2, dtype=cp.float32)
+    
     (nrow1, ncol1) = mat1.shape
     (nrow2, ncol2) = mat2.shape
 
     if nrow1 != nrow2:
         raise ValueError("Two images are not at the same height!!!")
 
-    win_width = np.int16(np.clip(win_width, 6, min(ncol1, ncol2) // 2 - 1))
+    win_width = int(np.clip(win_width, 6, min(ncol1, ncol2) // 2 - 1))
     offset = win_width // 2
     win_width = 2 * offset  # Make it even
-    ramp_down = np.linspace(1.0, 0.0, win_width)
-    ramp_up = 1.0 - ramp_down
-    wei_down = np.tile(ramp_down, (nrow1, 1))
-    wei_up = np.tile(ramp_up, (nrow1, 1))
 
-    if side == 1:
-        mat2_roi = mat2[:, 0:win_width]
-        mat2_roi_wei = mat2_roi * wei_up
-    else:
-        mat2_roi = mat2[:, ncol2 - win_width:]
-        mat2_roi_wei = mat2_roi * wei_down
-
-    list_mean2 = np.mean(np.abs(mat2_roi), axis=1)
-    list_pos = np.arange(offset, ncol1 - offset)
-    num_metric = len(list_pos)
-    list_metric = np.ones(num_metric, dtype=np.float32)
-
-    for i, pos in enumerate(list_pos):
-        mat1_roi = mat1[:, pos - offset:pos + offset]
-        if use_overlap is True:
-            if side == 1:
-                mat1_roi_wei = mat1_roi * wei_down
-            else:
-                mat1_roi_wei = mat1_roi * wei_up
-        if norm is True:
-            list_mean1 = np.mean(np.abs(mat1_roi), axis=1)
-            list_fact = list_mean2 / list_mean1
-            mat_fact = np.transpose(np.tile(list_fact, (win_width, 1)))
-            mat1_roi = mat1_roi * mat_fact
-            if use_overlap is True:
-                mat1_roi_wei = mat1_roi_wei * mat_fact
-        if use_overlap is True:
-            mat_comb = mat1_roi_wei + mat2_roi_wei
-            list_metric[i] = (_correlation_metric(mat1_roi, mat2_roi)
-                              + _correlation_metric(mat1_roi, mat_comb)
-                              + _correlation_metric(mat2_roi, mat_comb)) / 3.0
-        else:
-            list_metric[i] = _correlation_metric(mat1_roi, mat2_roi)
-    min_metric = np.min(list_metric)
+    list_metric = _calc_metrics(mat1, mat2, 
+                                     win_width, side, use_overlap, norm)
+    
+    min_metric = cp.min(list_metric)
     if min_metric != 0.0:
-        list_metric = list_metric / min_metric
+        list_metric /= min_metric
 
     return list_metric, offset
 
 
+_calc_metrics_module = load_cuda_module("calc_metrics", 
+                                        name_expressions=[
+                                            "calc_metrics_kernel<false, false>",
+                                            "calc_metrics_kernel<true, false>",
+                                            "calc_metrics_kernel<false, true>",
+                                            "calc_metrics_kernel<true, true>"],
+                                        options=('--maxrregcount=32',))
+
+@nvtx.annotate()
+def _calc_metrics(mat1, mat2, 
+                      win_width,  side, use_overlap, norm):
+    assert mat1.dtype == cp.float32, "only float32 supported"
+    assert mat2.dtype == cp.float32, "only float32 supported"
+    assert mat1.shape[0] == mat2.shape[0]
+    assert mat1.flags.c_contiguous, "only contiguos arrays supported"
+    assert mat2.flags.c_contiguous, "only contiguos arrays supported"
+    
+    num_pos = mat1.shape[1] - win_width
+    list_metric = cp.empty(num_pos, dtype=cp.float32)
+
+    args=(mat1, 
+          np.int32(mat1.strides[0]/mat1.strides[1]),
+          mat2, 
+          np.int32(mat2.strides[0]/mat2.strides[1]),
+          np.int32(win_width),
+          np.int32(mat1.shape[0]), 
+          np.int32(side), 
+          list_metric)
+    block=(128, 1, 1)
+    grid=(1, np.int32(num_pos), 1)
+    smem=block[0]*4*6 if use_overlap else block[0]*4*3
+    bool2str = lambda x: 'true' if x is True else 'false'
+    calc_metrics = _calc_metrics_module.get_function(f"calc_metrics_kernel<{bool2str(norm)}, {bool2str(use_overlap)}>")
+    calc_metrics(grid=grid, block=block, args=args, shared_mem=smem)
+        
+    return list_metric
+
+
+@nvtx.annotate()
 def _calculate_curvature(list_metric):
     """
     Calculate the curvature of a fitted curve going through the minimum
@@ -692,15 +710,15 @@ def _calculate_curvature(list_metric):
         Position of the minimum value with sub-pixel accuracy.
     """
     radi = 2
-    num_metric = len(list_metric)
-    min_pos = np.clip(
-        np.argmin(list_metric), radi, num_metric - radi - 1)
+    num_metric = list_metric.size
+    min_metric_idx = int(cp.argmin(list_metric))
+    min_pos = int(np.clip(min_metric_idx, radi, num_metric - radi - 1))
 
-    list1 = list_metric[min_pos - radi:min_pos + radi + 1]
+    # work mostly on CPU here - we have very small arrays here
+    list1 = cp.asnumpy(list_metric[min_pos - radi:min_pos + radi + 1])
     afact1 = np.polyfit(np.arange(0, 2 * radi + 1), list1, 2)[0]
-    list2 = list_metric[min_pos - 1:min_pos + 2]
-    (afact2, bfact2, _) = np.polyfit(
-        np.arange(min_pos - 1, min_pos + 2), list2, 2)
+    list2 = cp.asnumpy(list_metric[min_pos - 1:min_pos + 2])
+    (afact2, bfact2, _) = np.polyfit(np.arange(min_pos - 1, min_pos + 2), list2, 2)
 
     curvature = np.abs(afact1)
     if afact2 != 0.0:
@@ -709,22 +727,3 @@ def _calculate_curvature(list_metric):
             min_pos = num
 
     return curvature, np.float32(min_pos)
-
-
-def _correlation_metric(mat1, mat2):
-    """
-    Calculate the correlation metric. Smaller metric corresponds to better
-    correlation.
-
-    Parameters
-    ---------
-    mat1 : array_like
-    mat2 : array_like
-
-    Returns
-    -------
-    float
-        Correlation metric.
-    """
-    return np.abs(
-        1.0 - stats.pearsonr(mat1.flatten('F'), mat2.flatten('F'))[0])
