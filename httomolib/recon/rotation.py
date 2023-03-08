@@ -39,7 +39,7 @@ __all__ = [
 
 @nvtx.annotate()
 def find_center_vo_cupy(
-    data: ndarray,
+    data: cp.ndarray,
     ind: int = None,
     smin: int = -50,
     smax: int = 50,
@@ -54,7 +54,7 @@ def find_center_vo_cupy(
 
     Parameters
     ----------
-    data : ndarray
+    data : cp.ndarray
         3D tomographic data or a 2D sinogram as a CuPy array.
     ind : int, optional
         Index of the slice to be used for reconstruction.
