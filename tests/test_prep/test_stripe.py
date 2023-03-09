@@ -19,8 +19,9 @@ def test_remove_stripe_ti_on_data(data, flats, darks):
 
     data = None  #: free up GPU memory
     assert_allclose(np.mean(data_after_stripe_removal), 0.28924704, rtol=1e-05)
-    assert_allclose(np.mean(data_after_stripe_removal, axis=(1, 2)).sum(),
-        52.064457, rtol=1e-06)
+    assert_allclose(
+        np.mean(data_after_stripe_removal, axis=(1, 2)).sum(), 52.064457, rtol=1e-06
+    )
     assert_allclose(np.median(data_after_stripe_removal), 0.026177486, rtol=1e-05)
     assert_allclose(np.max(data_after_stripe_removal), 2.715983, rtol=1e-05)
 
@@ -32,22 +33,22 @@ def test_remove_stripe_ti_on_flats(host_flats):
     #: testing that numpy uint16 arrays can be passed
     corrected_data = remove_stripe_ti(np.copy(host_flats))
     assert_allclose(np.mean(corrected_data), 976.558447, rtol=1e-7)
-    assert_allclose(np.mean(corrected_data, axis=(1, 2)).sum(),
-        19531.168945, rtol=1e-7)
-    assert_allclose(np.median(corrected_data), 976., rtol=1e-7)
+    assert_allclose(np.mean(corrected_data, axis=(1, 2)).sum(), 19531.168945, rtol=1e-7)
+    assert_allclose(np.median(corrected_data), 976.0, rtol=1e-7)
 
 
 @cp.testing.gpu
 def test_remove_stripe_ti_numpy_vs_cupy_on_random_data():
     host_data = np.random.random_sample(size=(181, 5, 256)).astype(np.float32) * 2.0
     corrected_host_data = remove_stripe_ti(np.copy(host_data))
-    corrected_data = remove_stripe_ti(cp.copy(
-        cp.asarray(host_data, dtype=cp.float32))).get()
+    corrected_data = remove_stripe_ti(
+        cp.copy(cp.asarray(host_data, dtype=cp.float32))
+    ).get()
 
+    assert_allclose(np.sum(corrected_data), np.sum(corrected_host_data))
     assert_allclose(
-        np.sum(corrected_data), np.sum(corrected_host_data))
-    assert_allclose(
-        np.median(corrected_data), np.median(corrected_host_data), rtol=1e-6)
+        np.median(corrected_data), np.median(corrected_host_data), rtol=1e-6
+    )
 
 
 @cp.testing.gpu
@@ -67,11 +68,9 @@ def test_stripe_removal_sorting_cupy(data, flats, darks):
 
 @cp.testing.gpu
 @cp.testing.numpy_cupy_allclose(rtol=1e-6)
-def test_stripe_removal_sorting_numpy_vs_cupy_on_random_data(
-    ensure_clean_memory, xp
-):
+def test_stripe_removal_sorting_numpy_vs_cupy_on_random_data(ensure_clean_memory, xp):
     np.random.seed(12345)
-    data = np.random.random_sample(size=(181, 5, 256)).astype(np.float32) * 2.0 + .001
+    data = np.random.random_sample(size=(181, 5, 256)).astype(np.float32) * 2.0 + 0.001
     data = xp.asarray(data)
     return xp.asarray(remove_stripe_based_sorting(data))
 
@@ -79,7 +78,9 @@ def test_stripe_removal_sorting_numpy_vs_cupy_on_random_data(
 @cp.testing.gpu
 @pytest.mark.perf
 def test_stripe_removal_sorting_cupy_performance(ensure_clean_memory):
-    data_host = np.random.random_sample(size=(1801, 5, 2560)).astype(np.float32) * 2.0 + 0.001
+    data_host = (
+        np.random.random_sample(size=(1801, 5, 2560)).astype(np.float32) * 2.0 + 0.001
+    )
     data = cp.asarray(data_host, dtype=np.float32)
 
     # do a cold run first
@@ -103,7 +104,9 @@ def test_stripe_removal_sorting_cupy_performance(ensure_clean_memory):
 @cp.testing.gpu
 @pytest.mark.perf
 def test_remove_stripe_ti_performance(ensure_clean_memory):
-    data_host = np.random.random_sample(size=(1801, 5, 2560)).astype(np.float32) * 2.0 + 0.001
+    data_host = (
+        np.random.random_sample(size=(1801, 5, 2560)).astype(np.float32) * 2.0 + 0.001
+    )
     data = cp.asarray(data_host, dtype=np.float32)
 
     # do a cold run first
