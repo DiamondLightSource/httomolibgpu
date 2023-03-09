@@ -18,7 +18,7 @@ eps = 1e-6
 def test_inpainting_filter3d(host_data):
     mask = np.zeros(shape=host_data.shape)
     filtered_data = inpainting_filter3d(host_data, mask)
-    
+
     assert_allclose(np.min(filtered_data), 62.0)
     assert_allclose(np.max(filtered_data), 1136.0)
     assert_allclose(np.mean(filtered_data), 809.04987, rtol=eps)
@@ -30,10 +30,10 @@ def test_inpainting_filter3d(host_data):
 
 @cp.testing.gpu
 def test_median_filter3d_cupy_vs_scipy_on_arange(ensure_clean_memory):
-    mat = np.arange(4*5*6).reshape(4, 5, 6)
+    mat = np.arange(4 * 5 * 6).reshape(4, 5, 6)
     assert_equal(
         scipy.ndimage.median_filter(np.float32(mat), size=3),
-        median_filter3d_cupy(cp.asarray(mat, dtype=cp.float32), kernel_size=3).get()
+        median_filter3d_cupy(cp.asarray(mat, dtype=cp.float32), kernel_size=3).get(),
     )
 
 
@@ -41,7 +41,9 @@ def test_median_filter3d_cupy_vs_scipy_on_arange(ensure_clean_memory):
 def test_median_filter3d_cupy_vs_scipy(host_data, ensure_clean_memory):
     assert_equal(
         scipy.ndimage.median_filter(np.float32(host_data), size=3),
-        median_filter3d_cupy(cp.asarray(host_data, dtype=cp.float32), kernel_size=3).get()
+        median_filter3d_cupy(
+            cp.asarray(host_data, dtype=cp.float32), kernel_size=3
+        ).get(),
     )
 
 
@@ -83,8 +85,12 @@ def test_median_filter3d_cupy(data):
 
     assert filtered_data.dtype == np.uint16
 
-    assert median_filter3d_cupy(
-        data.astype(cp.float32), kernel_size=5, dif=1.5).get().dtype == np.float32
+    assert (
+        median_filter3d_cupy(data.astype(cp.float32), kernel_size=5, dif=1.5)
+        .get()
+        .dtype
+        == np.float32
+    )
 
 
 @cp.testing.gpu
@@ -94,13 +100,17 @@ def test_remove_outlier3d_cupy(data):
     assert filtered_data.ndim == 3
     assert_allclose(np.mean(filtered_data), 809.023452, rtol=eps)
     assert_allclose(np.mean(filtered_data, axis=(1, 2)).sum(), 145624.221436)
-    assert_allclose(np.median(filtered_data), 980.)
-    assert_allclose(np.median(filtered_data, axis=(1, 2)).sum(), 176400.)
+    assert_allclose(np.median(filtered_data), 980.0)
+    assert_allclose(np.median(filtered_data, axis=(1, 2)).sum(), 176400.0)
 
     assert filtered_data.dtype == np.uint16
 
-    assert remove_outlier3d_cupy(
-        data.astype(cp.float32), kernel_size=5, dif=1.5).get().dtype == np.float32
+    assert (
+        remove_outlier3d_cupy(data.astype(cp.float32), kernel_size=5, dif=1.5)
+        .get()
+        .dtype
+        == np.float32
+    )
 
 
 @cp.testing.gpu

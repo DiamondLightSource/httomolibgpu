@@ -12,10 +12,10 @@ from numpy.testing import assert_allclose
 def test_find_center_vo_cupy(data, flats, darks):
     data = normalize_cupy(data, flats, darks)
 
-    #--- testing the center of rotation on tomo_standard ---#
+    # --- testing the center of rotation on tomo_standard ---#
     cor = find_center_vo_cupy(data).get()
 
-    data = None #: free up GPU memory
+    data = None  #: free up GPU memory
     assert_allclose(cor, 79.5)
 
     #: Check that we only get a float32 output
@@ -28,7 +28,7 @@ def test_find_center_vo_cupy_ones(ensure_clean_memory):
     cor = find_center_vo_cupy(mat).get()
 
     assert_allclose(cor, 59.0)
-    mat = None #: free up GPU memory
+    mat = None  #: free up GPU memory
 
 
 def test_find_center_360_ones():
@@ -69,7 +69,7 @@ def test_find_center_vo_cupy_performance():
     dev = cp.cuda.Device()
     data_host = np.random.random_sample(size=(1801, 5, 2560)).astype(np.float32) * 2.0
     data = cp.asarray(data_host, dtype=np.float32)
-    
+
     # cold run first
     find_center_vo_cupy(data)
 
