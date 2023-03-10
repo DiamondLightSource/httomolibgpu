@@ -30,7 +30,7 @@ import nvtx
 
 __all__ = [
     'reconstruct_tomobar',
-    'reconstruct_tomopy',
+    'reconstruct_tomopy_astra',
 ]
 
 ## %%%%%%%%%%%%%%%%%%%%%%% ToMoBAR reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
@@ -214,11 +214,12 @@ def _filtersinc3D_cupy(projection3D):
 
 ## %%%%%%%%%%%%%%%%%%%%%%% Tomopy/ASTRA reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 @nvtx.annotate()
-def reconstruct_tomopy(
+def reconstruct_tomopy_astra(
     data : np.ndarray,
     angles : np.ndarray,
     center : float = None,
     algorithm : str = 'FBP_CUDA',
+    iterations : int = 1,
     proj_type : str = "cuda",
     gpu_id : int = 0,
     ncore : int = 1
@@ -237,6 +238,8 @@ def reconstruct_tomopy(
         The center of rotation (CoR).
     algorithm : str, optional
         The name of the reconstruction method, see available ASTRA methods.
+    iterations : int, optional
+        The number of iterations if the iterative algorithm is chosen.
     proj_type : str, optional
         Define projector type, e.g., "cuda" for "FBP_CUDA" algorithm 
         or "linear" for "FBP" (CPU) algorithm, see more available ASTRA projectors.
@@ -259,7 +262,8 @@ def reconstruct_tomopy(
                            options={
                                "method": algorithm,
                                "proj_type": proj_type,
-                               "gpu_list": [gpu_id],},
+                               "gpu_list": [gpu_id],                               
+                               'num_iter': iterations,},
                            ncore=ncore,)
     
     return reconstruction
