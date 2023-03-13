@@ -13,10 +13,10 @@ from .rotation_cpu_reference import find_center_360_numpy
 def test_find_center_vo_cupy(data, flats, darks):
     data = normalize_cupy(data, flats, darks)
 
-    #--- testing the center of rotation on tomo_standard ---#
+    # --- testing the center of rotation on tomo_standard ---#
     cor = find_center_vo_cupy(data).get()
 
-    data = None #: free up GPU memory
+    data = None  #: free up GPU memory
     assert_allclose(cor, 79.5)
 
     #: Check that we only get a float32 output
@@ -29,7 +29,7 @@ def test_find_center_vo_cupy_ones(ensure_clean_memory):
     cor = find_center_vo_cupy(mat).get()
 
     assert_allclose(cor, 59.0)
-    mat = None #: free up GPU memory
+    mat = None  #: free up GPU memory
 
 
 @cp.testing.gpu
@@ -78,6 +78,16 @@ def test_find_center_360_data(data):
     #: Check that we only get a float32 output
     assert cor.dtype == np.float32
     assert overlap.dtype == np.float32
+
+@cp.testing.gpu
+def test_find_center_360_1D_raises(data):
+    
+    #: 360-degree sinogram must be a 3d array
+    with pytest.raises(ValueError):
+        find_center_360(data[:, 10, :])
+    
+    with pytest.raises(ValueError):
+        find_center_360(cp.ones(10))
 
 
 @cp.testing.gpu
@@ -128,13 +138,5 @@ def test_find_center_360_performance(ensure_clean_memory):
     assert "performance in ms" == duration_ms
 
 
-@cp.testing.gpu
-def test_find_center_360_1D_raises(data):
-    
-    #: 360-degree sinogram must be a 3d array
-    with pytest.raises(ValueError):
-        find_center_360(data[:, 10, :])
-    
-    with pytest.raises(ValueError):
-        find_center_360(cp.ones(10))
+
         

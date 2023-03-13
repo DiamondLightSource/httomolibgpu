@@ -29,7 +29,9 @@ def pytest_collection_modifyitems(config, items):
             if "perf" not in item.keywords:
                 item.add_marker(skip_other)
     else:
-        skip_perf = pytest.mark.skip(reason="performance test - use '--performance' to run")
+        skip_perf = pytest.mark.skip(
+            reason="performance test - use '--performance' to run"
+        )
         for item in items:
             if "perf" in item.keywords:
                 item.add_marker(skip_perf)
@@ -61,7 +63,6 @@ def ensure_clean_memory():
     yield None
     cp.get_default_memory_pool().free_all_blocks()
     cp.get_default_pinned_memory_pool().free_all_blocks()
-
 
 
 @pytest.fixture
