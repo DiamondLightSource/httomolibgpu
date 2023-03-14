@@ -29,20 +29,23 @@ import nvtx
 from cupyx.scipy.ndimage import map_coordinates
 
 __all__ = [
-    'distortion_correction_proj_cupy',
+    "distortion_correction_proj",
 ]
 
 
-## %%%%%%%%%%%%%%%%%%%%%%%%%distortion_correction_proj_cupy%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-# CuPy implementation of distortion correction from Savu 
+## %%%%%%%%%%%%%%%%%%%%%%%%%distortion_correction_proj%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+# CuPy implementation of distortion correction from Savu
 # TODO: Needs to be implementation from TomoPy
 @nvtx.annotate()
-def distortion_correction_proj_cupy(data: cp.ndarray, metadata_path: str,
-                       preview: Dict[str, List[int]],
-                       center_from_left: float = None,
-                       center_from_top: float = None,
-                       polynomial_coeffs: List[float] = None,
-                       crop: int = 0):
+def distortion_correction_proj(
+    data: cp.ndarray,
+    metadata_path: str,
+    preview: Dict[str, List[int]],
+    center_from_left: float = None,
+    center_from_top: float = None,
+    polynomial_coeffs: List[float] = None,
+    crop: int = 0,
+):
     """Correct the radial distortion in the given stack of 2D images.
 
     Parameters
@@ -91,16 +94,18 @@ def distortion_correction_proj_cupy(data: cp.ndarray, metadata_path: str,
     # Get info from metadat txt file
     x_center, y_center, list_fact = _load_metadata_txt(metadata_path)
 
-    shift = preview['starts']
-    step = preview['steps']
+    shift = preview["starts"]
+    step = preview["steps"]
     x_dim = 1
     y_dim = 0
     step_check = max([step[i] for i in [x_dim, y_dim]]) > 1
     if step_check:
-        msg = "\n***********************************************\n" \
-              "!!! ERROR !!! -> Method doesn't work with the step in" \
-              " the preview larger than 1 \n" \
-              "***********************************************\n"
+        msg = (
+            "\n***********************************************\n"
+            "!!! ERROR !!! -> Method doesn't work with the step in"
+            " the preview larger than 1 \n"
+            "***********************************************\n"
+        )
         raise ValueError(msg)
 
     x_offset = shift[x_dim]
@@ -114,40 +119,47 @@ def distortion_correction_proj_cupy(data: cp.ndarray, metadata_path: str,
         list_fact = cp.float32(tuple(polynomial_coeffs))
     else:
         if not os.path.isfile(metadata_path):
-            msg = "!!! No such file: %s !!!" \
-                  " Please check the file path" % str(metadata_path)
+            msg = "!!! No such file: %s !!!" " Please check the file path" % str(
+                metadata_path
+            )
             raise ValueError(msg)
         try:
-            (x_center, y_center, list_fact) = _load_metadata_txt(
-                metadata_path)
+            (x_center, y_center, list_fact) = _load_metadata_txt(metadata_path)
             x_center = x_center - x_offset
             y_center = y_center - y_offset
         except IOError as exc:
-            msg = "\n*****************************************\n" \
-                  "!!! ERROR !!! -> Can't open this file: %s \n" \
-                  "*****************************************\n\
-                  " % str(metadata_path)
+            msg = (
+                "\n*****************************************\n"
+                "!!! ERROR !!! -> Can't open this file: %s \n"
+                "*****************************************\n\
+                  "
+                % str(metadata_path)
+            )
             raise ValueError(msg) from exc
 
     height, width = data.shape[y_dim + 1], data.shape[x_dim + 1]
     xu_list = cp.arange(width) - x_center
     yu_list = cp.arange(height) - y_center
     xu_mat, yu_mat = cp.meshgrid(xu_list, yu_list)
-    ru_mat = cp.sqrt(xu_mat ** 2 + yu_mat ** 2)
+    ru_mat = cp.sqrt(xu_mat**2 + yu_mat**2)
     fact_mat = cp.sum(
-        cp.asarray([factor * ru_mat ** i for i,
-                    factor in enumerate(list_fact)]), axis=0)
-    xd_mat = cp.asarray(cp.clip(
-        x_center + fact_mat * xu_mat, 0, width - 1), dtype=cp.float32)
-    yd_mat = cp.asarray(cp.clip(
-        y_center + fact_mat * yu_mat, 0, height - 1), dtype=cp.float32)
+        cp.asarray([factor * ru_mat**i for i, factor in enumerate(list_fact)]), axis=0
+    )
+    xd_mat = cp.asarray(
+        cp.clip(x_center + fact_mat * xu_mat, 0, width - 1), dtype=cp.float32
+    )
+    yd_mat = cp.asarray(
+        cp.clip(y_center + fact_mat * yu_mat, 0, height - 1), dtype=cp.float32
+    )
 
     diff_y = cp.max(yd_mat) - cp.min(yd_mat)
-    if (diff_y < 1):
-        msg = "\n*****************************************\n\n" \
-              "!!! ERROR !!! -> You need to increase the preview" \
-              " size for this plugin to work \n\n" \
-              "*****************************************\n"
+    if diff_y < 1:
+        msg = (
+            "\n*****************************************\n\n"
+            "!!! ERROR !!! -> You need to increase the preview"
+            " size for this plugin to work \n\n"
+            "*****************************************\n"
+        )
         raise ValueError(msg)
 
     indices = [cp.reshape(yd_mat, (-1, 1)), cp.reshape(xd_mat, (-1, 1))]
@@ -155,10 +167,10 @@ def distortion_correction_proj_cupy(data: cp.ndarray, metadata_path: str,
 
     # Loop over images and unwarp them
     for i in range(data.shape[0]):
-        mat_corrected = cp.reshape(map_coordinates(
-            data[i], indices, order=1, mode='reflect'),
-            (height, width))
-        mat_corrected = mat_corrected[crop:height - crop, crop:width - crop]
+        mat_corrected = cp.reshape(
+            map_coordinates(data[i], indices, order=1, mode="reflect"), (height, width)
+        )
+        mat_corrected = mat_corrected[crop : height - crop, crop : width - crop]
         data[i] = mat_corrected
     return mat_corrected
 
@@ -169,11 +181,13 @@ def distortion_correction_proj_cupy(data: cp.ndarray, metadata_path: str,
 # https://github.com/tomopy/tomopy/blob/c236a2969074f5fc70189fb5545f0a165924f916/source/tomopy/prep/alignment.py#L950-L981
 # but with the additional params `order` and `mode`).
 @nvtx.annotate()
-def distortion_correction_proj_discorpy_cupy(data: cp.ndarray,
-                                             metadata_path: str,
-                                             preview: Dict[str, List[int]],
-                                             order: int=1,
-                                             mode: str="reflect"):
+def distortion_correction_proj_discorpy(
+    data: cp.ndarray,
+    metadata_path: str,
+    preview: Dict[str, List[int]],
+    order: int = 1,
+    mode: str = "reflect",
+):
     """Unwarp a stack of images using a backward model.
 
     Parameters
@@ -212,16 +226,18 @@ def distortion_correction_proj_discorpy_cupy(data: cp.ndarray,
 
     # Use preview information to offset the x and y coords of the center of
     # distortion
-    shift = preview['starts']
-    step = preview['steps']
+    shift = preview["starts"]
+    step = preview["steps"]
     x_dim = 1
     y_dim = 0
     step_check = max([step[i] for i in [x_dim, y_dim]]) > 1
     if step_check:
-        msg = "\n***********************************************\n" \
-              "!!! ERROR !!! -> Method doesn't work with the step in" \
-              " the preview larger than 1 \n" \
-              "***********************************************\n"
+        msg = (
+            "\n***********************************************\n"
+            "!!! ERROR !!! -> Method doesn't work with the step in"
+            " the preview larger than 1 \n"
+            "***********************************************\n"
+        )
         raise ValueError(msg)
 
     x_offset = shift[x_dim]
@@ -233,13 +249,16 @@ def distortion_correction_proj_discorpy_cupy(data: cp.ndarray,
     xu_list = cp.arange(width) - xcenter
     yu_list = cp.arange(height) - ycenter
     xu_mat, yu_mat = cp.meshgrid(xu_list, yu_list)
-    ru_mat = cp.sqrt(xu_mat ** 2 + yu_mat ** 2)
-    fact_mat = cp.sum(cp.asarray(
-        [factor * ru_mat ** i for i, factor in enumerate(list_fact)]), axis=0)
-    xd_mat = cp.asarray(cp.clip(
-        xcenter + fact_mat * xu_mat, 0, width - 1), dtype=cp.float32)
-    yd_mat = cp.asarray(cp.clip(
-        ycenter + fact_mat * yu_mat, 0, height - 1), dtype=cp.float32)
+    ru_mat = cp.sqrt(xu_mat**2 + yu_mat**2)
+    fact_mat = cp.sum(
+        cp.asarray([factor * ru_mat**i for i, factor in enumerate(list_fact)]), axis=0
+    )
+    xd_mat = cp.asarray(
+        cp.clip(xcenter + fact_mat * xu_mat, 0, width - 1), dtype=cp.float32
+    )
+    yd_mat = cp.asarray(
+        cp.clip(ycenter + fact_mat * yu_mat, 0, height - 1), dtype=cp.float32
+    )
     indices = [cp.reshape(yd_mat, (-1, 1)), cp.reshape(xd_mat, (-1, 1))]
     indices = cp.asarray(indices, dtype=cp.float32)
 
@@ -271,7 +290,7 @@ def _load_metadata_txt(file_path):
     tuple of float and list of floats
         Tuple of (xcenter, ycenter, list_fact).
     """
-    with open(file_path, 'r') as f:
+    with open(file_path, "r") as f:
         x = f.read().splitlines()
         list_data = []
         for i in x:
@@ -281,4 +300,6 @@ def _load_metadata_txt(file_path):
     list_fact = list_data[2:]
 
     return xcenter, ycenter, list_fact
+
+
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##

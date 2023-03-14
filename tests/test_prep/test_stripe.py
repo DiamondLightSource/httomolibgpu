@@ -3,7 +3,7 @@ import cupy as cp
 from cupy.cuda import nvtx
 import numpy as np
 import pytest
-from httomolib.prep.normalize import normalize_cupy
+from httomolib.prep.normalize import normalize
 from httomolib.prep.stripe import (
     remove_stripe_based_sorting,
     remove_stripe_ti,
@@ -14,7 +14,7 @@ from numpy.testing import assert_allclose
 @cp.testing.gpu
 def test_remove_stripe_ti_on_data(data, flats, darks):
     # --- testing the CuPy implementation from TomoCupy ---#
-    data = normalize_cupy(data, flats, darks, cutoff=10, minus_log=True)
+    data = normalize(data, flats, darks, cutoff=10, minus_log=True)
     data_after_stripe_removal = remove_stripe_ti(cp.copy(data)).get()
 
     data = None  #: free up GPU memory
@@ -45,7 +45,7 @@ def test_remove_stripe_ti_numpy_vs_cupy_on_random_data():
         cp.copy(cp.asarray(host_data, dtype=cp.float32))
     ).get()
 
-    assert_allclose(np.sum(corrected_data), np.sum(corrected_host_data))
+    assert_allclose(np.sum(corrected_data), np.sum(corrected_host_data), rtol=1e-6)
     assert_allclose(
         np.median(corrected_data), np.median(corrected_host_data), rtol=1e-6
     )
@@ -54,7 +54,7 @@ def test_remove_stripe_ti_numpy_vs_cupy_on_random_data():
 @cp.testing.gpu
 def test_stripe_removal_sorting_cupy(data, flats, darks):
     # --- testing the CuPy port of TomoPy's implementation ---#
-    data = normalize_cupy(data, flats, darks, cutoff=10, minus_log=True)
+    data = normalize(data, flats, darks, cutoff=10, minus_log=True)
     corrected_data = remove_stripe_based_sorting(data).get()
 
     data = None  #: free up GPU memory

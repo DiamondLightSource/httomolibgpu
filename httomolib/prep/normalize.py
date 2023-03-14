@@ -25,21 +25,18 @@ import cupy as cp
 import nvtx
 from cupy import float32, log, mean, ndarray
 
-__all__ = [
-    'normalize_cupy',
-    'normalize_raw_cuda'
-]
+__all__ = ["normalize"]
 
 
 @nvtx.annotate()
-def normalize_raw_cuda(
+def normalize(
     data: cp.ndarray,
     flats: cp.ndarray,
     darks: cp.ndarray,
     cutoff: float = 10.0,
     minus_log: bool = False,
     nonnegativity: bool = False,
-    remove_nans: bool = False
+    remove_nans: bool = False,
 ) -> ndarray:
     """
     Normalize raw projection data using the flat and dark field projections.
@@ -74,7 +71,7 @@ def normalize_raw_cuda(
     out = cp.empty(data.shape, dtype=float32)
     mean(darks, axis=0, dtype=float32, out=dark0)
     mean(flats, axis=0, dtype=float32, out=flat0)
-    
+
     kernel_name = "normalisation"
     kernel = r"""
         float denom = float(flats) - float(darks);
@@ -86,7 +83,7 @@ def normalize_raw_cuda(
             v = cutoff;
         }
         """
-    if minus_log: 
+    if minus_log:
         kernel += "v = -log(v);\n"
         kernel_name += "_mlog"
     if nonnegativity:
@@ -104,7 +101,7 @@ def normalize_raw_cuda(
         kernel_name,
         options=("-std=c++11",),
         loop_prep="constexpr float eps = 1.0e-07;",
-        no_return=True
+        no_return=True,
     )
 
     normalisation_kernel(data, flat0, dark0, float32(cutoff), out)
@@ -113,7 +110,7 @@ def normalize_raw_cuda(
 
 
 def _check_valid_input(data, flats, darks) -> None:
-    '''Helper function to check the validity of inputs to normalisation functions'''
+    """Helper function to check the validity of inputs to normalisation functions"""
     if data.ndim != 3:
         raise ValueError("Input data must be a 3D stack of projections")
 
@@ -127,63 +124,3 @@ def _check_valid_input(data, flats, darks) -> None:
         flats = flats[cp.newaxis, :, :]
     if darks.ndim == 2:
         darks = darks[cp.newaxis, :, :]
-
-
-#: CuPy implementation with higher memory footprint than normalize_raw_cuda.
-@nvtx.annotate()
-def normalize_cupy(
-    data: cp.ndarray,
-    flats: cp.ndarray,
-    darks: cp.ndarray,
-    cutoff: float = 10.0,
-    minus_log: bool = False,
-    nonnegativity: bool = False,
-    remove_nans: bool = False
-) -> ndarray:
-    """
-    Normalize raw projection data using the flat and dark field projections.    
-
-    Parameters
-    ----------
-    data : ndarray
-        3D stack of projections as a CuPy array.
-    flats : ndarray
-        2D or 3D flat field data as a CuPy array.
-    darks : ndarray
-        2D or 3D dark field data as a CuPy array.
-    gpu_id : int, optional
-        A GPU device index to perform operation on.
-    cutoff : float, optional
-        Permitted maximum value for the normalised data.
-    minus_log : bool, optional
-        Apply negative log to the normalised data.
-    nonnegativity : bool, optional
-        Remove negative values in the normalised data.
-    remove_nans : bool, optional
-        Remove NaN values in the normalised data.
-        
-    Returns
-    -------
-    ndarray
-        Normalised 3D tomographic data as a CuPy array.
-    """
-    _check_valid_input(data, flats, darks)
-
-    darks = mean(darks, axis=0, dtype=float32)
-    flats = mean(flats, axis=0, dtype=float32)
-
-    # replicates tomopy implementation
-    lowval_threshold = cp.float32(1e-6)
-    denom = (flats - darks)
-    denom[denom < lowval_threshold] = lowval_threshold
-    data = (data - darks) / denom
-    data[data > cutoff] = cutoff
-
-    if minus_log:
-        data = -log(data)
-    if nonnegativity:
-        data[data < 0.0] = 0.0
-    if remove_nans:
-        data[cp.isnan(data)] = 0
-
-    return data

@@ -4,8 +4,8 @@ import cupy as cp
 import numpy as np
 import pytest
 from httomolib.prep.alignment import (
-    distortion_correction_proj_cupy,
-    distortion_correction_proj_discorpy_cupy,
+    distortion_correction_proj,
+    distortion_correction_proj_discorpy,
 )
 from imageio.v2 import imread
 from numpy.testing import assert_allclose
@@ -23,7 +23,7 @@ from numpy.testing import assert_allclose
 )
 @pytest.mark.parametrize(
     "implementation",
-    [distortion_correction_proj_cupy, distortion_correction_proj_discorpy_cupy],
+    [distortion_correction_proj, distortion_correction_proj_discorpy],
     ids=["cupy", "tomopy"],
 )
 def test_correct_distortion(
