@@ -5,6 +5,9 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 packages = ["httomolib"]
 
+[tool.setuptools.package-data]
+httomolib = ["*.cu", "*.cuh"]    # include cuda kernels in package
+
 [tool.setuptools-git-versioning]
 enabled = true
 

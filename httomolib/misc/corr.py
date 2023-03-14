@@ -68,100 +68,97 @@ def median_filter3d_cupy(
     if input_type not in ["float32", "uint16"]:
         raise ValueError("The input data should be either float32 or uint16 data type")
 
-    if dif == 0.0:
-        out = cp.zeros(data.shape, dtype=input_type, order="C")
-    else:
-        out = cp.copy(data, order="C")
-
+    
     if data.ndim == 3:
         if 0 in data.shape:
             raise ValueError("The length of one of dimensions is equal to zero")
     else:
         raise ValueError("The input array must be a 3D array")
 
+    out = cp.empty(data.shape, dtype=input_type, order="C")
+    
     median_kernel = r'''
-        template <typename Type, int radius, int diameter, int midpoint>
+        template <typename Type, int diameter>
         __global__ void median_general_kernel(
-            const Type* in, Type* out, float dif, int Z, int M, int N, long num_total)
+            const Type* in, Type* out, float dif, int Z, int M, int N)
         {
-            Type ValVec[diameter*diameter*diameter];
-            long i1, j1, k1, i_m, j_m, k_m, counter;
-            int x, y;
-            Type temp;
+            constexpr int radius = diameter / 2;
+            constexpr int d3 = diameter*diameter*diameter;
+            constexpr int midpoint = d3 / 2;
+
+            Type ValVec[d3];
             const long i = blockDim.x * blockIdx.x + threadIdx.x;
             const long j = blockDim.y * blockIdx.y + threadIdx.y;
             const long k = blockDim.z * blockIdx.z + threadIdx.z;
 
-            const unsigned long long index = i + N*j + N*M*k;
-
-            if (index < num_total && i < N && j < M && k < Z)
+            if (i >= N || j >= M || k >= Z)
+                return; 
+            
+            int counter = 0;
+            for(int i_m=-radius; i_m<=radius; i_m++)
             {
-                counter = 0l;
-                for(i_m=-radius; i_m<=radius; i_m++)
+                int i1 = i + i_m;
+                if ((i1 < 0) || (i1 >= N))
+                    i1 = i;
+                for(int j_m=-radius; j_m<=radius; j_m++)
                 {
-                    i1 = i + i_m;
-                    if ((i1 < 0) || (i1 >= N))
-                        i1 = i;
-                    for(j_m=-radius; j_m<=radius; j_m++)
+                    int j1 = j + j_m;
+                    if ((j1 < 0) || (j1 >= M))
+                        j1 = j;
+                    for(int k_m=-radius; k_m<=radius; k_m++)
                     {
-                        j1 = j + j_m;
-                        if ((j1 < 0) || (j1 >= M))
-                            j1 = j;
-                        for(k_m=-radius; k_m<=radius; k_m++)
-                        {
-                            k1 = k + k_m;
-                            if ((k1 < 0) || (k1 >= Z))
-                                k1 = k;
-                            ValVec[counter] = in[i1 + N*j1 + N*M*k1];
-                            counter++;
-                        }
+                        int k1 = k + k_m;
+                        if ((k1 < 0) || (k1 >= Z))
+                            k1 = k;
+                        ValVec[counter] = in[i1 + N*j1 + N*M*k1];
+                        counter++;
                     }
-                }
-                /* do bubble sort here */
-                for (x = 0; x < diameter*diameter*diameter - 1; x++)
-                {
-                    for(y = 0; y < diameter*diameter*diameter - x - 1; y++)
-                    {
-                        if (ValVec[y] > ValVec[y+1])
-                        {
-                            temp = ValVec[y];
-                            ValVec[y] = ValVec[y+1];
-                            ValVec[y+1] = temp;
-                        }
-                    }
-                }
-                /* perform median filtration */
-                if (dif == 0.0f)
-                    out[index] = ValVec[midpoint];
-                else
-                {
-                    /* perform dezingering */
-                    if (fabsf(in[index] - ValVec[midpoint]) >= dif)
-                        out[index] = ValVec[midpoint];
                 }
             }
+
+            /* do bubble sort here */
+            for (int x = 0; x < d3 - 1; x++)
+            {
+                for(int y = 0; y < d3 - x - 1; y++)
+                {
+                    if (ValVec[y] > ValVec[y+1])
+                    {
+                        Type temp = ValVec[y];
+                        ValVec[y] = ValVec[y+1];
+                        ValVec[y+1] = temp;
+                    }
+                }
+            }
+            
+            /* perform median filtration */
+            if (dif == 0.0f)
+                out[i + N*j + N*M*k] = ValVec[midpoint];
+            else
+            {
+                /* perform dezingering */
+                Type in_value = in[i + N*j + N*M*k];
+                out[i + N*j + N*M*k] = fabsf(in_value - ValVec[midpoint]) >= dif ? ValVec[midpoint] : in_value;
+            }
+        
         }
     '''
     dz, dy, dx = data.shape
     # setting grid/block parameters
-    blockdimen = 4 
-    block_x = blockdimen
-    block_y = blockdimen
-    block_z = blockdimen
+    block_x = 128
+    block_y = 1
+    block_z = 1
     block_dims = (block_x, block_y, block_z)
-    grid_x = int(cp.ceil(dx / block_x))
-    grid_y = int(cp.ceil(dy / block_y))
-    grid_z = int(cp.ceil(dz / block_z))
+    grid_x = (dx + block_x - 1) // block_x
+    grid_y = dy
+    grid_z = dz
     grid_dims = (grid_x, grid_y, grid_z) 
 
     params = (data, out, dif, dz, dy, dx, dx*dy*dz)
 
     if kernel_size in [3, 5, 7, 9, 11, 13]:
-        kernel_args = "median_general_kernel<{0}, {1}, {2}, {3}>".format(
+        kernel_args = "median_general_kernel<{0}, {1}>".format(
             "float" if input_type == "float32" else "unsigned short",
-            kernel_size//2,
-            kernel_size,
-            kernel_size**3//2
+            kernel_size
         )
     else:
         raise ValueError("Please select a correct kernel size: 3, 5, 7, 9, 11, 13")
