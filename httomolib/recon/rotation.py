@@ -41,7 +41,7 @@ __all__ = [
 
 @nvtx.annotate()
 def find_center_vo_cupy(
-    data: ndarray,
+    data: cp.ndarray,
     ind: int = None,
     smin: int = -50,
     smax: int = 50,
@@ -56,7 +56,7 @@ def find_center_vo_cupy(
 
     Parameters
     ----------
-    data : ndarray
+    data : cp.ndarray
         3D tomographic data or a 2D sinogram as a CuPy array.
     ind : int, optional
         Index of the slice to be used to estimate the CoR.
@@ -115,7 +115,7 @@ def _find_center_vo_gpu(data, ind, smin, smax, srad, step, ratio, drop):
         init_cen = _search_coarse(_sino_cs, smin, smax, ratio, drop)
         fine_cen = _search_fine(_sino_fs, srad, step, init_cen, ratio, drop)
 
-    return fine_cen.astype(cp.float32)
+    return np.float32(cp.asnumpy(fine_cen))
 
 
 @nvtx.annotate()

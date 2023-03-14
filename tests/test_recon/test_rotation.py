@@ -14,7 +14,7 @@ def test_find_center_vo_cupy(data, flats, darks):
     data = normalize_cupy(data, flats, darks)
 
     # --- testing the center of rotation on tomo_standard ---#
-    cor = find_center_vo_cupy(data).get()
+    cor = find_center_vo_cupy(data)
 
     data = None  #: free up GPU memory
     assert_allclose(cor, 79.5)
@@ -26,7 +26,7 @@ def test_find_center_vo_cupy(data, flats, darks):
 @cp.testing.gpu
 def test_find_center_vo_cupy_ones(ensure_clean_memory):
     mat = cp.ones(shape=(103, 450, 230), dtype=cp.float32)
-    cor = find_center_vo_cupy(mat).get()
+    cor = find_center_vo_cupy(mat)
 
     assert_allclose(cor, 59.0)
     mat = None  #: free up GPU memory
