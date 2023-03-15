@@ -88,19 +88,18 @@ def reconstruct_tomobar(
         device_projector="gpu",
         GPUdevice_index=gpu_id,
     )
-    # ------------------------------------------------------- #
-    data = _filtersinc3D_cupy(
-        data
-    )  # filter the data on the GPU and keep the result there
-    # the Astra toolbox requires C-contiguous arrays, and swapaxes seems to return a sliced view which
+    # filter the data on the GPU and keep the result there
+    data = _filtersinc3D_cupy(data)
+
+    # the Astra toolbox requires C-contiguous arrays, and swap axes seem to return a sliced view which
     # is neither C nor F contiguous.
     # So we have to make it C-contiguous first
     data = cp.ascontiguousarray(cp.swapaxes(data, 0, 1))
-    reconstruction = Atools.backprojCuPy(
-        data
-    )  # backproject the filtered data while keeping data on the GPU
+
+    # backproject the filtered data while keeping data on the GPU
+    reconstruction = Atools.backprojCuPy(data)
     cp._default_memory_pool.free_all_blocks()
-    # ------------------------------------------------------- #
+
     return reconstruction
 
 
