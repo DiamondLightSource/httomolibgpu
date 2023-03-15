@@ -19,14 +19,14 @@
 # Created Date: 25/October/2022
 # version ='0.1'
 # ---------------------------------------------------------------------------
-"""Modules for data segmentation and thresholding""" 
+"""Modules for data segmentation and thresholding"""
 
 import numpy as np
 from numpy import ndarray
 from skimage import filters
 
 __all__ = [
-    'binary_thresholding',
+    "binary_thresholding",
 ]
 
 
@@ -35,7 +35,7 @@ def binary_thresholding(
     val_intensity: float = 0.1,
     otsu: bool = False,
     foreground: bool = True,
-    axis: int = 1
+    axis: int = 1,
 ) -> ndarray:
     """
     Performs binary thresholding to the input data
@@ -52,7 +52,7 @@ def binary_thresholding(
     foreground : bool, optional
         Get the foreground, otherwise background.
     axis : int, optional
-        Specify the axis to use to slice the data (if data is the 3D array).        
+        Specify the axis to use to slice the data (if data is the 3D array).
 
     Returns
     -------
@@ -75,7 +75,7 @@ def binary_thresholding(
 
 
 def _get_mask(data, mask, val_intensity, otsu, foreground):
-    """ Helper function to get the data binary segmented into a mask """
+    """Helper function to get the data binary segmented into a mask"""
     if otsu:
         # get the intensity value based on Otsu
         val_intensity = filters.threshold_otsu(data)

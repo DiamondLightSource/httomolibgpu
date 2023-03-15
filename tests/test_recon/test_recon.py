@@ -1,17 +1,17 @@
 import cupy as cp
 import numpy as np
 import pytest
-from httomolib.prep.normalize import normalize_cupy
-from httomolib.recon.rotation import find_center_360, find_center_vo_cupy
+from httomolib.prep.normalize import normalize
+from httomolib.recon.rotation import find_center_360, find_center_vo
 from numpy.testing import assert_allclose
 
 
 @cp.testing.gpu
-def test_find_center_vo_cupy(data, flats, darks):
-    data = normalize_cupy(data, flats, darks)
+def test_find_center_vo(data, flats, darks):
+    data = normalize(data, flats, darks)
 
     #--- testing the center of rotation on tomo_standard ---#
-    cor = find_center_vo_cupy(data)
+    cor = find_center_vo(data)
 
     data = None #: free up GPU memory
     assert_allclose(cor, 79.5)
@@ -21,9 +21,9 @@ def test_find_center_vo_cupy(data, flats, darks):
 
 
 @cp.testing.gpu
-def test_find_center_vo_cupy_ones(ensure_clean_memory):
+def test_find_center_vo_ones(ensure_clean_memory):
     mat = cp.ones(shape=(103, 450, 230), dtype=cp.float32)
-    cor = find_center_vo_cupy(mat)
+    cor = find_center_vo(mat)
 
     assert_allclose(cor, 59.0)
     mat = None #: free up GPU memory

@@ -1,6 +1,6 @@
 import cupy as cp
 import numpy as np
-from httomolib.prep.normalize import normalize_cupy
+from httomolib.prep.normalize import normalize as normalize_cupy
 from httomolib.recon.algorithm import (
     reconstruct_tomobar,
     reconstruct_tomopy_astra,

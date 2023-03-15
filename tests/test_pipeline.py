@@ -1,9 +1,9 @@
 import cupy as cp
 import numpy as np
 from cupy.testing import assert_allclose
-from httomolib.prep.normalize import normalize_cupy
+from httomolib.prep.normalize import normalize as normalize_cupy
 from httomolib.prep.stripe import remove_stripe_based_sorting as remove_stripes
-from httomolib.recon.rotation import find_center_vo_cupy
+from httomolib.recon.rotation import find_center_vo as find_center_vo_cupy
 from tomopy.prep.normalize import normalize
 from tomopy.prep.stripe import remove_stripe_based_sorting
 from tomopy.recon.rotation import find_center_vo
@@ -23,11 +23,11 @@ def test_cpu_vs_gpu(host_data, host_flats, host_darks, ensure_clean_memory):
     darks = cp.asarray(host_darks)
 
     #: Normalize the data first
-    data_normalize_cupy = normalize_cupy(data, flats, darks, cutoff=15.0)
-    assert data_normalize_cupy.shape == (180, 128, 160)
+    data_normalize = normalize_cupy(data, flats, darks, cutoff=15.0)
+    assert data_normalize.shape == (180, 128, 160)
 
     #: Now do the stripes removal
-    corrected_data = remove_stripes(data_normalize_cupy)
+    corrected_data = remove_stripes(data_normalize)
 
     #: Apply Fresnel/Paganin filtering
 
@@ -50,7 +50,7 @@ def test_cpu_vs_gpu(host_data, host_flats, host_darks, ensure_clean_memory):
 
     #: TEST 2: check if the data is normalized correctly for both CPU and GPU
     np.testing.assert_almost_equal(
-        cp.mean(data_normalize_cupy), np.mean(tomopy_data), decimal=3
+        cp.mean(data_normalize), np.mean(tomopy_data), decimal=3
     )
 
     #: TEST 3: check if the stripes are removed correctly for both CPU and GPU
