@@ -78,13 +78,11 @@ def reconstruct_tomobar(
     # initiate a 3D ASTRA class object
     Atools = AstraTools3D(
         DetectorsDimH=data.shape[2],  # DetectorsDimH # detector dimension (horizontal)
-        DetectorsDimV=data.shape[
-            1
-        ],  # DetectorsDimV # detector dimension (vertical) for 3D case only
+        # DetectorsDimV: detector dimension (vertical) for 3D case only
+        DetectorsDimV=data.shape[1],
         AnglesVec=-angles,  # the vector of angles in radians
-        CenterRotOffset=data.shape[2] / 2
-        - center
-        - 0.5,  # The center of rotation combined with the shift offsets
+        # The center of rotation combined with the shift offsets
+        CenterRotOffset=data.shape[2] / 2 - center - 0.5,
         ObjSize=objsize,  # a scalar to define the reconstructed object dimensions
         OS_number=1,  # OS recon disabled
         device_projector="gpu",
