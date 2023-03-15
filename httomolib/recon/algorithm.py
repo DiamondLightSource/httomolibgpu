@@ -31,20 +31,20 @@ import nvtx
 from httomolib.cuda_kernels import load_cuda_module
 
 __all__ = [
-    'reconstruct_tomobar',
-    'reconstruct_tomopy_astra',
+    "reconstruct_tomobar",
+    "reconstruct_tomopy_astra",
 ]
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% ToMoBAR reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 @nvtx.annotate()
 def reconstruct_tomobar(
-    data : cp.ndarray,
-    angles : np.ndarray,
-    center : float = None,
-    objsize : int = None,
-    gpu_id : int = 0
-    ) -> cp.ndarray:
+    data: cp.ndarray,
+    angles: np.ndarray,
+    center: float = None,
+    objsize: int = None,
+    gpu_id: int = 0,
+) -> cp.ndarray:
     """
     Perform reconstruction using ToMoBAR wrappers around ASTRA toolbox.
     This is a 3D recon using 3D astra geometry routines.
@@ -67,35 +67,42 @@ def reconstruct_tomobar(
     cp.ndarray
         The reconstructed volume as a CuPy array.
     """
-    from tomobar.methodsDIR import RecToolsDIR
     from tomobar.supp.astraOP import AstraTools3D
 
     if center is None:
-        center = data.shape[2] // 2 # making a crude guess
+        center = data.shape[2] // 2  # making a crude guess
     if objsize is None:
         objsize = data.shape[2]
-        
-        # Perform filtering of the data on the GPU and then pass a pointer to CuPy array to do backprojection.    
-        # initiate a 3D ASTRA class object    
-        Atools = AstraTools3D(DetectorsDimH=data.shape[2],  # DetectorsDimH # detector dimension (horizontal)
-                                DetectorsDimV=data.shape[1],  # DetectorsDimV # detector dimension (vertical) for 3D case only
-                                AnglesVec=-angles,  # the vector of angles in radians
-                                CenterRotOffset=data.shape[2] / 2 - center - 0.5,  # The center of rotation combined with the shift offsets                              
-                                ObjSize=objsize,  # a scalar to define the reconstructed object dimensions
-                                OS_number = 1, # OS recon disabled
-                                device_projector = 'gpu',
-                                GPUdevice_index=gpu_id)
-        # ------------------------------------------------------- # 
-        data = _filtersinc3D_cupy(data) # filter the data on the GPU and keep the result there
-        # the Astra toolbox requires C-contiguous arrays, and swapaxes seems to return a sliced view which 
-        # is neither C nor F contiguous. 
-        # So we have to make it C-contiguous first
-        data = cp.ascontiguousarray(cp.swapaxes(data, 0, 1))
-        reconstruction = Atools.backprojCuPy(
-            data
-        )  # backproject the filtered data while keeping data on the GPU
-        cp._default_memory_pool.free_all_blocks()
-        # ------------------------------------------------------- #
+
+    # Perform filtering of the data on the GPU and then pass a pointer to CuPy array to do backprojection.
+    # initiate a 3D ASTRA class object
+    Atools = AstraTools3D(
+        DetectorsDimH=data.shape[2],  # DetectorsDimH # detector dimension (horizontal)
+        DetectorsDimV=data.shape[
+            1
+        ],  # DetectorsDimV # detector dimension (vertical) for 3D case only
+        AnglesVec=-angles,  # the vector of angles in radians
+        CenterRotOffset=data.shape[2] / 2
+        - center
+        - 0.5,  # The center of rotation combined with the shift offsets
+        ObjSize=objsize,  # a scalar to define the reconstructed object dimensions
+        OS_number=1,  # OS recon disabled
+        device_projector="gpu",
+        GPUdevice_index=gpu_id,
+    )
+    # ------------------------------------------------------- #
+    data = _filtersinc3D_cupy(
+        data
+    )  # filter the data on the GPU and keep the result there
+    # the Astra toolbox requires C-contiguous arrays, and swapaxes seems to return a sliced view which
+    # is neither C nor F contiguous.
+    # So we have to make it C-contiguous first
+    data = cp.ascontiguousarray(cp.swapaxes(data, 0, 1))
+    reconstruction = Atools.backprojCuPy(
+        data
+    )  # backproject the filtered data while keeping data on the GPU
+    cp._default_memory_pool.free_all_blocks()
+    # ------------------------------------------------------- #
     return reconstruction
 
 
@@ -151,15 +158,15 @@ def _filtersinc3D_cupy(projection3D):
 ## %%%%%%%%%%%%%%%%%%%%%%% Tomopy/ASTRA reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 @nvtx.annotate()
 def reconstruct_tomopy_astra(
-    data : np.ndarray,
-    angles : np.ndarray,
-    center : float = None,
-    algorithm : str = 'FBP_CUDA',
-    iterations : int = 1,
-    proj_type : str = "cuda",
-    gpu_id : int = 0,
-    ncore : int = 1
-    ) -> np.ndarray:
+    data: np.ndarray,
+    angles: np.ndarray,
+    center: float = None,
+    algorithm: str = "FBP_CUDA",
+    iterations: int = 1,
+    proj_type: str = "cuda",
+    gpu_id: int = 0,
+    ncore: int = 1,
+) -> np.ndarray:
     """
     Perform reconstruction using tomopy with wrappers around ASTRA toolbox.
     This is a 3D recon using 2D (slice-by-slice) astra geometry routines.
@@ -190,18 +197,21 @@ def reconstruct_tomopy_astra(
         The reconstructed volume.
     """
     from tomopy import astra, recon
-   
-    reconstruction = recon(data,
-                           theta=angles,
-                           center=center,
-                           algorithm=astra,
-                           options={
-                               "method": algorithm,
-                               "proj_type": proj_type,
-                               "gpu_list": [gpu_id],                               
-                               'num_iter': iterations,},
-                           ncore=ncore,)
-    
+
+    reconstruction = recon(
+        data,
+        theta=angles,
+        center=center,
+        algorithm=astra,
+        options={
+            "method": algorithm,
+            "proj_type": proj_type,
+            "gpu_list": [gpu_id],
+            "num_iter": iterations,
+        },
+        ncore=ncore,
+    )
+
     return reconstruction
 
 
