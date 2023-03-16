@@ -94,7 +94,7 @@ def median_filter3d(
     grid_z = dz
     grid_dims = (grid_x, grid_y, grid_z)
 
-    params = (data, out, dif, dz, dy, dx, dx * dy * dz)
+    params = (data, out, dif, dz, dy, dx)
 
     median3d(grid_dims, block_dims, params)
 

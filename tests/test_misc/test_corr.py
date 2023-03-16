@@ -93,7 +93,7 @@ def test_median_filter3d(data):
 @pytest.mark.perf
 def test_median_filter3d_performance(ensure_clean_memory):
     dev = cp.cuda.Device()
-    data_host = np.random.random_sample(size=(1801, 5, 2560)).astype(np.float32) * 2.0
+    data_host = np.random.random_sample(size=(450, 2160, 2560)).astype(np.float32) * 2.0
     data = cp.asarray(data_host, dtype=cp.float32)
 
     # warm up

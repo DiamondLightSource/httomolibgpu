@@ -15,15 +15,15 @@ __global__ void median_general_kernel(const Type *in, Type *out, float dif,
 
   int counter = 0;
   for (int i_m = -radius; i_m <= radius; i_m++) {
-    int i1 = i + i_m;
+    long long i1 = i + i_m;   // using long long to avoid integer overflows
     if ((i1 < 0) || (i1 >= N))
       i1 = i;
     for (int j_m = -radius; j_m <= radius; j_m++) {
-      int j1 = j + j_m;
+      long long j1 = j + j_m;
       if ((j1 < 0) || (j1 >= M))
         j1 = j;
       for (int k_m = -radius; k_m <= radius; k_m++) {
-        int k1 = k + k_m;
+        long long k1 = k + k_m;
         if ((k1 < 0) || (k1 >= Z))
           k1 = k;
         ValVec[counter] = in[i1 + N * j1 + N * M * k1];
@@ -44,12 +44,13 @@ __global__ void median_general_kernel(const Type *in, Type *out, float dif,
   }
 
   /* perform median filtration */
+  long long index = static_cast<long long>(i) + N * static_cast<long long>(j) + N * M * static_cast<long long>(k);
   if (dif == 0.0f)
-    out[i + N * j + N * M * k] = ValVec[midpoint];
+    out[index] = ValVec[midpoint];
   else {
     /* perform dezingering */
-    Type in_value = in[i + N * j + N * M * k];
-    out[i + N * j + N * M * k] =
+    Type in_value = in[index];
+    out[index] =
         fabsf(in_value - ValVec[midpoint]) >= dif ? ValVec[midpoint] : in_value;
   }
 }
