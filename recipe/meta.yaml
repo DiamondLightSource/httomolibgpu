@@ -6,22 +6,21 @@ package:
   version: {{ version }}
 
 source:
-  path: ..
+  path: ../
 
 build:
   preserve_egg_dir: False
-  script: {{ PYTHON }} -m pip install -e .
   number: 0
 
 requirements:
   host:
-    - python
+    - python>=3.9
     - pip
     - setuptools
   run:
-    - python
+    - python>=3.9
     - cupy
-    - numpy
+    - setuptools
     - scipy
     - pillow
     - scikit-image
