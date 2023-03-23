@@ -62,6 +62,8 @@ def sino_360_to_180(
     overlap = int(np.round(overlap))
     if overlap >= dz:
         raise ValueError("overlap must be less than data.shape[2]")
+    if overlap < 0:
+        raise ValueError("only positive overlaps are allowed.")
 
     n = dx // 2
 
