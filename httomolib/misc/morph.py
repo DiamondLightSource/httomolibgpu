@@ -54,6 +54,9 @@ def sino_360_to_180(
     cp.ndarray
         Output 3D data.
     """
+    if data.ndim != 3:
+        raise ValueError("only 3D data is supported")
+    
     dx, dy, dz = data.shape
 
     overlap = int(np.round(overlap))

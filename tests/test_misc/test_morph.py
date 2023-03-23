@@ -17,7 +17,9 @@ def test_sino_360_to_180_unity(ensure_clean_memory, xp, overlap, rotation):
         pytest.skip("Skipping test due to bug in tomopy")
 
     np.random.seed(12345)
-    data_host = np.random.random_sample(size=(123, 54, 128)).astype(np.float32) * 200.0 - 100.0
+    data_host = (
+        np.random.random_sample(size=(123, 54, 128)).astype(np.float32) * 200.0 - 100.0
+    )
     data = xp.asarray(data_host)
 
     if xp.__name__ == "numpy":
@@ -43,6 +45,13 @@ def test_sino_360_to_180_invalid(ensure_clean_memory, overlap, rotation):
 
     with pytest.raises(ValueError):
         sino_360_to_180(data, overlap, rotation)
+
+
+@pytest.mark.parametrize("shape", [(10,), (10, 10)])
+@cp.testing.gpu
+def test_sino_360_to_180_wrong_dims(ensure_clean_memory, shape):
+    with pytest.raises(ValueError):
+        sino_360_to_180(cp.ones(shape, dtype=cp.float32))
 
 
 @pytest.mark.parametrize("rotation", ["left", "right"])
