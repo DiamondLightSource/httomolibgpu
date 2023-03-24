@@ -97,22 +97,25 @@ def save_to_images(
             raise
 
     data = np.nan_to_num(data, copy=False, nan=0.0, posinf=0, neginf=0)
-
+    
     if glob_stats is None:
-        glob_stats = (
-            np.nanpercentile(data, perc_range_min),
-            np.nanpercentile(data, perc_range_max)
-        )
-
-    data_full_shape = np.shape(data)
+        min_percentile = np.nanpercentile(data, perc_range_min)
+        max_percentile = np.nanpercentile(data, perc_range_max)
+    else:
+        # calculate the range here based on global max and min
+        range_intensity = glob_stats[1] - glob_stats[0]
+        min_percentile = (perc_range_min * (range_intensity) / 100) + glob_stats[0]
+        max_percentile = (perc_range_max * (range_intensity) / 100) + glob_stats[0]
+    
     if data.ndim == 3:
-        slice_dim_size = data_full_shape[axis]
-        for i in range(slice_dim_size):
-            filename = f"{i + comm_rank*slice_dim_size:05d}.{file_format}"
+        slice_dim_size = np.shape(data)[axis]
+        for idx in range(slice_dim_size):
+            filename = f"{idx + comm_rank*slice_dim_size:05d}.{file_format}"
             filepath = os.path.join(path_to_images_dir, f"{filename}")
             _save_single_img(
-                data.take(indices=i, axis=axis),
-                glob_stats,
+                data.take(indices=idx, axis=axis),
+                min_percentile,
+                max_percentile,
                 bits,
                 jpeg_quality,
                 filepath,
@@ -120,27 +123,28 @@ def save_to_images(
     else:
         filename = f"{1:05d}.{file_format}"
         filepath = os.path.join(path_to_images_dir, f"{filename}")
-        _save_single_img(data, glob_stats, bits, jpeg_quality, filepath)
+        _save_single_img(data, min_percentile, max_percentile, bits, jpeg_quality, filepath)
 
-
-def _save_single_img(array2d, glob_stats, bits, jpeg_quality, path_to_out_file):
+def _save_single_img(array2d,
+                     min_percentile,
+                     max_percentile,
+                     bits, 
+                     jpeg_quality, 
+                     path_to_out_file):
     """Rescales to the bit chosen and saves the image."""
-    data_min = glob_stats[0]
-    data_max = glob_stats[1]
-
     if bits == 8:
         array2d = exposure.rescale_intensity(
-            array2d, in_range=(data_min, data_max), out_range=(0, 255)
+            array2d, in_range=(min_percentile, max_percentile), out_range=(0, 255)
         ).astype(np.uint8)
 
     elif bits == 16:
         array2d = exposure.rescale_intensity(
-            array2d, in_range=(data_min, data_max), out_range=(0, 65535)
+            array2d, in_range=(min_percentile, max_percentile), out_range=(0, 65535)
         ).astype(np.uint16)
 
     else:
         array2d = exposure.rescale_intensity(
-            array2d, in_range=(data_min, data_max), out_range=(data_min, data_max)
+            array2d, in_range=(min_percentile, max_percentile), out_range=(min_percentile, max_percentile)
         ).astype(np.uint32)
 
     img = Image.fromarray(array2d)
