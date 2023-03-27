@@ -83,3 +83,30 @@ def test_normalize_performance(ensure_clean_memory):
     duration_ms = float(end - start) * 1e-6 / 10
 
     assert "performance in ms" == duration_ms
+
+
+def test_normalize_memory_calc():
+    dy = 5
+    dx = 2560
+    # space for 200 slices in total, incl. flats/darks means, but not the 
+    # flats/darks themselves (we assume they have been pre-allocated already and
+    # excluded from available memory)
+    available_memory = (dx*dy*200 + 42) * 4  
+
+    # 2 slices for means are needed -> 198 left
+    flats = cp.empty((50, dy, dx), dtype=np.uint16)
+    darks = cp.empty((30, dy, dx), dtype=np.uint16)
+    
+    args = dict(flats=flats, 
+                darks=darks, 
+                cutoff=10.0,
+                minus_log=True,
+                nonnegativity=False,
+                remove_nans=False)
+    
+    # with 4-byte inputs and outputs, we can fit 198 slices between input / output
+    assert normalize.meta.calc_max_slices(0, (dy, dx), np.float32, available_memory, **args) == 99
+
+    # with 2-byte inputs, 4-byte outputs, we can fit 132 (input takes only half the space)
+    assert normalize.meta.calc_max_slices(0, (dy, dx), np.uint16, available_memory, **args) == 132
+    
