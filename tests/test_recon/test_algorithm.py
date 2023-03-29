@@ -43,14 +43,14 @@ def test_reconstruct_tomobar_device_2(data, flats, darks, ensure_clean_memory):
 
 
 @cp.testing.gpu
-def test_reconstruct_tomobar_device_3(data, ensure_clean_memory):
+def test_reconstruct_tomobar_device_3(data, flats, darks, ensure_clean_memory):
     recon_data = reconstruct_tomobar(
-        data,
+        normalize_cupy(data, flats, darks, cutoff=10, minus_log=True),
         np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
         objsize=15
     )
-    assert_allclose(np.mean(recon_data), -3.016141, rtol=1e-07)
-    assert_allclose(np.mean(recon_data, axis=(1, 2)).sum(), -386.06604, rtol=1e-07)
+    assert_allclose(np.mean(recon_data), 0.00589072, rtol=1e-6)
+    assert_allclose(np.mean(recon_data, axis=(1, 2)).sum(), 0.7540118, rtol=1e-6)
 
 
 def test_reconstruct_tomopy_fbp_cuda(
