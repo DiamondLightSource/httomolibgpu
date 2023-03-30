@@ -138,7 +138,7 @@ def _filtersinc3D_cupy(projection3D):
     # actual filtering
     proj_f *= f
     
-    return cupyx.scipy.fft.irfft2(proj_f, axes=(1, 2), norm="forward", overwrite_x=True)
+    return cupyx.scipy.fft.irfft2(proj_f, projection3D.shape[1:], axes=(1, 2), norm="forward", overwrite_x=True)
     
 
 
