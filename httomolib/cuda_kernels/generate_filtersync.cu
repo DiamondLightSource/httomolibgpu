@@ -61,16 +61,20 @@ extern "C" __global__ void generate_filtersinc(float a, float *f, int n,
   float dotprod_sqr = smem[0] * smem[0];
 
   // now compute actual result
+  int shift = n / 2;
   for (int i = tid; i < n; i += blockDim.x) {
+    // write to ifftshifted positions
+    int outidx = (i + shift) % n;
+    // we only need to consider half of the filter as it's symmetric and we 
+    // use the real FFT
+    if (outidx >= n / 2 + 1)
+      continue;
+
     float w = -M_PI + i * dw;
     float rd = a * w / 2.0f;
     float rn2 = sin(rd);
     float rn1 = abs(2.0 / a * rn2);
     float r = rn1 * dotprod_sqr;
-
-    // write to ifftshifted positions
-    int shift = n / 2;
-    int outidx = (i + shift) % n;
 
     // apply multiplier here - which does FFT scaling too
     f[outidx] = r * multiplier;

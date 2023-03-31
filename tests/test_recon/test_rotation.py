@@ -32,6 +32,19 @@ def test_find_center_vo_ones(ensure_clean_memory):
     mat = None  #: free up GPU memory
 
 
+
+@cp.testing.gpu
+def test_find_center_vo_random(ensure_clean_memory):
+    np.random.seed(12345)
+    data_host = np.random.random_sample(size=(1801, 5, 2560)).astype(np.float32) * 2.0
+    data = cp.asarray(data_host, dtype=np.float32)
+
+    cent = find_center_vo(data)
+
+    assert_allclose(cent, 1246.75)
+
+
+
 @cp.testing.gpu
 @pytest.mark.perf
 def test_find_center_vo_performance():

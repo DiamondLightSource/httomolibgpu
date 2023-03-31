@@ -4,10 +4,14 @@ extern "C" __global__ void generate_mask(const int ncol, const int nrow,
                                          const float radius, const float drop,
                                          unsigned short *mask) {
   int i = blockDim.x * blockIdx.x + threadIdx.x;
-  int j = blockDim.y * blockIdx.y + threadIdx.y;
+  int j = blockIdx.y;
 
-  if (j >= nrow || i >= ncol)
+  if (i >= ncol/2+1)
     return;
+
+  // we only need to look at the right half as we're using a real2complex FFT
+  int outi = i;
+  i += ncol/2-1;
 
   int pos = __float2int_ru(((j - cen_row) * dv / radius) / du);
   int pos1 = -pos + cen_col;
@@ -43,11 +47,5 @@ extern "C" __global__ void generate_mask(const int ncol, const int nrow,
     outval = 0;
   }
 
-  // write to ifft-shifted positions
-  int ishift = (ncol + 1) / 2;
-  int jshift = (nrow + 1) / 2;
-  int outi = (i + ishift) % ncol;
-  int outj = (j + jshift) % nrow;
-
-  mask[outj * ncol + outi] = outval;
+  mask[j * (ncol/2+1) + outi] = outval;
 }

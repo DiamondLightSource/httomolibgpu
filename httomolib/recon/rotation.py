@@ -26,6 +26,7 @@ from typing import Optional, Tuple, Union
 
 import cupy as cp
 import numpy as np
+import cupyx
 import nvtx
 import cupyx.scipy.ndimage as cpndi
 from cupy import ndarray
@@ -174,13 +175,13 @@ def _create_mask(nrow, ncol, radius, drop):
     cen_col = int(math.ceil(ncol / 2.0) - 1)
     drop = min([drop, int(math.ceil(0.05 * nrow))])
 
-    block_x = 16
-    block_y = 8
+    block_x = 128
+    block_y = 1
     block_dims = (block_x, block_y)
-    grid_x = (ncol + block_x - 1) // block_x
-    grid_y = (nrow + block_y - 1) // block_y
+    grid_x = (ncol//2+1 + block_x - 1) // block_x
+    grid_y = nrow
     grid_dims = (grid_x, grid_y)
-    mask = cp.empty((nrow, ncol), dtype="uint16")
+    mask = cp.empty((nrow, ncol//2+1), dtype="uint16")
     params = (
         ncol,
         nrow,
@@ -248,9 +249,11 @@ def _calculate_metric(list_shift, sino1, sino2, sino3, mask, out):
 
     # stack and transform
     mat[:, :na1, :] = sino1
-    cp.abs(cp.fft.fft2(mat, axes=(1, 2)), out=mat)
-    mat *= mask
-    cp.mean(mat, axis=(1, 2), out=out)
+    tmp = cupyx.scipy.fft.rfft2(mat, axes=(1, 2), norm=None)
+    tmp = cp.abs(tmp)
+    tmp *= mask
+    cp.mean(tmp, axis=(1, 2), out=out)
+    
 
 
 @nvtx.annotate()

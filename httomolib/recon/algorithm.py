@@ -113,22 +113,18 @@ def _filtersinc3D_cupy(projection3D):
     Returns:
         ndarray: a CuPy array of filtered projection data.
     """
+    (projectionsNum, DetectorsLengthV, DetectorsLengthH) = cp.shape(projection3D)
 
     # prepearing a ramp-like filter to apply to every projection
     module = load_cuda_module("generate_filtersync")
     filter_prep = module.get_function("generate_filtersinc")
 
-    # since the fft is complex-to-complex, it makes a copy of the real input array anyway,
-    # so we do that copy here explicitly, and then do everything in-place
-    projection3D = projection3D.astype(cp.complex64)
-    projection3D = cupyx.scipy.fft.fft2(
-        projection3D, axes=(1, 2), overwrite_x=True, norm="backward"
-    )
+    # Use real FFT to save space and time
+    proj_f = cupyx.scipy.fft.rfft2(projection3D, axes=(1, 2), norm="backward", overwrite_x=True)
 
     # generating the filter here so we can schedule/allocate while FFT is keeping the GPU busy
     a = 1.1
-    (projectionsNum, DetectorsLengthV, DetectorsLengthH) = cp.shape(projection3D)
-    f = cp.empty((1, 1, DetectorsLengthH), dtype=np.float32)
+    f = cp.empty((1, 1, DetectorsLengthH//2+1), dtype=np.float32)
     bx = 256
     # because FFT is linear, we can apply the FFT scaling + multiplier in the filter
     multiplier = 1.0 / projectionsNum / DetectorsLengthV / DetectorsLengthH
@@ -138,15 +134,12 @@ def _filtersinc3D_cupy(projection3D):
         args=(cp.float32(a), f, np.int32(DetectorsLengthH), np.float32(multiplier)),
         shared_mem=bx * 4,
     )
-    # actual filtering
-    projection3D *= f
 
-    # avoid normalising here - we have included that in the filter
-    return cp.real(
-        cupyx.scipy.fft.ifft2(
-            projection3D, axes=(1, 2), overwrite_x=True, norm="forward"
-        )
-    )
+    # actual filtering
+    proj_f *= f
+    
+    return cupyx.scipy.fft.irfft2(proj_f, projection3D.shape[1:], axes=(1, 2), norm="forward", overwrite_x=True)
+    
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
