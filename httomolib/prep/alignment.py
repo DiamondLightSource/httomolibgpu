@@ -22,20 +22,54 @@
 """Modules for data correction"""
 
 import os
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import cupy as cp
 import nvtx
 from cupyx.scipy.ndimage import map_coordinates
+from httomolib.decorator import method_proj
+import numpy as np
 
 __all__ = [
     "distortion_correction_proj",
 ]
 
 
+def _calc_max_slices_distortion_correction_proj(
+    other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
+) -> int:
+    # calculating memory is a bit more involved as various small temporary arrays
+    # are used. We revert to a rough estimation using only the larger elements and
+    # a safety margin
+    height, width = other_dims[0], other_dims[1]
+    lists_size = (width + height) * np.float64().nbytes
+    meshgrid_size = (width * height * 2) * np.float64().nbytes
+    ru_mat_size = meshgrid_size // 2
+    fact_mat_size = ru_mat_size
+    xd_mat_size = yd_mat_size = fact_mat_size // 2   # float32
+    indices_size = xd_mat_size + yd_mat_size
+
+    slice_size = np.prod(other_dims) * dtype.itemsize
+    processing_size = slice_size * 4  # temporaries in final for loop
+
+    available_memory -= (
+        lists_size
+        + meshgrid_size
+        + ru_mat_size
+        + fact_mat_size * 2
+        + xd_mat_size
+        + yd_mat_size
+        + processing_size
+        + indices_size * 3  # The x 3 here is for additional safety margin 
+    )                       # to allow for memory for temporaries
+
+    return available_memory // slice_size
+
+
 ## %%%%%%%%%%%%%%%%%%%%%%%%%distortion_correction_proj%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 # CuPy implementation of distortion correction from Savu
 # TODO: Needs to be implementation from TomoPy
+@method_proj(_calc_max_slices_distortion_correction_proj)
 @nvtx.annotate()
 def distortion_correction_proj(
     data: cp.ndarray,
@@ -170,9 +204,8 @@ def distortion_correction_proj(
         mat_corrected = cp.reshape(
             map_coordinates(data[i], indices, order=1, mode="reflect"), (height, width)
         )
-        mat_corrected = mat_corrected[crop : height - crop, crop : width - crop]
-        data[i] = mat_corrected
-    return mat_corrected
+        data[i] = mat_corrected[crop : height - crop, crop : width - crop]
+    return data
 
 
 # CuPy implementation of distortion correction from Discorpy
@@ -180,6 +213,7 @@ def distortion_correction_proj(
 # (which is the same as the TomoPy version
 # https://github.com/tomopy/tomopy/blob/c236a2969074f5fc70189fb5545f0a165924f916/source/tomopy/prep/alignment.py#L950-L981
 # but with the additional params `order` and `mode`).
+@method_proj(_calc_max_slices_distortion_correction_proj)
 @nvtx.annotate()
 def distortion_correction_proj_discorpy(
     data: cp.ndarray,

@@ -11,6 +11,8 @@ import time
 import pytest
 from cupy.cuda import nvtx
 
+from tests import MaxMemoryHook
+
 
 @cp.testing.gpu
 def test_reconstruct_tomobar_device_1(data, flats, darks, ensure_clean_memory):
@@ -44,11 +46,24 @@ def test_reconstruct_tomobar_device_2(data, flats, darks, ensure_clean_memory):
 
 @cp.testing.gpu
 def test_reconstruct_tomobar_device_3(data, flats, darks, ensure_clean_memory):
-    recon_data = reconstruct_tomobar(
-        normalize_cupy(data, flats, darks, cutoff=10, minus_log=True),
-        np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
-        objsize=15
-    )
+    
+    normalized = normalize_cupy(data, flats, darks, cutoff=10, minus_log=True)
+    
+    hook = MaxMemoryHook(normalized.size * normalized.itemsize)
+    with hook:
+        recon_data = reconstruct_tomobar(
+            normalized,
+            np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
+            objsize=15
+        )
+    
+    # make sure estimator function is within range (80% min, 100% max)
+    max_mem = hook.max_mem
+    actual_slices = data.shape[1]
+    estimated_slices = reconstruct_tomobar.meta.calc_max_slices(1, (data.shape[0], data.shape[2]), data.dtype, max_mem)
+    assert estimated_slices <= actual_slices
+    assert estimated_slices / actual_slices >= 0.8 
+    
     assert_allclose(np.mean(recon_data), 0.00589072, rtol=1e-6)
     assert_allclose(np.mean(recon_data, axis=(1, 2)).sum(), 0.7540118, rtol=1e-6)
 

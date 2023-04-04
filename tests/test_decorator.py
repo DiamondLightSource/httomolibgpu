@@ -16,6 +16,8 @@ def test_adds_metdata():
     assert myfunc.meta.method_name == "myfunc"
     assert myfunc.meta.module == ["tests", "test_decorator"]
     assert myfunc.meta.pattern == "all"
+    assert myfunc.meta.cpu is False
+    assert myfunc.meta.gpu is True
     # last parameter '2' is mapped to the kwargs
     assert myfunc.meta.calc_max_slices(0, (10, 10), np.int32, 40000, a=2) == 50
     assert myfunc.__name__ == "myfunc"
@@ -43,3 +45,19 @@ def test_metadata_proj():
     assert otherfunc.meta.pattern == "projection"
 
 
+def test_metadata_cpu():
+    @method_all(cpuonly=True)
+    def otherfunc(a: int) -> int:
+        pass
+
+    assert otherfunc.meta.cpu is True
+    assert otherfunc.meta.gpu is False
+
+
+def test_metadata_cpu_and_gpu():
+    @method_all(cpugpu=True)
+    def otherfunc(a: int) -> int:
+        pass
+
+    assert otherfunc.meta.cpu is True
+    assert otherfunc.meta.gpu is True

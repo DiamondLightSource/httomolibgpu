@@ -27,12 +27,14 @@ import numpy as np
 from numpy import ndarray
 from PIL import Image
 from skimage import exposure
+from httomolib.decorator import method_all
 
 __all__ = [
     "save_to_images",
 ]
 
 
+@method_all(cpuonly=True)
 def save_to_images(
     data: ndarray,
     out_dir: str,

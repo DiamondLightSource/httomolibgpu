@@ -47,7 +47,7 @@ def _normalize_max_slices(slice_dim: int,
     available_memory -= flats_mean_space + darks_mean_space
 
     # it also needs space for data input and output (we don't care about slice_dim)
-    in_slice_memory = np.prod(other_dims) * dtype().nbytes
+    in_slice_memory = np.prod(other_dims) * dtype.itemsize
     out_slice_memory = np.prod(other_dims) * float32().nbytes
     slice_memory = in_slice_memory + out_slice_memory
     max_slices = available_memory // slice_memory  # rounds down

@@ -33,13 +33,22 @@ from cupy import ndarray
 from cupyx.scipy.ndimage import gaussian_filter, shift
 
 from httomolib.cuda_kernels import load_cuda_module
+from httomolib.decorator import method_sino
 
 __all__ = [
     "find_center_vo",
     "find_center_360",
 ]
 
+def _calc_max_slices_center_vo(
+    other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
+) -> int:
+    # the function works on one slice from the sinogram all the way through (picks a specific index)
+    # so memory is not restricted as long as a single slice can fit
+    return 1000000
 
+
+@method_sino(_calc_max_slices_center_vo)
 @nvtx.annotate()
 def find_center_vo(
     data: cp.ndarray,
@@ -285,7 +294,16 @@ def _downsample(sino, level, axis):
     return downsampled_data
 
 
+def _calc_max_slices_center_360(
+    other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
+) -> int:
+    # the function works on one slice from the sinogram all the way through (picks 0 or a specific index)
+    # so memory is not restricted as long as a single slice can fit
+    return 1000000
+
+
 # --- Center of rotation (COR) estimation method ---#
+@method_sino(_calc_max_slices_center_360)
 @nvtx.annotate()
 def find_center_360(
     data: cp.ndarray,

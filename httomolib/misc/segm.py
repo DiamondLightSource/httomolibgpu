@@ -24,12 +24,14 @@
 import numpy as np
 from numpy import ndarray
 from skimage import filters
+from httomolib.decorator import method_all
 
 __all__ = [
     "binary_thresholding",
 ]
 
 
+@method_all(cpuonly=True)
 def binary_thresholding(
     data: ndarray,
     val_intensity: float = 0.1,

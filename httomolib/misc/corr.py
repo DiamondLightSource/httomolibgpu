@@ -24,11 +24,14 @@
 try:
     import cupy as cp
 except ImportError:
-    print('Cupy might be required for some methods in this module')    
+    print("Cupy might be required for some methods in this module")
 
+from typing import Tuple
 import numpy as np
+import nvtx
 
 from httomolib.cuda_kernels import load_cuda_module
+from httomolib.decorator import calc_max_slices_default, method_all
 
 __all__ = [
     "median_filter3d",
@@ -37,6 +40,8 @@ __all__ = [
 ]
 
 
+@method_all(calc_max_slices=calc_max_slices_default)
+@nvtx.annotate()
 def median_filter3d(
     data: cp.ndarray, kernel_size: int = 3, dif: float = 0.0
 ) -> cp.ndarray:
@@ -101,6 +106,7 @@ def median_filter3d(
     return out
 
 
+@method_all(calc_max_slices=calc_max_slices_default)
 def remove_outlier3d(
     data: cp.ndarray, kernel_size: int = 3, dif: float = 0.1
 ) -> cp.ndarray:
@@ -130,6 +136,7 @@ def remove_outlier3d(
     return median_filter3d(data=data, kernel_size=kernel_size, dif=dif)
 
 
+@method_all(cpuonly=True)
 def inpainting_filter3d(
     data: np.ndarray,
     mask: np.ndarray,
