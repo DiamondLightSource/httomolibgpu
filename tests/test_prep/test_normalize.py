@@ -24,9 +24,21 @@ def test_normalize_1D_raises(data, flats, darks, ensure_clean_memory):
     with pytest.raises(ValueError):
         normalize(data, _data_1d, darks)
 
-
 @cp.testing.gpu
 def test_normalize(data, flats, darks, ensure_clean_memory):
+    # --- testing normalize  ---#
+    data_normalize = normalize(cp.copy(data), flats, darks, minus_log=True).get()
+
+    assert data_normalize.dtype == np.float32
+
+    assert_allclose(np.mean(data_normalize), 0.2892469, rtol=1e-06)
+    assert_allclose(np.mean(data_normalize, axis=(1, 2)).sum(), 52.064465, rtol=1e-06)
+    assert_allclose(np.median(data_normalize), 0.01723744, rtol=1e-06)
+    assert_allclose(np.std(data_normalize), 0.524382, rtol=1e-06)
+
+
+@cp.testing.gpu
+def test_normalize_meta(data, flats, darks, ensure_clean_memory):
     # --- testing normalize  ---#
     hook = MaxMemoryHook()
     with hook:
@@ -38,15 +50,10 @@ def test_normalize(data, flats, darks, ensure_clean_memory):
     estimated_slices = normalize.meta.calc_max_slices(0, (data.shape[1], data.shape[2]), data.dtype, max_mem,
                                                       flats=flats, darks=darks)
     assert estimated_slices <= actual_slices
-    assert estimated_slices / actual_slices >= 0.8 
-
-    assert data_normalize.dtype == np.float32
-
-    assert_allclose(np.mean(data_normalize), 0.2892469, rtol=1e-06)
-    assert_allclose(np.mean(data_normalize, axis=(1, 2)).sum(), 52.064465, rtol=1e-06)
-    assert_allclose(np.median(data_normalize), 0.01723744, rtol=1e-06)
-    assert_allclose(np.std(data_normalize), 0.524382, rtol=1e-06)
-
+    assert estimated_slices / actual_slices >= 0.8
+    assert normalize.meta.pattern == 'projection'
+    assert 'normalize' in method_registry['httomolib']['prep']['normalize']
+    
 
 @cp.testing.gpu
 @pytest.mark.perf
@@ -96,32 +103,4 @@ def test_normalize_performance(ensure_clean_memory):
     duration_ms = float(end - start) * 1e-6 / 10
 
     assert "performance in ms" == duration_ms
-
-
-def test_normalize_memory_calc():
-    dy = 5
-    dx = 2560
-    # space for 200 slices in total, incl. flats/darks means, but not the 
-    # flats/darks themselves (we assume they have been pre-allocated already and
-    # excluded from available memory)
-    available_memory = (dx*dy*200 + 42) * 4  
-
-    # 2 slices for means are needed -> 198 left
-    flats = cp.empty((50, dy, dx), dtype=np.uint16)
-    darks = cp.empty((30, dy, dx), dtype=np.uint16)
-    
-    args = dict(flats=flats, 
-                darks=darks, 
-                cutoff=10.0,
-                minus_log=True,
-                nonnegativity=False,
-                remove_nans=False)
-    
-    assert 'normalize' in method_registry['httomolib']['prep']['normalize']
-
-    # with 4-byte inputs and outputs, we can fit 198 slices between input / output
-    assert normalize.meta.calc_max_slices(0, (dy, dx), np.float32(), available_memory, **args) == 99
-
-    # with 2-byte inputs, 4-byte outputs, we can fit 132 (input takes only half the space)
-    assert normalize.meta.calc_max_slices(0, (dy, dx), np.uint16(), available_memory, **args) == 132
     

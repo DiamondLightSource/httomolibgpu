@@ -19,6 +19,24 @@ def test_remove_stripe_ti_on_data(data, flats, darks):
     # --- testing the CuPy implementation from TomoCupy ---#
     data = normalize(data, flats, darks, cutoff=10, minus_log=True)
     
+    data_after_stripe_removal = remove_stripe_ti(cp.copy(data)).get()
+
+    assert_allclose(np.mean(data_after_stripe_removal), 0.28924704, rtol=1e-05)
+    assert_allclose(
+        np.mean(data_after_stripe_removal, axis=(1, 2)).sum(), 52.064457, rtol=1e-06
+    )
+    assert_allclose(np.median(data_after_stripe_removal), 0.026177486, rtol=1e-05)
+    assert_allclose(np.max(data_after_stripe_removal), 2.715983, rtol=1e-05)
+    
+    data = None  #: free up GPU memory
+    # make sure the output is float32
+    assert data_after_stripe_removal.dtype == np.float32
+
+@cp.testing.gpu
+def test_remove_stripe_ti_on_data_meta(data, flats, darks):
+    # --- testing the CuPy implementation from TomoCupy ---#
+    data = normalize(data, flats, darks, cutoff=10, minus_log=True)
+    
     hook = MaxMemoryHook()
     with hook:
         data_after_stripe_removal = remove_stripe_ti(cp.copy(data)).get()
@@ -30,16 +48,7 @@ def test_remove_stripe_ti_on_data(data, flats, darks):
     assert estimated_slices <= actual_slices
     assert estimated_slices / actual_slices >= 0.8 
 
-    data = None  #: free up GPU memory
-    assert_allclose(np.mean(data_after_stripe_removal), 0.28924704, rtol=1e-05)
-    assert_allclose(
-        np.mean(data_after_stripe_removal, axis=(1, 2)).sum(), 52.064457, rtol=1e-06
-    )
-    assert_allclose(np.median(data_after_stripe_removal), 0.026177486, rtol=1e-05)
-    assert_allclose(np.max(data_after_stripe_removal), 2.715983, rtol=1e-05)
-
-    # make sure the output is float32
-    assert data_after_stripe_removal.dtype == np.float32
+    data = None  #: free up GPU memory   
     assert remove_stripe_ti.meta.pattern == 'sinogram'
     assert 'remove_stripe_ti' in method_registry['httomolib']['prep']['stripe']
 
@@ -70,6 +79,20 @@ def test_remove_stripe_ti_numpy_vs_cupy_on_random_data():
 def test_stripe_removal_sorting_cupy(data, flats, darks):
     # --- testing the CuPy port of TomoPy's implementation ---#
     data = normalize(data, flats, darks, cutoff=10, minus_log=True)
+    corrected_data = remove_stripe_based_sorting(data).get()    
+   
+    data = None  #: free up GPU memory
+    assert_allclose(np.mean(corrected_data), 0.288198, rtol=1e-06)
+    assert_allclose(np.mean(corrected_data, axis=(1, 2)).sum(), 51.87565, rtol=1e-06)
+    assert_allclose(np.sum(corrected_data), 1062413.6, rtol=1e-06)
+
+    # make sure the output is float32
+    assert corrected_data.dtype == np.float32
+
+@cp.testing.gpu
+def test_stripe_removal_sorting_cupy_meta(data, flats, darks):
+    # --- testing the CuPy port of TomoPy's implementation ---#
+    data = normalize(data, flats, darks, cutoff=10, minus_log=True)
     hook = MaxMemoryHook(data.size * data.itemsize)
     with hook:
         corrected_data = remove_stripe_based_sorting(data).get()
@@ -82,12 +105,6 @@ def test_stripe_removal_sorting_cupy(data, flats, darks):
     assert estimated_slices / actual_slices >= 0.8 
     
     data = None  #: free up GPU memory
-    assert_allclose(np.mean(corrected_data), 0.288198, rtol=1e-06)
-    assert_allclose(np.mean(corrected_data, axis=(1, 2)).sum(), 51.87565, rtol=1e-06)
-    assert_allclose(np.sum(corrected_data), 1062413.6, rtol=1e-06)
-
-    # make sure the output is float32
-    assert corrected_data.dtype == np.float32
     assert remove_stripe_based_sorting.meta.pattern == 'sinogram'
     assert 'remove_stripe_based_sorting' in method_registry['httomolib']['prep']['stripe']
 

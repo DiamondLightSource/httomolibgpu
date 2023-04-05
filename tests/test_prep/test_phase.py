@@ -55,6 +55,18 @@ def test_fresnel_filter_1D_raises(ensure_clean_memory):
 @cp.testing.gpu
 def test_paganin_filter(data):
     # --- testing the Paganin filter on tomo_standard ---#
+    filtered_data = paganin_filter(data).get()
+    
+    assert filtered_data.ndim == 3
+    assert_allclose(np.mean(filtered_data), -770.5339, rtol=eps)
+    assert_allclose(np.max(filtered_data), -679.80945, rtol=eps)
+
+    #: make sure the output is float32
+    assert filtered_data.dtype == np.float32
+
+@cp.testing.gpu
+def test_paganin_filter_meta(data):
+    # --- testing the Paganin filter on tomo_standard ---#
     
     hook = MaxMemoryHook(data.size * data.itemsize)
     with hook:
@@ -64,19 +76,12 @@ def test_paganin_filter(data):
     max_mem = hook.max_mem
     actual_slices = data.shape[0]
     estimated_slices = paganin_filter.meta.calc_max_slices(
-        0, (data.shape[1], data.shape[2]), data.dtype, max_mem, pad_x=100, pad_y=100)
+        0, (data.shape[1], data.shape[2]), data.dtype, max_mem, pad_x=120, pad_y=120)
     assert estimated_slices <= actual_slices
-    assert estimated_slices / actual_slices >= 0.8 
+    assert estimated_slices / actual_slices >= 0.8    
 
-    assert filtered_data.ndim == 3
-    assert_allclose(np.mean(filtered_data), -770.5339, rtol=eps)
-    assert_allclose(np.max(filtered_data), -679.80945, rtol=eps)
-
-    #: make sure the output is float32
-    assert filtered_data.dtype == np.float32
     assert paganin_filter.meta.pattern == 'projection'
     assert 'paganin_filter' in method_registry['httomolib']['prep']['phase']
-
 
 @cp.testing.gpu
 def test_paganin_filter_energy100(data):

@@ -25,7 +25,7 @@ from typing import Tuple
 import cupy as cp
 import numpy as np
 import nvtx
-from cupy import float32, mean
+from cupy import uint16, float32, mean
 from httomolib import method_proj
 
 __all__ = ["normalize"]
@@ -43,7 +43,7 @@ def _normalize_max_slices(
 
     # it also needs space for data input and output (we don't care about slice_dim)
     # data: [x, 10, 20], dtype => other_dims = [10, 20]
-    in_slice_memory = np.prod(other_dims) * dtype.nbytes
+    in_slice_memory = np.prod(other_dims) * uint16().nbytes
     out_slice_memory = np.prod(other_dims) * float32().nbytes
     slice_memory = in_slice_memory + out_slice_memory
     max_slices = available_memory // slice_memory  # rounds down

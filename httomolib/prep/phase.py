@@ -183,11 +183,10 @@ def _calc_max_slices_paganin_filter(
     )
     # FFT needs complex inputs, so copy to complex happens first
     complex_slice = in_slice_size / dtype.itemsize * np.complex64().nbytes
-    fftplan_slice = complex_slice * 2.5
+    fftplan_slice = complex_slice # used to be a 2.5 multipler here
     filter_size = complex_slice
-    res_slice = np.prod(other_dims) * np.float32().nbytes
-    temp_slice_size = in_slice_size * 2
-    slice_size = input_size + in_slice_size + temp_slice_size + complex_slice + fftplan_slice + res_slice
+    res_slice = np.prod(other_dims) * np.float32().nbytes    
+    slice_size = input_size + in_slice_size + complex_slice + fftplan_slice + res_slice
     available_memory -= filter_size
     return math.floor(available_memory / slice_size)
 
