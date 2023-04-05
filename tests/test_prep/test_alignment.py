@@ -47,7 +47,7 @@ def test_correct_distortion(
 
     preview = {"starts": [0, 0], "stops": [im.shape[0], im.shape[1]], "steps": [1, 1]}
     corrected_data = implementation(im, distortion_coeffs_path, preview).get()
-
+    
     assert_allclose(np.mean(corrected_data), mean_value)
     assert np.max(corrected_data) == max_value
 

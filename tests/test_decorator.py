@@ -29,9 +29,10 @@ def test_adds_metdata():
     assert method_registry["tests"]["test_decorator"]["myfunc"](2) == 4
 
 
+
 def test_metadata_sino():
     @method_sino(calc_max_slices=None)
-    def otherfunc(a: int) -> int:
+    def otherfunc(a: int):
         pass
 
     assert otherfunc.meta.pattern == "sinogram"
@@ -39,7 +40,7 @@ def test_metadata_sino():
 
 def test_metadata_proj():
     @method_proj(calc_max_slices=None)
-    def otherfunc(a: int) -> int:
+    def otherfunc(a: int):
         pass
 
     assert otherfunc.meta.pattern == "projection"
@@ -47,7 +48,7 @@ def test_metadata_proj():
 
 def test_metadata_cpu():
     @method_all(cpuonly=True)
-    def otherfunc(a: int) -> int:
+    def otherfunc(a: int):
         pass
 
     assert otherfunc.meta.cpu is True
@@ -56,7 +57,7 @@ def test_metadata_cpu():
 
 def test_metadata_cpu_and_gpu():
     @method_all(cpugpu=True)
-    def otherfunc(a: int) -> int:
+    def otherfunc(a: int):
         pass
 
     assert otherfunc.meta.cpu is True

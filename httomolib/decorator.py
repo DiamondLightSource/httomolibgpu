@@ -1,20 +1,19 @@
 import inspect
 
-from typing import Callable, List, Literal, Tuple, Protocol
+from typing import Callable, Dict, List, Literal, Tuple, Protocol, TypeAlias, Union
 import numpy as np
 from dataclasses import dataclass, field
-
-method_registry = dict()
 
 
 class MemoryFunction(Protocol):
     """
-    A callable signature for a function to determine the maximum chunk size
-    supported given the chunking dimension,
-    the size of the other dimensions,
-    the data type,
-    and the available memory in bytes.
-    It takes the actual method parmaters as kwargs, which it may use if needed.
+    A callable signature for a function to determine the maximum chunk size supported,
+    given
+    - the chunking dimension,
+    - the size of the other dimensions,
+    - the data type for the input,
+    - and the available memory in bytes.
+    It takes the actual method parameters as kwargs, which it may use if needed.
 
     It returns the maximum size in slice_dim dimension that can be supported
     within the given memory.
@@ -28,13 +27,37 @@ class MemoryFunction(Protocol):
         available_memory: int,
         **kwargs,
     ) -> int:
+        """
+        Calculate the maximum number of slices that can fit in the given memory,
+        for a method with the 'all' pattern.
+
+        Parameters
+        ----------
+        slice_dim : int
+            The dimension in which the slicing happens (0 for projection, 1 for sinogram)
+        other_dims : Tuple[int, int]
+            Shape of the data input in the other 2 dimensions that are not sliced
+        dtype : np.dtype
+            The numpy datatype for the input data
+        available_memory : int
+            The available memory to fit the slices, in bytes
+        kwargs : dict
+            Dictionary of the extra method paramters (apart from the data input)
+
+        Returns
+        -------
+        int
+            The maximum number of slices that it can fit into the given available memory
+
+        """
         ...
 
 
 class MemorySinglePattern(Protocol):
-    """Signature for a function to calculate the max chunk size for a method that
+    """
+    Signature for a function to calculate the max chunk size for a method that
     supports only one pattern.
-    It avoids the slice_dim parameter, as that's redundant in that case
+    It avoids the slice_dim parameter, as that is redundant in that case.
     """
 
     def __call__(
@@ -44,37 +67,60 @@ class MemorySinglePattern(Protocol):
         available_memory: int,
         **kwargs,
     ) -> int:
+        """
+        Calculate the maximum number of slices that can fit in the given memory,
+        for a method with the 'projection' or 'sinogram' pattern.
+
+        Parameters
+        ----------
+        other_dims : Tuple[int, int]
+            Shape of the data input in the other 2 dimensions that are not sliced
+        dtype : np.dtype
+            The numpy datatype for the input data
+        available_memory : int
+            The available memory to fit the slices, in bytes
+        kwargs : dict
+            Dictionary of the extra method paramters (apart from the data input)
+
+        Returns
+        -------
+        int
+            The maximum number of slices that it can fit into the given available memory
+
+        """
         ...
-
-
-def calc_max_slices_default(
-    slice_dim: int,
-    other_dims: Tuple[int, int],
-    dtype: np.dtype,
-    available_memory: int,
-    **kwargs,
-) -> int:
-    """Default function for calculating maximum slices, which simply assumes
-    space for input and output only is required, both with the same datatype,
-    and no temporaries."""
-
-    return available_memory // (np.prod(other_dims) * dtype.itemsize * 2)
-
-
-def calc_max_slices_single_pattern_default(
-    other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
-) -> int:
-    """Default function for calculating maximum slices, which simply assumes
-    space for input and output only is required, both with the same datatype,
-    and no temporaries."""
-
-    return calc_max_slices_default(0, other_dims, dtype, available_memory, **kwargs)
 
 
 @dataclass(frozen=True)
 class MethodMeta:
-    """Class for meta properties of a function"""
+    """
+    Class for meta properties of a method (to be stored as func.meta by the decorator).
 
+    Attributes
+    ----------
+    method_name : str
+        Name of the method as a string
+    signature : Signature
+        An inspect signature of the method with its arguments
+    module : List[str]
+        A list representing the module hierarchy where the method is defined, e.g.
+        ['httomolib', 'prep', 'normlize'] for 'httomolib/prep/normalize.py'
+    calc_max_slices : MemoryFunction
+        Method to calculate the maximum number of slices that can fit in the given
+        available memory.
+    pattern : Literal["projection", "sinogram", "all"]
+        The pattern supported by the method.
+    cpu : bool
+        Whether the method supports CPU data (numpy)
+    gpu : bool
+        Whether the method supports GPU data (cupy)
+    function : Callable
+        The actual method itself
+    others : dict
+        Dictionary of additional arbitrary meta information
+    """
+
+    # TODO: output dtype somehow? assume output is same as input
     method_name: str
     signature: inspect.Signature
     module: List[str]
@@ -87,6 +133,38 @@ class MethodMeta:
 
     def __call__(self, *args, **kwargs):
         return self.function(*args, **kwargs)
+
+
+MetaDict: TypeAlias = Dict[str, MethodMeta]
+method_registry: Dict[str, Union[MetaDict, MethodMeta]] = dict()
+
+
+def calc_max_slices_default(
+    slice_dim: int,
+    other_dims: Tuple[int, int],
+    dtype: np.dtype,
+    available_memory: int,
+    **kwargs,
+) -> int:
+    """
+    Default function for calculating maximum slices, which simply assumes
+    space for input and output only is required, both with the same datatype,
+    and no temporaries.
+    """
+
+    return available_memory // (np.prod(other_dims) * dtype.itemsize * 2)
+
+
+def calc_max_slices_single_pattern_default(
+    other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
+) -> int:
+    """
+    Default function for calculating maximum slices, which simply assumes
+    space for input and output only is required, both with the same datatype,
+    and no temporaries.
+    """
+
+    return calc_max_slices_default(0, other_dims, dtype, available_memory, **kwargs)
 
 
 def method(
@@ -156,11 +234,31 @@ def method_sino(
     Decorator for exported tomography methods, annotating the method with
     a function to calculate the memory requirements as well as other properties.
 
-    This is a convenience version for sinogram pattern - see method for details.
+    This is a convenience version for sinogram pattern.
+
+    Parameters
+    ----------
+    calc_max_slices: MemoryFunction, optional
+        Function to calculate how many slices can fit in the given GPU memory at max.
+        If not given, it assumes memory is only needed for input and output and no
+        temporaries is needed.
+        It is not used for CPU-only functions.
+    cpuonly: bool, optional
+        Marks the method as CPU only (default: False).
+    cpugpu: bool, optional
+        Marks the method as supporting both CPU and GPU input arrays (default: False).
+    **other: dict, optional
+        Any other keyword arguments will be added to the meta info as a dictionary.
     """
 
-    def _calc_max_slices(_, otherdims, dtype, available_memory, **others):
-        return calc_max_slices(otherdims, dtype, available_memory, **others)
+    def _calc_max_slices(
+        slice_dim: int,
+        other_dims: Tuple[int, int],
+        dtype: np.dtype,
+        available_memory: int,
+        **kwargs,
+    ) -> int:
+        return calc_max_slices(other_dims, dtype, available_memory, **kwargs)
 
     return method(_calc_max_slices, cpuonly, cpugpu, **others, pattern="sinogram")
 
@@ -175,11 +273,31 @@ def method_proj(
     Decorator for exported tomography methods, annotating the method with
     a function to calculate the memory requirements as well as other properties.
 
-    This is a convenience version for projection pattern - see method for details.
+    This is a convenience version for projection pattern.
+
+    Parameters
+    ----------
+    calc_max_slices: MemoryFunction, optional
+        Function to calculate how many slices can fit in the given GPU memory at max.
+        If not given, it assumes memory is only needed for input and output and no
+        temporaries is needed.
+        It is not used for CPU-only functions.
+    cpuonly: bool, optional
+        Marks the method as CPU only (default: False).
+    cpugpu: bool, optional
+        Marks the method as supporting both CPU and GPU input arrays (default: False).
+    **other: dict, optional
+        Any other keyword arguments will be added to the meta info as a dictionary.
     """
 
-    def _calc_max_slices(_, otherdims, dtype, available_memory, **others):
-        return calc_max_slices(otherdims, dtype, available_memory, **others)
+    def _calc_max_slices(
+        slice_dim: int,
+        other_dims: Tuple[int, int],
+        dtype: np.dtype,
+        available_memory: int,
+        **others,
+    ):
+        return calc_max_slices(other_dims, dtype, available_memory, **others)
 
     return method(_calc_max_slices, cpuonly, cpugpu, **others, pattern="projection")
 

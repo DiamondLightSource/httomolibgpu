@@ -187,7 +187,7 @@ def test_retrieve_phase_1D_raises(ensure_clean_memory):
 
 @cp.testing.gpu
 def test_retrieve_phase(data):
-    hook = MaxMemoryHook(data.size * data.itemsize)
+    hook = MaxMemoryHook(data.nbytes)
     with hook:
         phase_data = retrieve_phase(data).get()
 
