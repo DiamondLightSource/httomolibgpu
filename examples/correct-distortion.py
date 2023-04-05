@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import cupy as cp
-from httomolib.prep.alignment import distortion_correction_proj_cupy
+from httomolib.prep.alignment import distortion_correction_proj
 from imageio.v2 import imread, imwrite
 
 # Load image to be corrected
@@ -23,7 +23,7 @@ distortion_coeffs_file_path = data_folder / 'distortion-correction/distortion-co
 
 # Apply distortion correction
 corrected_images = \
-    distortion_correction_proj_cupy(im, distortion_coeffs_file_path, PREVIEW)
+    distortion_correction_proj(im, distortion_coeffs_file_path, PREVIEW)
 corrected_images = cp.squeeze(corrected_images)
 
 # Save corrected image if desired
