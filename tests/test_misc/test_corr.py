@@ -10,6 +10,7 @@ from httomolib.misc.corr import (
     median_filter3d,
     remove_outlier3d,
 )
+from httomolib import method_registry
 from numpy.testing import assert_allclose, assert_equal
 
 eps = 1e-6
@@ -87,6 +88,20 @@ def test_median_filter3d(data):
         median_filter3d(data.astype(cp.float32), kernel_size=5, dif=1.5).get().dtype
         == np.float32
     )
+
+
+@cp.testing.gpu
+def test_median_filter3d_memory_calc():
+    dy = 5
+    dx = 2560
+    available_memory = (dx*dy*200 + 42) * 2
+    args=dict(kernel_size=3, dif=1.5)
+
+    assert 'median_filter3d' in method_registry['httomolib']['misc']['corr']
+    assert median_filter3d.meta.calc_max_slices(0, (dy, dx), np.uint16, available_memory, **args) == 100
+    assert median_filter3d.meta.calc_max_slices(0, (dy, dx), np.float32, available_memory, **args) == 50
+    assert median_filter3d.meta.calc_max_slices(1, (dy, dx), np.uint16, available_memory, **args) == 100
+    assert median_filter3d.meta.calc_max_slices(1, (dy, dx), np.float32, available_memory, **args) == 50
 
 
 @cp.testing.gpu

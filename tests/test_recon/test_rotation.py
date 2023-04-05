@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 from httomolib.prep.normalize import normalize
 from httomolib.recon.rotation import find_center_360, find_center_vo
+from httomolib import method_registry
 from numpy.testing import assert_allclose
 from .rotation_cpu_reference import find_center_360_numpy
 
@@ -21,6 +22,8 @@ def test_find_center_vo(data, flats, darks):
 
     #: Check that we only get a float32 output
     assert cor.dtype == np.float32
+    assert find_center_vo.meta.pattern == 'sinogram'
+    assert 'find_center_vo' in method_registry['httomolib']['recon']['rotation']
 
 
 @cp.testing.gpu
@@ -91,6 +94,8 @@ def test_find_center_360_data(data):
     #: Check that we only get a float32 output
     assert cor.dtype == np.float32
     assert overlap.dtype == np.float32
+    assert find_center_360.meta.pattern == 'sinogram'
+    assert 'find_center_360' in method_registry['httomolib']['recon']['rotation']
 
 
 @cp.testing.gpu

@@ -21,13 +21,37 @@
 # ---------------------------------------------------------------------------
 """Modules for raw projection data normalization"""
 
+from typing import Tuple
 import cupy as cp
+import numpy as np
 import nvtx
-from cupy import float32, log, mean, ndarray
+from cupy import float32, mean
+from httomolib import method_proj
 
 __all__ = ["normalize"]
 
 
+def _normalize_max_slices(
+    other_dims: Tuple[int, int], dtype: cp.dtype, available_memory: int, **kwargs
+) -> int:
+    """Calculate the max chunk size it can fit in the available memory"""
+
+    # normalize needs space to store the darks + flats and their means as a fixed cost
+    flats_mean_space = np.prod(other_dims) * float32().nbytes
+    darks_mean_space = np.prod(other_dims) * float32().nbytes
+    available_memory -= flats_mean_space + darks_mean_space
+
+    # it also needs space for data input and output (we don't care about slice_dim)
+    # data: [x, 10, 20], dtype => other_dims = [10, 20]
+    in_slice_memory = np.prod(other_dims) * dtype.nbytes
+    out_slice_memory = np.prod(other_dims) * float32().nbytes
+    slice_memory = in_slice_memory + out_slice_memory
+    max_slices = available_memory // slice_memory  # rounds down
+
+    return max_slices
+
+
+@method_proj(calc_max_slices=_normalize_max_slices)
 @nvtx.annotate()
 def normalize(
     data: cp.ndarray,
@@ -37,7 +61,7 @@ def normalize(
     minus_log: bool = False,
     nonnegativity: bool = False,
     remove_nans: bool = False,
-) -> ndarray:
+) -> cp.ndarray:
     """
     Normalize raw projection data using the flat and dark field projections.
     This is a raw CUDA kernel implementation with CuPy wrappers.

@@ -22,17 +22,20 @@
 """ Module for loading/saving images """
 
 import os
+from typing import Optional
 
 import numpy as np
 from numpy import ndarray
 from PIL import Image
 from skimage import exposure
+from httomolib.decorator import method_all
 
 __all__ = [
     "save_to_images",
 ]
 
 
+@method_all(cpuonly=True)
 def save_to_images(
     data: ndarray,
     out_dir: str,
@@ -43,7 +46,7 @@ def save_to_images(
     perc_range_min: float = 0.0,
     perc_range_max: float = 100.0,
     jpeg_quality: int = 95,
-    glob_stats: tuple = None,
+    glob_stats: Optional[tuple] = None,
     comm_rank: int = 0,
 ):
     """

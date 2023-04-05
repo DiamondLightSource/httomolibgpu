@@ -54,6 +54,11 @@ def test_sino_360_to_180_wrong_dims(ensure_clean_memory, shape):
         sino_360_to_180(cp.ones(shape, dtype=cp.float32))
 
 
+def test_sino_360_to_180_meta():
+    assert sino_360_to_180.meta.gpu is True
+    assert sino_360_to_180.meta.pattern == 'sinogram'
+
+
 @pytest.mark.parametrize("rotation", ["left", "right"])
 @pytest.mark.perf
 @cp.testing.gpu

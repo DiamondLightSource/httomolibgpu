@@ -21,12 +21,15 @@
 # ---------------------------------------------------------------------------
 """Modules for phase retrieval and phase-contrast enhancement"""
 
+import math
+from typing import Tuple
 import cupy as cp
 import cupyx
 import numpy as np
 import nvtx
 
 from httomolib.cuda_kernels import load_cuda_module
+from httomolib.decorator import method_proj
 
 __all__ = [
     "fresnel_filter",
@@ -41,7 +44,29 @@ PI = 3.14159265359
 PLANCK_CONSTANT = 6.58211928e-19  # [keV*s]
 
 
+def _calc_max_slices_fresnel(
+    other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
+) -> int:
+    height1, width1 = other_dims
+    window_size = (height1 * width1) * np.float64().nbytes
+    pad_width = min(150, int(0.1 * width1))
+    padded_height = height1 + 2 * pad_width
+    padded_width = width1 * 2 * pad_width
+    in_slice_size = height1 * width1 * dtype.itemsize
+    # float64 here as res is internally computed in double
+    internal_slice_size = padded_height * padded_width * np.float64().nbytes
+    out_slice_size = padded_height * padded_width * np.float32().nbytes
+    slice_size = in_slice_size + out_slice_size + internal_slice_size
+    # the internal data is computed using a for loop, so the temporaries won't have
+    # a significant impact. But we add a safety margin for that
+    safety = in_slice_size * 4
+
+    available_memory -= window_size + safety
+    return available_memory // slice_size
+
+
 # CuPy implementation of Fresnel filter ported from Savu
+@method_proj(_calc_max_slices_fresnel)
 def fresnel_filter(
     mat: cp.ndarray, pattern: str, ratio: float, apply_log: bool = True
 ) -> cp.ndarray:
@@ -147,8 +172,29 @@ def _make_window(height, width, ratio, pattern):
     return win2d
 
 
+def _calc_max_slices_paganin_filter(
+    other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
+) -> int:
+    pad_x = kwargs["pad_x"]
+    pad_y = kwargs["pad_y"]
+    input_size = np.prod(other_dims) * dtype.itemsize
+    in_slice_size = (
+        (other_dims[0] + 2 * pad_y) * (other_dims[1] + 2 * pad_x) * dtype.itemsize
+    )
+    # FFT needs complex inputs, so copy to complex happens first
+    complex_slice = in_slice_size / dtype.itemsize * np.complex64().nbytes
+    fftplan_slice = complex_slice * 2.5
+    filter_size = complex_slice
+    res_slice = np.prod(other_dims) * np.float32().nbytes
+    temp_slice_size = in_slice_size * 2
+    slice_size = input_size + in_slice_size + temp_slice_size + complex_slice + fftplan_slice + res_slice
+    available_memory -= filter_size
+    return math.floor(available_memory / slice_size)
+
+
 ## %%%%%%%%%%%%%%%%%%%%%%% paganin_filter %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 #: CuPy implementation of Paganin filter from Savu
+@method_proj(_calc_max_slices_paganin_filter)
 @nvtx.annotate()
 def paganin_filter(
     data: cp.ndarray,
@@ -309,8 +355,36 @@ def paganin_filter(
     return res
 
 
+def _calc_max_slice_retrieve_phase(
+    other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
+) -> int:
+    dy, dz = other_dims
+    pixel_size = kwargs["pixel_size"]
+    energy = kwargs["energy"]
+    wavelength = _wavelength(energy)
+    dist = kwargs["dist"]
+    py = _calc_pad_width(dy, pixel_size, wavelength, dist)
+    pz = _calc_pad_width(dz, pixel_size, wavelength, dist)
+    # x 2 for ifftshift
+    grid_size = (dy + 2 * py) * (dz + 2 * pz) * np.float64().nbytes * 2
+    prj_size = (dy + 2 * py) * (dz + 2 * pz) * np.float32().nbytes * 2
+    prj_complex_size = prj_size * 2
+    fftplan_size = prj_complex_size
+    prj_ret_size = prj_complex_size
+    # the code goes through the projections line by line,
+    # which doesn't need any significant memory compared to the slices
+    # it also updates the inputs in-place
+
+    available_memory -= (
+        grid_size + prj_complex_size + prj_size + fftplan_size + prj_ret_size
+    )
+    slice_memory = np.prod(other_dims) * dtype.itemsize
+    return available_memory // slice_memory
+
+
 ## %%%%%%%%%%%%%%%%%%%%%%% retrieve_phase %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 #: CuPy implementation of retrieve_phase from TomoPy
+@method_proj(_calc_max_slice_retrieve_phase)
 @nvtx.annotate()
 def retrieve_phase(
     tomo: cp.ndarray,
@@ -431,7 +505,7 @@ def _calc_pad(
     """
     _, dy, dz = tomo.shape
     wavelength = _wavelength(energy)
-    py, pz, val = 0, 0, 0
+    py, pz, val = 0, 0, 0.0
     if pad:
         val = _calc_pad_val(tomo)
         py = _calc_pad_width(dy, pixel_size, wavelength, dist)
