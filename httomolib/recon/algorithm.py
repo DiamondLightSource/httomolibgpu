@@ -60,8 +60,8 @@ def _calc_max_slices_reconstruct_tomobar(
 def reconstruct_tomobar(
     data: cp.ndarray,
     angles: np.ndarray,
-    center: float = None,
-    objsize: int = None,
+    center: Optional[float] = None,
+    objsize: Optional[int] = None,
     gpu_id: int = 0,
 ) -> cp.ndarray:
     """
@@ -182,7 +182,7 @@ def _calc_max_slices_reconstruct_tompy_astra(
 def reconstruct_tomopy_astra(
     data: np.ndarray,
     angles: np.ndarray,
-    center: float = None,
+    center: Optional[float] = None,
     algorithm: str = "FBP_CUDA",
     iterations: int = 1,
     proj_type: str = "cuda",

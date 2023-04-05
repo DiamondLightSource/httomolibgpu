@@ -22,7 +22,7 @@
 """Modules for finding the axis of rotation"""
 
 import math
-from typing import Optional, Tuple, Union
+from typing import Literal, Optional, Tuple, Union
 
 import cupy as cp
 import numpy as np
@@ -52,12 +52,12 @@ def _calc_max_slices_center_vo(
 @nvtx.annotate()
 def find_center_vo(
     data: cp.ndarray,
-    ind: int = None,
+    ind: Optional[int] = None,
     smin: int = -50,
     smax: int = 50,
-    srad: int = 6,
-    step: int = 0.25,
-    ratio: int = 0.5,
+    srad: float = 6.,
+    step: float = 0.25,
+    ratio: float = 0.5,
     drop: int = 20,
 ) -> float:
     """
@@ -122,7 +122,7 @@ def find_center_vo(
         init_cen = _search_coarse(_sino_cs, smin, smax, ratio, drop)
         fine_cen = _search_fine(_sino_fs, srad, step, init_cen, ratio, drop)
 
-    return np.float32(cp.asnumpy(fine_cen))
+    return cp.asnumpy(fine_cen, dtype=np.float32)
 
 
 @nvtx.annotate()
@@ -307,13 +307,13 @@ def _calc_max_slices_center_360(
 @nvtx.annotate()
 def find_center_360(
     data: cp.ndarray,
-    ind: int = None,
+    ind: Optional[int] = None,
     win_width: int = 10,
-    side: set = None,
+    side: Optional[Literal[0, 1]] = None,
     denoise: bool = True,
     norm: bool = False,
     use_overlap: bool = False,
-) -> Tuple[float, float, int, float]:
+) -> Tuple[float, float, Optional[Literal[0, 1]], float]:
     """
     Find the center-of-rotation (COR) in a 360-degree scan with offset COR use
     the method presented in Ref. [1] by Nghia Vo.
@@ -378,12 +378,12 @@ def find_center_360(
     else:
         cor = ncol - overlap / 2.0 - 1.0
 
-    return cp.float32(cor), cp.float32(overlap), side, cp.float32(overlap_position)
+    return float(cor), float(overlap), side, float(overlap_position)
 
 
 def _find_overlap(
     mat1, mat2, win_width, side=None, denoise=True, norm=False, use_overlap=False
-):
+) :
     """
     Find the overlap area and overlap side between two images (Ref. [1]) where
     the overlap side referring to the first image.

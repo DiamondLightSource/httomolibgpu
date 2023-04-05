@@ -22,6 +22,7 @@
 """ Module for loading/saving images """
 
 import os
+from typing import Optional
 
 import numpy as np
 from numpy import ndarray
@@ -45,7 +46,7 @@ def save_to_images(
     perc_range_min: float = 0.0,
     perc_range_max: float = 100.0,
     jpeg_quality: int = 95,
-    glob_stats: tuple = None,
+    glob_stats: Optional[tuple] = None,
     comm_rank: int = 0,
 ):
     """

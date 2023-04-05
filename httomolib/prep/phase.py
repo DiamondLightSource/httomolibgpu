@@ -505,7 +505,7 @@ def _calc_pad(
     """
     _, dy, dz = tomo.shape
     wavelength = _wavelength(energy)
-    py, pz, val = 0, 0, 0
+    py, pz, val = 0, 0, 0.0
     if pad:
         val = _calc_pad_val(tomo)
         py = _calc_pad_width(dy, pixel_size, wavelength, dist)

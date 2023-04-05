@@ -63,7 +63,7 @@ def binary_thresholding(
     """
 
     # initialising output mask
-    mask = np.uint8(np.zeros(np.shape(data)))
+    mask = np.zeros(np.shape(data), dtype=np.uint8)
 
     data_full_shape = np.shape(data)
     if data.ndim == 3:

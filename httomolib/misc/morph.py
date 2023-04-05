@@ -21,7 +21,6 @@
 # ---------------------------------------------------------------------------
 """Module for data type morphing functions"""
 
-import math
 import cupy as cp
 import numpy as np
 import nvtx
@@ -37,14 +36,14 @@ def _calc_max_slices_sino_360_to_180(
     other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
 ) -> int:
     assert 'overlap' in kwargs, "Overlap not given"
-    overlap = int(math.round(kwargs['overlap']))
+    overlap = int(np.round(kwargs['overlap']))
     in_slice = np.prod(other_dims) * dtype.itemsize
     out_slice = other_dims[0] * (other_dims[1] * 2 - overlap) / 2 * dtype.itemsize
     # we have to leave this as 64bit to match tomopy?
     weights = overlap * np.float64().nbytes
 
     available_memory -= weights
-    return math.floor(available_memory / (in_slice + out_slice))
+    return int(np.floor(available_memory / (in_slice + out_slice)))
 
 
 

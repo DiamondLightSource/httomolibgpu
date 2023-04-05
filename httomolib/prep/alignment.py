@@ -22,7 +22,7 @@
 """Modules for data correction"""
 
 import os
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import cupy as cp
 import nvtx
@@ -75,9 +75,9 @@ def distortion_correction_proj(
     data: cp.ndarray,
     metadata_path: str,
     preview: Dict[str, List[int]],
-    center_from_left: float = None,
-    center_from_top: float = None,
-    polynomial_coeffs: List[float] = None,
+    center_from_left: Optional[float] = None,
+    center_from_top: Optional[float] = None,
+    polynomial_coeffs: Optional[List[float]] = None,
     crop: int = 0,
 ):
     """Correct the radial distortion in the given stack of 2D images.
