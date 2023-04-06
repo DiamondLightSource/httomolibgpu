@@ -122,8 +122,7 @@ def find_center_vo(
         init_cen = _search_coarse(_sino_cs, smin, smax, ratio, drop)
         fine_cen = _search_fine(_sino_fs, srad, step, init_cen, ratio, drop)
 
-    return cp.asnumpy(fine_cen, dtype=np.float32)
-
+    return fine_cen.get()
 
 @nvtx.annotate()
 def _search_coarse(sino, smin, smax, ratio, drop):

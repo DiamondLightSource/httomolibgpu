@@ -65,24 +65,32 @@ def test_paganin_filter(data):
     assert filtered_data.dtype == np.float32
 
 @cp.testing.gpu
-def test_paganin_filter_meta(data):
+@pytest.mark.parametrize("pad", [0, 31, 100])
+@pytest.mark.parametrize("slices", [15, 51, 160])
+@pytest.mark.parametrize("dtype", [np.uint16, np.float32])
+def test_paganin_filter_meta(pad, slices, dtype):    
     # --- testing the Paganin filter on tomo_standard ---#
-    
+    cache = cp.fft.config.get_plan_cache()
+    cache.clear()
+    kwargs = dict(pad_x=pad, pad_y=pad)
+    data = cp.random.random_sample((slices, 111, 121), dtype=np.float32)
+    if dtype == np.uint16:
+        data = cp.asarray(data * 300.0, dtype=np.uint16)    
     hook = MaxMemoryHook(data.size * data.itemsize)
     with hook:
-        filtered_data = paganin_filter(data).get()
+        paganin_filter(data, **kwargs)
     
     # make sure estimator function is within range (80% min, 100% max)
     max_mem = hook.max_mem
     actual_slices = data.shape[0]
     estimated_slices = paganin_filter.meta.calc_max_slices(
-        0, (data.shape[1], data.shape[2]), data.dtype, max_mem, pad_x=120, pad_y=120)
+        0, (data.shape[1], data.shape[2]), data.dtype, max_mem, **kwargs)
     assert estimated_slices <= actual_slices
     assert estimated_slices / actual_slices >= 0.8    
 
     assert paganin_filter.meta.pattern == 'projection'
     assert 'paganin_filter' in method_registry['httomolib']['prep']['phase']
-
+    
 @cp.testing.gpu
 def test_paganin_filter_energy100(data):
     filtered_data = paganin_filter(data, energy=100.0).get()
@@ -192,10 +200,25 @@ def test_retrieve_phase_1D_raises(ensure_clean_memory):
 
 @cp.testing.gpu
 def test_retrieve_phase(data):
+    phase_data = retrieve_phase(data).get()
+
+    assert phase_data.shape == (180, 128, 160)
+    assert np.sum(phase_data) == 2994544952
+    assert_allclose(np.mean(phase_data), 812.3223068576389, rtol=1e-7)
+    #: retrieve_phase can give uint16 or float32 output
+    assert phase_data.dtype == np.uint16
+
+    float32_phase_data = retrieve_phase(data.astype(cp.float32)).get()
+    assert float32_phase_data.dtype == np.float32
+
+
+@cp.testing.gpu
+def test_retrieve_phase_meta(data):
+    cache = cp.fft.config.get_plan_cache()
+    cache.clear()
     hook = MaxMemoryHook(data.nbytes)
     with hook:
         phase_data = retrieve_phase(data).get()
-
     # make sure estimator function is within range (80% min, 100% max)
     max_mem = hook.max_mem
     actual_slices = data.shape[0]
@@ -203,17 +226,8 @@ def test_retrieve_phase(data):
         0, (data.shape[1], data.shape[2]), data.dtype, max_mem, 
         pixel_size=1e-4, energy=20, dist=50)
     assert estimated_slices <= actual_slices
-    assert estimated_slices / actual_slices >= 0.8 
-
-    assert phase_data.shape == (180, 128, 160)
-    assert np.sum(phase_data) == 2994544952
-    assert_allclose(np.mean(phase_data), 812.3223068576389, rtol=1e-7)
-
-    #: retrieve_phase can give uint16 or float32 output
-    assert phase_data.dtype == np.uint16
-
-    float32_phase_data = retrieve_phase(data.astype(cp.float32)).get()
-    assert float32_phase_data.dtype == np.float32
+    assert estimated_slices / actual_slices >= 0.8
+    
     assert retrieve_phase.meta.pattern == 'projection'
     assert 'retrieve_phase' in method_registry['httomolib']['prep']['phase']
 

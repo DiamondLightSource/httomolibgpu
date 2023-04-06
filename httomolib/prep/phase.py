@@ -183,12 +183,12 @@ def _calc_max_slices_paganin_filter(
     )
     # FFT needs complex inputs, so copy to complex happens first
     complex_slice = in_slice_size / dtype.itemsize * np.complex64().nbytes
-    fftplan_slice = complex_slice # used to be a 2.5 multipler here
+    fftplan_slice = complex_slice
     filter_size = complex_slice
     res_slice = np.prod(other_dims) * np.float32().nbytes    
     slice_size = input_size + in_slice_size + complex_slice + fftplan_slice + res_slice
     available_memory -= filter_size
-    return math.floor(available_memory / slice_size)
+    return available_memory // slice_size
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% paganin_filter %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
@@ -309,6 +309,7 @@ def paganin_filter(
         precond_kernel_int(data, data)
 
     # avoid normalising in both directions - we include multiplier in the post_kernel
+    data = cp.asarray(data, dtype=cp.complex64)
     data = cupyx.scipy.fft.fft2(data, axes=(-2, -1), overwrite_x=True, norm="backward")
 
     # prepare filter here, while the GPU is busy with the FFT
