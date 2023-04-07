@@ -22,7 +22,7 @@
 """Modules for finding the axis of rotation"""
 
 import math
-from typing import Literal, Optional, Tuple, Union
+from typing import List, Literal, Optional, Tuple, Union
 
 import cupy as cp
 import numpy as np
@@ -39,6 +39,7 @@ __all__ = [
     "find_center_vo",
     "find_center_360",
 ]
+
 
 def _calc_max_slices_center_vo(
     other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
@@ -213,6 +214,30 @@ def round_up(x: float) -> int:
     else:
         return int(math.floor(x))
 
+def _get_available_gpu_memory() -> int:
+    dev = cp.cuda.Device()
+    # first, let's make some space
+    cp.get_default_memory_pool().free_all_blocks()
+    cache = cp.fft.config.get_plan_cache()
+    cache.clear()
+    available_memory = dev.mem_info[0] + cp.get_default_memory_pool().free_bytes()
+    return int(available_memory * 0.9)  # 10% safety margin
+
+def _calculate_chunks(nshifts: int, shift_size: int, available_memory: Optional[int] = None) -> List[int]:
+    if available_memory is None:
+        available_memory = _get_available_gpu_memory()
+
+    freq_domain_size = shift_size  # it needs only half (RFFT), but complex64, so it's the same
+    fft_plan_size = freq_domain_size
+    size_per_shift = fft_plan_size + freq_domain_size
+    nshift_max = available_memory // size_per_shift
+    num_chunks = int(np.ceil(nshifts / nshift_max))
+    chunk_size = int(np.ceil(nshifts / num_chunks))
+    chunks = [chunk_size] * (num_chunks - 1)
+    stop_idx = list(np.cumsum(chunks))
+    stop_idx.append(nshifts)
+    return stop_idx
+
 
 @nvtx.annotate()
 def _calculate_metric(list_shift, sino1, sino2, sino3, mask, out):
@@ -228,40 +253,67 @@ def _calculate_metric(list_shift, sino1, sino2, sino3, mask, out):
     nshifts = list_shift.shape[0]
     na1 = sino1.shape[0]
     na2 = sino2.shape[0]
-    mat = cp.empty((nshifts, na1 + na2, sino2.shape[1]), dtype=cp.float32)
 
-    # first, handle the integer shifts without spline in a raw kernel,
-    # and shift in the sino3 one accordingly
     module = load_cuda_module("center_360_shifts")
     shift_whole_shifts = module.get_function("shift_whole_shifts")
-
-    bx = 128
-    gx = (sino3.shape[1] + bx - 1) // bx
-    shift_whole_shifts(
-        grid=(gx, na2, list_shift.shape[0]),
-        block=(bx, 1, 1),
-        args=(sino2, sino3, list_shift, mat[:, na1:, :], sino3.shape[1], na1 + na2),
+    # note: we don't have to calculate the mean here, as we're only looking for minimum metric.
+    # The sum is enough.
+    masked_sum_abs_kernel = cp.ReductionKernel(
+        in_params="complex64 x, uint16 mask",                   # input, complex + mask
+        out_params="float32 out",                        # output, real
+        map_expr="mask ? abs(x) : 0.0f",
+        reduce_expr="a + b",            
+        post_map_expr="out = a",   
+        identity='0.0f',
+        reduce_type="float",
+        name="masked_sum_abs", 
     )
 
-    # now we can only look at the spline shifting, the rest is done
-    list_shift_host = cp.asnumpy(list_shift)
-    for i in range(list_shift_host.shape[0]):
-        shift_col = float(list_shift_host[i])
-        if not shift_col.is_integer():
-            shifted = shift(sino2, (0, shift_col), order=3, prefilter=True)
-            shift_int = round_up(shift_col)
-            if shift_int >= 0:
-                mat[i, na1:, shift_int:] = shifted[:, shift_int:]
-            else:
-                mat[i, na1:, :shift_int] = shifted[:, :shift_int]
+    # determine how many shifts we can fit in the available memory
+    # and iterate in chunks
+    chunks = _calculate_chunks(nshifts, (na1 + na2) * sino2.shape[1] * cp.float32().nbytes)
 
-    # stack and transform
+    mat = cp.empty((chunks[0], na1 + na2, sino2.shape[1]), dtype=cp.float32)
     mat[:, :na1, :] = sino1
-    tmp = cupyx.scipy.fft.rfft2(mat, axes=(1, 2), norm=None)
-    tmp = cp.abs(tmp)
-    tmp *= mask
-    cp.mean(tmp, axis=(1, 2), out=out)
-    
+    # explicitly create FFT plan here, so it's not cached and clearly re-used
+    plan = cupyx.scipy.fftpack.get_fft_plan(mat, mat.shape[-2:], axes=(1, 2), value_type='R2C')
+
+    for i,stop_idx in enumerate(chunks):
+        if i > 0:
+            # more than one iteration means we're tight on memory, so clear up freed blocks
+            mat_freq = None
+            cp.get_default_memory_pool().free_all_blocks()
+        
+        start_idx = 0 if i == 0 else chunks[i-1]
+        size = stop_idx - start_idx
+        
+        # first, handle the integer shifts without spline in a raw kernel,
+        # and shift in the sino3 one accordingly
+        bx = 128
+        gx = (sino3.shape[1] + bx - 1) // bx
+        shift_whole_shifts(
+            grid=(gx, na2, size), ####
+            block=(bx, 1, 1),
+            args=(sino2, sino3, list_shift[start_idx:stop_idx], mat[:, na1:, :], sino3.shape[1], na1 + na2),
+        )
+
+        # now we can only look at the spline shifting, the rest is done
+        list_shift_host = cp.asnumpy(list_shift[start_idx:stop_idx])
+        for i in range(list_shift_host.shape[0]):
+            shift_col = float(list_shift_host[i])
+            if not shift_col.is_integer():
+                shifted = shift(sino2, (0, shift_col), order=3, prefilter=True)
+                shift_int = round_up(shift_col)
+                if shift_int >= 0:
+                    mat[i, na1:, shift_int:] = shifted[:, shift_int:]
+                else:
+                    mat[i, na1:, :shift_int] = shifted[:, :shift_int]
+
+        # stack and transform
+        # (we do the full sized mat FFT, even though the last chunk may be smaller, to 
+        # make sure we can re-use the same FFT plan as before)
+        mat_freq = cupyx.scipy.fft.rfft2(mat, axes=(1, 2), norm=None, plan=plan)
+        masked_sum_abs_kernel(mat_freq[:size, :, :], mask, out=out[start_idx:stop_idx], axis=(1, 2))
 
 
 @nvtx.annotate()

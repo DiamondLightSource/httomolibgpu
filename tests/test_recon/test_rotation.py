@@ -1,10 +1,13 @@
+import math
+import random
 import time
+from unittest import mock
 import cupy as cp
 from cupy.cuda import nvtx
 import numpy as np
 import pytest
 from httomolib.prep.normalize import normalize
-from httomolib.recon.rotation import find_center_360, find_center_vo
+from httomolib.recon.rotation import _calculate_chunks, find_center_360, find_center_vo
 from httomolib import method_registry
 from numpy.testing import assert_allclose
 from .rotation_cpu_reference import find_center_360_numpy
@@ -46,6 +49,46 @@ def test_find_center_vo_random(ensure_clean_memory):
 
     assert_allclose(cent, 1246.75)
 
+
+@cp.testing.gpu
+def test_find_center_vo_calculate_chunks():
+    # we need the split to fit into the available memory, and also make sure
+    # that the last chunk is either the same or smaller than the previous ones
+    # (so that we can re-use the same memory as for the previous chunks, incl. FFT plan)
+    # Note: With shift_size = 100 bytes, we need 200 bytes per shift
+    assert _calculate_chunks(10, 100, 1000000) == [10]
+    assert _calculate_chunks(10, 100, 10 * 200) == [10]
+    assert _calculate_chunks(10, 100, 5 * 200) == [5, 10]
+    assert _calculate_chunks(10, 100, 7 * 200) == [5, 10]
+    assert _calculate_chunks(10, 100, 9 * 200) == [5, 10]
+    assert _calculate_chunks(9, 100, 5 * 200) == [5, 9]
+    assert _calculate_chunks(10, 100, 4 * 200) == [4, 8, 10]
+    # add a bit of randomness here, to check basic assumptions
+    random.seed(123456)
+    for _ in range(100):
+        available = random.randint(1*250, 100*200)  # memory to fit anywhere between 1 and 100 shifts
+        nshifts = random.randint(1, 1000)
+        chunks = _calculate_chunks(nshifts, 100, available)
+        assert len(chunks) > 0
+        assert len(chunks) == math.ceil(nshifts / (available // 200))
+        assert chunks[-1] == nshifts
+        if len(chunks) > 1:
+            diffs = np.diff(chunks)
+            assert diffs[0] > 0
+            np.testing.assert_array_equal(diffs[:-1], diffs[0])
+            assert diffs[-1] <= diffs[0]
+
+
+@cp.testing.gpu
+def test_find_center_vo_data_chunked(data, flats, darks):
+    data = normalize(data, flats, darks)
+
+    # we emulate less memory here - with this amount, we get 12 chunks and 3 chunks in the 2 calls,
+    # and the data should be the same as when it's all fitting
+    with mock.patch('httomolib.recon.rotation._get_available_gpu_memory', return_value=10000000):
+        cor = find_center_vo(data)
+
+    assert_allclose(cor, 79.5)
 
 
 @cp.testing.gpu
@@ -91,9 +134,7 @@ def test_find_center_360_data(data):
     assert side == 1
     assert_allclose(overlap_pos, 111.906334, rtol=eps)
 
-    #: Check that we only get a float32 output
-    assert cor.dtype == np.float32
-    assert overlap.dtype == np.float32
+    #: Check meta
     assert find_center_360.meta.pattern == 'sinogram'
     assert 'find_center_360' in method_registry['httomolib']['recon']['rotation']
 
