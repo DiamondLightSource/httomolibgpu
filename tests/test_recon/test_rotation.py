@@ -55,22 +55,22 @@ def test_find_center_vo_calculate_chunks():
     # we need the split to fit into the available memory, and also make sure
     # that the last chunk is either the same or smaller than the previous ones
     # (so that we can re-use the same memory as for the previous chunks, incl. FFT plan)
-    # Note: With shift_size = 100 bytes, we need 200 bytes per shift
+    # Note: With shift_size = 100 bytes, we need 300 bytes per shift
     assert _calculate_chunks(10, 100, 1000000) == [10]
-    assert _calculate_chunks(10, 100, 10 * 200) == [10]
-    assert _calculate_chunks(10, 100, 5 * 200) == [5, 10]
-    assert _calculate_chunks(10, 100, 7 * 200) == [5, 10]
-    assert _calculate_chunks(10, 100, 9 * 200) == [5, 10]
-    assert _calculate_chunks(9, 100, 5 * 200) == [5, 9]
-    assert _calculate_chunks(10, 100, 4 * 200) == [4, 8, 10]
+    assert _calculate_chunks(10, 100, 10 * 300 + 100) == [10]
+    assert _calculate_chunks(10, 100, 5 * 300 + 100) == [5, 10]
+    assert _calculate_chunks(10, 100, 7 * 300 + 100) == [5, 10]
+    assert _calculate_chunks(10, 100, 9 * 300 + 100) == [5, 10]
+    assert _calculate_chunks(9, 100, 5 * 300 + 100) == [5, 9]
+    assert _calculate_chunks(10, 100, 4 * 300 + 100) == [4, 8, 10]
     # add a bit of randomness here, to check basic assumptions
     random.seed(123456)
     for _ in range(100):
-        available = random.randint(1*250, 100*200)  # memory to fit anywhere between 1 and 100 shifts
+        available = random.randint(1*300+100, 100*300 + 100)  # memory to fit anywhere between 1 and 100 shifts
         nshifts = random.randint(1, 1000)
         chunks = _calculate_chunks(nshifts, 100, available)
         assert len(chunks) > 0
-        assert len(chunks) == math.ceil(nshifts / (available // 200))
+        assert len(chunks) == math.ceil(nshifts / ((available - 100) // 300))
         assert chunks[-1] == nshifts
         if len(chunks) > 1:
             diffs = np.diff(chunks)

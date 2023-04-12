@@ -226,11 +226,13 @@ def _get_available_gpu_memory() -> int:
 def _calculate_chunks(nshifts: int, shift_size: int, available_memory: Optional[int] = None) -> List[int]:
     if available_memory is None:
         available_memory = _get_available_gpu_memory()
-
+    
+    available_memory -= shift_size
     freq_domain_size = shift_size  # it needs only half (RFFT), but complex64, so it's the same
     fft_plan_size = freq_domain_size
-    size_per_shift = fft_plan_size + freq_domain_size
+    size_per_shift = fft_plan_size + freq_domain_size + shift_size
     nshift_max = available_memory // size_per_shift
+    assert nshift_max > 0, "Not enough memory to process"
     num_chunks = int(np.ceil(nshifts / nshift_max))
     chunk_size = int(np.ceil(nshifts / num_chunks))
     chunks = [chunk_size] * (num_chunks - 1)
