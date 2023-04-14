@@ -98,10 +98,10 @@ def test_median_filter3d_memory_calc():
     args=dict(kernel_size=3, dif=1.5)
 
     assert 'median_filter3d' in method_registry['httomolib']['misc']['corr']
-    assert median_filter3d.meta.calc_max_slices(0, (dy, dx), np.uint16, available_memory, **args) == 100
-    assert median_filter3d.meta.calc_max_slices(0, (dy, dx), np.float32, available_memory, **args) == 50
-    assert median_filter3d.meta.calc_max_slices(1, (dy, dx), np.uint16, available_memory, **args) == 100
-    assert median_filter3d.meta.calc_max_slices(1, (dy, dx), np.float32, available_memory, **args) == 50
+    assert median_filter3d.meta.calc_max_slices(0, (dy, dx), np.uint16(), available_memory, **args) == 100
+    assert median_filter3d.meta.calc_max_slices(0, (dy, dx), np.float32(), available_memory, **args) == 50
+    assert median_filter3d.meta.calc_max_slices(1, (dy, dx), np.uint16(), available_memory, **args) == 100
+    assert median_filter3d.meta.calc_max_slices(1, (dy, dx), np.float32(), available_memory, **args) == 50
 
 
 @cp.testing.gpu

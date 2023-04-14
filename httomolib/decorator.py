@@ -42,7 +42,7 @@ class MemoryFunction(Protocol):
         available_memory : int
             The available memory to fit the slices, in bytes
         kwargs : dict
-            Dictionary of the extra method paramters (apart from the data input)
+            Dictionary of the extra method parameters (apart from the data input)
 
         Returns
         -------
