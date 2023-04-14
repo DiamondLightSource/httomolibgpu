@@ -5,10 +5,10 @@ import numpy as np
 
 def test_adds_metdata():
     @method_all(
-        calc_max_slices=lambda slice_dim, otherdims, dtype, available_memory, **kwargs: available_memory
+        calc_max_slices=lambda slice_dim, otherdims, dtype, available_memory, **kwargs: (available_memory
         // dtype().itemsize
         // np.prod(otherdims)
-        // 2
+        // 2, dtype)
     )
     def myfunc(a: int) -> int:
         return a**2
@@ -19,7 +19,7 @@ def test_adds_metdata():
     assert myfunc.meta.cpu is False
     assert myfunc.meta.gpu is True
     # last parameter '2' is mapped to the kwargs
-    assert myfunc.meta.calc_max_slices(0, (10, 10), np.int32, 40000, a=2) == 50
+    assert myfunc.meta.calc_max_slices(0, (10, 10), np.int32(), 40000, a=2) == (50, np.int32())
     assert myfunc.__name__ == "myfunc"
     assert inspect.getfullargspec(myfunc).args == ["a"]
     assert myfunc(2) == 4

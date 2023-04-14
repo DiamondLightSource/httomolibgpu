@@ -46,7 +46,7 @@ PLANCK_CONSTANT = 6.58211928e-19  # [keV*s]
 
 def _calc_max_slices_fresnel(
     other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
-) -> int:
+) -> Tuple[int, np.dtype]:
     height1, width1 = other_dims
     window_size = (height1 * width1) * np.float64().nbytes
     pad_width = min(150, int(0.1 * width1))
@@ -62,7 +62,7 @@ def _calc_max_slices_fresnel(
     safety = in_slice_size * 4
 
     available_memory -= window_size + safety
-    return available_memory // slice_size
+    return available_memory // slice_size, np.float32()
 
 
 # CuPy implementation of Fresnel filter ported from Savu
@@ -174,7 +174,7 @@ def _make_window(height, width, ratio, pattern):
 
 def _calc_max_slices_paganin_filter(
     other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
-) -> int:
+) -> Tuple[int, np.dtype]:
     pad_x = kwargs["pad_x"]
     pad_y = kwargs["pad_y"]
     input_size = np.prod(other_dims) * dtype.itemsize
@@ -188,7 +188,7 @@ def _calc_max_slices_paganin_filter(
     res_slice = np.prod(other_dims) * np.float32().nbytes    
     slice_size = input_size + in_slice_size + complex_slice + fftplan_slice + res_slice
     available_memory -= filter_size
-    return available_memory // slice_size
+    return available_memory // slice_size, np.float32()
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% paganin_filter %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
@@ -357,7 +357,7 @@ def paganin_filter(
 
 def _calc_max_slice_retrieve_phase(
     other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
-) -> int:
+) -> Tuple[int, np.dtype]:
     dy, dz = other_dims
     pixel_size = kwargs["pixel_size"]
     energy = kwargs["energy"]
@@ -379,7 +379,7 @@ def _calc_max_slice_retrieve_phase(
         grid_size + prj_complex_size + prj_size + fftplan_size + prj_ret_size
     )
     slice_memory = np.prod(other_dims) * dtype.itemsize
-    return available_memory // slice_memory
+    return available_memory // slice_memory, dtype
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% retrieve_phase %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##

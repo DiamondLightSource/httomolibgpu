@@ -43,10 +43,10 @@ __all__ = [
 
 def _calc_max_slices_center_vo(
     other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
-) -> int:
+) -> Tuple[int, np.dtype]:
     # the function works on one slice from the sinogram all the way through (picks a specific index)
     # so memory is not restricted as long as a single slice can fit
-    return 1000000
+    return 1000000, dtype
 
 
 @method_sino(_calc_max_slices_center_vo)
@@ -349,10 +349,10 @@ def _downsample(sino, level, axis):
 
 def _calc_max_slices_center_360(
     other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
-) -> int:
+) -> Tuple[int, np.dtype]:
     # the function works on one slice from the sinogram all the way through (picks 0 or a specific index)
     # so memory is not restricted as long as a single slice can fit
-    return 1000000
+    return 1000000, dtype
 
 
 # --- Center of rotation (COR) estimation method ---#

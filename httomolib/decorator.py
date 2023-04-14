@@ -26,7 +26,7 @@ class MemoryFunction(Protocol):
         dtype: np.dtype,
         available_memory: int,
         **kwargs,
-    ) -> int:
+    ) -> Tuple[int, np.dtype]:
         """
         Calculate the maximum number of slices that can fit in the given memory,
         for a method with the 'all' pattern.
@@ -46,8 +46,10 @@ class MemoryFunction(Protocol):
 
         Returns
         -------
-        int
-            The maximum number of slices that it can fit into the given available memory
+        Tuple[int, np.dtype]
+            Tuple consisting of:
+            - the maximum number of slices that it can fit into the given available memory
+            - the output dtype for the given input dtype
 
         """
         ...
@@ -66,7 +68,7 @@ class MemorySinglePattern(Protocol):
         dtype: np.dtype,
         available_memory: int,
         **kwargs,
-    ) -> int:
+    ) -> Tuple[int, np.dtype]:
         """
         Calculate the maximum number of slices that can fit in the given memory,
         for a method with the 'projection' or 'sinogram' pattern.
@@ -84,8 +86,10 @@ class MemorySinglePattern(Protocol):
 
         Returns
         -------
-        int
-            The maximum number of slices that it can fit into the given available memory
+        Tuple[int, np.dtype]
+            Tuple consisting of:
+            - the maximum number of slices that it can fit into the given available memory
+            - the output dtype for the given input dtype
 
         """
         ...
@@ -119,8 +123,7 @@ class MethodMeta:
     others : dict
         Dictionary of additional arbitrary meta information
     """
-
-    # TODO: output dtype somehow? assume output is same as input
+    
     method_name: str
     signature: inspect.Signature
     module: List[str]
@@ -145,19 +148,19 @@ def calc_max_slices_default(
     dtype: np.dtype,
     available_memory: int,
     **kwargs,
-) -> int:
+) -> Tuple[int, np.dtype]:
     """
     Default function for calculating maximum slices, which simply assumes
     space for input and output only is required, both with the same datatype,
     and no temporaries.
     """
 
-    return available_memory // (np.prod(other_dims) * dtype.itemsize * 2)
+    return available_memory // (np.prod(other_dims) * dtype.itemsize * 2), dtype
 
 
 def calc_max_slices_single_pattern_default(
     other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
-) -> int:
+) -> Tuple[int, np.dtype]:
     """
     Default function for calculating maximum slices, which simply assumes
     space for input and output only is required, both with the same datatype,

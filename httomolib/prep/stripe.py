@@ -38,7 +38,7 @@ __all__ = [
 
 def _calc_max_slices_stripe_based_sorting(
     other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
-) -> int:
+) -> Tuple[int, np.dtype]:
     # the algorithm calls _rsort for each slice independenty, and it needs 
     # several temporaries in the order of the input slice.
     # Those temporaries are independent of the number of slices and represent a fixed 
@@ -46,7 +46,7 @@ def _calc_max_slices_stripe_based_sorting(
     slice_mem = np.prod(other_dims) * dtype.itemsize * 1.25
     temp_mem = slice_mem * 8
     available_memory -= temp_mem
-    return available_memory // slice_mem
+    return available_memory // slice_mem, dtype
 
 
 @method_sino(_calc_max_slices_stripe_based_sorting, cpugpu=True)
@@ -128,7 +128,7 @@ def _rs_sort(sinogram, size, dim):
 
 def _calc_max_slices_remove_stripe_ti(
     other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
-) -> int:
+) -> Tuple[int, np.dtype]:
     # This is admittedly a rough estimation, but it should be about right
     gamma_mem = other_dims[1] * np.float64().itemsize
     
@@ -138,7 +138,7 @@ def _calc_max_slices_remove_stripe_ti(
     extra_temp_mem = slice_mean_mem * 8
 
     available_memory -= gamma_mem
-    return available_memory // (in_slice_mem + slice_mean_mem + slice_fft_plan_mem + extra_temp_mem)
+    return available_memory // (in_slice_mem + slice_mean_mem + slice_fft_plan_mem + extra_temp_mem), dtype
 
 
 @method_sino(_calc_max_slices_remove_stripe_ti, cpugpu=True)
