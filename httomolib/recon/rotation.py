@@ -22,32 +22,34 @@
 """Modules for finding the axis of rotation"""
 
 import math
-from typing import Optional
+from typing import Optional, Tuple, Union
 
 import cupy as cp
 import numpy as np
+import cupyx
 import nvtx
-import scipy.ndimage as ndi
+import cupyx.scipy.ndimage as cpndi
 from cupy import ndarray
 from cupyx.scipy.ndimage import gaussian_filter, shift
-from scipy import stats
+
+from httomolib.cuda_kernels import load_cuda_module
 
 __all__ = [
-    'find_center_vo_cupy',
-    'find_center_360',
+    "find_center_vo",
+    "find_center_360",
 ]
 
 
 @nvtx.annotate()
-def find_center_vo_cupy(
-    data: ndarray,
+def find_center_vo(
+    data: cp.ndarray,
     ind: int = None,
     smin: int = -50,
     smax: int = 50,
     srad: int = 6,
     step: int = 0.25,
     ratio: int = 0.5,
-    drop: int = 20
+    drop: int = 20,
 ) -> float:
     """
     Find rotation axis location using Nghia Vo's method. See the paper
@@ -55,7 +57,7 @@ def find_center_vo_cupy(
 
     Parameters
     ----------
-    data : ndarray
+    data : cp.ndarray
         3D tomographic data or a 2D sinogram as a CuPy array.
     ind : int, optional
         Index of the slice to be used to estimate the CoR.
@@ -64,7 +66,7 @@ def find_center_vo_cupy(
         the sinogram.
     smax : int, optional
         Coarse search radius. Reference to the horizontal center of
-        the sinogram.        
+        the sinogram.
     srad : float, optional
         Fine search radius.
     step : float, optional
@@ -80,10 +82,7 @@ def find_center_vo_cupy(
     float
         Rotation axis location.
     """
-    return _find_center_vo_gpu(data, ind, smin, smax, srad, step, ratio, drop)
 
-
-def _find_center_vo_gpu(data, ind, smin, smax, srad, step, ratio, drop):
     if data.ndim == 2:
         data = cp.expand_dims(data, 1)
         ind = 0
@@ -93,7 +92,7 @@ def _find_center_vo_gpu(data, ind, smin, smax, srad, step, ratio, drop):
     if ind is None:
         ind = height // 2
         if height > 10:
-            _sino = cp.mean(data[:, ind - 5: ind + 5, :], axis=1)
+            _sino = cp.mean(data[:, ind - 5 : ind + 5, :], axis=1)
         else:
             _sino = data[:, ind, :]
     else:
@@ -103,7 +102,7 @@ def _find_center_vo_gpu(data, ind, smin, smax, srad, step, ratio, drop):
         _sino_cs = gaussian_filter(_sino, (3, 1), mode="reflect")
     with nvtx.annotate("gaussian_filter_2", color="green"):
         _sino_fs = gaussian_filter(_sino, (2, 2), mode="reflect")
-    
+
     if _sino.shape[0] * _sino.shape[1] > 4e6:
         # data is large, so downsample it before performing search for
         # centre of rotation
@@ -114,7 +113,7 @@ def _find_center_vo_gpu(data, ind, smin, smax, srad, step, ratio, drop):
         init_cen = _search_coarse(_sino_cs, smin, smax, ratio, drop)
         fine_cen = _search_fine(_sino_fs, srad, step, init_cen, ratio, drop)
 
-    return fine_cen.astype(cp.float32)
+    return np.float32(cp.asnumpy(fine_cen))
 
 
 @nvtx.annotate()
@@ -135,7 +134,7 @@ def _search_coarse(sino, smin, smax, ratio, drop):
     list_shift = 2.0 * (list_cor - cen_fliplr)
     list_metric = cp.empty(list_shift.shape, dtype=cp.float32)
     _calculate_metric(list_shift, sino, flip_sino, comp_sino, mask, list_metric)
-    
+
     minpos = cp.argmin(list_metric)
     if minpos == 0:
         print("WARNING!!!Global minimum is out of searching range")
@@ -154,78 +153,18 @@ def _search_fine(sino, srad, step, init_cen, ratio, drop):
     flip_sino = cp.ascontiguousarray(cp.fliplr(sino))
     comp_sino = cp.ascontiguousarray(cp.flipud(sino))
     mask = _create_mask(2 * nrow, ncol, 0.5 * ratio * ncol, drop)
-    
+
     cen_fliplr = (ncol - 1.0) / 2.0
-    srad = max(min(abs(float(srad)), ncol/4.0), 1.0)
+    srad = max(min(abs(float(srad)), ncol / 4.0), 1.0)
     step = max(min(abs(step), srad), 0.1)
     init_cen = max(min(init_cen, ncol - srad - 1), srad)
     list_cor = init_cen + cp.arange(-srad, srad + step, step, dtype=np.float32)
     list_shift = 2.0 * (list_cor - cen_fliplr)
     list_metric = cp.empty(list_shift.shape, dtype="float32")
-    
+
     _calculate_metric(list_shift, sino, flip_sino, comp_sino, mask, out=list_metric)
     cor = list_cor[cp.argmin(list_metric)]
     return cor
-
-
-GENERATE_MASK_KERNEL = cp.RawKernel(
-    r"""
-extern "C" __global__
-void generate_mask(const int ncol, const int nrow, const int cen_col,
-                    const int cen_row, const float du, const float dv,
-                    const float radius, const float drop, unsigned short* mask) {
-    int i = blockDim.x * blockIdx.x + threadIdx.x;
-    int j = blockDim.y * blockIdx.y + threadIdx.y;
-    
-    if (j >= nrow || i >= ncol)
-        return;
-    
-    int pos = __float2int_ru(((j - cen_row) * dv / radius) / du);
-    int pos1 = -pos + cen_col;
-    int pos2 = pos + cen_col;
-
-    if (pos1 > pos2) {
-        int temp = pos1;
-        pos1 = pos2;
-        pos2 = temp;
-        if (pos1 >= ncol) {
-            pos1 = ncol -1;
-        }
-        if (pos2 < 0) {
-            pos2 = 0;
-        }
-    }
-    else {
-        if (pos1 < 0) {
-            pos1 = 0;
-        }
-        if (pos2 >= ncol) {
-            pos2 = ncol -1;
-        }
-    }
-
-    short outval = (pos1 <= i && i <= pos2) ? 1 : 0;
-
-    // mask[cen_row - drop: cen_row + drop + 1, :] = 0
-    if (j >= cen_row - drop && j <= cen_row + drop) {
-        outval = 0;
-    }
-    // mask[:, cen_col - 1: cen_col + 2] = 0
-    if (i >= cen_col - 1 && i <= cen_col + 1) {
-        outval = 0;
-    }
-    
-    // write to ifft-shifted positions
-    int ishift = (ncol + 1) / 2;
-    int jshift = (nrow + 1) / 2;
-    int outi = (i + ishift) % ncol;
-    int outj = (j + jshift) % nrow;
-
-    mask[outj * ncol + outi] = outval;
-}
-""",
-    "generate_mask",
-)
 
 
 @nvtx.annotate()
@@ -236,14 +175,13 @@ def _create_mask(nrow, ncol, radius, drop):
     cen_col = int(math.ceil(ncol / 2.0) - 1)
     drop = min([drop, int(math.ceil(0.05 * nrow))])
 
-
-    block_x = 16
-    block_y = 8
+    block_x = 128
+    block_y = 1
     block_dims = (block_x, block_y)
-    grid_x = (ncol + block_x - 1) // block_x
-    grid_y = (nrow  + block_y - 1) // block_y
+    grid_x = (ncol//2+1 + block_x - 1) // block_x
+    grid_y = nrow
     grid_dims = (grid_x, grid_y)
-    mask = cp.empty((nrow, ncol), dtype="uint16")
+    mask = cp.empty((nrow, ncol//2+1), dtype="uint16")
     params = (
         ncol,
         nrow,
@@ -255,7 +193,9 @@ def _create_mask(nrow, ncol, radius, drop):
         cp.float32(drop),
         mask,
     )
-    GENERATE_MASK_KERNEL(grid_dims, block_dims, params)
+    module = load_cuda_module("generate_mask")
+    kernel = module.get_function("generate_mask")
+    kernel(grid_dims, block_dims, params)
     return mask
 
 
@@ -274,71 +214,27 @@ def _calculate_metric(list_shift, sino1, sino2, sino3, mask, out):
     assert sino2.dtype == cp.float32, "sino1 must be float32"
     assert sino3.dtype == cp.float32, "sino1 must be float32"
     assert out.dtype == cp.float32, "sino1 must be float32"
-    assert sino2.flags['C_CONTIGUOUS'], "sino2 must be C-contiguous"
-    assert sino3.flags['C_CONTIGUOUS'], "sino3 must be C-contiguous"
-    assert list_shift.flags['C_CONTIGUOUS'], "list_shift must be C-contiguous"
+    assert sino2.flags["C_CONTIGUOUS"], "sino2 must be C-contiguous"
+    assert sino3.flags["C_CONTIGUOUS"], "sino3 must be C-contiguous"
+    assert list_shift.flags["C_CONTIGUOUS"], "list_shift must be C-contiguous"
     nshifts = list_shift.shape[0]
     na1 = sino1.shape[0]
     na2 = sino2.shape[0]
-    mat = cp.empty((nshifts, na1+na2, sino2.shape[1]), dtype=cp.float32)
-    
-    
-    # first, handle the integer shifts without spline in a raw kernel, 
-    # and shift in the sino3 one accordingly
-    shift_whole_shifts = cp.RawKernel(r"""
-        #include <cupy/complex.cuh>
+    mat = cp.empty((nshifts, na1 + na2, sino2.shape[1]), dtype=cp.float32)
 
-        extern "C" __global__
-        void shift_whole_shifts(const float* sino2, const float* sino3, 
-                                const float* __restrict__ list_shift,
-                                float* mat, int nx, int nymat) {
-           int xid = threadIdx.x + blockIdx.x * blockDim.x;
-           int yid = blockIdx.y;
-           int zid = blockIdx.z;
-           int ny = gridDim.y;
-           
-           if (xid >= nx) return;
-           
-           float shift_col = list_shift[zid];
-           float int_part = 0.0;
-           float frac_part = modf(shift_col, &int_part);
-           if (abs(frac_part) > 1e-5f) {
-                // we have a floating point shift, so we only roll in 
-                // sino3, but we leave the rest for later using scipy
-                int shift_int = shift_col >= 0.0 ? int(ceil(shift_col)) : int(floor(shift_col));
-                if (shift_int >= 0 && xid < shift_int) {
-                   mat[zid * nymat * nx + yid * nx + xid] = sino3[yid * nx + xid];
-                } 
-                if (shift_int < 0 && xid >= nx+shift_int) {
-                   mat[zid * nymat * nx + yid * nx + xid] = sino3[yid * nx + xid];
-                }
-           } else {
-                // we have an integer shift, so we can roll in directly
-                // by indexing
-                int shift_int = int(shift_col);
-                if (shift_int >= 0) {
-                    if (xid >= shift_int) {
-                        mat[zid * nymat * nx + yid * nx + xid] = sino2[yid * nx + xid-shift_int];
-                    } else {
-                        mat[zid * nymat * nx + yid * nx + xid] = sino3[yid * nx + xid];
-                    }
-                } else {
-                    if (xid < nx+shift_int) {
-                        mat[zid * nymat * nx + yid * nx + xid] = sino2[yid * nx + xid-shift_int];
-                    } else {
-                        mat[zid * nymat * nx + yid * nx + xid] = sino3[yid * nx + xid];
-                    }
-                }
-           }
-        }
-    """, name="shift_whole_shifts")
+    # first, handle the integer shifts without spline in a raw kernel,
+    # and shift in the sino3 one accordingly
+    module = load_cuda_module("center_360_shifts")
+    shift_whole_shifts = module.get_function("shift_whole_shifts")
 
     bx = 128
     gx = (sino3.shape[1] + bx - 1) // bx
-    shift_whole_shifts(grid=(gx, na2, list_shift.shape[0]),
-                       block=(bx, 1, 1),
-                       args=(sino2, sino3, list_shift, mat[:,na1:,:], sino3.shape[1], na1+na2))
-    
+    shift_whole_shifts(
+        grid=(gx, na2, list_shift.shape[0]),
+        block=(bx, 1, 1),
+        args=(sino2, sino3, list_shift, mat[:, na1:, :], sino3.shape[1], na1 + na2),
+    )
+
     # now we can only look at the spline shifting, the rest is done
     list_shift_host = cp.asnumpy(list_shift)
     for i in range(list_shift_host.shape[0]):
@@ -351,64 +247,19 @@ def _calculate_metric(list_shift, sino1, sino2, sino3, mask, out):
             else:
                 mat[i, na1:, :shift_int] = shifted[:, :shift_int]
 
-        
     # stack and transform
-    mat[:,:na1,:] = sino1
-    cp.abs(cp.fft.fft2(mat, axes=(1,2)), out=mat)
-    mat *= mask
-    cp.mean(mat, axis=(1,2), out=out)
-
-
-
-
-DOWNSAMPLE_SINO_KERNEL = cp.RawKernel(
-    r"""
-    extern "C" __global__
-    void downsample_sino(float* sino, int dx, int dz, int level,
-                         float* out) {
-        // use shared memory to store the values used to "merge" columns of the
-        // sinogram in the downsampling process
-        extern __shared__ float downsampled_vals[];
-        unsigned int binsize, i, j, k, orig_ind, out_ind, output_bin_no;
-        i = blockDim.x * blockIdx.x + threadIdx.x;
-        j = 0;
-        k = blockDim.y * blockIdx.y + threadIdx.y;
-        orig_ind = (k * dz) + i;
-        binsize = 1 << level;
-        unsigned int dz_downsampled = __float2uint_rd(
-            fdividef(__uint2float_rd(dz), __uint2float_rd(binsize)));
-        unsigned int i_downsampled = __float2uint_rd(
-            fdividef(__uint2float_rd(i), __uint2float_rd(binsize)));
-        if (orig_ind < dx * dz) {
-            output_bin_no =  __float2uint_rd(
-                fdividef(__uint2float_rd(i), __uint2float_rd(binsize))
-            );
-            out_ind = (k * dz_downsampled) + i_downsampled;
-            downsampled_vals[threadIdx.y * 8 + threadIdx.x] = sino[orig_ind] / __uint2float_rd(binsize);
-            // synchronise threads within thread-block so that it's guaranteed
-            // that all the required values have been copied into shared memeory
-            // to then sum and save in the downsampled output
-            __syncthreads();
-            // arbitrarily use the "beginning thread" in each "lot" of pixels
-            // for downsampling to then save the desired value in the
-            // downsampled output array
-            if (i % 4 == 0) {
-                out[out_ind] = downsampled_vals[threadIdx.y * 8 + threadIdx.x] +
-                    downsampled_vals[threadIdx.y * 8 + threadIdx.x + 1] +
-                    downsampled_vals[threadIdx.y * 8 + threadIdx.x + 2] +
-                    downsampled_vals[threadIdx.y * 8 + threadIdx.x + 3];
-            }
-        }
-    }
-    """,
-    "downsample_sino",
-)
+    mat[:, :na1, :] = sino1
+    tmp = cupyx.scipy.fft.rfft2(mat, axes=(1, 2), norm=None)
+    tmp = cp.abs(tmp)
+    tmp *= mask
+    cp.mean(tmp, axis=(1, 2), out=out)
+    
 
 
 @nvtx.annotate()
 def _downsample(sino, level, axis):
     assert sino.dtype == cp.float32, "single precision floating point input required"
-    assert sino.flags['C_CONTIGUOUS'], "list_shift must be C-contiguous"
+    assert sino.flags["C_CONTIGUOUS"], "list_shift must be C-contiguous"
 
     dx, dz = sino.shape
     # Determine the new size, dim, of the downsampled dimension
@@ -428,31 +279,36 @@ def _downsample(sino, level, axis):
     # memeory per thread-block
     shared_mem_bytes = 64
     params = (sino, dx, dz, level, downsampled_data)
-    DOWNSAMPLE_SINO_KERNEL(grid_dims, block_dims, params, shared_mem=shared_mem_bytes)
+    module = load_cuda_module("downsample_sino")
+    kernel = module.get_function("downsample_sino")
+    kernel(grid_dims, block_dims, params, shared_mem=shared_mem_bytes)
     return downsampled_data
 
 
-#--- Center of rotation (COR) estimation method ---#
+# --- Center of rotation (COR) estimation method ---#
 @nvtx.annotate()
 def find_center_360(
-    data: np.ndarray,
+    data: cp.ndarray,
     ind: int = None,
     win_width: int = 10,
     side: set = None,
     denoise: bool = True,
     norm: bool = False,
-    use_overlap: bool = False
-) -> tuple[float, float, int, float]:
+    use_overlap: bool = False,
+) -> Tuple[float, float, int, float]:
     """
     Find the center-of-rotation (COR) in a 360-degree scan with offset COR use
     the method presented in Ref. [1] by Nghia Vo.
 
+    This function supports both numpy and cupy - the implementation is selected
+    by where the input data array resides.
+
     Parameters
     ----------
-    data : ndarray
-        3D tomographic data as a CuPy array.
+    data : cp.ndarray
+        3D tomographic data as a Cupy array.
     ind : int, optional
-        Index of the slice to be used for estimate the CoR and the overlap.        
+        Index of the slice to be used for estimate the CoR and the overlap.
     win_width : int, optional
         Window width used for finding the overlap area.
     side : {None, 0, 1}, optional
@@ -485,29 +341,31 @@ def find_center_360(
     """
     if data.ndim != 3:
         raise ValueError("A 3D array must be provided")
-    
+
     # this method works with a 360-degree sinogram.
     if ind is None:
-        _sino = data[:, 0, :]        
+        _sino = data[:, 0, :]
     else:
-        _sino = data[:, ind, :]  
-    
+        _sino = data[:, ind, :]
+
     (nrow, ncol) = _sino.shape
     nrow_180 = nrow // 2 + 1
     sino_top = _sino[0:nrow_180, :]
-    sino_bot = np.fliplr(_sino[-nrow_180:, :])
+    sino_bot = cp.fliplr(_sino[-nrow_180:, :])
     (overlap, side, overlap_position) = _find_overlap(
-        sino_top, sino_bot, win_width, side, denoise, norm, use_overlap)
+        sino_top, sino_bot, win_width, side, denoise, norm, use_overlap
+    )
     if side == 0:
         cor = overlap / 2.0 - 1.0
     else:
         cor = ncol - overlap / 2.0 - 1.0
 
-    return np.float32(cor), np.float32(overlap), side, np.float32(overlap_position)
+    return cp.float32(cor), cp.float32(overlap), side, cp.float32(overlap_position)
 
 
-def _find_overlap(mat1, mat2, win_width, side=None, denoise=True, norm=False,
-                 use_overlap=False):
+def _find_overlap(
+    mat1, mat2, win_width, side=None, denoise=True, norm=False, use_overlap=False
+):
     """
     Find the overlap area and overlap side between two images (Ref. [1]) where
     the overlap side referring to the first image.
@@ -545,25 +403,53 @@ def _find_overlap(mat1, mat2, win_width, side=None, denoise=True, norm=False,
     """
     ncol1 = mat1.shape[1]
     ncol2 = mat2.shape[1]
-    win_width = np.int16(np.clip(win_width, 6, min(ncol1, ncol2) // 2))
+    win_width = int(np.clip(win_width, 6, min(ncol1, ncol2) // 2))
 
     if side == 1:
-        (list_metric, offset) = _search_overlap(mat1, mat2, win_width, side,
-                                               denoise, norm, use_overlap)
+        (list_metric, offset) = _search_overlap(
+            mat1,
+            mat2,
+            win_width,
+            side=side,
+            denoise=denoise,
+            norm=norm,
+            use_overlap=use_overlap,
+        )
         overlap_position = _calculate_curvature(list_metric)[1]
         overlap_position += offset
         overlap = ncol1 - overlap_position + win_width // 2
     elif side == 0:
-        (list_metric, offset) = _search_overlap(mat1, mat2, win_width, side,
-                                               denoise, norm, use_overlap)
+        (list_metric, offset) = _search_overlap(
+            mat1,
+            mat2,
+            win_width,
+            side=side,
+            denoise=denoise,
+            norm=norm,
+            use_overlap=use_overlap,
+        )
         overlap_position = _calculate_curvature(list_metric)[1]
         overlap_position += offset
         overlap = overlap_position + win_width // 2
     else:
-        (list_metric1, offset1) = _search_overlap(mat1, mat2, win_width, 1,
-                                                 norm, denoise, use_overlap)
-        (list_metric2, offset2) = _search_overlap(mat1, mat2, win_width, 0,
-                                                 norm, denoise, use_overlap)
+        (list_metric1, offset1) = _search_overlap(
+            mat1,
+            mat2,
+            win_width,
+            side=1,
+            denoise=denoise,
+            norm=norm,
+            use_overlap=use_overlap,
+        )
+        (list_metric2, offset2) = _search_overlap(
+            mat1,
+            mat2,
+            win_width,
+            side=0,
+            denoise=denoise,
+            norm=norm,
+            use_overlap=use_overlap,
+        )
 
         (curvature1, overlap_position1) = _calculate_curvature(list_metric1)
         overlap_position1 += offset1
@@ -582,8 +468,10 @@ def _find_overlap(mat1, mat2, win_width, side=None, denoise=True, norm=False,
     return overlap, side, overlap_position
 
 
-def _search_overlap(mat1, mat2, win_width, side, denoise=True, norm=False,
-                   use_overlap=False):
+@nvtx.annotate()
+def _search_overlap(
+    mat1, mat2, win_width, side, denoise=True, norm=False, use_overlap=False
+):
     """
     Calculate the correlation metrics between a rectangular region, defined
     by the window width, on the utmost left/right side of image 2 and the
@@ -618,62 +506,79 @@ def _search_overlap(mat1, mat2, win_width, side, denoise=True, norm=False,
         corresponds to the center of the window.
     """
     if denoise is True:
-        mat1 = ndi.gaussian_filter(mat1, (2, 2), mode='reflect')
-        mat2 = ndi.gaussian_filter(mat2, (2, 2), mode='reflect')
+        # note: the filtering makes the output contiguous
+        with nvtx.annotate("denoise_filter", color="green"):
+            mat1 = cpndi.gaussian_filter(mat1, (2, 2), mode="reflect")
+            mat2 = cpndi.gaussian_filter(mat2, (2, 2), mode="reflect")
+    else:
+        mat1 = cp.ascontiguousarray(mat1, dtype=cp.float32)
+        mat2 = cp.ascontiguousarray(mat2, dtype=cp.float32)
+
     (nrow1, ncol1) = mat1.shape
     (nrow2, ncol2) = mat2.shape
 
     if nrow1 != nrow2:
         raise ValueError("Two images are not at the same height!!!")
 
-    win_width = np.int16(np.clip(win_width, 6, min(ncol1, ncol2) // 2 - 1))
+    win_width = int(np.clip(win_width, 6, min(ncol1, ncol2) // 2 - 1))
     offset = win_width // 2
     win_width = 2 * offset  # Make it even
-    ramp_down = np.linspace(1.0, 0.0, win_width)
-    ramp_up = 1.0 - ramp_down
-    wei_down = np.tile(ramp_down, (nrow1, 1))
-    wei_up = np.tile(ramp_up, (nrow1, 1))
 
-    if side == 1:
-        mat2_roi = mat2[:, 0:win_width]
-        mat2_roi_wei = mat2_roi * wei_up
-    else:
-        mat2_roi = mat2[:, ncol2 - win_width:]
-        mat2_roi_wei = mat2_roi * wei_down
+    list_metric = _calc_metrics(mat1, mat2, win_width, side, use_overlap, norm)
 
-    list_mean2 = np.mean(np.abs(mat2_roi), axis=1)
-    list_pos = np.arange(offset, ncol1 - offset)
-    num_metric = len(list_pos)
-    list_metric = np.ones(num_metric, dtype=np.float32)
-
-    for i, pos in enumerate(list_pos):
-        mat1_roi = mat1[:, pos - offset:pos + offset]
-        if use_overlap is True:
-            if side == 1:
-                mat1_roi_wei = mat1_roi * wei_down
-            else:
-                mat1_roi_wei = mat1_roi * wei_up
-        if norm is True:
-            list_mean1 = np.mean(np.abs(mat1_roi), axis=1)
-            list_fact = list_mean2 / list_mean1
-            mat_fact = np.transpose(np.tile(list_fact, (win_width, 1)))
-            mat1_roi = mat1_roi * mat_fact
-            if use_overlap is True:
-                mat1_roi_wei = mat1_roi_wei * mat_fact
-        if use_overlap is True:
-            mat_comb = mat1_roi_wei + mat2_roi_wei
-            list_metric[i] = (_correlation_metric(mat1_roi, mat2_roi)
-                              + _correlation_metric(mat1_roi, mat_comb)
-                              + _correlation_metric(mat2_roi, mat_comb)) / 3.0
-        else:
-            list_metric[i] = _correlation_metric(mat1_roi, mat2_roi)
-    min_metric = np.min(list_metric)
+    min_metric = cp.min(list_metric)
     if min_metric != 0.0:
-        list_metric = list_metric / min_metric
+        list_metric /= min_metric
 
     return list_metric, offset
 
 
+_calc_metrics_module = load_cuda_module(
+    "calc_metrics",
+    name_expressions=[
+        "calc_metrics_kernel<false, false>",
+        "calc_metrics_kernel<true, false>",
+        "calc_metrics_kernel<false, true>",
+        "calc_metrics_kernel<true, true>",
+    ],
+    options=("--maxrregcount=32",),
+)
+
+
+@nvtx.annotate()
+def _calc_metrics(mat1, mat2, win_width, side, use_overlap, norm):
+    assert mat1.dtype == cp.float32, "only float32 supported"
+    assert mat2.dtype == cp.float32, "only float32 supported"
+    assert mat1.shape[0] == mat2.shape[0]
+    assert mat1.flags.c_contiguous, "only contiguos arrays supported"
+    assert mat2.flags.c_contiguous, "only contiguos arrays supported"
+
+    num_pos = mat1.shape[1] - win_width
+    list_metric = cp.empty(num_pos, dtype=cp.float32)
+
+    args = (
+        mat1,
+        np.int32(mat1.strides[0] / mat1.strides[1]),
+        mat2,
+        np.int32(mat2.strides[0] / mat2.strides[1]),
+        np.int32(win_width),
+        np.int32(mat1.shape[0]),
+        np.int32(side),
+        list_metric,
+    )
+    block = (128, 1, 1)
+    grid = (1, np.int32(num_pos), 1)
+    smem = block[0] * 4 * 6 if use_overlap else block[0] * 4 * 3
+    bool2str = lambda x: "true" if x is True else "false"
+    calc_metrics = _calc_metrics_module.get_function(
+        f"calc_metrics_kernel<{bool2str(norm)}, {bool2str(use_overlap)}>"
+    )
+    calc_metrics(grid=grid, block=block, args=args, shared_mem=smem)
+
+    return list_metric
+
+
+@nvtx.annotate()
 def _calculate_curvature(list_metric):
     """
     Calculate the curvature of a fitted curve going through the minimum
@@ -692,39 +597,20 @@ def _calculate_curvature(list_metric):
         Position of the minimum value with sub-pixel accuracy.
     """
     radi = 2
-    num_metric = len(list_metric)
-    min_pos = np.clip(
-        np.argmin(list_metric), radi, num_metric - radi - 1)
+    num_metric = list_metric.size
+    min_metric_idx = int(cp.argmin(list_metric))
+    min_pos = int(np.clip(min_metric_idx, radi, num_metric - radi - 1))
 
-    list1 = list_metric[min_pos - radi:min_pos + radi + 1]
+    # work mostly on CPU here - we have very small arrays here
+    list1 = cp.asnumpy(list_metric[min_pos - radi : min_pos + radi + 1])
     afact1 = np.polyfit(np.arange(0, 2 * radi + 1), list1, 2)[0]
-    list2 = list_metric[min_pos - 1:min_pos + 2]
-    (afact2, bfact2, _) = np.polyfit(
-        np.arange(min_pos - 1, min_pos + 2), list2, 2)
+    list2 = cp.asnumpy(list_metric[min_pos - 1 : min_pos + 2])
+    (afact2, bfact2, _) = np.polyfit(np.arange(min_pos - 1, min_pos + 2), list2, 2)
 
     curvature = np.abs(afact1)
     if afact2 != 0.0:
-        num = - bfact2 / (2 * afact2)
+        num = -bfact2 / (2 * afact2)
         if (num >= min_pos - 1) and (num <= min_pos + 1):
             min_pos = num
 
     return curvature, np.float32(min_pos)
-
-
-def _correlation_metric(mat1, mat2):
-    """
-    Calculate the correlation metric. Smaller metric corresponds to better
-    correlation.
-
-    Parameters
-    ---------
-    mat1 : array_like
-    mat2 : array_like
-
-    Returns
-    -------
-    float
-        Correlation metric.
-    """
-    return np.abs(
-        1.0 - stats.pearsonr(mat1.flatten('F'), mat2.flatten('F'))[0])

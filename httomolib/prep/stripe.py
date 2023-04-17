@@ -27,8 +27,8 @@ import numpy as np
 import nvtx
 
 __all__ = [
-    'remove_stripe_based_sorting',
-    'remove_stripe_ti',
+    "remove_stripe_based_sorting",
+    "remove_stripe_ti",
 ]
 
 # TODO: port 'remove_all_stripe', 'remove_large_stripe' and 'remove_dead_stripe'

@@ -9,6 +9,9 @@ packages = ["httomolib",
             "httomolib.recon",
             "httomolib.cuda_kernels"]
 
+[tool.setuptools.package-data]
+httomolib = ["*.cu", "*.cuh"]    # include cuda kernels in package
+
 [tool.setuptools-git-versioning]
 enabled = true
 

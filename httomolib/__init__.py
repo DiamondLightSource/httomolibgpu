@@ -1,6 +1,7 @@
 from httomolib.misc.corr import *
 from httomolib.misc.images import *
 from httomolib.misc.segm import *
+from httomolib.misc.morph import *
 from httomolib.prep.alignment import *
 from httomolib.prep.normalize import *
 from httomolib.prep.phase import *

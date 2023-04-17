@@ -26,25 +26,24 @@ import cupyx
 import numpy as np
 import nvtx
 
+from httomolib.cuda_kernels import load_cuda_module
+
 __all__ = [
-    'fresnel_filter',
-    'paganin_filter',
-    'retrieve_phase',
+    "fresnel_filter",
+    "paganin_filter",
+    "retrieve_phase",
 ]
 
 # Define constants used in phase retrieval method
 BOLTZMANN_CONSTANT = 1.3806488e-16  # [erg/k]
-SPEED_OF_LIGHT = 299792458e+2  # [cm/s]
+SPEED_OF_LIGHT = 299792458e2  # [cm/s]
 PI = 3.14159265359
 PLANCK_CONSTANT = 6.58211928e-19  # [keV*s]
 
 
 # CuPy implementation of Fresnel filter ported from Savu
 def fresnel_filter(
-    mat: cp.ndarray,
-    pattern: str,
-    ratio: float,
-    apply_log: bool = True
+    mat: cp.ndarray, pattern: str, ratio: float, apply_log: bool = True
 ) -> cp.ndarray:
     """
     Apply Fresnel filter.
@@ -74,8 +73,10 @@ def fresnel_filter(
         mat = cp.expand_dims(mat, 0)
 
     if mat.ndim != 3:
-        raise ValueError(f"Invalid number of dimensions in data: {mat.ndim},"
-                         " please provide a stack of 2D projections.")
+        raise ValueError(
+            f"Invalid number of dimensions in data: {mat.ndim},"
+            " please provide a stack of 2D projections."
+        )
 
     if apply_log is True:
         mat = -cp.log(mat)
@@ -105,23 +106,23 @@ def fresnel_filter(
     for i in range(mat.shape[0]):
         if pattern == "PROJECTION":
             top_drop = 10  # To remove the time stamp in some data
-            mat_pad = cp.pad(mat[i][top_drop:], (
-                (pad_width + top_drop, pad_width), (pad_width, pad_width)),
-                mode="edge")
+            mat_pad = cp.pad(
+                mat[i][top_drop:],
+                ((pad_width + top_drop, pad_width), (pad_width, pad_width)),
+                mode="edge",
+            )
             win_pad = cp.pad(window, pad_width, mode="edge")
-            mat_dec = \
-                cp.fft.ifft2(cp.fft.fft2(mat_pad) / cp.fft.ifftshift(win_pad))
+            mat_dec = cp.fft.ifft2(cp.fft.fft2(mat_pad) / cp.fft.ifftshift(win_pad))
             mat_dec = cp.real(
-                mat_dec[pad_width:pad_width + nrow, pad_width:pad_width + ncol])
+                mat_dec[pad_width : pad_width + nrow, pad_width : pad_width + ncol]
+            )
             res[i] = mat_dec
         else:
-            mat_pad = \
-                cp.pad(mat[i], ((0, 0), (pad_width, pad_width)), mode='edge')
-            win_pad = cp.pad(window, ((0, 0), (pad_width, pad_width)),
-                             mode="edge")
+            mat_pad = cp.pad(mat[i], ((0, 0), (pad_width, pad_width)), mode="edge")
+            win_pad = cp.pad(window, ((0, 0), (pad_width, pad_width)), mode="edge")
             mat_fft = cp.fft.fftshift(cp.fft.fft(mat_pad), axes=1) / win_pad
             mat_dec = cp.fft.ifft(cp.fft.ifftshift(mat_fft, axes=1))
-            mat_dec = cp.real(mat_dec[:, pad_width:pad_width + ncol])
+            mat_dec = cp.real(mat_dec[:, pad_width : pad_width + ncol])
             res[i] = mat_dec
 
     if apply_log is True:
@@ -137,10 +138,10 @@ def _make_window(height, width, ratio, pattern):
         ulist = (1.0 * cp.arange(0, width) - center_wid) / width
         vlist = (1.0 * cp.arange(0, height) - center_hei) / height
         u, v = cp.meshgrid(ulist, vlist)
-        win2d = 1.0 + ratio * (u ** 2 + v ** 2)
+        win2d = 1.0 + ratio * (u**2 + v**2)
     else:
         ulist = (1.0 * cp.arange(0, width) - center_wid) / width
-        win1d = 1.0 + ratio * ulist ** 2
+        win1d = 1.0 + ratio * ulist**2
         win2d = cp.tile(win1d, (height, 1))
 
     return win2d
@@ -157,8 +158,8 @@ def paganin_filter(
     resolution: float = 1.28,
     pad_y: int = 100,
     pad_x: int = 100,
-    pad_method: str = 'edge',
-    increment: float = 0.0
+    pad_method: str = "edge",
+    increment: float = 0.0,
 ) -> cp.ndarray:
     """
     Apply Paganin filter (for denoising or contrast enhancement) to
@@ -203,8 +204,10 @@ def paganin_filter(
         data = cp.expand_dims(data, 0)
 
     if data.ndim != 3:
-        raise ValueError(f"Invalid number of dimensions in data: {data.ndim},"
-                         " please provide a stack of 2D projections.")
+        raise ValueError(
+            f"Invalid number of dimensions in data: {data.ndim},"
+            " please provide a stack of 2D projections."
+        )
 
     # Setup various values for the filter
     _, height, width = data.shape
@@ -219,43 +222,12 @@ def paganin_filter(
 
     # Define the paganin filter, taking into account the padding that will be
     # applied to the projections (if any)
-    
-    # Using RawKernel her as indexing is direct and it avoids a lot of temporaries
+
+    # Using raw kernel her as indexing is direct and it avoids a lot of temporaries
     # and tiny kernels
-    kernel = cp.RawKernel(r"""
-    #include <cupy/complex.cuh>
+    module = load_cuda_module("paganin_filter_gen")
+    kernel = module.get_function("paganin_filter_gen")
 
-    extern "C" __global__
-    void paganin_filter_gen(int width1, int height1, float resolution,
-                            float wavelength, float distance, float ratio,
-                            complex<float>* filtercomplex) {
-        int px = threadIdx.x + blockIdx.x * blockDim.x;
-        int py = threadIdx.y + blockIdx.y * blockDim.y;
-        if (px >= width1) return;
-        if (py >= height1) return;
-
-        float dpx = 1.0f / (width1 * resolution);
-        float dpy = 1.0f / (height1 * resolution);
-        int centerx = (width1 + 1) / 2 - 1;
-        int centery = (height1 + 1) / 2 - 1;
-
-        float pxx = (px - centerx) * dpx;
-        float pyy = (py - centery) * dpy;
-        float pd = (pxx*pxx + pyy*pyy) * wavelength * distance * 3.1415926535897932384626433832795f;
-        float filter1 = 1.0f + ratio * pd;
-
-        complex<float> value = 1.0f / complex<float>(filter1, filter1);
-
-        // ifftshifting positions
-        int xshift = (width1 + 1) / 2;
-        int yshift = (height1 + 1) / 2;
-        int outX = (px + xshift) % width1;
-        int outY = (py + yshift) % height1;
-
-        filtercomplex[outY * width1 + outX] = value;
-    }
-    """, "paganin_filter_gen")
-    
     # Apply padding to all the 2D projections
     # Note: this takes considerable time on GPU...
     data = cp.pad(data, ((0, 0), (pad_y, pad_y), (pad_x, pad_x)), mode=pad_method)
@@ -293,21 +265,26 @@ def paganin_filter(
 
     # avoid normalising in both directions - we include multiplier in the post_kernel
     data = cupyx.scipy.fft.fft2(data, axes=(-2, -1), overwrite_x=True, norm="backward")
-    
+
     # prepare filter here, while the GPU is busy with the FFT
     filtercomplex = cp.empty((height1, width1), dtype=np.complex64)
     bx = 16
     by = 8
     gx = (width1 + bx - 1) // bx
     gy = (height1 + by - 1) // by
-    kernel(grid=(gx, gy, 1), block=(bx, by, 1), 
-        args=(cp.int32(width1), 
-                cp.int32(height1), 
-                cp.float32(resolution), 
-                cp.float32(wavelength), 
-                cp.float32(distance), 
-                cp.float32(ratio), 
-                filtercomplex))
+    kernel(
+        grid=(gx, gy, 1),
+        block=(bx, by, 1),
+        args=(
+            cp.int32(width1),
+            cp.int32(height1),
+            cp.float32(resolution),
+            cp.float32(wavelength),
+            cp.float32(distance),
+            cp.float32(ratio),
+            filtercomplex,
+        ),
+    )
     data *= filtercomplex
 
     data = cupyx.scipy.fft.ifft2(data, axes=(-2, -1), overwrite_x=True, norm="forward")
@@ -319,10 +296,14 @@ def paganin_filter(
         name="paganin_post_proc",
         no_return=True,
     )
-    fft_scale = 1.0/(data.shape[1] * data.shape[2])
+    fft_scale = 1.0 / (data.shape[1] * data.shape[2])
     res = cp.empty((data.shape[0], height, width), dtype=np.float32)
     post_kernel(
-        data[:, pad_y : pad_y + height, pad_x : pad_x + width], np.float32(increment), np.float32(ratio), np.float32(fft_scale), res
+        data[:, pad_y : pad_y + height, pad_x : pad_x + width],
+        np.float32(increment),
+        np.float32(ratio),
+        np.float32(fft_scale),
+        res,
     )
 
     return res
@@ -334,10 +315,10 @@ def paganin_filter(
 def retrieve_phase(
     tomo: cp.ndarray,
     pixel_size: float = 1e-4,
-    dist: float = 50.,
-    energy: float = 20.,
+    dist: float = 50.0,
+    energy: float = 20.0,
     alpha: float = 1e-3,
-    pad: bool = True
+    pad: bool = True,
 ) -> cp.ndarray:
     """
     Perform single-step phase retrieval from phase-contrast measurements
@@ -369,8 +350,10 @@ def retrieve_phase(
         tomo = cp.expand_dims(tomo, 0)
 
     if tomo.ndim != 3:
-        raise ValueError(f"Invalid number of dimensions in data: {tomo.ndim},"
-                         " please provide a stack of 2D projections.")
+        raise ValueError(
+            f"Invalid number of dimensions in data: {tomo.ndim},"
+            " please provide a stack of 2D projections."
+        )
 
     # New dimensions and pad value after padding.
     py, pz, val = _calc_pad(tomo, pixel_size, dist, energy, pad)
@@ -380,10 +363,9 @@ def retrieve_phase(
     w2 = _reciprocal_grid(pixel_size, dy + 2 * py, dz + 2 * pz)
 
     # Filter in Fourier space.
-    phase_filter = cp.fft.fftshift(
-        _paganin_filter_factor(energy, dist, alpha, w2))
+    phase_filter = cp.fft.fftshift(_paganin_filter_factor(energy, dist, alpha, w2))
 
-    prj = cp.full((dy + 2*py, dz + 2*pz), val, dtype=cp.float32)
+    prj = cp.full((dy + 2 * py, dz + 2 * pz), val, dtype=cp.float32)
 
     # Apply phase retrieval
     return _retrieve_phase(tomo, phase_filter, py, pz, prj, pad)
@@ -395,17 +377,17 @@ def _retrieve_phase(
     px: int,
     py: int,
     prj: cp.ndarray,
-    pad: bool
+    pad: bool,
 ) -> cp.ndarray:
     _, dy, dz = tomo.shape
     num_projs = tomo.shape[0]
     normalized_phase_filter = phase_filter / phase_filter.max()
     for m in range(num_projs):
-        prj[px:dy + px, py:dz + py] = tomo[m]
+        prj[px : dy + px, py : dz + py] = tomo[m]
         prj[:px] = prj[px]
-        prj[-px:] = prj[-px-1]
+        prj[-px:] = prj[-px - 1]
         prj[:, :py] = prj[:, py][:, cp.newaxis]
-        prj[:, -py:] = prj[:, -py-1][:, cp.newaxis]
+        prj[:, -py:] = prj[:, -py - 1][:, cp.newaxis]
         # TomoPy has its own 2D FFT implementations
         # https://github.com/tomopy/tomopy/blob/master/source/tomopy/util/misc.py,
         # the NumPy equivalent in CuPy has been used as an alternative
@@ -414,13 +396,14 @@ def _retrieve_phase(
         fproj *= normalized_phase_filter
         proj = cp.real(cp.fft.ifft2(fproj))
         if pad:
-            proj = proj[px:dy + px, py:dz + py]
+            proj = proj[px : dy + px, py : dz + py]
         tomo[m] = proj
     return tomo
 
 
-def _calc_pad(tomo: cp.ndarray, pixel_size: float, dist: float, energy: float,
-              pad: bool) -> tuple[int, int, float]:
+def _calc_pad(
+    tomo: cp.ndarray, pixel_size: float, dist: float, energy: float, pad: bool
+) -> tuple[int, int, float]:
     """
     Calculate new dimensions and pad value after padding.
 
@@ -460,14 +443,14 @@ def _wavelength(energy: float) -> float:
     return 2 * PI * PLANCK_CONSTANT * SPEED_OF_LIGHT / energy
 
 
-def _paganin_filter_factor(energy: float, dist: float, alpha: float,
-                           w2: cp.ndarray) -> cp.ndarray:
+def _paganin_filter_factor(
+    energy: float, dist: float, alpha: float, w2: cp.ndarray
+) -> cp.ndarray:
     return 1 / (_wavelength(energy) * dist * w2 / (4 * PI) + alpha)
 
 
-def _calc_pad_width(dim: int, pixel_size: float, wavelength: float,
-                    dist: float) -> int:
-    pad_pix = cp.ceil(PI * wavelength * dist / pixel_size ** 2)
+def _calc_pad_width(dim: int, pixel_size: float, wavelength: float, dist: float) -> int:
+    pad_pix = cp.ceil(PI * wavelength * dist / pixel_size**2)
     return int((pow(2, cp.ceil(cp.log2(dim + pad_pix))) - dim) * 0.5)
 
 
@@ -504,10 +487,10 @@ def _reciprocal_grid(pixel_size: float, nx: int, ny: int) -> cp.ndarray:
     #
     # When `ufunc.outer` is supported in CuPy, this code can be updated
     # accordingly.
-    grid = cp.empty((len(indx),len(indy)))
+    grid = cp.empty((len(indx), len(indy)))
     for i in range(len(indx)):
         for j in range(len(indy)):
-            grid[i,j] = cp.add(indx[i], indy[j])
+            grid[i, j] = cp.add(indx[i], indy[j])
     return grid
 
 
@@ -531,4 +514,4 @@ def _reciprocal_coord(pixel_size: float, num_grid: int) -> cp.ndarray:
     n = num_grid - 1
     rc = cp.arange(-n, num_grid, 2, dtype=cp.float32)
     rc *= 0.5 / (n * pixel_size)
-    return  rc
+    return rc

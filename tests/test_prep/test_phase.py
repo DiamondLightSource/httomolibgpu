@@ -45,7 +45,7 @@ def test_fresnel_filter_1D_raises(ensure_clean_memory):
     with pytest.raises(ValueError):
         fresnel_filter(_data, "SINOGRAM", 100.0)
 
-    _data = None #: free up GPU memory
+    _data = None  #: free up GPU memory
 
 
 @cp.testing.gpu
@@ -84,24 +84,30 @@ def test_paganin_filter_padmean(data):
         [-785.60736, -786.20215, -786.7521, -787.25494],
         rtol=eps,
     )
-    assert_allclose(filtered_data[0, 50, 40:42], 
-        [-776.6436, -775.1906], rtol=eps, atol=1e-5)
-    assert_allclose(filtered_data[0, 60:63, 90],
-        [-737.75104, -736.6097, -735.49884], rtol=eps, atol=1e-5)
+    assert_allclose(
+        filtered_data[0, 50, 40:42], [-776.6436, -775.1906], rtol=eps, atol=1e-5
+    )
+    assert_allclose(
+        filtered_data[0, 60:63, 90],
+        [-737.75104, -736.6097, -735.49884],
+        rtol=eps,
+        atol=1e-5,
+    )
+
 
 @cp.testing.gpu
 @pytest.mark.perf
 def test_paganin_filter_performance(ensure_clean_memory):
     # Note: low/high and size values taken from sample2_medium.yaml real run
-    
+
     # this test needs ~20GB of memory with 1801 - we'll divide depending on GPU memory
     dev = cp.cuda.Device()
     mem_80percent = 0.8 * dev.mem_info[0]
     size = 1801
-    required_mem = 20 * 1024*1024*1024
+    required_mem = 20 * 1024 * 1024 * 1024
     if mem_80percent < required_mem:
         size = int(np.ceil(size / required_mem * mem_80percent))
-        print(f'Using smaller size of ({size}, 5, 2560) due to memory restrictions')
+        print(f"Using smaller size of ({size}, 5, 2560) due to memory restrictions")
 
     data_host = np.random.random_sample(size=(size, 5, 2560)).astype(np.float32) * 2.0
     data = cp.asarray(data_host, dtype=np.float32)
@@ -149,7 +155,7 @@ def test_paganin_filter_1D_raises(ensure_clean_memory):
     with pytest.raises(ValueError):
         paganin_filter(_data)
 
-    _data = None #: free up GPU memory
+    _data = None  #: free up GPU memory
 
 
 @cp.testing.gpu
@@ -159,7 +165,7 @@ def test_retrieve_phase_1D_raises(ensure_clean_memory):
     with pytest.raises(ValueError):
         retrieve_phase(_data)
 
-    _data = None #: free up GPU memory
+    _data = None  #: free up GPU memory
 
 
 @cp.testing.gpu
