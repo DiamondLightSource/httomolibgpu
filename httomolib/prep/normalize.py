@@ -26,7 +26,7 @@ import cupy as cp
 import numpy as np
 import nvtx
 from cupy import uint16, float32, mean
-from httomolib import method_proj
+from httomolib.decorator import method_proj
 
 __all__ = ["normalize"]
 
