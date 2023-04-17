@@ -34,7 +34,7 @@ __all__ = [
 
 def _calc_max_slices_sino_360_to_180(
     other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
-) -> int:
+) -> Tuple[int, np.dtype]:
     assert 'overlap' in kwargs, "Overlap not given"
     overlap = int(np.round(kwargs['overlap']))
     in_slice = np.prod(other_dims) * dtype.itemsize
@@ -43,7 +43,7 @@ def _calc_max_slices_sino_360_to_180(
     weights = overlap * np.float64().nbytes
 
     available_memory -= weights
-    return int(np.floor(available_memory / (in_slice + out_slice)))
+    return int(np.floor(available_memory / (in_slice + out_slice))), dtype
 
 
 

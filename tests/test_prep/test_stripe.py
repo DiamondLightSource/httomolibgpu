@@ -44,7 +44,7 @@ def test_remove_stripe_ti_on_data_meta(data, flats, darks):
     # make sure estimator function is within range (80% min, 100% max)
     max_mem = hook.max_mem
     actual_slices = data.shape[1]
-    estimated_slices = remove_stripe_ti.meta.calc_max_slices(1, (data.shape[0], data.shape[2]), data.dtype, max_mem)
+    estimated_slices, _ = remove_stripe_ti.meta.calc_max_slices(1, (data.shape[0], data.shape[2]), data.dtype, max_mem)
     assert estimated_slices <= actual_slices
     assert estimated_slices / actual_slices >= 0.8 
 
@@ -100,7 +100,7 @@ def test_stripe_removal_sorting_cupy_meta(data, flats, darks):
     # make sure estimator function is within range (80% min, 100% max)
     max_mem = hook.max_mem
     actual_slices = data.shape[1]
-    estimated_slices = remove_stripe_based_sorting.meta.calc_max_slices(1, (data.shape[0], data.shape[2]), data.dtype, max_mem)
+    estimated_slices, _ = remove_stripe_based_sorting.meta.calc_max_slices(1, (data.shape[0], data.shape[2]), data.dtype, max_mem)
     assert estimated_slices <= actual_slices
     assert estimated_slices / actual_slices >= 0.8 
     

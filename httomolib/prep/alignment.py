@@ -63,7 +63,7 @@ def _calc_max_slices_distortion_correction_proj(
         + indices_size * 3  # The x 3 here is for additional safety margin 
     )                       # to allow for memory for temporaries
 
-    return available_memory // slice_size
+    return available_memory // slice_size, dtype
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%%%%distortion_correction_proj%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##

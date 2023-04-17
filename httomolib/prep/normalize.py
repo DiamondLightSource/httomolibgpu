@@ -33,7 +33,7 @@ __all__ = ["normalize"]
 
 def _normalize_max_slices(
     other_dims: Tuple[int, int], dtype: cp.dtype, available_memory: int, **kwargs
-) -> int:
+) -> Tuple[int, np.dtype]:
     """Calculate the max chunk size it can fit in the available memory"""
 
     # normalize needs space to store the darks + flats and their means as a fixed cost
@@ -48,7 +48,7 @@ def _normalize_max_slices(
     slice_memory = in_slice_memory + out_slice_memory
     max_slices = available_memory // slice_memory  # rounds down
 
-    return max_slices
+    return max_slices, float32()
 
 
 @method_proj(calc_max_slices=_normalize_max_slices)

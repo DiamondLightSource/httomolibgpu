@@ -39,7 +39,7 @@ __all__ = [
 
 def _calc_max_slices_reconstruct_tomobar(
     other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
-) -> int:
+) -> Tuple[int, np.dtype]:
     # we first run filtersync, and calc the memory for that - how com it's 
     DetectorsLengthH = other_dims[1]
     in_slice_size = np.prod(other_dims) * dtype.itemsize
@@ -51,7 +51,7 @@ def _calc_max_slices_reconstruct_tomobar(
     astra_size = in_slice_size * 2
 
     available_memory -= filter_size
-    return available_memory // (in_slice_size + freq_slice + fftplan_size + swapaxis_size + astra_size)
+    return available_memory // (in_slice_size + freq_slice + fftplan_size + swapaxis_size + astra_size), np.float32()
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% ToMoBAR reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
@@ -165,15 +165,15 @@ def _filtersinc3D_cupy(projection3D):
 
 def _calc_max_slices_reconstruct_tompy_astra(
     other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
-) -> int:
+) -> Tuple[int, np.dtype]:
     algorithm = kwargs['algorithm']
     # we don't know how Astra uses the memory - we can only guess
     if algorithm  == 'FBP_CUDA':
         slice_mem = np.prod(other_dims) * dtype.itemsize * 4
-        return available_memory // slice_mem
+        return available_memory // slice_mem, dtype
 
     # no GPU used, we're not really limiting this
-    return available_memory // np.prod(other_dims) // dtype.itemsize
+    return available_memory // np.prod(other_dims) // dtype.itemsize, dtype
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% Tomopy/ASTRA reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%  ##

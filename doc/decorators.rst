@@ -21,7 +21,7 @@ The ``calc_max_slices`` function must have the following signature::
                         other_dims: Tuple[int, int],
                         dtype: np.dtype,
                         available_memory: int,
-                        **kwargs) -> int: ...
+                        **kwargs) -> Tuple[int, np.dtype]: ...
 
 The ``httomo`` package will call this function, passing in the dimension along which it will slice
 (``0`` for projection, ``1`` for sinogram), the other dimensions of the data array shape,
@@ -29,6 +29,8 @@ the data type for the input, and the avaialble memory on the GPU for method exec
 Additionally it passes all other parameters of the method in the ``kwargs`` argument, 
 which can be used by the function in case parameters determine the memory consumption.
 The function should calculate how many slices along the slicing dimension it can fit into the given memory.
+Further, it returns the output datatype of the method (given the input ``dtype`` argument),
+which ``httomo`` will use for calling subsequent functions.
 
 **Example (All Patterns):**
 
@@ -40,7 +42,7 @@ it can fit, given the other two dimension sizes. For example:
 * Assume the available free memory on the GPU is 14,450 bytes
 * It will call the function as::
 
-    max_slices = my_method.meta.calc_max_slices(0, (10, 20), np.float32(), 14450, **method_args)
+    max_slices, outdtype = my_method.meta.calc_max_slices(0, (10, 20), np.float32(), 14450, **method_args)
 
 * The developer of the given method needs to provide this function implementation,
   and it needs to calculate the maximum number of slices it can fit. 
@@ -55,7 +57,7 @@ it can fit, given the other two dimension sizes. For example:
         input_mem_per_slice = other_dims[0] * other_dims[1] * dtype.nbytes
         output_mem_per_slice = input_mem_per_slice
         max_slices = available_memory // (input_mem_per_slice + output_mem_per_slice)
-        return max_slices
+        return max_slices, dtype
 
   (note that `//` denotes integer division, which rounds towards zero)
 * If the method needs extra memory internally, this should be taken into account in the implementation.
