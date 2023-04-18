@@ -2,7 +2,7 @@ import cupy as cp
 import numpy as np
 from httomolib.prep.normalize import normalize as normalize_cupy
 from httomolib.recon.algorithm import (
-    reconstruct_tomobar,
+    reconstruct_FBP,
     reconstruct_tomopy_astra,
 )
 from numpy.testing import assert_allclose
@@ -16,7 +16,7 @@ from tests import MaxMemoryHook
 
 @cp.testing.gpu
 def test_reconstruct_tomobar_device_1(data, flats, darks, ensure_clean_memory):
-    recon_data = reconstruct_tomobar(
+    recon_data = reconstruct_FBP(
         normalize_cupy(data, flats, darks, cutoff=10, minus_log=True),
         np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
         79.5,
@@ -31,7 +31,7 @@ def test_reconstruct_tomobar_device_1(data, flats, darks, ensure_clean_memory):
 
 @cp.testing.gpu
 def test_reconstruct_tomobar_device_2(data, flats, darks, ensure_clean_memory):
-    recon_data = reconstruct_tomobar(
+    recon_data = reconstruct_FBP(
         normalize_cupy(data, flats, darks, cutoff=20.5, minus_log=False),
         np.linspace(5.0 * np.pi / 360.0, 180.0 * np.pi / 360.0, data.shape[0]),
         15.5,
@@ -51,7 +51,7 @@ def test_reconstruct_tomobar_device_3(data, flats, darks, ensure_clean_memory):
     
     hook = MaxMemoryHook(normalized.size * normalized.itemsize)
     with hook:
-        recon_data = reconstruct_tomobar(
+        recon_data = reconstruct_FBP(
             normalized,
             np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
             objsize=15
