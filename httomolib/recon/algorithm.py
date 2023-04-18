@@ -32,12 +32,12 @@ from httomolib.decorator import method_sino
 from httomolib.cuda_kernels import load_cuda_module
 
 __all__ = [
-    "reconstruct_FBP",
+    "FBP_rec",
     "reconstruct_tomopy_astra",
 ]
 
 
-def _calc_max_slices_reconstruct_FBP(
+def _calc_max_slices_FBP(
     other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
 ) -> Tuple[int, np.dtype]:
     # we first run filtersync, and calc the memory for that - how com it's 
@@ -55,9 +55,9 @@ def _calc_max_slices_reconstruct_FBP(
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% FBP reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-@method_sino(_calc_max_slices_reconstruct_FBP)
+@method_sino(_calc_max_slices_FBP)
 @nvtx.annotate()
-def reconstruct_FBP(
+def FBP_rec(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
@@ -65,8 +65,8 @@ def reconstruct_FBP(
     gpu_id: int = 0,
 ) -> cp.ndarray:
     """
-    Perform reconstruction using ToMoBAR wrappers around ASTRA toolbox.
-    This is a 3D recon with CuPy arrays using 3D astra geometry routines.
+    Perform Filtered Backprojection (FBP) reconstruction using ASTRA toolbox and ToMoBAR wrappers.
+    This is 3D recon from a CuPy array and a custom built filter.
 
     Parameters
     ----------
@@ -92,44 +92,16 @@ def reconstruct_FBP(
         center = data.shape[2] // 2  # making a crude guess
     if objsize is None:
         objsize = data.shape[2]
-    """
-    # Perform filtering of the data on the GPU and then pass a pointer to CuPy array to do backprojection.
-    # initiate a 3D ASTRA class object
-    Atools = AstraTools3D(
-        DetectorsDimH=data.shape[2],  # DetectorsDimH # detector dimension (horizontal)
-        # DetectorsDimV: detector dimension (vertical) for 3D case only
-        DetectorsDimV=data.shape[1],
-        AnglesVec=-angles,  # the vector of angles in radians
-        # The center of rotation combined with the shift offsets
-        CenterRotOffset=data.shape[2] / 2 - center - 0.5,
-        ObjSize=objsize,  # a scalar to define the reconstructed object dimensions
-        OS_number=1,  # OS recon disabled
-        device_projector="gpu",
-        GPUdevice_index=gpu_id,
-    )
-    # filter the data on the GPU and keep the result there
-    data = _filtersinc3D_cupy(data)
-
-    # the Astra toolbox requires C-contiguous arrays, and swap axes seem to return a sliced view which
-    # is neither C nor F contiguous.
-    # So we have to make it C-contiguous first
-    data = cp.ascontiguousarray(cp.swapaxes(data, 0, 1))
-
-    # backproject the filtered data while keeping data on the GPU
-    reconstruction = Atools.backprojCuPy(data)
-    """
-    print(data.shape())
-    RecToolsCP = RecToolsDIRCuPy(DetectorsDimH=Horiz_det,  # Horizontal detector dimension
-                                DetectorsDimV=Vert_det,  # Vertical detector dimension (3D case)
-                                CenterRotOffset=0.0,  # Center of Rotation scalar or a vector
-                                AnglesVec=angles_rad,  # A vector of projection angles in radians
-                                ObjSize=N_size,  # Reconstructed object dimensions (scalar)
-                                device_projector="gpu",
-)
-    
-    
+        
+    RecToolsCP = RecToolsDIRCuPy(DetectorsDimH=data.shape[2],  # Horizontal detector dimension
+                                 DetectorsDimV=data.shape[1],  # Vertical detector dimension (3D case)
+                                 CenterRotOffset=data.shape[2] / 2 - center - 0.5,  # Center of Rotation scalar or a vector
+                                 AnglesVec=-angles,  # A vector of projection angles in radians
+                                 ObjSize=objsize,  # Reconstructed object dimensions (scalar)
+                                 device_projector=gpu_id,
+                                 )
+    reconstruction = RecToolsCP.FBP3D(data)
     cp._default_memory_pool.free_all_blocks()
-
     return reconstruction
 
 

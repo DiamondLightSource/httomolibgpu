@@ -2,7 +2,7 @@ import cupy as cp
 import numpy as np
 from httomolib.prep.normalize import normalize as normalize_cupy
 from httomolib.recon.algorithm import (
-    reconstruct_FBP,
+    FBP_rec,
     reconstruct_tomopy_astra,
 )
 from numpy.testing import assert_allclose
@@ -16,12 +16,12 @@ from tests import MaxMemoryHook
 
 @cp.testing.gpu
 def test_reconstruct_tomobar_device_1(data, flats, darks, ensure_clean_memory):
-    recon_data = reconstruct_FBP(
+    recon_data = FBP_rec(
         normalize_cupy(data, flats, darks, cutoff=10, minus_log=True),
         np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
         79.5,
     )
-
+    recon_data = recon_data.get()
     assert_allclose(np.mean(recon_data), 0.000798, rtol=1e-07, atol=1e-6)
     assert_allclose(np.mean(recon_data, axis=(1, 2)).sum(), 0.102106, rtol=1e-05)
     assert_allclose(np.std(recon_data), 0.006293, rtol=1e-07, atol=1e-6)
