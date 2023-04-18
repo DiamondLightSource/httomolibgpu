@@ -3,6 +3,7 @@ requires = ["setuptools>=42", "wheel", "setuptools-git-versioning"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
+include-package-data = true
 packages = ["httomolib",
             "httomolib.misc",
             "httomolib.prep",

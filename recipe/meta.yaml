@@ -19,7 +19,7 @@ requirements:
     - setuptools
   run:
     - python>=3.9
-    - cupy
+    - numpy
     - setuptools
     - scipy
     - pillow
