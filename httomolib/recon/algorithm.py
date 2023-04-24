@@ -121,7 +121,7 @@ def _calc_max_slices_reconstruct_tomopy_astra(
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% Tomopy/ASTRA reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-@method_sino(_calc_max_slices_reconstruct_tomopy_astra)
+@method_sino(cpuonly=True)
 @nvtx.annotate()
 def reconstruct_tomopy_astra(
     data: np.ndarray,
