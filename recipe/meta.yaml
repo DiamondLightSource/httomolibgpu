@@ -20,6 +20,12 @@ requirements:
   run:
     - python
     - numpy
+    - cupy
+    - tomopy
+    - astra-toolbox
+    - nvtx
+    - tomobar
+    - larix
     - setuptools
     - scipy
     - pillow
