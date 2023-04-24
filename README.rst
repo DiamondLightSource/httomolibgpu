@@ -6,7 +6,15 @@ Setup
 * Clone the repository from GitHub using :code:`git clone git@github.com:DiamondLightSource/httomolib.git`
 * Install dependencies from the environment file :code:`conda env create httomolib --file conda/environment.yml`
 * Activate the environment with :code:`conda activate httomolib`
-* Install the environment in development mode with :code:`pip install -e .[dev]`
+* Install the package from the conda channel :code:`conda install -c httomo httomolib`
+* Or install the environment in development mode with :code:`pip install -e .[dev]`
+
+Python conda build packaging
+=====
+* One can also install httomolib as a conda package
+* Ensure that dependencies are installed as in the setup above 
+* :code:`export VERSION=1.0`
+* From the the main folder run: :code:`conda build conda/recipe/ -c conda-forge -c httomo -c astra-toolbox`
 
 An example of using the API
 ===========================

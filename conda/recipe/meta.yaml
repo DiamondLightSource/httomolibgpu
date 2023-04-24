@@ -1,12 +1,11 @@
 {% set name = "httomolib" %}
-{% set version = "0.0.1" %}
 
 package:
   name: {{ name|lower }}
-  version: {{ version }}
+  version: {{ environ['VERSION'] }}
 
 source:
-  path: ../
+  path: ../../
 
 build:
   preserve_egg_dir: False
