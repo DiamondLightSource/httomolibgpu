@@ -21,9 +21,10 @@
 # ---------------------------------------------------------------------------
 """Modules for tomographic reconstruction"""
 
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 import cupy as cp
+from cupy import float32, complex64
 import cupyx
 import numpy as np
 import nvtx
@@ -40,18 +41,19 @@ __all__ = [
 def _calc_max_slices_FBP(
     other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
 ) -> Tuple[int, np.dtype]:
-    # we first run filtersync, and calc the memory for that - how com it's 
+    # we first run filtersync, and calc the memory for that
     DetectorsLengthH = other_dims[1]
     in_slice_size = np.prod(other_dims) * dtype.itemsize
-    filter_size = (DetectorsLengthH//2+1) * np.float32().itemsize
-    freq_slice = other_dims[0] * (DetectorsLengthH//2+1) * np.complex64().itemsize
+    filter_size = (DetectorsLengthH//2+1) * float32().itemsize
+    freq_slice = other_dims[0] * (DetectorsLengthH//2+1) * complex64().itemsize
     fftplan_size = freq_slice * 2
     swapaxis_size = in_slice_size
-    # can only guess what the astra toolbox uses re memory...
-    astra_size = in_slice_size * 2
+    # a guess for astra toolbox memory usage
+    astra_size = in_slice_size * 2.5
 
     available_memory -= filter_size
-    return available_memory // (in_slice_size + freq_slice + fftplan_size + swapaxis_size + astra_size), np.float32()
+    slices_max = available_memory // int(in_slice_size + freq_slice + fftplan_size + swapaxis_size + astra_size)
+    return (slices_max, float32())
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% FBP reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
@@ -104,9 +106,8 @@ def FBP_rec(
     cp._default_memory_pool.free_all_blocks()
     return reconstruction
 
-
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-
+"""
 def _calc_max_slices_reconstruct_tomopy_astra(
     other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
 ) -> Tuple[int, np.dtype]:
@@ -118,7 +119,7 @@ def _calc_max_slices_reconstruct_tomopy_astra(
 
     # no GPU used, we're not really limiting this
     return available_memory // np.prod(other_dims) // dtype.itemsize, dtype
-
+"""
 
 ## %%%%%%%%%%%%%%%%%%%%%%% Tomopy/ASTRA reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 @method_sino(cpuonly=True)
