@@ -21,9 +21,10 @@
 # ---------------------------------------------------------------------------
 """Modules for tomographic reconstruction"""
 
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 import cupy as cp
+from cupy import float32, complex64
 import cupyx
 import numpy as np
 import nvtx
@@ -32,32 +33,33 @@ from httomolib.decorator import method_sino
 from httomolib.cuda_kernels import load_cuda_module
 
 __all__ = [
-    "reconstruct_tomobar",
+    "FBP_rec",
     "reconstruct_tomopy_astra",
 ]
 
 
-def _calc_max_slices_reconstruct_tomobar(
+def _calc_max_slices_FBP(
     other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
 ) -> Tuple[int, np.dtype]:
-    # we first run filtersync, and calc the memory for that - how com it's 
+    # we first run filtersync, and calc the memory for that
     DetectorsLengthH = other_dims[1]
     in_slice_size = np.prod(other_dims) * dtype.itemsize
-    filter_size = (DetectorsLengthH//2+1) * np.float32().itemsize
-    freq_slice = other_dims[0] * (DetectorsLengthH//2+1) * np.complex64().itemsize
+    filter_size = (DetectorsLengthH//2+1) * float32().itemsize
+    freq_slice = other_dims[0] * (DetectorsLengthH//2+1) * complex64().itemsize
     fftplan_size = freq_slice * 2
     swapaxis_size = in_slice_size
-    # can only guess what the astra toolbox uses re memory...
-    astra_size = in_slice_size * 2
+    # a guess for astra toolbox memory usage
+    astra_size = in_slice_size * 2.5
 
     available_memory -= filter_size
-    return available_memory // (in_slice_size + freq_slice + fftplan_size + swapaxis_size + astra_size), np.float32()
+    slices_max = available_memory // int(in_slice_size + freq_slice + fftplan_size + swapaxis_size + astra_size)
+    return (slices_max, float32())
 
 
-## %%%%%%%%%%%%%%%%%%%%%%% ToMoBAR reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-@method_sino(_calc_max_slices_reconstruct_tomobar)
+## %%%%%%%%%%%%%%%%%%%%%%% FBP reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+@method_sino(_calc_max_slices_FBP)
 @nvtx.annotate()
-def reconstruct_tomobar(
+def FBP_rec(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
@@ -65,8 +67,8 @@ def reconstruct_tomobar(
     gpu_id: int = 0,
 ) -> cp.ndarray:
     """
-    Perform reconstruction using ToMoBAR wrappers around ASTRA toolbox.
-    This is a 3D recon using 3D astra geometry routines.
+    Perform Filtered Backprojection (FBP) reconstruction using ASTRA toolbox and ToMoBAR wrappers.
+    This is 3D recon from a CuPy array and a custom built filter.
 
     Parameters
     ----------
@@ -84,100 +86,43 @@ def reconstruct_tomobar(
     Returns
     -------
     cp.ndarray
-        The reconstructed volume as a CuPy array.
+        The FBP reconstructed volume as a CuPy array.
     """
-    from tomobar.supp.astraOP import AstraTools3D
+    from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
 
     if center is None:
         center = data.shape[2] // 2  # making a crude guess
     if objsize is None:
         objsize = data.shape[2]
-
-    # Perform filtering of the data on the GPU and then pass a pointer to CuPy array to do backprojection.
-    # initiate a 3D ASTRA class object
-    Atools = AstraTools3D(
-        DetectorsDimH=data.shape[2],  # DetectorsDimH # detector dimension (horizontal)
-        # DetectorsDimV: detector dimension (vertical) for 3D case only
-        DetectorsDimV=data.shape[1],
-        AnglesVec=-angles,  # the vector of angles in radians
-        # The center of rotation combined with the shift offsets
-        CenterRotOffset=data.shape[2] / 2 - center - 0.5,
-        ObjSize=objsize,  # a scalar to define the reconstructed object dimensions
-        OS_number=1,  # OS recon disabled
-        device_projector="gpu",
-        GPUdevice_index=gpu_id,
-    )
-    # filter the data on the GPU and keep the result there
-    data = _filtersinc3D_cupy(data)
-
-    # the Astra toolbox requires C-contiguous arrays, and swap axes seem to return a sliced view which
-    # is neither C nor F contiguous.
-    # So we have to make it C-contiguous first
-    data = cp.ascontiguousarray(cp.swapaxes(data, 0, 1))
-
-    # backproject the filtered data while keeping data on the GPU
-    reconstruction = Atools.backprojCuPy(data)
+        
+    RecToolsCP = RecToolsDIRCuPy(DetectorsDimH=data.shape[2],  # Horizontal detector dimension
+                                 DetectorsDimV=data.shape[1],  # Vertical detector dimension (3D case)
+                                 CenterRotOffset=data.shape[2] / 2 - center - 0.5,  # Center of Rotation scalar or a vector
+                                 AnglesVec=-angles,  # A vector of projection angles in radians
+                                 ObjSize=objsize,  # Reconstructed object dimensions (scalar)
+                                 device_projector=gpu_id,
+                                 )
+    reconstruction = RecToolsCP.FBP3D(data)
     cp._default_memory_pool.free_all_blocks()
-
     return reconstruction
 
-
-@nvtx.annotate()
-def _filtersinc3D_cupy(projection3D):
-    """applies a filter to 3D projection data
-
-    Args:
-        projection3D (ndarray): projection data must be a CuPy array.
-
-    Returns:
-        ndarray: a CuPy array of filtered projection data.
-    """
-    (projectionsNum, DetectorsLengthV, DetectorsLengthH) = cp.shape(projection3D)
-
-    # prepearing a ramp-like filter to apply to every projection
-    module = load_cuda_module("generate_filtersync")
-    filter_prep = module.get_function("generate_filtersinc")
-
-    # Use real FFT to save space and time
-    proj_f = cupyx.scipy.fft.rfft(projection3D, axis=-1, norm="backward", overwrite_x=True)
-
-    # generating the filter here so we can schedule/allocate while FFT is keeping the GPU busy
-    a = 1.1
-    f = cp.empty((1, 1, DetectorsLengthH//2+1), dtype=np.float32)
-    bx = 256
-    # because FFT is linear, we can apply the FFT scaling + multiplier in the filter
-    multiplier = 1.0 / projectionsNum / DetectorsLengthH
-    filter_prep(
-        grid=(1, 1, 1),
-        block=(bx, 1, 1),
-        args=(cp.float32(a), f, np.int32(DetectorsLengthH), np.float32(multiplier)),
-        shared_mem=bx * 4,
-    )
-
-    # actual filtering
-    proj_f *= f
-    
-    return cupyx.scipy.fft.irfft(proj_f, projection3D.shape[2], axis=-1, norm="forward", overwrite_x=True)
-    
-
-
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-
-def _calc_max_slices_reconstruct_tompy_astra(
+"""
+def _calc_max_slices_reconstruct_tomopy_astra(
     other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
 ) -> Tuple[int, np.dtype]:
     algorithm = kwargs['algorithm']
     # we don't know how Astra uses the memory - we can only guess
     if algorithm  == 'FBP_CUDA':
-        slice_mem = np.prod(other_dims) * dtype.itemsize * 4
+        slice_mem = np.prod(other_dims) * dtype.itemsize * 3
         return available_memory // slice_mem, dtype
 
     # no GPU used, we're not really limiting this
     return available_memory // np.prod(other_dims) // dtype.itemsize, dtype
-
+"""
 
 ## %%%%%%%%%%%%%%%%%%%%%%% Tomopy/ASTRA reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-@method_sino(_calc_max_slices_reconstruct_tompy_astra)
+@method_sino(cpuonly=True)
 @nvtx.annotate()
 def reconstruct_tomopy_astra(
     data: np.ndarray,

@@ -154,9 +154,8 @@ def calc_max_slices_default(
     space for input and output only is required, both with the same datatype,
     and no temporaries.
     """
-
-    return available_memory // (np.prod(other_dims) * dtype.itemsize * 2), dtype
-
+    slices_max = available_memory // int(np.prod(other_dims) * dtype.itemsize * 2)    
+    return (slices_max, dtype)
 
 def calc_max_slices_single_pattern_default(
     other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
@@ -168,7 +167,6 @@ def calc_max_slices_single_pattern_default(
     """
 
     return calc_max_slices_default(0, other_dims, dtype, available_memory, **kwargs)
-
 
 def method(
     calc_max_slices: MemoryFunction = calc_max_slices_default,
@@ -260,10 +258,17 @@ def method_sino(
         dtype: np.dtype,
         available_memory: int,
         **kwargs,
-    ) -> int:
-        return calc_max_slices(other_dims, dtype, available_memory, **kwargs)
+    ) -> Tuple[int, np.dtype]:
+        return calc_max_slices(other_dims,
+                               dtype,
+                               available_memory,
+                               **kwargs)
 
-    return method(_calc_max_slices, cpuonly, cpugpu, **others, pattern="sinogram")
+    return method(_calc_max_slices,
+                  cpuonly,
+                  cpugpu,
+                  **others,
+                  pattern="sinogram")
 
 
 def method_proj(
@@ -299,10 +304,17 @@ def method_proj(
         dtype: np.dtype,
         available_memory: int,
         **others,
-    ):
-        return calc_max_slices(other_dims, dtype, available_memory, **others)
+    ) -> Tuple[int, np.dtype]:
+        return calc_max_slices(other_dims,
+                               dtype,
+                               available_memory,
+                               **others)
 
-    return method(_calc_max_slices, cpuonly, cpugpu, **others, pattern="projection")
+    return method(_calc_max_slices,
+                  cpuonly,
+                  cpugpu,
+                  **others,
+                  pattern="projection")
 
 
 method_all = method
