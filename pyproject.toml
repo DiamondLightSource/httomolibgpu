@@ -3,7 +3,12 @@ requires = ["setuptools>=42", "wheel", "setuptools-git-versioning"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["httomolib"]
+include-package-data = true
+packages = ["httomolib",
+            "httomolib.misc",
+            "httomolib.prep",
+            "httomolib.recon",
+            "httomolib.cuda_kernels"]
 
 [tool.setuptools.package-data]
 httomolib = ["*.cu", "*.cuh"]    # include cuda kernels in package
@@ -37,7 +42,6 @@ dependencies = [
     "pillow",
     "scikit-image"
 ]
-
 
 [project.optional-dependencies]
 dev = [
