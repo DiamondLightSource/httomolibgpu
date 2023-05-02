@@ -35,6 +35,7 @@ from httomolib.cuda_kernels import load_cuda_module
 __all__ = [
     "FBP_rec",
     "SIRT_rec",
+    "CGLS_rec",
     "reconstruct_tomopy_astra",
 ]
 
