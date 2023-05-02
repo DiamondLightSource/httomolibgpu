@@ -3,6 +3,8 @@ import numpy as np
 from httomolib.prep.normalize import normalize as normalize_cupy
 from httomolib.recon.algorithm import (
     FBP_rec,
+    SIRT_rec,
+    CGLS_rec,
     reconstruct_tomopy_astra,
 )
 from numpy.testing import assert_allclose
@@ -45,36 +47,208 @@ def test_reconstruct_FBP_rec_2(data, flats, darks, ensure_clean_memory):
     assert_allclose(np.std(recon_data), 0.003561, rtol=1e-07, atol=1e-6)
     assert recon_data.dtype == np.float32
 
-
 @cp.testing.gpu
-def test_reconstruct_FBP_rec_3(data, flats, darks, ensure_clean_memory):
+def test_reconstruct_FBP_hook(data, flats, darks, ensure_clean_memory):
     
     normalized = normalize_cupy(data, flats, darks, cutoff=10, minus_log=True)
     
     cp.get_default_memory_pool().free_all_blocks()
     cache = cp.fft.config.get_plan_cache()
     cache.clear()
-    
+
+    objrecon_size = data.shape[2]
     hook = MaxMemoryHook(normalized.size * normalized.itemsize)
     with hook:
         recon_data = FBP_rec(
             normalized,
             np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
-            objsize=data.shape[2]
+            79.5,
+            objsize=objrecon_size
         )
     
     # make sure estimator function is within range (80% min, 100% max)
     max_mem = hook.max_mem
     actual_slices = data.shape[1]
-    estimated_slices, _ = FBP_rec.meta.calc_max_slices(1, (data.shape[0], data.shape[2]), data.dtype, max_mem)
+    estimated_slices, _ = FBP_rec.meta.calc_max_slices(1,
+                                                       (data.shape[0], data.shape[2]),
+                                                       (objrecon_size, objrecon_size),
+                                                       normalized.dtype,
+                                                       max_mem)
     assert estimated_slices <= actual_slices
     assert estimated_slices / actual_slices >= 0.8
     
     recon_data = recon_data.get()    
-    assert_allclose(np.mean(recon_data), 0.0007981232, rtol=1e-6)
-    assert_allclose(np.mean(recon_data, axis=(1, 2)).sum(), 0.10215975, rtol=1e-6)
+    assert_allclose(np.mean(recon_data), 0.00079770206, rtol=1e-6)
+    assert_allclose(np.mean(recon_data, axis=(1, 2)).sum(), 0.10210582, rtol=1e-6)
+
+@cp.testing.gpu
+def test_reconstruct_SIRT_rec1(data, flats, darks, ensure_clean_memory):  
+    objrecon_size = data.shape[2]
+    recon_data = SIRT_rec(
+        normalize_cupy(data, flats, darks, cutoff=10, minus_log=True),
+        np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
+        79.5,
+        objsize=objrecon_size,
+        iterations=10,
+        nonnegativity=True,
+    )
+    recon_data = recon_data.get()
+    assert_allclose(np.mean(recon_data), 0.0018447536, rtol=1e-07, atol=1e-6)
+    assert_allclose(np.mean(recon_data, axis=(1, 2)).sum(), 0.23612846, rtol=1e-05)
+    assert recon_data.dtype == np.float32
 
 
+@cp.testing.gpu
+def test_reconstruct_SIRT_hook(data, flats, darks, ensure_clean_memory):
+    objrecon_size = data.shape[2]
+    normalized = normalize_cupy(data, flats, darks, cutoff=10, minus_log=True)
+    
+    cp.get_default_memory_pool().free_all_blocks()
+    cache = cp.fft.config.get_plan_cache()
+    cache.clear()
+
+    objrecon_size = data.shape[2]
+    hook = MaxMemoryHook(normalized.size * normalized.itemsize)
+    with hook:
+        recon_data = SIRT_rec(
+            normalized,
+            np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
+            79.5,
+            objsize=objrecon_size,
+            iterations=2,
+            nonnegativity=True,
+        )
+    
+    # make sure estimator function is within range (80% min, 100% max)
+    max_mem = hook.max_mem
+    actual_slices = data.shape[1]
+    estimated_slices, _ = SIRT_rec.meta.calc_max_slices(1,
+                                                       (data.shape[0], data.shape[2]),
+                                                       (objrecon_size, objrecon_size),
+                                                       normalized.dtype,
+                                                       max_mem)
+    assert estimated_slices <= actual_slices
+    assert estimated_slices / actual_slices >= 0.8
+
+@cp.testing.gpu
+def test_reconstruct_SIRT_hook2(ensure_clean_memory):
+    np.random.seed(12345)
+    data_host = np.random.random_sample(size=(1801, 10, 2560)).astype(np.float32) * 2.0
+    data = cp.asarray(data_host, dtype=np.float32)
+        
+    objrecon_size = data.shape[2]    
+    cp.get_default_memory_pool().free_all_blocks()
+    cache = cp.fft.config.get_plan_cache()
+    cache.clear()
+
+    objrecon_size = data.shape[2]
+    hook = MaxMemoryHook(data.size * data.itemsize)
+    with hook:
+        recon_data = SIRT_rec(
+            data,
+            np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
+            1200,
+            objsize=objrecon_size,
+            iterations=2,
+            nonnegativity=True,
+        )
+    
+    # make sure estimator function is within range (80% min, 100% max)
+    max_mem = hook.max_mem
+    actual_slices = data.shape[1]
+    estimated_slices, _ = SIRT_rec.meta.calc_max_slices(1,
+                                                       (data.shape[0], data.shape[2]),
+                                                       (objrecon_size, objrecon_size),
+                                                       data.dtype,
+                                                       max_mem)
+    assert estimated_slices <= actual_slices
+    assert estimated_slices / actual_slices >= 0.8
+
+
+@cp.testing.gpu
+def test_reconstruct_CGLS_rec1(data, flats, darks, ensure_clean_memory):  
+    objrecon_size = data.shape[2]
+    recon_data = CGLS_rec(
+        normalize_cupy(data, flats, darks, cutoff=10, minus_log=True),
+        np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
+        79.5,
+        objsize=objrecon_size,
+        iterations=5,
+        nonnegativity=True,
+    )
+    recon_data = recon_data.get()
+    assert_allclose(np.mean(recon_data), 0.0021818762, rtol=1e-07, atol=1e-6)
+    assert_allclose(np.mean(recon_data, axis=(1, 2)).sum(), 0.27928016, rtol=1e-05)
+    assert recon_data.dtype == np.float32
+
+
+@cp.testing.gpu
+def test_reconstruct_CGLS_hook(data, flats, darks, ensure_clean_memory):
+    objrecon_size = data.shape[2]
+    normalized = normalize_cupy(data, flats, darks, cutoff=10, minus_log=True)
+    
+    cp.get_default_memory_pool().free_all_blocks()
+    cache = cp.fft.config.get_plan_cache()
+    cache.clear()
+
+    objrecon_size = data.shape[2]
+    hook = MaxMemoryHook(normalized.size * normalized.itemsize)
+    with hook:
+        recon_data = CGLS_rec(
+            normalized,
+            np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
+            79.5,
+            objsize=objrecon_size,
+            iterations=2,
+            nonnegativity=True,
+        )
+    
+    # make sure estimator function is within range (80% min, 100% max)
+    max_mem = hook.max_mem
+    actual_slices = data.shape[1]
+    estimated_slices, _ = CGLS_rec.meta.calc_max_slices(1,
+                                                       (data.shape[0], data.shape[2]),
+                                                       (objrecon_size, objrecon_size),
+                                                       normalized.dtype,
+                                                       max_mem)
+    assert estimated_slices <= actual_slices
+    assert estimated_slices / actual_slices >= 0.8
+
+
+@cp.testing.gpu
+def test_reconstruct_CGLS_hook2(ensure_clean_memory):
+    np.random.seed(12345)
+    data_host = np.random.random_sample(size=(1801, 10, 2560)).astype(np.float32) * 2.0
+    data = cp.asarray(data_host, dtype=np.float32)
+        
+    objrecon_size = data.shape[2]    
+    cp.get_default_memory_pool().free_all_blocks()
+    cache = cp.fft.config.get_plan_cache()
+    cache.clear()
+
+    objrecon_size = data.shape[2]
+    hook = MaxMemoryHook(data.size * data.itemsize)
+    with hook:
+        recon_data = CGLS_rec(
+            data,
+            np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
+            1200,
+            objsize=objrecon_size,
+            iterations=2,
+            nonnegativity=True,
+        )
+    
+    # make sure estimator function is within range (80% min, 100% max)
+    max_mem = hook.max_mem
+    actual_slices = data.shape[1]
+    estimated_slices, _ = CGLS_rec.meta.calc_max_slices(1,
+                                                       (data.shape[0], data.shape[2]),
+                                                       (objrecon_size, objrecon_size),
+                                                       data.dtype,
+                                                       max_mem)
+    assert estimated_slices <= actual_slices
+    assert estimated_slices / actual_slices >= 0.8
+    
 def test_reconstruct_tomopy_fbp_cuda(
     host_data, host_flats, host_darks, ensure_clean_memory
 ):

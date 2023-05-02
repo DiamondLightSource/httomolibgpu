@@ -36,12 +36,15 @@ __all__ = [
 
 
 def _calc_max_slices_distortion_correction_proj(
-    other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
+    non_slice_dims_shape: Tuple[int, int],
+    output_dims: Tuple[int, int],
+    dtype: np.dtype,
+    available_memory: int, **kwargs
 ) -> int:
     # calculating memory is a bit more involved as various small temporary arrays
     # are used. We revert to a rough estimation using only the larger elements and
     # a safety margin
-    height, width = other_dims[0], other_dims[1]
+    height, width = non_slice_dims_shape[0], non_slice_dims_shape[1]
     lists_size = (width + height) * np.float64().nbytes
     meshgrid_size = (width * height * 2) * np.float64().nbytes
     ru_mat_size = meshgrid_size // 2
@@ -49,7 +52,7 @@ def _calc_max_slices_distortion_correction_proj(
     xd_mat_size = yd_mat_size = fact_mat_size // 2   # float32
     indices_size = xd_mat_size + yd_mat_size
 
-    slice_size = np.prod(other_dims) * dtype.itemsize
+    slice_size = np.prod(output_dims) * dtype.itemsize
     processing_size = slice_size * 4  # temporaries in final for loop
 
     available_memory -= (

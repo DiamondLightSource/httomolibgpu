@@ -19,7 +19,9 @@ def test_adds_metdata():
     assert myfunc.meta.cpu is False
     assert myfunc.meta.gpu is True
     # last parameter '2' is mapped to the kwargs
-    assert myfunc.meta.calc_max_slices(0, (10, 10), int32, 40000, a=2) == (50, int32)
+    assert myfunc.meta.calc_max_slices(0, 
+                                       (10, 10), 
+                                       int32, 40000, a=2) == (50, int32)
     assert myfunc.__name__ == "myfunc"
     assert inspect.getfullargspec(myfunc).args == ["a"]
     assert myfunc(2) == 4

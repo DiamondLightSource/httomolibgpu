@@ -4,7 +4,8 @@ httomolib
 Setup
 =====
 * Clone the repository from GitHub using :code:`git clone git@github.com:DiamondLightSource/httomolib.git`
-* Install dependencies from the environment file :code:`conda env create httomolib --file conda/environment.yml`
+* Install dependencies from the environment file :code:`conda env create --name httomolib --file conda/environment.yml`. We suggest on using 
+`mamba`` in order to accelerate the resolving time, i.e., :code:`conda install -c conda-forge mamba` and then :code:`mamba env create --name httomolib --file conda/environment.yml`
 * Activate the environment with :code:`conda activate httomolib`
 * Install the environment in development mode with :code:`pip install -e .[dev]`
 

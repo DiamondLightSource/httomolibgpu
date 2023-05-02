@@ -37,13 +37,15 @@ __all__ = [
 
 
 def _calc_max_slices_stripe_based_sorting(
-    other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
+    non_slice_dims_shape: Tuple[int, int],
+    output_dims: Tuple[int, int],
+    dtype: np.dtype, available_memory: int, **kwargs
 ) -> Tuple[int, np.dtype]:
     # the algorithm calls _rsort for each slice independenty, and it needs 
     # several temporaries in the order of the input slice.
     # Those temporaries are independent of the number of slices and represent a fixed 
     # offset. Also, the data is updated in-place
-    slice_mem = np.prod(other_dims) * dtype.itemsize * 1.25
+    slice_mem = np.prod(non_slice_dims_shape) * dtype.itemsize * 1.25
     temp_mem = slice_mem * 8
     available_memory -= temp_mem
     return available_memory // slice_mem, dtype
@@ -127,13 +129,15 @@ def _rs_sort(sinogram, size, dim):
 
 
 def _calc_max_slices_remove_stripe_ti(
-    other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
+    non_slice_dims_shape: Tuple[int, int],
+    output_dims: Tuple[int, int],
+    dtype: np.dtype, available_memory: int, **kwargs
 ) -> Tuple[int, np.dtype]:
     # This is admittedly a rough estimation, but it should be about right
-    gamma_mem = other_dims[1] * np.float64().itemsize
+    gamma_mem = non_slice_dims_shape[1] * np.float64().itemsize
     
-    in_slice_mem = np.prod(other_dims) * dtype.itemsize
-    slice_mean_mem = other_dims[1] * dtype.itemsize * 2
+    in_slice_mem = np.prod(non_slice_dims_shape) * dtype.itemsize
+    slice_mean_mem = non_slice_dims_shape[1] * dtype.itemsize * 2
     slice_fft_plan_mem = slice_mean_mem * 3
     extra_temp_mem = slice_mean_mem * 8
 

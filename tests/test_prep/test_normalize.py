@@ -47,8 +47,11 @@ def test_normalize_meta(data, flats, darks, ensure_clean_memory):
     # make sure estimator function is within range (80% min, 100% max)
     max_mem = hook.max_mem
     actual_slices = data.shape[0]
-    estimated_slices, _ = normalize.meta.calc_max_slices(0, (data.shape[1], data.shape[2]), data.dtype, max_mem,
-                                                      flats=flats, darks=darks)
+    estimated_slices, _ = normalize.meta.calc_max_slices(0,
+                                                         (data.shape[1], data.shape[2]),
+                                                         (data.shape[1], data.shape[2]),
+                                                         data.dtype, max_mem,
+                                                         flats=flats, darks=darks)
     assert estimated_slices <= actual_slices
     assert estimated_slices / actual_slices >= 0.8
     assert normalize.meta.pattern == 'projection'

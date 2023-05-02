@@ -9,8 +9,9 @@ class MemoryFunction(Protocol):
     """
     A callable signature for a function to determine the maximum chunk size supported,
     given
-    - the chunking dimension,
-    - the size of the other dimensions,
+    - the slicing dimension,
+    - the size of the remaining (after slicing) input dimensions,
+    - the size of the output dimensions,
     - the data type for the input,
     - and the available memory in bytes.
     It takes the actual method parameters as kwargs, which it may use if needed.
@@ -22,7 +23,8 @@ class MemoryFunction(Protocol):
     def __call__(
         self,
         slice_dim: int,
-        other_dims: Tuple[int, int],
+        non_slice_dims_shape: Tuple[int, int],
+        output_dims: Tuple[int, int],
         dtype: np.dtype,
         available_memory: int,
         **kwargs,
@@ -35,8 +37,10 @@ class MemoryFunction(Protocol):
         ----------
         slice_dim : int
             The dimension in which the slicing happens (0 for projection, 1 for sinogram)
-        other_dims : Tuple[int, int]
+        non_slice_dims_shape : Tuple[int, int]
             Shape of the data input in the other 2 dimensions that are not sliced
+        output_dims: Tuple[int, int]
+            Shape of the data output (after slicing)
         dtype : np.dtype
             The numpy datatype for the input data
         available_memory : int
@@ -64,7 +68,8 @@ class MemorySinglePattern(Protocol):
 
     def __call__(
         self,
-        other_dims: Tuple[int, int],
+        non_slice_dims_shape: Tuple[int, int],
+        output_dims: Tuple[int, int],
         dtype: np.dtype,
         available_memory: int,
         **kwargs,
@@ -75,8 +80,10 @@ class MemorySinglePattern(Protocol):
 
         Parameters
         ----------
-        other_dims : Tuple[int, int]
+        non_slice_dims_shape : Tuple[int, int]
             Shape of the data input in the other 2 dimensions that are not sliced
+        output_dims: Tuple[int, int]
+            Shape of the data output (after slicing
         dtype : np.dtype
             The numpy datatype for the input data
         available_memory : int
@@ -144,7 +151,8 @@ method_registry: Dict[str, Union[MetaDict, MethodMeta]] = dict()
 
 def calc_max_slices_default(
     slice_dim: int,
-    other_dims: Tuple[int, int],
+    non_slice_dims_shape: Tuple[int, int],
+    output_dims: Tuple[int, int],   
     dtype: np.dtype,
     available_memory: int,
     **kwargs,
@@ -154,11 +162,15 @@ def calc_max_slices_default(
     space for input and output only is required, both with the same datatype,
     and no temporaries.
     """
-    slices_max = available_memory // int(np.prod(other_dims) * dtype.itemsize * 2)    
+    slices_max = available_memory // int((np.prod(non_slice_dims_shape) + np.prod(output_dims)) * dtype.itemsize)
     return (slices_max, dtype)
 
 def calc_max_slices_single_pattern_default(
-    other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
+    non_slice_dims_shape: Tuple[int, int],
+    output_dims: Tuple[int, int],
+    dtype: np.dtype,
+    available_memory: int,
+    **kwargs
 ) -> Tuple[int, np.dtype]:
     """
     Default function for calculating maximum slices, which simply assumes
@@ -166,7 +178,12 @@ def calc_max_slices_single_pattern_default(
     and no temporaries.
     """
 
-    return calc_max_slices_default(0, other_dims, dtype, available_memory, **kwargs)
+    return calc_max_slices_default(0,
+                                   non_slice_dims_shape,
+                                   output_dims,                                 
+                                   dtype,
+                                   available_memory,
+                                   **kwargs)
 
 def method(
     calc_max_slices: MemoryFunction = calc_max_slices_default,
@@ -254,12 +271,14 @@ def method_sino(
 
     def _calc_max_slices(
         slice_dim: int,
-        other_dims: Tuple[int, int],
+        non_slice_dims_shape: Tuple[int, int],
+        output_dims: Tuple[int, int],
         dtype: np.dtype,
         available_memory: int,
         **kwargs,
     ) -> Tuple[int, np.dtype]:
-        return calc_max_slices(other_dims,
+        return calc_max_slices(non_slice_dims_shape,
+                               output_dims,
                                dtype,
                                available_memory,
                                **kwargs)
@@ -300,12 +319,14 @@ def method_proj(
 
     def _calc_max_slices(
         slice_dim: int,
-        other_dims: Tuple[int, int],
+        non_slice_dims_shape: Tuple[int, int],
+        output_dims: Tuple[int, int],
         dtype: np.dtype,
         available_memory: int,
         **others,
     ) -> Tuple[int, np.dtype]:
-        return calc_max_slices(other_dims,
+        return calc_max_slices(non_slice_dims_shape,
+                               output_dims,
                                dtype,
                                available_memory,
                                **others)
