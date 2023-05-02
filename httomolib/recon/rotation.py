@@ -42,7 +42,9 @@ __all__ = [
 
 
 def _calc_max_slices_center_vo(
-    other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
+    non_slice_dims_shape: Tuple[int, int],
+    output_dims: Tuple[int, int],
+    dtype: np.dtype, available_memory: int, **kwargs
 ) -> Tuple[int, np.dtype]:
     # the function works on one slice from the sinogram all the way through (picks a specific index)
     # so memory is not restricted as long as a single slice can fit
@@ -348,7 +350,9 @@ def _downsample(sino, level, axis):
 
 
 def _calc_max_slices_center_360(
-    other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
+    non_slice_dims_shape: Tuple[int, int],
+    output_dims: Tuple[int, int],
+    dtype: np.dtype, available_memory: int, **kwargs
 ) -> Tuple[int, np.dtype]:
     # the function works on one slice from the sinogram all the way through (picks 0 or a specific index)
     # so memory is not restricted as long as a single slice can fit
@@ -431,7 +435,7 @@ def find_center_360(
     else:
         cor = ncol - overlap / 2.0 - 1.0
 
-    return float(cor), float(overlap), side, float(overlap_position)
+    return cor, overlap, side, overlap_position
 
 
 def _find_overlap(
