@@ -68,7 +68,7 @@ def test_paganin_filter(data):
 @pytest.mark.parametrize("pad", [0, 31, 100])
 @pytest.mark.parametrize("slices", [15, 51, 160])
 @pytest.mark.parametrize("dtype", [np.uint16, np.float32])
-def test_paganin_filter_meta(pad, slices, dtype):    
+def test_paganin_filter_meta(pad, slices, dtype, ensure_clean_memory):    
     # --- testing the Paganin filter on tomo_standard ---#
     cache = cp.fft.config.get_plan_cache()
     cache.clear()
@@ -216,7 +216,7 @@ def test_retrieve_phase(data):
 
 
 @cp.testing.gpu
-def test_retrieve_phase_meta(data):
+def test_retrieve_phase_meta(data, ensure_clean_memory):
     cache = cp.fft.config.get_plan_cache()
     cache.clear()
     hook = MaxMemoryHook(data.nbytes)
