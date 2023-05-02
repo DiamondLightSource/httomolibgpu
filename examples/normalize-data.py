@@ -2,7 +2,7 @@ from pathlib import Path
 
 import cupy as cp
 import numpy as np
-from httomolib.prep.normalize import normalize_cupy, normalize_raw_cuda
+from httomolib.prep.normalize import normalize
 
 # Load the projection data
 data_folder = Path("tests/test_data/")
@@ -16,4 +16,4 @@ host_darks = datafile['darks']
 data = cp.asarray(host_data)
 flats = cp.asarray(host_flats)
 darks = cp.asarray(host_darks)
-data = normalize_cupy(data, flats, darks, cutoff = 10, minus_log = True)
+data = normalize(data, flats, darks, cutoff = 10, minus_log = True)

@@ -20,11 +20,12 @@
 # version ='0.1'
 # ---------------------------------------------------------------------------
 """Modules for stripes removal"""
-from typing import Union
+from typing import Tuple, Union
 
 import cupy as cp
 import numpy as np
 import nvtx
+from httomolib.decorator import method_sino
 
 __all__ = [
     "remove_stripe_based_sorting",
@@ -35,6 +36,22 @@ __all__ = [
 # from https://github.com/tomopy/tomopy/blob/master/source/tomopy/prep/stripe.py
 
 
+def _calc_max_slices_stripe_based_sorting(
+    non_slice_dims_shape: Tuple[int, int],
+    output_dims: Tuple[int, int],
+    dtype: np.dtype, available_memory: int, **kwargs
+) -> Tuple[int, np.dtype]:
+    # the algorithm calls _rsort for each slice independenty, and it needs 
+    # several temporaries in the order of the input slice.
+    # Those temporaries are independent of the number of slices and represent a fixed 
+    # offset. Also, the data is updated in-place
+    slice_mem = np.prod(non_slice_dims_shape) * dtype.itemsize * 1.25
+    temp_mem = slice_mem * 8
+    available_memory -= temp_mem
+    return available_memory // slice_mem, dtype
+
+
+@method_sino(_calc_max_slices_stripe_based_sorting, cpugpu=True)
 @nvtx.annotate()
 def remove_stripe_based_sorting(
     data: Union[cp.ndarray, np.ndarray],
@@ -111,6 +128,24 @@ def _rs_sort(sinogram, size, dim):
     return xp.transpose(sino_corrected)
 
 
+def _calc_max_slices_remove_stripe_ti(
+    non_slice_dims_shape: Tuple[int, int],
+    output_dims: Tuple[int, int],
+    dtype: np.dtype, available_memory: int, **kwargs
+) -> Tuple[int, np.dtype]:
+    # This is admittedly a rough estimation, but it should be about right
+    gamma_mem = non_slice_dims_shape[1] * np.float64().itemsize
+    
+    in_slice_mem = np.prod(non_slice_dims_shape) * dtype.itemsize
+    slice_mean_mem = non_slice_dims_shape[1] * dtype.itemsize * 2
+    slice_fft_plan_mem = slice_mean_mem * 3
+    extra_temp_mem = slice_mean_mem * 8
+
+    available_memory -= gamma_mem
+    return available_memory // (in_slice_mem + slice_mean_mem + slice_fft_plan_mem + extra_temp_mem), dtype
+
+
+@method_sino(_calc_max_slices_remove_stripe_ti, cpugpu=True)
 @nvtx.annotate()
 def remove_stripe_ti(
     data: Union[cp.ndarray, np.ndarray],

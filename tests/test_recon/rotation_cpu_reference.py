@@ -1,16 +1,17 @@
+from typing import Literal, Optional
 import numpy as np
 import scipy.ndimage as ndi
 
 
 def find_center_360_numpy(
     data: np.ndarray,
-    ind: int = None,
+    ind: Optional[int] = None,
     win_width: int = 10,
-    side: set = None,
+    side: Optional[Literal[0, 1]] = None,
     denoise: bool = True,
     norm: bool = False,
     use_overlap: bool = False,
-) -> tuple[float, float, int, float]:
+) -> tuple[float, float, Optional[Literal[0, 1]], float]:
     """
     Numpy implementation - for reference in testing the cupy
     production version.
@@ -36,7 +37,7 @@ def find_center_360_numpy(
     else:
         cor = ncol - overlap / 2.0 - 1.0
 
-    return np.float32(cor), np.float32(overlap), side, np.float32(overlap_position)
+    return float(cor), float(overlap), side, float(overlap_position)
 
 
 def _find_overlap(
