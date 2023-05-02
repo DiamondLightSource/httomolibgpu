@@ -80,7 +80,9 @@ def test_distortion_correction_meta(distortion_correction_path, stack_size, impl
     max_mem = hook.max_mem
     actual_slices = im_stack.shape[0]
     estimated_slices, _ = implementation.meta.calc_max_slices(
-        0, (im_stack.shape[1], im_stack.shape[2]), im_stack.dtype, max_mem, 
+        0, (im_stack.shape[1], im_stack.shape[2]),
+        (im_stack.shape[1], im_stack.shape[2]),
+        im_stack.dtype, max_mem, 
         metadata_path=distortion_coeffs_path, preview=preview)
     assert estimated_slices <= actual_slices
     assert estimated_slices / actual_slices >= 0.8 

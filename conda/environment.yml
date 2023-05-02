@@ -3,10 +3,10 @@ channels:
   - conda-forge
   - anaconda
   - astra-toolbox
-  - savu-dep
+  - httomo
 dependencies:
   - conda-forge::cupy
-  - conda-forge::numpy
+  - conda-forge::numpy<=1.23
   - conda-forge::nvtx
   - conda-forge::tomopy
   - conda-forge::scipy
@@ -22,5 +22,5 @@ dependencies:
   - anaconda::ipython
   - anaconda::h5py
   - astra-toolbox::astra-toolbox
-  - savu-dep::tomobar
-  - savu-dep::larix
+  - httomo::tomobar
+  - httomo::larix

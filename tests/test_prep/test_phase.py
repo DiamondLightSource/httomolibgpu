@@ -84,7 +84,10 @@ def test_paganin_filter_meta(pad, slices, dtype):
     max_mem = hook.max_mem
     actual_slices = data.shape[0]
     estimated_slices, _ = paganin_filter.meta.calc_max_slices(
-        0, (data.shape[1], data.shape[2]), data.dtype, max_mem, **kwargs)
+        0, 
+        (data.shape[1], data.shape[2]),
+        (data.shape[1], data.shape[2]),
+        data.dtype, max_mem, **kwargs)
     assert estimated_slices <= actual_slices
     assert estimated_slices / actual_slices >= 0.8    
 
@@ -223,7 +226,10 @@ def test_retrieve_phase_meta(data):
     max_mem = hook.max_mem
     actual_slices = data.shape[0]
     estimated_slices, _ = retrieve_phase.meta.calc_max_slices(
-        0, (data.shape[1], data.shape[2]), data.dtype, max_mem, 
+        0,
+        (data.shape[1], data.shape[2]),
+        (data.shape[1], data.shape[2]),        
+        data.dtype, max_mem, 
         pixel_size=1e-4, energy=20, dist=50)
     assert estimated_slices <= actual_slices
     assert estimated_slices / actual_slices >= 0.8
