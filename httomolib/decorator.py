@@ -11,7 +11,6 @@ class MemoryFunction(Protocol):
     given
     - the slicing dimension,
     - the size of the remaining (after slicing) input dimensions,
-    - the size of the output dimensions,
     - the data type for the input,
     - and the available memory in bytes.
     It takes the actual method parameters as kwargs, which it may use if needed.
@@ -24,11 +23,10 @@ class MemoryFunction(Protocol):
         self,
         slice_dim: int,
         non_slice_dims_shape: Tuple[int, int],
-        output_dims: Tuple[int, int],
         dtype: np.dtype,
         available_memory: int,
         **kwargs,
-    ) -> Tuple[int, np.dtype]:
+    ) -> Tuple[int, np.dtype, Tuple[int, int]]:
         """
         Calculate the maximum number of slices that can fit in the given memory,
         for a method with the 'all' pattern.
@@ -39,8 +37,6 @@ class MemoryFunction(Protocol):
             The dimension in which the slicing happens (0 for projection, 1 for sinogram)
         non_slice_dims_shape : Tuple[int, int]
             Shape of the data input in the other 2 dimensions that are not sliced
-        output_dims: Tuple[int, int]
-            Shape of the data output (after slicing)
         dtype : np.dtype
             The numpy datatype for the input data
         available_memory : int
@@ -54,6 +50,7 @@ class MemoryFunction(Protocol):
             Tuple consisting of:
             - the maximum number of slices that it can fit into the given available memory
             - the output dtype for the given input dtype
+            - the output data shape
 
         """
         ...
@@ -69,11 +66,10 @@ class MemorySinglePattern(Protocol):
     def __call__(
         self,
         non_slice_dims_shape: Tuple[int, int],
-        output_dims: Tuple[int, int],
         dtype: np.dtype,
         available_memory: int,
         **kwargs,
-    ) -> Tuple[int, np.dtype]:
+    ) -> Tuple[int, np.dtype, Tuple[int, int]]:
         """
         Calculate the maximum number of slices that can fit in the given memory,
         for a method with the 'projection' or 'sinogram' pattern.
@@ -82,8 +78,6 @@ class MemorySinglePattern(Protocol):
         ----------
         non_slice_dims_shape : Tuple[int, int]
             Shape of the data input in the other 2 dimensions that are not sliced
-        output_dims: Tuple[int, int]
-            Shape of the data output (after slicing
         dtype : np.dtype
             The numpy datatype for the input data
         available_memory : int
@@ -97,6 +91,7 @@ class MemorySinglePattern(Protocol):
             Tuple consisting of:
             - the maximum number of slices that it can fit into the given available memory
             - the output dtype for the given input dtype
+            - the output data shape
 
         """
         ...

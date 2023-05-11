@@ -44,7 +44,8 @@ def _calc_max_slices_FBP(
     non_slice_dims_shape: Tuple[int, int],
     output_dims: Tuple[int, int],
     dtype: np.dtype,
-    available_memory: int, **kwargs
+    available_memory: int,
+    **kwargs
 ) -> Tuple[int, np.dtype]:
     # we first run filtersync, and calc the memory for that
     DetectorsLengthH = non_slice_dims_shape[1]
@@ -53,6 +54,11 @@ def _calc_max_slices_FBP(
     freq_slice = non_slice_dims_shape[0] * (DetectorsLengthH//2+1) * complex64().itemsize
     fftplan_size = freq_slice * 2
     filtered_in_data = np.prod(non_slice_dims_shape) * float32().itemsize
+    # calculate the output shape
+    objsize = kwargs['objsize']
+    if objsize is None:
+        objsize = DetectorsLengthH
+    output_dims = (objsize, objsize)
     # astra backprojection will generate an output array 
     astra_out_size = (np.prod(output_dims) * float32().itemsize)
 
