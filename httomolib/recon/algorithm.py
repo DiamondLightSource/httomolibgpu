@@ -42,11 +42,10 @@ __all__ = [
 
 def _calc_max_slices_FBP(
     non_slice_dims_shape: Tuple[int, int],
-    output_dims: Tuple[int, int],
     dtype: np.dtype,
     available_memory: int,
     **kwargs
-) -> Tuple[int, np.dtype]:
+) -> Tuple[int, np.dtype, Tuple[int, int]]:
     # we first run filtersync, and calc the memory for that
     DetectorsLengthH = non_slice_dims_shape[1]
     in_slice_size = np.prod(non_slice_dims_shape) * dtype.itemsize
@@ -64,7 +63,7 @@ def _calc_max_slices_FBP(
 
     available_memory -= filter_size
     slices_max = available_memory // int(in_slice_size + filtered_in_data + freq_slice + fftplan_size + astra_out_size)
-    return (slices_max, float32())
+    return (slices_max, float32(), output_dims)
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% FBP reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
@@ -121,10 +120,16 @@ def FBP_rec(
 
 def _calc_max_slices_SIRT(
     non_slice_dims_shape: Tuple[int, int],
-    output_dims: Tuple[int, int],
     dtype: np.dtype,
     available_memory: int, **kwargs
-) -> Tuple[int, np.dtype]:
+) -> Tuple[int, np.dtype, Tuple[int, int]]:
+    # calculate the output shape
+    DetectorsLengthH = non_slice_dims_shape[1]
+    objsize = kwargs['objsize']
+    if objsize is None:
+        objsize = DetectorsLengthH
+    output_dims = (objsize, objsize) 
+    
     # input/output
     data_out = np.prod(non_slice_dims_shape) * dtype.itemsize
     x_rec = np.prod(output_dims) * dtype.itemsize
@@ -138,7 +143,7 @@ def _calc_max_slices_SIRT(
    
     total_mem = int(data_out + x_rec + R_mat + C_mat + C_R_res + astra_size)
     slices_max = available_memory // total_mem
-    return (slices_max, float32())
+    return (slices_max, float32(), output_dims)
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% SIRT reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
@@ -202,10 +207,16 @@ def SIRT_rec(
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 def _calc_max_slices_CGLS(
     non_slice_dims_shape: Tuple[int, int],
-    output_dims: Tuple[int, int],
     dtype: np.dtype,
     available_memory: int, **kwargs
-) -> Tuple[int, np.dtype]:
+) -> Tuple[int, np.dtype, Tuple[int, int]]:
+    # calculate the output shape
+    DetectorsLengthH = non_slice_dims_shape[1]
+    objsize = kwargs['objsize']
+    if objsize is None:
+        objsize = DetectorsLengthH
+    output_dims = (objsize, objsize) 
+    
     # input/output
     data_out = np.prod(non_slice_dims_shape) * dtype.itemsize
     x_rec = np.prod(output_dims) * dtype.itemsize
@@ -219,7 +230,8 @@ def _calc_max_slices_CGLS(
    
     total_mem = int(data_out + x_rec + d + r + Ad + s + astra_size)
     slices_max = available_memory // total_mem
-    return (slices_max, float32())
+    return (slices_max, float32(), output_dims)
+
 ## %%%%%%%%%%%%%%%%%%%%%%% CGLS reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 @method_sino(_calc_max_slices_CGLS)
 @nvtx.annotate()

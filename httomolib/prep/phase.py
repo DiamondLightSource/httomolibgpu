@@ -24,6 +24,7 @@
 import math
 from typing import Tuple
 import cupy as cp
+from cupy import float32
 import cupyx
 import numpy as np
 import nvtx
@@ -46,9 +47,8 @@ PLANCK_CONSTANT = 6.58211928e-19  # [keV*s]
 
 def _calc_max_slices_fresnel(
     non_slice_dims_shape: Tuple[int, int],
-    output_dims: Tuple[int, int],
     dtype: np.dtype, available_memory: int, **kwargs
-) -> Tuple[int, np.dtype]:
+) -> Tuple[int, np.dtype, Tuple[int, int]]:
     height1, width1 = non_slice_dims_shape
     window_size = (height1 * width1) * np.float64().nbytes
     pad_width = min(150, int(0.1 * width1))
@@ -64,7 +64,7 @@ def _calc_max_slices_fresnel(
     safety = in_slice_size * 4
 
     available_memory -= window_size + safety
-    return available_memory // slice_size, np.float32()
+    return (available_memory // slice_size, float32(), non_slice_dims_shape)
 
 
 # CuPy implementation of Fresnel filter ported from Savu
@@ -176,9 +176,8 @@ def _make_window(height, width, ratio, pattern):
 
 def _calc_max_slices_paganin_filter(
     non_slice_dims_shape: Tuple[int, int],
-    output_dims: Tuple[int, int],    
     dtype: np.dtype, available_memory: int, **kwargs
-) -> Tuple[int, np.dtype]:
+) -> Tuple[int, np.dtype, Tuple[int, int]]:
     pad_x = kwargs["pad_x"]
     pad_y = kwargs["pad_y"]
     input_size = np.prod(non_slice_dims_shape) * dtype.itemsize
@@ -189,10 +188,10 @@ def _calc_max_slices_paganin_filter(
     complex_slice = in_slice_size / dtype.itemsize * np.complex64().nbytes
     fftplan_slice = complex_slice
     filter_size = complex_slice
-    res_slice = np.prod(output_dims) * np.float32().nbytes    
+    res_slice = np.prod(non_slice_dims_shape) * np.float32().nbytes    
     slice_size = input_size + in_slice_size + complex_slice + fftplan_slice + res_slice
     available_memory -= filter_size
-    return available_memory // slice_size, np.float32()
+    return (int(available_memory // slice_size), float32(), non_slice_dims_shape)
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% paganin_filter %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
@@ -361,9 +360,10 @@ def paganin_filter(
 
 def _calc_max_slice_retrieve_phase(
     non_slice_dims_shape: Tuple[int, int],
-    output_dims: Tuple[int, int],
-    dtype: np.dtype, available_memory: int, **kwargs
-) -> Tuple[int, np.dtype]:
+    dtype: np.dtype, 
+    available_memory: int, 
+    **kwargs
+) -> Tuple[int, np.dtype, Tuple[int, int]]:
     dy, dz = non_slice_dims_shape
     pixel_size = kwargs["pixel_size"]
     energy = kwargs["energy"]
@@ -384,8 +384,8 @@ def _calc_max_slice_retrieve_phase(
     available_memory -= (
         grid_size + prj_complex_size + prj_size + fftplan_size + prj_ret_size
     )
-    slice_memory = np.prod(output_dims) * dtype.itemsize
-    return available_memory // slice_memory, dtype
+    slice_memory = np.prod(non_slice_dims_shape) * dtype.itemsize
+    return (available_memory // slice_memory, dtype, non_slice_dims_shape)
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% retrieve_phase %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##

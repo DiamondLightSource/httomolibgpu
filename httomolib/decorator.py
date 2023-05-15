@@ -143,30 +143,28 @@ class MethodMeta:
 MetaDict: TypeAlias = Dict[str, MethodMeta]
 method_registry: Dict[str, Union[MetaDict, MethodMeta]] = dict()
 
-
 def calc_max_slices_default(
     slice_dim: int,
     non_slice_dims_shape: Tuple[int, int],
-    output_dims: Tuple[int, int],   
     dtype: np.dtype,
     available_memory: int,
     **kwargs,
-) -> Tuple[int, np.dtype]:
+) -> Tuple[int, np.dtype, Tuple[int, int]]:
     """
     Default function for calculating maximum slices, which simply assumes
     space for input and output only is required, both with the same datatype,
     and no temporaries.
     """
-    slices_max = available_memory // int((np.prod(non_slice_dims_shape) + np.prod(output_dims)) * dtype.itemsize)
-    return (slices_max, dtype)
+    slices_max = available_memory // int((np.prod(non_slice_dims_shape) + np.prod(non_slice_dims_shape)) * dtype.itemsize)
+    output_dims = non_slice_dims_shape
+    return (slices_max, dtype, output_dims)
 
 def calc_max_slices_single_pattern_default(
     non_slice_dims_shape: Tuple[int, int],
-    output_dims: Tuple[int, int],
     dtype: np.dtype,
     available_memory: int,
     **kwargs
-) -> Tuple[int, np.dtype]:
+) -> Tuple[int, np.dtype, Tuple[int, int]]:
     """
     Default function for calculating maximum slices, which simply assumes
     space for input and output only is required, both with the same datatype,
@@ -175,7 +173,6 @@ def calc_max_slices_single_pattern_default(
 
     return calc_max_slices_default(0,
                                    non_slice_dims_shape,
-                                   output_dims,                                 
                                    dtype,
                                    available_memory,
                                    **kwargs)
@@ -267,13 +264,11 @@ def method_sino(
     def _calc_max_slices(
         slice_dim: int,
         non_slice_dims_shape: Tuple[int, int],
-        output_dims: Tuple[int, int],
         dtype: np.dtype,
         available_memory: int,
         **kwargs,
-    ) -> Tuple[int, np.dtype]:
+    ) -> Tuple[int, np.dtype, Tuple[int, int]]:
         return calc_max_slices(non_slice_dims_shape,
-                               output_dims,
                                dtype,
                                available_memory,
                                **kwargs)
@@ -315,13 +310,11 @@ def method_proj(
     def _calc_max_slices(
         slice_dim: int,
         non_slice_dims_shape: Tuple[int, int],
-        output_dims: Tuple[int, int],
         dtype: np.dtype,
         available_memory: int,
         **others,
-    ) -> Tuple[int, np.dtype]:
+    ) -> Tuple[int, np.dtype, Tuple[int, int]]:
         return calc_max_slices(non_slice_dims_shape,
-                               output_dims,
                                dtype,
                                available_memory,
                                **others)

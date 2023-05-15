@@ -69,11 +69,11 @@ def test_reconstruct_FBP_hook(data, flats, darks, ensure_clean_memory):
     # make sure estimator function is within range (80% min, 100% max)
     max_mem = hook.max_mem
     actual_slices = data.shape[1]
-    estimated_slices, _ = FBP_rec.meta.calc_max_slices(1,
+    estimated_slices, dtype_out, output_dims = FBP_rec.meta.calc_max_slices(1,
                                                        (data.shape[0], data.shape[2]),
-                                                       (objrecon_size, objrecon_size),
                                                        normalized.dtype,
-                                                       max_mem)
+                                                       max_mem,
+                                                       objsize=objrecon_size)
     assert estimated_slices <= actual_slices
     assert estimated_slices / actual_slices >= 0.8
     
@@ -122,11 +122,11 @@ def test_reconstruct_SIRT_hook(data, flats, darks, ensure_clean_memory):
     # make sure estimator function is within range (80% min, 100% max)
     max_mem = hook.max_mem
     actual_slices = data.shape[1]
-    estimated_slices, _ = SIRT_rec.meta.calc_max_slices(1,
+    estimated_slices, dtype_out, output_dims = SIRT_rec.meta.calc_max_slices(1,
                                                        (data.shape[0], data.shape[2]),
-                                                       (objrecon_size, objrecon_size),
                                                        normalized.dtype,
-                                                       max_mem)
+                                                       max_mem,
+                                                       objsize=objrecon_size)
     assert estimated_slices <= actual_slices
     assert estimated_slices / actual_slices >= 0.8
 
@@ -156,11 +156,11 @@ def test_reconstruct_SIRT_hook2(ensure_clean_memory):
     # make sure estimator function is within range (80% min, 100% max)
     max_mem = hook.max_mem
     actual_slices = data.shape[1]
-    estimated_slices, _ = SIRT_rec.meta.calc_max_slices(1,
+    estimated_slices, dtype_out, output_dims = SIRT_rec.meta.calc_max_slices(1,
                                                        (data.shape[0], data.shape[2]),
-                                                       (objrecon_size, objrecon_size),
                                                        data.dtype,
-                                                       max_mem)
+                                                       max_mem,
+                                                       objsize=objrecon_size)
     assert estimated_slices <= actual_slices
     assert estimated_slices / actual_slices >= 0.8
 
@@ -206,11 +206,11 @@ def test_reconstruct_CGLS_hook(data, flats, darks, ensure_clean_memory):
     # make sure estimator function is within range (80% min, 100% max)
     max_mem = hook.max_mem
     actual_slices = data.shape[1]
-    estimated_slices, _ = CGLS_rec.meta.calc_max_slices(1,
-                                                       (data.shape[0], data.shape[2]),
-                                                       (objrecon_size, objrecon_size),
+    estimated_slices, dtype_out, output_dims = CGLS_rec.meta.calc_max_slices(1,
+                                                       (data.shape[0], data.shape[2]),                                                       
                                                        normalized.dtype,
-                                                       max_mem)
+                                                       max_mem,
+                                                       objsize=objrecon_size)
     assert estimated_slices <= actual_slices
     assert estimated_slices / actual_slices >= 0.8
 
@@ -241,11 +241,11 @@ def test_reconstruct_CGLS_hook2(ensure_clean_memory):
     # make sure estimator function is within range (80% min, 100% max)
     max_mem = hook.max_mem
     actual_slices = data.shape[1]
-    estimated_slices, _ = CGLS_rec.meta.calc_max_slices(1,
-                                                       (data.shape[0], data.shape[2]),
-                                                       (objrecon_size, objrecon_size),
+    estimated_slices, dtype_out, output_dims = CGLS_rec.meta.calc_max_slices(1,
+                                                       (data.shape[0], data.shape[2]),                                                       
                                                        data.dtype,
-                                                       max_mem)
+                                                       max_mem,
+                                                       objsize=objrecon_size)
     assert estimated_slices <= actual_slices
     assert estimated_slices / actual_slices >= 0.8
     
