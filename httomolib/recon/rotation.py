@@ -43,13 +43,11 @@ __all__ = [
 
 def _calc_max_slices_center_vo(
     non_slice_dims_shape: Tuple[int, int],
-    output_dims: Tuple[int, int],
     dtype: np.dtype, available_memory: int, **kwargs
-) -> Tuple[int, np.dtype]:
+) -> Tuple[int, np.dtype, Tuple[int, int]]:
     # the function works on one slice from the sinogram all the way through (picks a specific index)
     # so memory is not restricted as long as a single slice can fit
-    return 1000000, dtype
-
+    return (1000000, dtype, non_slice_dims_shape)
 
 @method_sino(_calc_max_slices_center_vo)
 @nvtx.annotate()
@@ -351,12 +349,11 @@ def _downsample(sino, level, axis):
 
 def _calc_max_slices_center_360(
     non_slice_dims_shape: Tuple[int, int],
-    output_dims: Tuple[int, int],
     dtype: np.dtype, available_memory: int, **kwargs
-) -> Tuple[int, np.dtype]:
+) -> Tuple[int, np.dtype, Tuple[int, int]]:
     # the function works on one slice from the sinogram all the way through (picks 0 or a specific index)
     # so memory is not restricted as long as a single slice can fit
-    return 1000000, dtype
+    return (1000000, dtype, non_slice_dims_shape)
 
 
 # --- Center of rotation (COR) estimation method ---#
