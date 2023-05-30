@@ -36,7 +36,6 @@ classifiers = [
 requires-python = ">=3.9"
 dynamic = ["version"]
 dependencies = [
-    "cupy",
     "numpy",
     "scipy",
     "pillow",
@@ -44,6 +43,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+cupy = ["cupy"]
 dev = [
   "pytest",
   "pytest-cov",
