@@ -15,9 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ---------------------------------------------------------------------------
-# Created By  : Daniil Kazantsev <scientificsoftware@diamond.ac.uk>
+# Created By  : <scientificsoftware@diamond.ac.uk>
 # Created Date: 27/October/2022
-# version ='0.1'
 # ---------------------------------------------------------------------------
 """ Module for loading/saving images """
 
