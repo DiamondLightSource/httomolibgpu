@@ -33,8 +33,6 @@ test:
   imports:
     - httomolib
     - httomolib.misc
-    - httomolib.prep
-    - httomolib.recon
   source_files:
     - tests/*
   commands:

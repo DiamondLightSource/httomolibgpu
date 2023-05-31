@@ -31,14 +31,12 @@ def test_adds_metdata():
     assert method_registry["tests"]["test_decorator"]["myfunc"](2) == 4
 
 
-
 def test_metadata_sino():
     @method_sino(calc_max_slices=None)
     def otherfunc(a: int):
         pass
 
     assert otherfunc.meta.pattern == "sinogram"
-
 
 def test_metadata_proj():
     @method_proj(calc_max_slices=None)
