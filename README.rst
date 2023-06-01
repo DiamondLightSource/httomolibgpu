@@ -36,8 +36,8 @@ Build HTTomolibGPU as a conda Python package
 
 An example of using the API
 ===========================
-* The file :code:`examples/normalize-data.py` shows how to apply the CuPy implementation of dark-flat field correction to the :code:`tests/test_data/tomo_standard.npz` data.
-* The file :code:`examples/fresnel-filter.py` shows how to apply the CuPy implementation of Fresnel filtering to the :code:`tests/test_data/tomo_standard.npz` data.
+* The file :code:`examples/normalize-data.py` shows how to apply dark-flat field correction to the :code:`tests/test_data/tomo_standard.npz` data.
+* The file :code:`examples/fresnel-filter.py` shows how to apply Fresnel filtering to the :code:`tests/test_data/tomo_standard.npz` data.
 
 Input data for methods
 ======================
