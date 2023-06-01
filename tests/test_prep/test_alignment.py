@@ -3,11 +3,11 @@ import os
 import cupy as cp
 import numpy as np
 import pytest
-from httomolib.prep.alignment import (
+from httomolibgpu.prep.alignment import (
     distortion_correction_proj,
     distortion_correction_proj_discorpy,
 )
-from httomolib import method_registry
+from httomolibgpu import method_registry
 from imageio.v2 import imread
 from numpy.testing import assert_allclose
 
@@ -86,4 +86,4 @@ def test_distortion_correction_meta(distortion_correction_path, stack_size, impl
     assert estimated_slices <= actual_slices
     assert estimated_slices / actual_slices >= 0.8 
     
-    assert implementation.__name__ in method_registry['httomolib']['prep']['alignment']
+    assert implementation.__name__ in method_registry['httomolibgpu']['prep']['alignment']

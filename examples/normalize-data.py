@@ -2,7 +2,7 @@ from pathlib import Path
 
 import cupy as cp
 import numpy as np
-from httomolib.prep.normalize import normalize
+from httomolibgpu.prep.normalize import normalize
 
 # Load the projection data
 data_folder = Path("tests/test_data/")

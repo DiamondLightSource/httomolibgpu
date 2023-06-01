@@ -1,4 +1,4 @@
-{% set name = "httomolib" %}
+{% set name = "httomolibgpu" %}
 
 package:
   name: {{ name|lower }}
@@ -24,7 +24,6 @@ requirements:
     - astra-toolbox
     - nvtx
     - tomobar
-    - larix
     - setuptools
     - scipy
     - pillow
@@ -36,10 +35,10 @@ test:
     - pip
     - pytest
   imports:
-    - httomolib
-    - httomolib.misc
-    - httomolib.prep
-    - httomolib.recon
+    - httomolibgpu
+    - httomolibgpu.misc
+    - httomolibgpu.prep
+    - httomolibgpu.recon
   source_files:
     - tests/*
   commands:
@@ -47,10 +46,10 @@ test:
     - pytest
 
 about:
-  home: https://github.com/DiamondLightSource/httomolib
-  summary: 'A library of data processing and reconstruction methods for tomography'
+  home: https://github.com/DiamondLightSource/httomolibgpu
+  summary: 'A library of GPU-accelerated data processing and reconstruction methods for tomography'
   description: |
-    A library of data processing and reconstruction methods for tomography
+    A library of GPU-accelerated data processing and reconstruction methods for tomography
 
 extra:
   recipe-maintainers:

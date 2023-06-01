@@ -4,9 +4,9 @@ import cupy as cp
 import numpy as np
 import pytest
 from cupy.cuda import nvtx
-from httomolib.prep.phase import fresnel_filter, paganin_filter, retrieve_phase
+from httomolibgpu.prep.phase import fresnel_filter, paganin_filter, retrieve_phase
 from numpy.testing import assert_allclose
-from httomolib import method_registry
+from httomolibgpu import method_registry
 from tests import MaxMemoryHook
 
 eps = 1e-6
@@ -26,7 +26,7 @@ def test_fresnel_filter_projection(data):
     #: make sure the output is float32
     assert filtered_data.dtype == np.float32
     assert fresnel_filter.meta.pattern == 'projection'
-    assert 'fresnel_filter' in method_registry['httomolib']['prep']['phase']
+    assert 'fresnel_filter' in method_registry['httomolibgpu']['prep']['phase']
 
 
 @cp.testing.gpu
@@ -91,7 +91,7 @@ def test_paganin_filter_meta(pad, slices, dtype, ensure_clean_memory):
     assert estimated_slices / actual_slices >= 0.8    
 
     assert paganin_filter.meta.pattern == 'projection'
-    assert 'paganin_filter' in method_registry['httomolib']['prep']['phase']
+    assert 'paganin_filter' in method_registry['httomolibgpu']['prep']['phase']
     
 @cp.testing.gpu
 def test_paganin_filter_energy100(data):
@@ -233,7 +233,7 @@ def test_retrieve_phase_meta(data, ensure_clean_memory):
     assert estimated_slices / actual_slices >= 0.8
     
     assert retrieve_phase.meta.pattern == 'projection'
-    assert 'retrieve_phase' in method_registry['httomolib']['prep']['phase']
+    assert 'retrieve_phase' in method_registry['httomolibgpu']['prep']['phase']
 
 
 @cp.testing.gpu

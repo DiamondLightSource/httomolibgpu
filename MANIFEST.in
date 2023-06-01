@@ -1,1 +1,1 @@
-include httomolib/cuda_kernels/*.cu
+include httomolibgpu/cuda_kernels/*.cu

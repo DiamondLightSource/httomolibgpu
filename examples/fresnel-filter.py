@@ -2,7 +2,7 @@ from pathlib import Path
 
 import cupy as cp
 import numpy as np
-from httomolib.prep.phase import fresnel_filter
+from httomolibgpu.prep.phase import fresnel_filter
 
 # Load data
 data_folder = Path("tests/test_data/")

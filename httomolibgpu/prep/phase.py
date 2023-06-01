@@ -29,8 +29,8 @@ import cupyx
 import numpy as np
 import nvtx
 
-from httomolib.cuda_kernels import load_cuda_module
-from httomolib.decorator import method_proj
+from httomolibgpu.cuda_kernels import load_cuda_module
+from httomolibgpu.decorator import method_proj
 
 __all__ = [
     "fresnel_filter",

@@ -17,7 +17,6 @@
 # ---------------------------------------------------------------------------
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 01 November 2022
-# version ='0.1'
 # ---------------------------------------------------------------------------
 """Modules for finding the axis of rotation"""
 
@@ -32,8 +31,8 @@ import cupyx.scipy.ndimage as cpndi
 from cupy import ndarray
 from cupyx.scipy.ndimage import gaussian_filter, shift
 
-from httomolib.cuda_kernels import load_cuda_module
-from httomolib.decorator import method_sino
+from httomolibgpu.cuda_kernels import load_cuda_module
+from httomolibgpu.decorator import method_sino
 
 __all__ = [
     "find_center_vo",

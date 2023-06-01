@@ -17,15 +17,14 @@
 # ---------------------------------------------------------------------------
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 23 March 2023
-# version ='0.1'
 # ---------------------------------------------------------------------------
 """Module for data type morphing functions"""
 
-import cupy as cp
+import cupy as cp 
 import numpy as np
 import nvtx
 from typing import Literal, Tuple
-from httomolib.decorator import method_sino
+from httomolibgpu.decorator import method_sino
 
 __all__ = [
     "sino_360_to_180",

@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import cupy as cp
-from httomolib.prep.alignment import distortion_correction_proj
+from httomolibgpu.prep.alignment import distortion_correction_proj
 from imageio.v2 import imread, imwrite
 
 # Load image to be corrected
