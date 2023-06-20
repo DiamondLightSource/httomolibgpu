@@ -6,9 +6,9 @@ import cupy as cp
 from cupy.cuda import nvtx
 import numpy as np
 import pytest
-from httomolib.prep.normalize import normalize
-from httomolib.recon.rotation import _calculate_chunks, find_center_360, find_center_vo
-from httomolib import method_registry
+from httomolibgpu.prep.normalize import normalize
+from httomolibgpu.recon.rotation import _calculate_chunks, find_center_360, find_center_vo
+from httomolibgpu import method_registry
 from numpy.testing import assert_allclose
 from .rotation_cpu_reference import find_center_360_numpy
 
@@ -26,7 +26,7 @@ def test_find_center_vo(data, flats, darks):
     #: Check that we only get a float32 output
     assert cor.dtype == np.float32
     assert find_center_vo.meta.pattern == 'sinogram'
-    assert 'find_center_vo' in method_registry['httomolib']['recon']['rotation']
+    assert 'find_center_vo' in method_registry['httomolibgpu']['recon']['rotation']
 
 
 @cp.testing.gpu
@@ -85,7 +85,7 @@ def test_find_center_vo_data_chunked(data, flats, darks):
 
     # we emulate less memory here - with this amount, we get 12 chunks and 3 chunks in the 2 calls,
     # and the data should be the same as when it's all fitting
-    with mock.patch('httomolib.recon.rotation._get_available_gpu_memory', return_value=10000000):
+    with mock.patch('httomolibgpu.recon.rotation._get_available_gpu_memory', return_value=10000000):
         cor = find_center_vo(data)
 
     assert_allclose(cor, 79.5)
@@ -136,7 +136,7 @@ def test_find_center_360_data(data):
 
     #: Check meta
     assert find_center_360.meta.pattern == 'sinogram'
-    assert 'find_center_360' in method_registry['httomolib']['recon']['rotation']
+    assert 'find_center_360' in method_registry['httomolibgpu']['recon']['rotation']
 
 
 @cp.testing.gpu

@@ -5,11 +5,11 @@ from pathlib import Path
 
 import cupy as cp
 import numpy as np
-from httomolib.prep.alignment import distortion_correction_proj
-from httomolib.prep.normalize import normalize
-from httomolib.prep.phase import paganin_filter
-from httomolib.prep.stripe import remove_stripe_based_sorting
-from httomolib.recon.rotation import find_center_vo
+from httomolibgpu.prep.alignment import distortion_correction_proj
+from httomolibgpu.prep.normalize import normalize
+from httomolibgpu.prep.phase import paganin_filter
+from httomolibgpu.prep.stripe import remove_stripe_based_sorting
+from httomolibgpu.recon.rotation import find_center_vo
 
 data_folder = Path("tests/test_data/")
 

@@ -4,20 +4,20 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 include-package-data = true
-packages = ["httomolib",
-            "httomolib.misc",
-            "httomolib.prep",
-            "httomolib.recon",
-            "httomolib.cuda_kernels"]
+packages = ["httomolibgpu",
+            "httomolibgpu.misc",
+            "httomolibgpu.prep",
+            "httomolibgpu.recon",
+            "httomolibgpu.cuda_kernels"]
 
 [tool.setuptools.package-data]
-httomolib = ["*.cu", "*.cuh"]    # include cuda kernels in package
+httomolibgpu = ["*.cu", "*.cuh"]    # include cuda kernels in package
 
 [tool.setuptools-git-versioning]
 enabled = true
 
 [project]
-name = "httomolib"
+name = "httomolibgpu"
 description = "Commonly used tomography data processing methods at DLS."
 readme = "README.rst"
 license = {text = "BSD-3-Clause"}
@@ -58,7 +58,7 @@ dev = [
 
 
 [project.urls]
-"Repository" = "https://github.com/DiamondLightSource/httomolib"
+"Repository" = "https://github.com/DiamondLightSource/httomolibgpu"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
@@ -80,12 +80,12 @@ filterwarnings = [
 ]
 
 [tool.coverage.run]
-data_file = "/tmp/httomolib.coverage"
+data_file = "/tmp/httomolibgpu.coverage"
 
 [tool.coverage.paths]
 # Tests are run from installed location, map back to the src directory
 source = [
-    "httomolib",
+    "httomolibgpu",
     "**/site-packages/"
 ]
 

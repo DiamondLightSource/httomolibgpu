@@ -17,7 +17,6 @@
 # ---------------------------------------------------------------------------
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 01 November 2022
-# version ='0.1'
 # ---------------------------------------------------------------------------
 """Modules for raw projection data normalization"""
 
@@ -26,7 +25,7 @@ import cupy as cp
 import numpy as np
 import nvtx
 from cupy import uint16, float32, mean
-from httomolib.decorator import method_proj
+from httomolibgpu.decorator import method_proj
 
 __all__ = ["normalize"]
 

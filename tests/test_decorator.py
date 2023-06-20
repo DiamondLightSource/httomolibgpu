@@ -1,4 +1,4 @@
-from httomolib import method_all, method_proj, method_sino, method_registry
+from httomolibgpu import method_all, method_proj, method_sino, method_registry
 import inspect
 import numpy as np
 from numpy import int32

@@ -3,12 +3,12 @@ import cupy as cp
 from cupy.cuda import nvtx
 import numpy as np
 import pytest
-from httomolib.prep.normalize import normalize
-from httomolib.prep.stripe import (
+from httomolibgpu.prep.normalize import normalize
+from httomolibgpu.prep.stripe import (
     remove_stripe_based_sorting,
     remove_stripe_ti,
 )
-from httomolib import method_registry
+from httomolibgpu import method_registry
 from numpy.testing import assert_allclose
 
 from tests import MaxMemoryHook
@@ -52,7 +52,7 @@ def test_remove_stripe_ti_on_data_meta(data, flats, darks):
 
     data = None  #: free up GPU memory   
     assert remove_stripe_ti.meta.pattern == 'sinogram'
-    assert 'remove_stripe_ti' in method_registry['httomolib']['prep']['stripe']
+    assert 'remove_stripe_ti' in method_registry['httomolibgpu']['prep']['stripe']
 
 
 def test_remove_stripe_ti_on_flats(host_flats):
@@ -110,7 +110,7 @@ def test_stripe_removal_sorting_cupy_meta(data, flats, darks):
     
     data = None  #: free up GPU memory
     assert remove_stripe_based_sorting.meta.pattern == 'sinogram'
-    assert 'remove_stripe_based_sorting' in method_registry['httomolib']['prep']['stripe']
+    assert 'remove_stripe_based_sorting' in method_registry['httomolibgpu']['prep']['stripe']
 
 
 @cp.testing.gpu

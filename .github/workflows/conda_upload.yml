@@ -1,0 +1,44 @@
+name: httomolibgpu conda upload
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v2
+
+      # setup Python 3.9
+      - name: Setup Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      # install dependencies with conda
+      - name: Install dependencies with conda
+        run: |      
+          $CONDA/bin/conda env create --name httomolibgpu --file conda/environment.yml
+          $CONDA/bin/conda run -n httomolibgpu pip install -e .
+          $CONDA/bin/conda list
+
+      - name: Decrypt a secret
+        run: ./.scripts/decrypt_secret.sh
+        env:
+          LARGE_SECRET_PASSPHRASE: ${{ secrets.LARGE_SECRET_PASSPHRASE }}
+
+      - name: Build and upload the package to httomo conda cloud
+        run: |
+          chmod +x ./.scripts/conda_upload.sh
+          ./.scripts/conda_upload.sh

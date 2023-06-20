@@ -15,28 +15,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ---------------------------------------------------------------------------
-# Created By  : Daniil Kazantsev <scientificsoftware@diamond.ac.uk>
+# Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 21/October/2022
-# version ='0.1'
 # ---------------------------------------------------------------------------
 """ Module for data correction """
 
 try:
     import cupy as cp
 except ImportError:
-    print("Cupy might be required for some methods in this module")
-
+    print("Cupy library is a required dependency for HTTomolibgpu, please install")
 from typing import Tuple
 import numpy as np
 import nvtx
 
-from httomolib.cuda_kernels import load_cuda_module
-from httomolib.decorator import calc_max_slices_default, method_all
+from httomolibgpu.cuda_kernels import load_cuda_module
+from httomolibgpu.decorator import calc_max_slices_default, method_all
 
 __all__ = [
     "median_filter3d",
     "remove_outlier3d",
-    "inpainting_filter3d",
 ]
 
 
@@ -134,49 +131,3 @@ def remove_outlier3d(
         If the input array is not three dimensional.
     """
     return median_filter3d(data=data, kernel_size=kernel_size, dif=dif)
-
-
-@method_all(cpuonly=True)
-def inpainting_filter3d(
-    data: np.ndarray,
-    mask: np.ndarray,
-    iter: int = 3,
-    windowsize_half: int = 5,
-    method_type: str = "random",
-    ncore: int = 1,
-) -> np.ndarray:
-    """
-    Inpainting filter for 3D data, taken from the Larix toolbox
-    (C - implementation).
-
-    A morphological inpainting scheme which progresses from the
-    edge of the mask inwards. It acts like a diffusion-type process
-    but significantly faster in convergence.
-
-    Parameters
-    ----------
-    data : ndarray
-        Input array.
-    mask : ndarray
-        Input binary mask (uint8) the same size as data,
-        integer 1 will define the inpainting area.
-    iter : int, optional
-        An additional number of iterations to run after the region
-        has been inpainted (smoothing effect).
-    windowsize_half : int, optional
-        Half-window size of the searching window (neighbourhood window).
-    method_type : str, optional
-        Method type to select for a value in the neighbourhood: mean, median,
-        or random. Defaults to "random".
-    ncore : int, optional
-        The number of CPU cores to use.
-
-    Returns
-    -------
-    ndarray
-        Inpainted array.
-    """
-
-    from larix.methods.misc import INPAINT_EUCL_WEIGHTED
-
-    return INPAINT_EUCL_WEIGHTED(data, mask, iter, windowsize_half, method_type, ncore)

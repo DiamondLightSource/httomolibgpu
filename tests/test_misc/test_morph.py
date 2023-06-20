@@ -3,10 +3,11 @@ import cupy as cp
 import numpy as np
 from cupy.cuda import nvtx
 import pytest
-from tomopy.misc.morph import sino_360_to_180 as tomopy_sino_360_to_180
-from httomolib.misc.morph import sino_360_to_180
+#from tomopy.misc.morph import sino_360_to_180 as tomopy_sino_360_to_180
+from httomolibgpu.misc.morph import sino_360_to_180
 
 
+"""
 @cp.testing.gpu
 @pytest.mark.parametrize("overlap", [0, 1, 3, 15, 32])
 @pytest.mark.parametrize("rotation", ["left", "right"])
@@ -26,7 +27,7 @@ def test_sino_360_to_180_unity(ensure_clean_memory, xp, overlap, rotation):
         return tomopy_sino_360_to_180(data, overlap, rotation)
     else:
         return sino_360_to_180(data, overlap, rotation)
-
+"""
 
 @pytest.mark.parametrize(
     "overlap, rotation",

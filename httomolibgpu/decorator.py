@@ -110,7 +110,7 @@ class MethodMeta:
         An inspect signature of the method with its arguments
     module : List[str]
         A list representing the module hierarchy where the method is defined, e.g.
-        ['httomolib', 'prep', 'normlize'] for 'httomolib/prep/normalize.py'
+        ['httomolibgpu', 'prep', 'normlize'] for 'httomolibgpu/prep/normalize.py'
     calc_max_slices : MemoryFunction
         Method to calculate the maximum number of slices that can fit in the given
         available memory.

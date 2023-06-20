@@ -5,8 +5,8 @@ import numpy as np
 import pytest
 
 from numpy.testing import assert_allclose, assert_equal
-from httomolib.prep.normalize import normalize
-from httomolib import method_registry
+from httomolibgpu.prep.normalize import normalize
+from httomolibgpu import method_registry
 from cupy.cuda import nvtx
 
 from tests import MaxMemoryHook
@@ -54,7 +54,7 @@ def test_normalize_meta(data, flats, darks, ensure_clean_memory):
     assert estimated_slices <= actual_slices
     assert estimated_slices / actual_slices >= 0.8
     assert normalize.meta.pattern == 'projection'
-    assert 'normalize' in method_registry['httomolib']['prep']['normalize']
+    assert 'normalize' in method_registry['httomolibgpu']['prep']['normalize']
     
 
 @cp.testing.gpu

@@ -1,8 +1,11 @@
-{% set name = "httomolib" %}
+{% set pyproject = load_file_data("../../pyproject.toml", from_recipe_dir=True) %}
+{% set proj = pyproject.get("project") %}
+{% set name = proj.get("name") %}
+{% set version = proj.get("version") %}
 
 package:
   name: {{ name|lower }}
-  version: {{ environ['VERSION'] }}
+  version: {{ version }}
 
 source:
   path: ../../
@@ -20,11 +23,9 @@ requirements:
     - python
     - numpy
     - cupy
-    - tomopy
     - astra-toolbox
     - nvtx
     - tomobar
-    - larix
     - setuptools
     - scipy
     - pillow
@@ -36,10 +37,10 @@ test:
     - pip
     - pytest
   imports:
-    - httomolib
-    - httomolib.misc
-    - httomolib.prep
-    - httomolib.recon
+    - httomolibgpu
+    - httomolibgpu.misc
+    - httomolibgpu.prep
+    - httomolibgpu.recon
   source_files:
     - tests/*
   commands:
@@ -47,10 +48,10 @@ test:
     - pytest
 
 about:
-  home: https://github.com/DiamondLightSource/httomolib
-  summary: 'A library of data processing and reconstruction methods for tomography'
+  home: https://github.com/DiamondLightSource/httomolibgpu
+  summary: 'A library of GPU-accelerated data processing and reconstruction methods for tomography'
   description: |
-    A library of data processing and reconstruction methods for tomography
+    A library of GPU-accelerated data processing and reconstruction methods for tomography
 
 extra:
   recipe-maintainers:

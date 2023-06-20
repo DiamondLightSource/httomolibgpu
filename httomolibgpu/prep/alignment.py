@@ -17,7 +17,6 @@
 # ---------------------------------------------------------------------------
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 01 November 2022
-# version ='0.1'
 # ---------------------------------------------------------------------------
 """Modules for data correction"""
 
@@ -25,10 +24,12 @@ import os
 from typing import Dict, List, Optional, Tuple
 
 import cupy as cp
-import nvtx
 from cupyx.scipy.ndimage import map_coordinates
-from httomolib.decorator import method_proj
+import nvtx
 import numpy as np
+
+
+from httomolibgpu.decorator import method_proj
 
 __all__ = [
     "distortion_correction_proj",

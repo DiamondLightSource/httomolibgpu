@@ -17,7 +17,6 @@
 # ---------------------------------------------------------------------------
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 01 November 2022
-# version ='0.1'
 # ---------------------------------------------------------------------------
 """Modules for phase retrieval and phase-contrast enhancement"""
 
@@ -29,8 +28,8 @@ import cupyx
 import numpy as np
 import nvtx
 
-from httomolib.cuda_kernels import load_cuda_module
-from httomolib.decorator import method_proj
+from httomolibgpu.cuda_kernels import load_cuda_module
+from httomolibgpu.decorator import method_proj
 
 __all__ = [
     "fresnel_filter",
@@ -374,7 +373,7 @@ def _calc_max_slice_retrieve_phase(
     # x 2 for ifftshift
     grid_size = (dy + 2 * py) * (dz + 2 * pz) * np.float64().nbytes * 2
     prj_size = (dy + 2 * py) * (dz + 2 * pz) * np.float32().nbytes * 2
-    prj_complex_size = prj_size * 2
+    prj_complex_size = int(prj_size * 1.85)
     fftplan_size = prj_complex_size
     prj_ret_size = prj_complex_size
     # the code goes through the projections line by line,

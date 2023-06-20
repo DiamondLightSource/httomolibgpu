@@ -17,7 +17,6 @@
 # ---------------------------------------------------------------------------
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 01 November 2022
-# version ='0.1'
 # ---------------------------------------------------------------------------
 """Modules for stripes removal"""
 from typing import Tuple, Union
@@ -25,7 +24,7 @@ from typing import Tuple, Union
 import cupy as cp
 import numpy as np
 import nvtx
-from httomolib.decorator import method_sino
+from httomolibgpu.decorator import method_sino
 
 __all__ = [
     "remove_stripe_based_sorting",

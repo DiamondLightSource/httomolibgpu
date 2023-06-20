@@ -1,4 +1,4 @@
-name: httomolib
+name: httomolibgpu
 channels:
   - conda-forge
   - anaconda
@@ -8,7 +8,6 @@ dependencies:
   - conda-forge::cupy
   - conda-forge::numpy<=1.23
   - conda-forge::nvtx
-  - conda-forge::tomopy
   - conda-forge::scipy
   - conda-forge::python
   - conda-forge::pytest
@@ -23,4 +22,4 @@ dependencies:
   - anaconda::h5py
   - astra-toolbox::astra-toolbox
   - httomo::tomobar
-  - httomo::larix
+  

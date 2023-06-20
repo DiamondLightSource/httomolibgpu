@@ -17,7 +17,6 @@
 # ---------------------------------------------------------------------------
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 01 November 2022
-# version ='0.1'
 # ---------------------------------------------------------------------------
 """Module for tomographic reconstruction"""
 
@@ -28,15 +27,14 @@ from cupy import float32, complex64
 import cupyx
 import numpy as np
 import nvtx
-from httomolib.decorator import method_sino
+from httomolibgpu.decorator import method_sino
 
-from httomolib.cuda_kernels import load_cuda_module
+from httomolibgpu.cuda_kernels import load_cuda_module
 
 __all__ = [
-    "FBP_rec",
-    "SIRT_rec",
-    "CGLS_rec",
-    "reconstruct_tomopy_astra",
+    "FBP",
+    "SIRT",
+    "CGLS",
 ]
 
 
@@ -69,7 +67,7 @@ def _calc_max_slices_FBP(
 ## %%%%%%%%%%%%%%%%%%%%%%% FBP reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 @method_sino(_calc_max_slices_FBP)
 @nvtx.annotate()
-def FBP_rec(
+def FBP(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
@@ -149,7 +147,7 @@ def _calc_max_slices_SIRT(
 ## %%%%%%%%%%%%%%%%%%%%%%% SIRT reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 @method_sino(_calc_max_slices_SIRT)
 @nvtx.annotate()
-def SIRT_rec(
+def SIRT(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
@@ -235,7 +233,7 @@ def _calc_max_slices_CGLS(
 ## %%%%%%%%%%%%%%%%%%%%%%% CGLS reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 @method_sino(_calc_max_slices_CGLS)
 @nvtx.annotate()
-def CGLS_rec(
+def CGLS(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
@@ -290,65 +288,4 @@ def CGLS_rec(
     cp._default_memory_pool.free_all_blocks()
     return reconstruction
 
-## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-
-## %%%%%%%%%%%%%%%%%%%%%%% Tomopy/ASTRA reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-@method_sino(cpuonly=True)
-@nvtx.annotate()
-def reconstruct_tomopy_astra(
-    data: np.ndarray,
-    angles: np.ndarray,
-    center: Optional[float] = None,
-    algorithm: str = "FBP_CUDA",
-    iterations: int = 1,
-    proj_type: str = "cuda",
-    gpu_id: int = 0,
-    ncore: int = 1,
-) -> np.ndarray:
-    """
-    Perform reconstruction using tomopy with wrappers around ASTRA toolbox.
-    This is a 3D recon using 2D (slice-by-slice) astra geometry routines.
-
-    Parameters
-    ----------
-    data : np.ndarray
-        Projection data as a numpy array.
-    angles : np.ndarray
-        An array of angles given in radians.
-    center : float, optional
-        The center of rotation (CoR).
-    algorithm : str, optional
-        The name of the reconstruction method, see available ASTRA methods.
-    iterations : int, optional
-        The number of iterations if the iterative algorithm is chosen.
-    proj_type : str, optional
-        Define projector type, e.g., "cuda" for "FBP_CUDA" algorithm
-        or "linear" for "FBP" (CPU) algorithm, see more available ASTRA projectors.
-    gpu_id : int, optional
-        A GPU device index to perform operation on.
-    ncore : int, optional
-        Number of cores that will be assigned to jobs.
-
-    Returns
-    -------
-    np.ndarray
-        The reconstructed volume.
-    """
-    from tomopy import astra, recon
-
-    reconstruction = recon(
-        data,
-        theta=angles,
-        center=center,
-        algorithm=astra,
-        options={
-            "method": algorithm,
-            "proj_type": proj_type,
-            "gpu_list": [gpu_id],
-            "num_iter": iterations,
-        },
-        ncore=ncore,
-    )
-
-    return reconstruction
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
