@@ -42,6 +42,8 @@ jobs:
           LARGE_SECRET_PASSPHRASE: ${{ secrets.LARGE_SECRET_PASSPHRASE }}
 
       - name: Build and upload the package to httomo conda cloud
+        env:
+          LABEL: main
         run: |
           chmod +x ./.scripts/conda_upload.sh
           ./.scripts/conda_upload.sh
