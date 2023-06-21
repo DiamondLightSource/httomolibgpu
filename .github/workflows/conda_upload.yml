@@ -1,12 +1,10 @@
 name: httomolibgpu conda upload
 
+# Run the workflow whenever a tag beginning with `v` is pushed to any branch
 on:
   push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+    tags:
+      - v*
 
 jobs:
   build-linux:
