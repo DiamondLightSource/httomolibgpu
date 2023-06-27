@@ -64,6 +64,7 @@ def test_paganin_filter(data):
     #: make sure the output is float32
     assert filtered_data.dtype == np.float32
 
+
 @cp.testing.gpu
 @pytest.mark.parametrize("pad", [0, 31, 100])
 @pytest.mark.parametrize("slices", [15, 51, 160])
@@ -92,7 +93,8 @@ def test_paganin_filter_meta(pad, slices, dtype, ensure_clean_memory):
 
     assert paganin_filter.meta.pattern == 'projection'
     assert 'paganin_filter' in method_registry['httomolibgpu']['prep']['phase']
-    
+
+
 @cp.testing.gpu
 def test_paganin_filter_energy100(data):
     filtered_data = paganin_filter(data, energy=100.0).get()

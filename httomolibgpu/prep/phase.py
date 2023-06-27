@@ -247,9 +247,6 @@ def paganin_filter(
         The stack of filtered projections.
     """
     # Check the input data is valid
-    if data.ndim == 2:
-        data = cp.expand_dims(data, 0)
-
     if data.ndim != 3:
         raise ValueError(
             f"Invalid number of dimensions in data: {data.ndim},"
