@@ -1,10 +1,9 @@
-name: httomolibgpu conda upload
+name: httomolibgpu nightly dev conda package build + upload
 
-# Run the workflow whenever a tag beginning with `v` is pushed to any branch
 on:
-  push:
-    tags:
-      - v*
+  schedule:
+    # Run at midnight every day
+    - cron: '0 0 * * *'
 
 jobs:
   build-linux:
@@ -18,21 +17,14 @@ jobs:
       - name: Checkout repository code
         uses: actions/checkout@v3
         with:
+          ref: "main"
           fetch-depth: 0
-          ref: ${{ github.ref_name }}
 
       # setup Python 3.9
       - name: Setup Python 3.9
         uses: actions/setup-python@v2
         with:
           python-version: 3.9
-
-      # install dependencies with conda
-      - name: Install dependencies with conda
-        run: |      
-          $CONDA/bin/conda env create --name httomolibgpu --file conda/environment.yml
-          $CONDA/bin/conda run -n httomolibgpu pip install -e .
-          $CONDA/bin/conda list
 
       - name: Decrypt a secret
         run: ./.scripts/decrypt_secret.sh
@@ -41,7 +33,8 @@ jobs:
 
       - name: Build and upload the package to httomo conda cloud
         env:
-          LABEL: main
+          LABEL: dev
         run: |
           chmod +x ./.scripts/conda_upload.sh
           ./.scripts/conda_upload.sh
+
