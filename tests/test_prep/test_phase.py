@@ -4,7 +4,7 @@ import cupy as cp
 import numpy as np
 import pytest
 from cupy.cuda import nvtx
-from httomolibgpu.prep.phase import fresnel_filter, paganin_filter, retrieve_phase
+from httomolibgpu.prep.phase import fresnel_filter, paganin_filter, paganin_filter2, retrieve_phase
 from numpy.testing import assert_allclose
 from httomolibgpu import method_registry
 from tests import MaxMemoryHook
@@ -193,6 +193,84 @@ def test_paganin_filter_1D_raises(ensure_clean_memory):
 
 
 @cp.testing.gpu
+def test_paganin_filter2_1D_raises(ensure_clean_memory):
+    _data = cp.ones(10)
+    with pytest.raises(ValueError):
+        paganin_filter2(_data)
+
+    _data = None  #: free up GPU memory
+
+
+@cp.testing.gpu
+def test_paganin_filter2(data):
+    # --- testing the Paganin filter from TomoPy on tomo_standard ---#
+    filtered_data = paganin_filter2(data).get()
+
+    assert filtered_data.ndim == 3
+    assert_allclose(np.mean(filtered_data), -1.227684e-09, rtol=eps)
+    assert_allclose(np.max(filtered_data), -7.713906e-10, rtol=eps)
+
+    #: make sure the output is float32
+    assert filtered_data.dtype == np.float32
+
+
+@cp.testing.gpu
+def test_paganin_filter2_energy100(data):
+    filtered_data = paganin_filter2(data, energy=100.0).get()
+
+    assert_allclose(np.mean(filtered_data), -6.506681e-10, rtol=1e-05)
+    assert_allclose(np.min(filtered_data), -6.939478e-10, rtol=eps)
+
+    assert filtered_data.ndim == 3
+    assert filtered_data.dtype == np.float32
+
+
+@cp.testing.gpu
+def test_paganin_filter2_dist75(data):
+    filtered_data = paganin_filter2(data, dist=75.0, alpha=1e-6).get()
+
+    assert_allclose(np.sum(np.mean(filtered_data, axis=(1, 2))), -2.2097976e-07, rtol=1e-6)
+    assert_allclose(np.sum(filtered_data), -0.0045256666, rtol=1e-6)
+    assert_allclose(np.mean(filtered_data[0, 60:63, 90]), -1.1674713e-09, rtol=1e-6)
+    assert_allclose(np.sum(filtered_data[50:100, 40, 1]), -6.416675e-08, rtol=1e-6)
+
+
+@cp.testing.gpu
+@pytest.mark.perf
+def test_paganin_filter2_performance(ensure_clean_memory):
+    # Note: low/high and size values taken from sample2_medium.yaml real run
+
+    # this test needs ~20GB of memory with 1801 - we'll divide depending on GPU memory
+    dev = cp.cuda.Device()
+    mem_80percent = 0.8 * dev.mem_info[0]
+    size = 1801
+    required_mem = 20 * 1024 * 1024 * 1024
+    if mem_80percent < required_mem:
+        size = int(np.ceil(size / required_mem * mem_80percent))
+        print(f"Using smaller size of ({size}, 5, 2560) due to memory restrictions")
+
+    data_host = np.random.random_sample(size=(size, 5, 2560)).astype(np.float32) * 2.0
+    data = cp.asarray(data_host, dtype=np.float32)
+
+    # run code and time it
+    # cold run first
+    paganin_filter2(data)
+    dev = cp.cuda.Device()
+    dev.synchronize()
+
+    start = time.perf_counter_ns()
+    nvtx.RangePush("Core")
+    for _ in range(10):
+        paganin_filter2(data)
+
+    nvtx.RangePop()
+    dev.synchronize()
+    duration_ms = float(time.perf_counter_ns() - start) * 1e-6 / 10
+
+    assert "performance in ms" == duration_ms
+
+
+@cp.testing.gpu
 def test_retrieve_phase_1D_raises(ensure_clean_memory):
     #: testing the phase retrieval on tomo_standard
     _data = cp.ones(10)
@@ -207,8 +285,8 @@ def test_retrieve_phase(data):
     phase_data = retrieve_phase(data).get()
 
     assert phase_data.shape == (180, 128, 160)
-    assert np.sum(phase_data) == 2994544952
-    assert_allclose(np.mean(phase_data), 812.3223068576389, rtol=1e-7)
+    assert np.sum(phase_data) == 3226505533
+    assert_allclose(np.mean(phase_data), 875.245642, rtol=1e-7)
     #: retrieve_phase can give uint16 or float32 output
     assert phase_data.dtype == np.uint16
 
