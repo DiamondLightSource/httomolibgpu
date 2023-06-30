@@ -560,21 +560,10 @@ def _reciprocal_grid(pixel_size: float, shape_proj: tuple) -> cp.ndarray:
     # Sampling in reciprocal space.
     indx = _reciprocal_coord(pixel_size, shape_proj[0])
     indy = _reciprocal_coord(pixel_size, shape_proj[1])
-    cp.square(indx, out=indx)
-    cp.square(indy, out=indy)
-    # TODO: Explicitly generate the result equivalent to `np.add.outer()` using
-    # nested loops, since CuPy doesn't yet have a released version which
-    # provides `ufunc.outer`, see https://github.com/cupy/cupy/pull/7049,
-    # https://github.com/cupy/cupy/issues/7082, and
-    # https://github.com/cupy/cupy/issues/6866.
-    #
-    # When `ufunc.outer` is supported in CuPy, this code can be updated
-    # accordingly.
-    grid = cp.empty((len(indx), len(indy)))
-    for i in range(len(indx)):
-        for j in range(len(indy)):
-            grid[i, j] = cp.add(indx[i], indy[j])
-    return grid
+    indx_sq = cp.square(indx)
+    indy_sq = cp.square(indy)
+
+    return cp.add.outer(indx_sq, indy_sq)
 
 
 def _reciprocal_coord(pixel_size: float, num_grid: int) -> cp.ndarray:
@@ -675,9 +664,15 @@ def paganin_filter2(
     tomo = ifft_filtered_tomo[slc_indices].astype(cp.float32)
 
     # taking the negative log
-    tomo = -cp.log(tomo) / (4 * PI / _wavelength(energy))
+    c = 4 * PI / _wavelength(energy)
+    _log_kernel = cp.ElementwiseKernel(
+        "C tomo, raw float32 c",
+        "C out",
+        "out = -log(tomo) * 1/c",
+        name="log_kernel",
+    )
 
-    return tomo
+    return _log_kernel(tomo, c)
 
 
 def _shift_bit_length(x: int) -> int:
