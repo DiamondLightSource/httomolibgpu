@@ -4,7 +4,7 @@ import cupy as cp
 import numpy as np
 import pytest
 from cupy.cuda import nvtx
-from httomolibgpu.prep.phase import fresnel_filter, paganin_filter, paganin_filter2, retrieve_phase
+from httomolibgpu.prep.phase import fresnel_filter, paganin_filter, paganin_filter2
 from numpy.testing import assert_allclose
 from httomolibgpu import method_registry
 from tests import MaxMemoryHook
@@ -268,59 +268,3 @@ def test_paganin_filter2_performance(ensure_clean_memory):
     duration_ms = float(time.perf_counter_ns() - start) * 1e-6 / 10
 
     assert "performance in ms" == duration_ms
-
-
-@cp.testing.gpu
-def test_retrieve_phase_1D_raises(ensure_clean_memory):
-    #: testing the phase retrieval on tomo_standard
-    _data = cp.ones(10)
-    with pytest.raises(ValueError):
-        retrieve_phase(_data)
-
-    _data = None  #: free up GPU memory
-
-
-@cp.testing.gpu
-def test_retrieve_phase(data):
-    phase_data = retrieve_phase(data).get()
-
-    assert phase_data.shape == (180, 128, 160)
-    assert np.sum(phase_data) == 3226505533
-    assert_allclose(np.mean(phase_data), 875.245642, rtol=1e-7)
-    #: retrieve_phase can give uint16 or float32 output
-    assert phase_data.dtype == np.uint16
-
-    float32_phase_data = retrieve_phase(data.astype(cp.float32)).get()
-    assert float32_phase_data.dtype == np.float32
-
-
-@cp.testing.gpu
-def test_retrieve_phase_meta(data, ensure_clean_memory):
-    cache = cp.fft.config.get_plan_cache()
-    cache.clear()
-    hook = MaxMemoryHook(data.nbytes)
-    with hook:
-        phase_data = retrieve_phase(data).get()
-    # make sure estimator function is within range (80% min, 100% max)
-    max_mem = hook.max_mem
-    actual_slices = data.shape[0]
-    estimated_slices, dtype_out, output_dims = retrieve_phase.meta.calc_max_slices(
-        0,
-        (data.shape[1], data.shape[2]),
-        data.dtype, max_mem, 
-        pixel_size=1e-4, energy=20, dist=50)
-    assert estimated_slices <= actual_slices
-    assert estimated_slices / actual_slices >= 0.8
-    
-    assert retrieve_phase.meta.pattern == 'projection'
-    assert 'retrieve_phase' in method_registry['httomolibgpu']['prep']['phase']
-
-
-@cp.testing.gpu
-def test_retrieve_phase_energy100_nopad(data):
-    phase_data = retrieve_phase(data, dist=34.3, energy=100.0, pad=False).get()
-
-    assert_allclose(np.mean(phase_data), 979.527778, rtol=1e-7)
-    assert_allclose(np.std(phase_data), 30.053735, rtol=1e-7)
-
-    assert phase_data.dtype == np.uint16
