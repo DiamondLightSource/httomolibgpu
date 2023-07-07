@@ -427,7 +427,42 @@ def _reciprocal_coord(pixel_size: float, num_grid: int) -> cp.ndarray:
     return rc
 
 
+def _calc_max_slices_paganin_filter2(
+    non_slice_dims_shape: Tuple[int, int],
+    dtype: np.dtype,
+    available_memory: int,
+    **kwargs,
+) -> Tuple[int, np.dtype, Tuple[int, int]]:
+    element = non_slice_dims_shape[1]
+    diff = _shift_bit_length(element + 1) - element
+    if element % 2 == 0:
+        pad_width = diff // 2
+        pad_width = (pad_width, pad_width)
+    else:
+        # need an uneven padding for odd-number lengths
+        left_pad = diff // 2
+        right_pad = diff - left_pad
+        pad_width = (left_pad, right_pad)
+
+    input_size = np.prod(non_slice_dims_shape) * dtype.itemsize
+    in_slice_size = (
+        (non_slice_dims_shape[0] + 2 * pad_width[1])
+        * (non_slice_dims_shape[1] + 2 * pad_width[0])
+        * dtype.itemsize
+    )
+    # FFT needs complex inputs, so copy to complex happens first
+    complex_slice = in_slice_size / dtype.itemsize * np.complex64().nbytes
+    fftplan_slice = complex_slice
+    filter_size = complex_slice
+    res_slice = np.prod(non_slice_dims_shape) * np.float32().nbytes
+    slice_size = input_size + in_slice_size + complex_slice + fftplan_slice + res_slice
+    available_memory -= filter_size
+
+    return (int(available_memory // slice_size), float32(), non_slice_dims_shape)
+
+
 # Adaptation with some corrections of retrieve_phase (Paganin filter) from TomoPy
+@method_proj(_calc_max_slices_paganin_filter2)
 @nvtx.annotate()
 def paganin_filter2(
     tomo: cp.ndarray,

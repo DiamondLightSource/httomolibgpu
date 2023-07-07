@@ -268,3 +268,33 @@ def test_paganin_filter2_performance(ensure_clean_memory):
     duration_ms = float(time.perf_counter_ns() - start) * 1e-6 / 10
 
     assert "performance in ms" == duration_ms
+
+
+@cp.testing.gpu
+@pytest.mark.parametrize("slices", [15, 51, 160])
+@pytest.mark.parametrize("dtype", [np.uint16, np.float32])
+def test_paganin_filter2_meta(slices, dtype, ensure_clean_memory):
+    cache = cp.fft.config.get_plan_cache()
+    cache.clear()
+    kwargs = {}
+    data = cp.random.random_sample((slices, 111, 121), dtype=np.float32)
+    if dtype == np.uint16:
+        data = cp.asarray(data * 300.0, dtype=np.uint16)
+    hook = MaxMemoryHook(data.size * data.itemsize)
+    with hook:
+        paganin_filter2(data, **kwargs)
+
+    assert paganin_filter2.meta.pattern == 'projection'
+    assert 'paganin_filter2' in method_registry['httomolibgpu']['prep']['phase']
+    assert not paganin_filter2.meta.cpu
+    assert paganin_filter2.meta.gpu
+
+    # make sure estimator function is within range (80% min, 100% max)
+    max_mem = hook.max_mem
+    actual_slices = data.shape[0]
+    estimated_slices, dtype_out, output_dims = paganin_filter2.meta.calc_max_slices(
+        0,
+        (data.shape[1], data.shape[2]),
+        data.dtype, max_mem, **kwargs)
+    assert estimated_slices <= actual_slices
+    assert estimated_slices / actual_slices >= 0.8
