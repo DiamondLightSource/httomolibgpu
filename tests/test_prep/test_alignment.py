@@ -1,16 +1,18 @@
 import os
+import time
 
 import cupy as cp
 import numpy as np
 import pytest
+from cupy.cuda import nvtx
+from imageio.v2 import imread
+from numpy.testing import assert_allclose
+
+from httomolibgpu import method_registry
 from httomolibgpu.prep.alignment import (
     distortion_correction_proj,
     distortion_correction_proj_discorpy,
 )
-from httomolibgpu import method_registry
-from imageio.v2 import imread
-from numpy.testing import assert_allclose
-
 from tests import MaxMemoryHook
 
 
@@ -118,3 +120,40 @@ def test_distortion_correction_meta(
     assert (
         implementation.__name__ in method_registry["httomolibgpu"]["prep"]["alignment"]
     )
+
+
+@cp.testing.gpu
+@pytest.mark.perf
+def test_distortion_correction_performance(
+    distortion_correction_path, ensure_clean_memory
+):
+    dev = cp.cuda.Device()
+    distortion_coeffs_path = os.path.join(
+        distortion_correction_path, "distortion-coeffs.txt"
+    )
+
+    image_path = os.path.join(distortion_correction_path, "dot_pattern_03.tif")
+    im_host = np.asarray(imread(image_path))
+    im_host = np.expand_dims(im_host, axis=0)
+    # replicate into a stack of images
+    im_stack = cp.asarray(np.tile(im_host, (150, 3, 2)))
+
+    preview = {
+        "starts": [0, 0],
+        "stops": [im_stack.shape[0], im_stack.shape[1]],
+        "steps": [1, 1],
+    }
+
+    # cold run first
+    distortion_correction_proj_discorpy(im_stack, distortion_coeffs_path, preview)
+    dev.synchronize()
+
+    start = time.perf_counter_ns()
+    nvtx.RangePush("Core")
+    for _ in range(10):
+        distortion_correction_proj_discorpy(im_stack, distortion_coeffs_path, preview)
+    nvtx.RangePop()
+    dev.synchronize()
+    duration_ms = float(time.perf_counter_ns() - start) * 1e-6 / 10
+
+    assert "performance in ms" == duration_ms
