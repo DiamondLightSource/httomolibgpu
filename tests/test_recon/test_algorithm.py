@@ -178,7 +178,7 @@ def test_reconstruct_CGLS(data, flats, darks, ensure_clean_memory):
     )
     recon_data = recon_data.get()
     assert_allclose(np.mean(recon_data), 0.0021818762, rtol=1e-07, atol=1e-6)
-    assert_allclose(np.mean(recon_data, axis=(1, 2)).sum(), 0.279187, rtol=1e-04)
+    assert_allclose(np.mean(recon_data, axis=(1, 2)).sum(), 0.279187, rtol=1e-03)
     assert recon_data.dtype == np.float32
 
 

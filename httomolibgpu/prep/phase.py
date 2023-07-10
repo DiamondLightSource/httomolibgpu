@@ -433,32 +433,43 @@ def _calc_max_slices_paganin_filter2(
     available_memory: int,
     **kwargs,
 ) -> Tuple[int, np.dtype, Tuple[int, int]]:
-    element = non_slice_dims_shape[1]
-    diff = _shift_bit_length(element + 1) - element
-    if element % 2 == 0:
-        pad_width = diff // 2
-        pad_width = (pad_width, pad_width)
-    else:
-        # need an uneven padding for odd-number lengths
-        left_pad = diff // 2
-        right_pad = diff - left_pad
-        pad_width = (left_pad, right_pad)
+    pad_tup = []
+    for index, element in enumerate(non_slice_dims_shape):
+        diff = _shift_bit_length(element + 1) - element
+        if element % 2 == 0:
+            pad_width = diff // 2
+            pad_width = (pad_width, pad_width)
+        else:
+            # need an uneven padding for odd-number lengths
+            left_pad = diff // 2
+            right_pad = diff - left_pad
+            pad_width = (left_pad, right_pad)
+        pad_tup.append(pad_width)
 
     input_size = np.prod(non_slice_dims_shape) * dtype.itemsize
     in_slice_size = (
-        (non_slice_dims_shape[0] + 2 * pad_width[1])
-        * (non_slice_dims_shape[1] + 2 * pad_width[0])
+        (non_slice_dims_shape[0] + pad_tup[0][0]+pad_tup[0][1])
+        * (non_slice_dims_shape[1] + pad_tup[1][0]+pad_tup[1][1])
         * dtype.itemsize
     )
+    out_slice_size = (
+        (non_slice_dims_shape[0] + pad_tup[0][0]+pad_tup[0][1])
+        * (non_slice_dims_shape[1] + pad_tup[1][0]+pad_tup[1][1])
+        * np.float32().nbytes
+    )
+    
     # FFT needs complex inputs, so copy to complex happens first
     complex_slice = in_slice_size / dtype.itemsize * np.complex64().nbytes
     fftplan_slice = complex_slice
-    filter_size = complex_slice
-    res_slice = np.prod(non_slice_dims_shape) * np.float32().nbytes
-    slice_size = input_size + in_slice_size + complex_slice + fftplan_slice + res_slice
+    grid_size = np.prod(non_slice_dims_shape) * np.float32().nbytes
+    filter_size = grid_size    
+    res_slice = grid_size    
+    
+    tot_memory = input_size + in_slice_size + out_slice_size + 2*complex_slice + fftplan_slice + res_slice
     available_memory -= filter_size
-
-    return (int(available_memory // slice_size), float32(), non_slice_dims_shape)
+    available_memory -= grid_size
+    
+    return (int(available_memory // tot_memory), float32(), non_slice_dims_shape)
 
 
 # Adaptation with some corrections of retrieve_phase (Paganin filter) from TomoPy
@@ -503,8 +514,7 @@ def paganin_filter2(
 
     dz_orig, dy_orig, dx_orig = cp.shape(tomo)
 
-    # Perform padding to the power of 2 as FFT is O(n*log(n)) complexity
-    # NOTE: Need to convert to float32 as FFT produces complex128 array from uint16
+    # Perform padding to the power of 2 as FFT is O(n*log(n)) complexity    
     # TODO: adding other options of padding?
     padded_tomo, pad_tup = _pad_projections_to_second_power(tomo)
 
