@@ -34,7 +34,7 @@ from httomolibgpu.decorator import method_proj
 __all__ = [
     "fresnel_filter",
     "paganin_filter",
-    "retrieve_phase",
+    "paganin_filter2",
 ]
 
 # Define constants used in phase retrieval method
@@ -46,7 +46,9 @@ PLANCK_CONSTANT = 6.58211928e-19  # [keV*s]
 
 def _calc_max_slices_fresnel(
     non_slice_dims_shape: Tuple[int, int],
-    dtype: np.dtype, available_memory: int, **kwargs
+    dtype: np.dtype,
+    available_memory: int,
+    **kwargs,
 ) -> Tuple[int, np.dtype, Tuple[int, int]]:
     height1, width1 = non_slice_dims_shape
     window_size = (height1 * width1) * np.float64().nbytes
@@ -175,19 +177,23 @@ def _make_window(height, width, ratio, pattern):
 
 def _calc_max_slices_paganin_filter(
     non_slice_dims_shape: Tuple[int, int],
-    dtype: np.dtype, available_memory: int, **kwargs
+    dtype: np.dtype,
+    available_memory: int,
+    **kwargs,
 ) -> Tuple[int, np.dtype, Tuple[int, int]]:
     pad_x = kwargs["pad_x"]
     pad_y = kwargs["pad_y"]
     input_size = np.prod(non_slice_dims_shape) * dtype.itemsize
     in_slice_size = (
-        (non_slice_dims_shape[0] + 2 * pad_y) * (non_slice_dims_shape[1] + 2 * pad_x) * dtype.itemsize
+        (non_slice_dims_shape[0] + 2 * pad_y)
+        * (non_slice_dims_shape[1] + 2 * pad_x)
+        * dtype.itemsize
     )
     # FFT needs complex inputs, so copy to complex happens first
     complex_slice = in_slice_size / dtype.itemsize * np.complex64().nbytes
     fftplan_slice = complex_slice
     filter_size = complex_slice
-    res_slice = np.prod(non_slice_dims_shape) * np.float32().nbytes    
+    res_slice = np.prod(non_slice_dims_shape) * np.float32().nbytes
     slice_size = input_size + in_slice_size + complex_slice + fftplan_slice + res_slice
     available_memory -= filter_size
     return (int(available_memory // slice_size), float32(), non_slice_dims_shape)
@@ -247,9 +253,6 @@ def paganin_filter(
         The stack of filtered projections.
     """
     # Check the input data is valid
-    if data.ndim == 2:
-        data = cp.expand_dims(data, 0)
-
     if data.ndim != 3:
         raise ValueError(
             f"Invalid number of dimensions in data: {data.ndim},"
@@ -305,7 +308,7 @@ def paganin_filter(
         no_return=True,
     )
 
-    if data.dtype == cp.float32 or data.dtype == cp.float64:
+    if data.dtype in (cp.float32, cp.float64):
         precond_kernel_float(data, data)
     else:
         precond_kernel_int(data, data)
@@ -357,167 +360,6 @@ def paganin_filter(
     return res
 
 
-def _calc_max_slice_retrieve_phase(
-    non_slice_dims_shape: Tuple[int, int],
-    dtype: np.dtype, 
-    available_memory: int, 
-    **kwargs
-) -> Tuple[int, np.dtype, Tuple[int, int]]:
-    dy, dz = non_slice_dims_shape
-    pixel_size = kwargs["pixel_size"]
-    energy = kwargs["energy"]
-    wavelength = _wavelength(energy)
-    dist = kwargs["dist"]
-    py = _calc_pad_width(dy, pixel_size, wavelength, dist)
-    pz = _calc_pad_width(dz, pixel_size, wavelength, dist)
-    # x 2 for ifftshift
-    grid_size = (dy + 2 * py) * (dz + 2 * pz) * np.float64().nbytes * 2
-    prj_size = (dy + 2 * py) * (dz + 2 * pz) * np.float32().nbytes * 2
-    prj_complex_size = int(prj_size * 1.85)
-    fftplan_size = prj_complex_size
-    prj_ret_size = prj_complex_size
-    # the code goes through the projections line by line,
-    # which doesn't need any significant memory compared to the slices
-    # it also updates the inputs in-place
-
-    available_memory -= (
-        grid_size + prj_complex_size + prj_size + fftplan_size + prj_ret_size
-    )
-    slice_memory = np.prod(non_slice_dims_shape) * dtype.itemsize
-    return (available_memory // slice_memory, dtype, non_slice_dims_shape)
-
-
-## %%%%%%%%%%%%%%%%%%%%%%% retrieve_phase %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-#: CuPy implementation of retrieve_phase from TomoPy
-@method_proj(_calc_max_slice_retrieve_phase)
-@nvtx.annotate()
-def retrieve_phase(
-    tomo: cp.ndarray,
-    pixel_size: float = 1e-4,
-    dist: float = 50.0,
-    energy: float = 20.0,
-    alpha: float = 1e-3,
-    pad: bool = True,
-) -> cp.ndarray:
-    """
-    Perform single-step phase retrieval from phase-contrast measurements
-    :cite:`Paganin:02`.
-
-    Parameters
-    ----------
-    tomo : cp.ndarray
-        3D tomographic data.
-    pixel_size : float, optional
-        Detector pixel size in cm.
-    dist : float, optional
-        Propagation distance of the wavefront in cm.
-    energy : float, optional
-        Energy of incident wave in keV.
-    alpha : float, optional
-        Regularization parameter.
-    pad : bool, optional
-        If True, extend the size of the projections by padding with zeros.
-
-    Returns
-    -------
-    cp.ndarray
-        Approximated 3D tomographic phase data.
-    """
-
-    # Check the input data is valid
-    if tomo.ndim == 2:
-        tomo = cp.expand_dims(tomo, 0)
-
-    if tomo.ndim != 3:
-        raise ValueError(
-            f"Invalid number of dimensions in data: {tomo.ndim},"
-            " please provide a stack of 2D projections."
-        )
-
-    # New dimensions and pad value after padding.
-    py, pz, val = _calc_pad(tomo, pixel_size, dist, energy, pad)
-
-    # Compute the reciprocal grid.
-    _, dy, dz = tomo.shape
-    w2 = _reciprocal_grid(pixel_size, dy + 2 * py, dz + 2 * pz)
-
-    # Filter in Fourier space.
-    phase_filter = cp.fft.fftshift(_paganin_filter_factor(energy, dist, alpha, w2))
-
-    prj = cp.full((dy + 2 * py, dz + 2 * pz), val, dtype=cp.float32)
-
-    # Apply phase retrieval
-    return _retrieve_phase(tomo, phase_filter, py, pz, prj, pad)
-
-
-def _retrieve_phase(
-    tomo: cp.ndarray,
-    phase_filter: cp.ndarray,
-    px: int,
-    py: int,
-    prj: cp.ndarray,
-    pad: bool,
-) -> cp.ndarray:
-    _, dy, dz = tomo.shape
-    num_projs = tomo.shape[0]
-    normalized_phase_filter = phase_filter / phase_filter.max()
-    for m in range(num_projs):
-        prj[px : dy + px, py : dz + py] = tomo[m]
-        prj[:px] = prj[px]
-        prj[-px:] = prj[-px - 1]
-        prj[:, :py] = prj[:, py][:, cp.newaxis]
-        prj[:, -py:] = prj[:, -py - 1][:, cp.newaxis]
-        # TomoPy has its own 2D FFT implementations
-        # https://github.com/tomopy/tomopy/blob/master/source/tomopy/util/misc.py,
-        # the NumPy equivalent in CuPy has been used as an alternative
-        # https://docs.cupy.dev/en/stable/reference/generated/cupy.fft.fft2.html#.
-        fproj = cp.fft.fft2(prj)
-        fproj *= normalized_phase_filter
-        proj = cp.real(cp.fft.ifft2(fproj))
-        if pad:
-            proj = proj[px : dy + px, py : dz + py]
-        tomo[m] = proj
-    return tomo
-
-
-def _calc_pad(
-    tomo: cp.ndarray, pixel_size: float, dist: float, energy: float, pad: bool
-) -> tuple[int, int, float]:
-    """
-    Calculate new dimensions and pad value after padding.
-
-    Parameters
-    ----------
-    tomo : ndarray
-        3D tomographic data.
-    pixel_size : float
-        Detector pixel size in cm.
-    dist : float
-        Propagation distance of the wavefront in cm.
-    energy : float
-        Energy of incident wave in keV.
-    pad : bool
-        If True, extend the size of the projections by padding with zeros.
-
-    Returns
-    -------
-    int
-        Pad amount in projection axis.
-    int
-        Pad amount in sinogram axis.
-    float
-        Pad value.
-    """
-    _, dy, dz = tomo.shape
-    wavelength = _wavelength(energy)
-    py, pz, val = 0, 0, 0.0
-    if pad:
-        val = _calc_pad_val(tomo)
-        py = _calc_pad_width(dy, pixel_size, wavelength, dist)
-        pz = _calc_pad_width(dz, pixel_size, wavelength, dist)
-    return py, pz, val
-
-
 def _wavelength(energy: float) -> float:
     return 2 * PI * PLANCK_CONSTANT * SPEED_OF_LIGHT / energy
 
@@ -537,7 +379,7 @@ def _calc_pad_val(tomo: cp.ndarray) -> float:
     return cp.mean((tomo[..., 0] + tomo[..., -1]) * 0.5)
 
 
-def _reciprocal_grid(pixel_size: float, nx: int, ny: int) -> cp.ndarray:
+def _reciprocal_grid(pixel_size: float, shape_proj: tuple) -> cp.ndarray:
     """
     Calculate reciprocal grid.
 
@@ -545,8 +387,8 @@ def _reciprocal_grid(pixel_size: float, nx: int, ny: int) -> cp.ndarray:
     ----------
     pixel_size : float
         Detector pixel size in cm.
-    nx, ny : int
-        Size of the reciprocal grid along x and y axes.
+    shape_proj : tuple
+        Shape of the reciprocal grid along x and y axes.
 
     Returns
     -------
@@ -554,23 +396,12 @@ def _reciprocal_grid(pixel_size: float, nx: int, ny: int) -> cp.ndarray:
         Grid coordinates.
     """
     # Sampling in reciprocal space.
-    indx = _reciprocal_coord(pixel_size, nx)
-    indy = _reciprocal_coord(pixel_size, ny)
-    cp.square(indx, out=indx)
-    cp.square(indy, out=indy)
-    # TODO: Explicitly generate the result equivalent to `np.add.outer()` using
-    # nested loops, since CuPy doesn't yet have a released version which
-    # provides `ufunc.outer`, see https://github.com/cupy/cupy/pull/7049,
-    # https://github.com/cupy/cupy/issues/7082, and
-    # https://github.com/cupy/cupy/issues/6866.
-    #
-    # When `ufunc.outer` is supported in CuPy, this code can be updated
-    # accordingly.
-    grid = cp.empty((len(indx), len(indy)))
-    for i in range(len(indx)):
-        for j in range(len(indy)):
-            grid[i, j] = cp.add(indx[i], indy[j])
-    return grid
+    indx = _reciprocal_coord(pixel_size, shape_proj[0])
+    indy = _reciprocal_coord(pixel_size, shape_proj[1])
+    indx_sq = cp.square(indx)
+    indy_sq = cp.square(indy)
+
+    return cp.add.outer(indx_sq, indy_sq)
 
 
 def _reciprocal_coord(pixel_size: float, num_grid: int) -> cp.ndarray:
@@ -592,5 +423,184 @@ def _reciprocal_coord(pixel_size: float, num_grid: int) -> cp.ndarray:
     """
     n = num_grid - 1
     rc = cp.arange(-n, num_grid, 2, dtype=cp.float32)
-    rc *= 0.5 / (n * pixel_size)
+    rc *= 2 * PI / (n * pixel_size)
     return rc
+
+
+def _calc_max_slices_paganin_filter2(
+    non_slice_dims_shape: Tuple[int, int],
+    dtype: np.dtype,
+    available_memory: int,
+    **kwargs,
+) -> Tuple[int, np.dtype, Tuple[int, int]]:
+    pad_tup = []
+    for index, element in enumerate(non_slice_dims_shape):
+        diff = _shift_bit_length(element + 1) - element
+        if element % 2 == 0:
+            pad_width = diff // 2
+            pad_width = (pad_width, pad_width)
+        else:
+            # need an uneven padding for odd-number lengths
+            left_pad = diff // 2
+            right_pad = diff - left_pad
+            pad_width = (left_pad, right_pad)
+        pad_tup.append(pad_width)
+
+    input_size = np.prod(non_slice_dims_shape) * dtype.itemsize
+    in_slice_size = (
+        (non_slice_dims_shape[0] + pad_tup[0][0]+pad_tup[0][1])
+        * (non_slice_dims_shape[1] + pad_tup[1][0]+pad_tup[1][1])
+        * dtype.itemsize
+    )
+    out_slice_size = (
+        (non_slice_dims_shape[0] + pad_tup[0][0]+pad_tup[0][1])
+        * (non_slice_dims_shape[1] + pad_tup[1][0]+pad_tup[1][1])
+        * np.float32().nbytes
+    )
+    
+    # FFT needs complex inputs, so copy to complex happens first
+    complex_slice = in_slice_size / dtype.itemsize * np.complex64().nbytes
+    fftplan_slice = complex_slice
+    grid_size = np.prod(non_slice_dims_shape) * np.float32().nbytes
+    filter_size = grid_size    
+    res_slice = grid_size    
+    
+    tot_memory = input_size + in_slice_size + out_slice_size + 2*complex_slice + fftplan_slice + res_slice
+    available_memory -= filter_size
+    available_memory -= grid_size
+    
+    return (int(available_memory // tot_memory), float32(), non_slice_dims_shape)
+
+
+# Adaptation with some corrections of retrieve_phase (Paganin filter) from TomoPy
+@method_proj(_calc_max_slices_paganin_filter2)
+@nvtx.annotate()
+def paganin_filter2(
+    tomo: cp.ndarray,
+    pixel_size: float = 1e-4,
+    dist: float = 50.0,
+    energy: float = 53.0,
+    alpha: float = 1e-3,
+) -> cp.ndarray:
+    """
+    Perform single-material phase retrieval from flats/darks corrected tomographic measurements
+    :cite:`Paganin:02`.
+
+    Parameters
+    ----------
+    tomo : cp.ndarray
+        3D array of f/d corrected tomographic projections.
+    pixel_size : float, optional
+        Detector pixel size in cm.
+    dist : float, optional
+        Propagation distance of the wavefront in cm.
+    energy : float, optional
+        Energy of incident wave in keV.
+    alpha : float, optional
+        Regularization parameter, the ratio of delta/beta. Larger values lead to more smoothing.
+
+    Returns
+    -------
+    cp.ndarray
+        The 3D array of Paganin phase-filtered projection images.
+    """
+
+    # Check the input data is valid
+    if tomo.ndim != 3:
+        raise ValueError(
+            f"Invalid number of dimensions in data: {tomo.ndim},"
+            " please provide a stack of 2D projections."
+        )
+
+    dz_orig, dy_orig, dx_orig = cp.shape(tomo)
+
+    # Perform padding to the power of 2 as FFT is O(n*log(n)) complexity    
+    # TODO: adding other options of padding?
+    padded_tomo, pad_tup = _pad_projections_to_second_power(tomo)
+
+    dz, dy, dx = cp.shape(padded_tomo)
+
+    # 3D FFT of tomo data
+    padded_tomo = cp.asarray(padded_tomo, dtype=cp.complex64)
+    fft_tomo = cupyx.scipy.fft.fft2(padded_tomo, axes=(-2, -1), overwrite_x=True)
+
+    # Compute the reciprocal grid.
+    w2 = _reciprocal_grid(pixel_size, (dy, dx))
+
+    # Build filter in the Fourier space.
+    phase_filter = cupyx.scipy.fft.fftshift(_paganin_filter_factor2(energy, dist, alpha, w2))
+    phase_filter = phase_filter / phase_filter.max()  # normalisation
+
+    # Apply filter and take inverse FFT
+    ifft_filtered_tomo = (
+        cupyx.scipy.fft.ifft2(phase_filter * fft_tomo, axes=(-2, -1), overwrite_x=True)
+    ).real
+
+    # slicing indices for cropping
+    slc_indices = (
+        slice(pad_tup[0][0], pad_tup[0][0] + dz_orig, 1),
+        slice(pad_tup[1][0], pad_tup[1][0] + dy_orig, 1),
+        slice(pad_tup[2][0], pad_tup[2][0] + dx_orig, 1),
+    )
+
+    # crop the padded filtered data:
+    tomo = ifft_filtered_tomo[slc_indices].astype(cp.float32)
+
+    # taking the negative log
+    c = 4 * PI / _wavelength(energy)
+    _log_kernel = cp.ElementwiseKernel(
+        "C tomo, raw float32 c",
+        "C out",
+        "out = -log(tomo) * 1/c",
+        name="log_kernel",
+    )
+
+    return _log_kernel(tomo, c)
+
+
+def _shift_bit_length(x: int) -> int:
+    return 1 << (x - 1).bit_length()
+
+
+def _pad_projections_to_second_power(tomo: cp.ndarray) -> tuple[cp.ndarray, tuple]:
+    """
+    Performs padding of each projection to the next power of 2.
+    If the shape is not even we also care of that before padding.
+
+    Parameters
+    ----------
+    tomo : cp.ndarray
+        3d projection data
+
+    Returns
+    -------
+    ndarray: padded 3d projection data
+    tuple: a tuple with padding dimensions
+    """
+    full_shape_tomo = cp.shape(tomo)
+
+    pad_tup = []
+    for index, element in enumerate(full_shape_tomo):
+        if index == 0:
+            pad_width = (0, 0)  # do not pad the slicing dim
+        else:
+            diff = _shift_bit_length(element + 1) - element
+            if element % 2 == 0:
+                pad_width = diff // 2
+                pad_width = (pad_width, pad_width)
+            else:
+                # need an uneven padding for odd-number lengths
+                left_pad = diff // 2
+                right_pad = diff - left_pad
+                pad_width = (left_pad, right_pad)
+
+        pad_tup.append(pad_width)
+
+    padded_tomo = cp.pad(tomo, tuple(pad_tup), "edge")
+
+    return padded_tomo, pad_tup
+
+
+def _paganin_filter_factor2(energy, dist, alpha, w2):
+    # Alpha represents the ratio of delta/beta.
+    return 1 / (1 + (dist * alpha * _wavelength(energy) * w2 / (4 * PI)))
