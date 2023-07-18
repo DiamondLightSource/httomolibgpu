@@ -33,14 +33,12 @@ def test_median_filter3d_vs_scipy(host_data, ensure_clean_memory):
     )
 
 
-@cp.testing.gpu
 @pytest.mark.perf
 @pytest.mark.parametrize("kernel_size", [3, 5])
 def test_median_filter3d_benchmark(host_data, ensure_clean_memory, kernel_size, benchmark):
     benchmark(median_filter3d, cp.asarray(host_data, dtype=cp.float32), kernel_size=kernel_size)
 
 
-@cp.testing.gpu
 @pytest.mark.perf
 @pytest.mark.parametrize("size", [3, 5])
 def test_scipy_median_filter_benchmark(data, ensure_clean_memory, benchmark, size):
