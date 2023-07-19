@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 import scipy
 from cupy.cuda import nvtx
+from cupyx.scipy.ndimage import median_filter as median_filter_cupy
 from httomolibgpu.misc.corr import (
     median_filter3d,
     remove_outlier3d,
@@ -30,6 +31,18 @@ def test_median_filter3d_vs_scipy(host_data, ensure_clean_memory):
         scipy.ndimage.median_filter(np.float32(host_data), size=3),
         median_filter3d(cp.asarray(host_data, dtype=cp.float32), kernel_size=3).get(),
     )
+
+
+@pytest.mark.perf
+@pytest.mark.parametrize("kernel_size", [3, 5])
+def test_median_filter3d_benchmark(host_data, ensure_clean_memory, kernel_size, benchmark):
+    benchmark(median_filter3d, cp.asarray(host_data, dtype=cp.float32), kernel_size=kernel_size)
+
+
+@pytest.mark.perf
+@pytest.mark.parametrize("size", [3, 5])
+def test_scipy_median_filter_benchmark(data, ensure_clean_memory, benchmark, size):
+    benchmark(median_filter_cupy, data.astype(cp.float32), size=size)
 
 
 @cp.testing.gpu
