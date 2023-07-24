@@ -60,7 +60,7 @@ def _calc_max_slices_FBP(
     astra_out_size = (np.prod(output_dims) * float32().itemsize)
 
     available_memory -= filter_size
-    slices_max = available_memory // int(in_slice_size + filtered_in_data + freq_slice + fftplan_size + astra_out_size)
+    slices_max = available_memory // int(2*in_slice_size + filtered_in_data + freq_slice + fftplan_size + 2*astra_out_size)
     return (slices_max, float32(), output_dims)
 
 
