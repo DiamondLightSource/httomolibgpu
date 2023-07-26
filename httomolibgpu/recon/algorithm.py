@@ -60,7 +60,7 @@ def _calc_max_slices_FBP(
     astra_out_size = (np.prod(output_dims) * float32().itemsize)
 
     available_memory -= filter_size
-    slices_max = available_memory // int(in_slice_size + filtered_in_data + freq_slice + fftplan_size + astra_out_size)
+    slices_max = available_memory // int(2*in_slice_size + filtered_in_data + freq_slice + fftplan_size + 2*astra_out_size)
     return (slices_max, float32(), output_dims)
 
 
@@ -137,7 +137,7 @@ def _calc_max_slices_SIRT(
     # update_term
     C_R_res = C_mat + 2*R_mat
     # a guess for astra toolbox memory usage for projection/backprojection
-    astra_size = 0.5*(x_rec+data_out)
+    astra_size = 2*(x_rec+data_out)
    
     total_mem = int(data_out + x_rec + R_mat + C_mat + C_R_res + astra_size)
     slices_max = available_memory // total_mem
@@ -224,7 +224,7 @@ def _calc_max_slices_CGLS(
     Ad = 2*data_out
     s = x_rec
     # a guess for astra toolbox memory usage for projection/backprojection
-    astra_size = 0.5*(x_rec+data_out)
+    astra_size = 2*(x_rec+data_out)
    
     total_mem = int(data_out + x_rec + d + r + Ad + s + astra_size)
     slices_max = available_memory // total_mem

@@ -73,7 +73,7 @@ def test_reconstruct_FBP_hook(data, flats, darks, ensure_clean_memory):
                                                        max_mem,
                                                        objsize=objrecon_size)
     assert estimated_slices <= actual_slices
-    assert estimated_slices / actual_slices >= 0.8
+    assert estimated_slices / actual_slices >= 0.5 # lowering because hook doesn't extend to ASTRA functions
 
     recon_data = recon_data.get()
     assert_allclose(np.mean(recon_data), 0.00079770206, rtol=1e-6)
@@ -127,7 +127,7 @@ def test_reconstruct_SIRT_hook(data, flats, darks, ensure_clean_memory):
                                                        max_mem,
                                                        objsize=objrecon_size)
     assert estimated_slices <= actual_slices
-    assert estimated_slices / actual_slices >= 0.8
+    assert estimated_slices / actual_slices >= 0.5 # lowering because hook doesn't extend to ASTRA functions
 
 
 @cp.testing.gpu
@@ -162,7 +162,7 @@ def test_reconstruct_SIRT_hook2(ensure_clean_memory):
                                                        max_mem,
                                                        objsize=objrecon_size)
     assert estimated_slices <= actual_slices
-    assert estimated_slices / actual_slices >= 0.8
+    assert estimated_slices / actual_slices >= 0.5 # lowering because hook doesn't extend to ASTRA functions
 
 
 @cp.testing.gpu
@@ -213,7 +213,7 @@ def test_reconstruct_CGLS_hook(data, flats, darks, ensure_clean_memory):
                                                        objsize=objrecon_size)
 
     assert estimated_slices <= actual_slices
-    assert estimated_slices / actual_slices >= 0.8
+    assert estimated_slices / actual_slices >= 0.5 # lowering because hook doesn't extend to ASTRA functions
 
 
 @cp.testing.gpu
@@ -248,7 +248,7 @@ def test_reconstruct_CGLS_hook2(ensure_clean_memory):
                                                        max_mem,
                                                        objsize=objrecon_size)
     assert estimated_slices <= actual_slices
-    assert estimated_slices / actual_slices >= 0.8
+    assert estimated_slices / actual_slices >= 0.5 # lowering because hook doesn't extend to ASTRA functions
 
 
 @cp.testing.gpu
