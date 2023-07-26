@@ -137,7 +137,7 @@ def _calc_max_slices_SIRT(
     # update_term
     C_R_res = C_mat + 2*R_mat
     # a guess for astra toolbox memory usage for projection/backprojection
-    astra_size = 0.5*(x_rec+data_out)
+    astra_size = 2*(x_rec+data_out)
    
     total_mem = int(data_out + x_rec + R_mat + C_mat + C_R_res + astra_size)
     slices_max = available_memory // total_mem
@@ -224,7 +224,7 @@ def _calc_max_slices_CGLS(
     Ad = 2*data_out
     s = x_rec
     # a guess for astra toolbox memory usage for projection/backprojection
-    astra_size = 0.5*(x_rec+data_out)
+    astra_size = 2*(x_rec+data_out)
    
     total_mem = int(data_out + x_rec + d + r + Ad + s + astra_size)
     slices_max = available_memory // total_mem
