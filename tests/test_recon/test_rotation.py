@@ -4,10 +4,16 @@ import time
 from unittest import mock
 import cupy as cp
 from cupy.cuda import nvtx
+from cupyx.scipy.ndimage import shift
 import numpy as np
 import pytest
 from httomolibgpu.prep.normalize import normalize
-from httomolibgpu.recon.rotation import _calculate_chunks, find_center_360, find_center_vo
+from httomolibgpu.recon.rotation import (
+    _calculate_chunks,
+    find_center_360,
+    find_center_pc,
+    find_center_vo,
+)
 from httomolibgpu import method_registry
 from numpy.testing import assert_allclose
 from .rotation_cpu_reference import find_center_360_numpy
@@ -29,6 +35,7 @@ def test_find_center_vo(data, flats, darks):
     assert 'find_center_vo' in method_registry['httomolibgpu']['recon']['rotation']
 
 
+
 @cp.testing.gpu
 def test_find_center_vo_ones(ensure_clean_memory):
     mat = cp.ones(shape=(103, 450, 230), dtype=cp.float32)
@@ -36,7 +43,6 @@ def test_find_center_vo_ones(ensure_clean_memory):
 
     assert_allclose(cor, 59.0)
     mat = None  #: free up GPU memory
-
 
 
 @cp.testing.gpu
@@ -105,6 +111,45 @@ def test_find_center_vo_performance():
     nvtx.RangePush("Core")
     for _ in range(10):
         find_center_vo(data)
+    nvtx.RangePop()
+    dev.synchronize()
+    duration_ms = float(time.perf_counter_ns() - start) * 1e-6 / 10
+
+    assert "performance in ms" == duration_ms
+
+
+def test_find_center_pc_ones(ensure_clean_memory):
+    mat = cp.ones(shape=(100, 100), dtype=cp.float32)
+    shifted_mat = shift(cp.fliplr(mat), (0, 18.75), mode='reflect')
+    cor = find_center_pc(mat, shifted_mat)
+
+    assert_allclose(cor, 48.75, rtol=1e-7)
+
+
+def test_find_center_pc(data, flats, darks, ensure_clean_memory):
+    data = normalize(data, flats, darks)[:, :, 3]
+    shifted_data = shift(cp.fliplr(data), (0, 18.75), mode='reflect')
+
+    # --- testing the center of rotation on tomo_standard ---#
+    cor = find_center_pc(data, shifted_data)
+
+    assert_allclose(cor, 73., rtol=1e-7)
+
+
+@pytest.mark.perf
+def test_find_center_pc_performance(ensure_clean_memory):
+    dev = cp.cuda.Device()
+    data_host = np.random.random_sample(size=(1801, 2560, 5)).astype(np.float32) * 2.0
+    data = cp.asarray(data_host, dtype=np.float32)[:, :, 3]
+    shifted_data = shift(cp.fliplr(data), (0, 18.75), mode='reflect')
+
+    # cold run first
+    find_center_pc(data, shifted_data)
+
+    start = time.perf_counter_ns()
+    nvtx.RangePush("Core")
+    for _ in range(10):
+        find_center_pc(data, shifted_data)
     nvtx.RangePop()
     dev.synchronize()
     duration_ms = float(time.perf_counter_ns() - start) * 1e-6 / 10

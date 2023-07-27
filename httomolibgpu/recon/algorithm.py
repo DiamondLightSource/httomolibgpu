@@ -24,7 +24,6 @@ from typing import Optional, Tuple, Union
 
 import cupy as cp
 from cupy import float32, complex64
-import cupyx
 import numpy as np
 import nvtx
 from httomolibgpu.decorator import method_sino

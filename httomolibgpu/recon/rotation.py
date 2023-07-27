@@ -30,6 +30,7 @@ import nvtx
 import cupyx.scipy.ndimage as cpndi
 from cupy import ndarray
 from cupyx.scipy.ndimage import gaussian_filter, shift
+from skimage.registration import phase_cross_correlation
 
 from httomolibgpu.cuda_kernels import load_cuda_module
 from httomolibgpu.decorator import method_sino
@@ -37,6 +38,7 @@ from httomolibgpu.decorator import method_sino
 __all__ = [
     "find_center_vo",
     "find_center_360",
+    "find_center_pc",
 ]
 
 
@@ -344,6 +346,54 @@ def _downsample(sino, level, axis):
     kernel = module.get_function("downsample_sino")
     kernel(grid_dims, block_dims, params, shared_mem=shared_mem_bytes)
     return downsampled_data
+
+
+def find_center_pc(proj1, proj2, tol=0.5, rotc_guess=None):
+    """
+    Find rotation axis location by finding the offset between the first
+    projection and a mirrored projection 180 degrees apart using
+    phase correlation in Fourier space.
+    The ``phase_cross_correlation`` function uses cross-correlation in Fourier
+    space, optionally employing an upsampled matrix-multiplication DFT to
+    achieve arbitrary subpixel precision. :cite:`Guizar:08`.
+
+    Parameters
+    ----------
+    proj1 : cp.ndarray
+        Projection data
+
+    proj2 : cp.ndarray
+        Projection data
+
+    tol : scalar, optional
+        Subpixel accuracy
+
+    rotc_guess : float, optional
+        Initial guess value for the rotation center
+
+    Returns
+    -------
+    float
+        Rotation axis location.
+    """
+
+    imgshift = 0.0 if rotc_guess is None else rotc_guess - \
+        (proj1.shape[1] - 1.0) / 2.0
+
+    proj1 = cpndi.shift(proj1, [0, -imgshift], mode='constant', cval=0)
+    proj2 = cpndi.shift(proj2, [0, -imgshift], mode='constant', cval=0)
+
+    # create reflection of second projection
+    proj2 = cp.fliplr(proj2)
+
+    # Determine shift between images using scikit-image pcm
+    skimage_shift = phase_cross_correlation(proj1.get(), proj2.get(), upsample_factor=1.0 / tol)
+
+    # Compute center of rotation as the center of first image and the
+    # registered translation with the second image
+    center = (proj1.shape[1] + skimage_shift[0][1] - 1.0) / 2.0
+
+    return center + imgshift
 
 
 def _calc_max_slices_center_360(
