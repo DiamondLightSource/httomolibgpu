@@ -23,7 +23,7 @@ def test_reconstruct_FBP_1(data, flats, darks, ensure_clean_memory):
     )
     recon_data = recon_data.get()
     assert_allclose(np.mean(recon_data), 0.000798, rtol=1e-07, atol=1e-6)
-    assert_allclose(np.mean(recon_data, axis=(1, 2)).sum(), 0.102106, rtol=1e-05)
+    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.102106, rtol=1e-05)
     assert_allclose(np.std(recon_data), 0.006293, rtol=1e-07, atol=1e-6)
     assert_allclose(np.median(recon_data), -0.000555, rtol=1e-07, atol=1e-6)
     assert recon_data.dtype == np.float32
@@ -40,7 +40,7 @@ def test_reconstruct_FBP_2(data, flats, darks, ensure_clean_memory):
     recon_data = recon_data.get()
     assert_allclose(np.mean(recon_data), -0.00015, rtol=1e-07, atol=1e-6)
     assert_allclose(
-        np.mean(recon_data, axis=(1, 2)).sum(), -0.019142, rtol=1e-06, atol=1e-5
+        np.mean(recon_data, axis=(0, 2)).sum(), -0.019142, rtol=1e-06, atol=1e-5
     )
     assert_allclose(np.std(recon_data), 0.003561, rtol=1e-07, atol=1e-6)
     assert recon_data.dtype == np.float32
@@ -77,7 +77,7 @@ def test_reconstruct_FBP_hook(data, flats, darks, ensure_clean_memory):
 
     recon_data = recon_data.get()
     assert_allclose(np.mean(recon_data), 0.00079770206, rtol=1e-6)
-    assert_allclose(np.mean(recon_data, axis=(1, 2)).sum(), 0.10210582, rtol=1e-6)
+    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.10210582, rtol=1e-6)
 
 
 @cp.testing.gpu
@@ -93,7 +93,7 @@ def test_reconstruct_SIRT(data, flats, darks, ensure_clean_memory):
     )
     recon_data = recon_data.get()
     assert_allclose(np.mean(recon_data), 0.0018447536, rtol=1e-07, atol=1e-6)
-    assert_allclose(np.mean(recon_data, axis=(1, 2)).sum(), 0.23612846, rtol=1e-05)
+    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.23612846, rtol=1e-05)
     assert recon_data.dtype == np.float32
 
 
@@ -178,7 +178,7 @@ def test_reconstruct_CGLS(data, flats, darks, ensure_clean_memory):
     )
     recon_data = recon_data.get()
     assert_allclose(np.mean(recon_data), 0.0021818762, rtol=1e-07, atol=1e-6)
-    assert_allclose(np.mean(recon_data, axis=(1, 2)).sum(), 0.279187, rtol=1e-03)
+    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.279187, rtol=1e-03)
     assert recon_data.dtype == np.float32
 
 

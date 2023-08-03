@@ -37,7 +37,6 @@ __all__ = [
     "CGLS",
 ]
 
-
 def _calc_max_slices_FBP(
     non_slice_dims_shape: Tuple[int, int],
     dtype: np.dtype,
@@ -112,7 +111,7 @@ def FBP(
                                  )
     reconstruction = RecToolsCP.FBP3D(data)
     cp._default_memory_pool.free_all_blocks()
-    return reconstruction
+    return cp.swapaxes(reconstruction,0,1)
 
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 
@@ -200,7 +199,7 @@ def SIRT(
     _algorithm_ = {"iterations": iterations, "nonnegativity": nonnegativity}
     reconstruction = RecToolsCP.SIRT(_data_, _algorithm_)
     cp._default_memory_pool.free_all_blocks()
-    return reconstruction
+    return cp.swapaxes(reconstruction,0,1)
 
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 def _calc_max_slices_CGLS(
@@ -286,6 +285,6 @@ def CGLS(
     _algorithm_ = {"iterations": iterations, "nonnegativity": nonnegativity}
     reconstruction = RecToolsCP.CGLS(_data_, _algorithm_)
     cp._default_memory_pool.free_all_blocks()
-    return reconstruction
+    return cp.swapaxes(reconstruction,0,1)
 
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
