@@ -33,7 +33,7 @@ jobs:
 
       - name: Build and upload the package to httomo conda cloud
         env:
-          LABEL: dev
+          LABEL: main
         run: |
           chmod +x ./.scripts/conda_upload.sh
           ./.scripts/conda_upload.sh
