@@ -101,7 +101,6 @@ def FBP(
         center = data.shape[2] // 2  # making a crude guess
     if objsize is None:
         objsize = data.shape[2]
-        
     RecToolsCP = RecToolsDIRCuPy(DetectorsDimH=data.shape[2],  # Horizontal detector dimension
                                  DetectorsDimV=data.shape[1],  # Vertical detector dimension (3D case)
                                  CenterRotOffset=data.shape[2] / 2 - center - 0.5,  # Center of Rotation scalar or a vector
