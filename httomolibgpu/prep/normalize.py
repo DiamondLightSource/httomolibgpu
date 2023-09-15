@@ -81,7 +81,7 @@ def normalize(
     nonnegativity : bool, optional
         Remove negative values in the normalised data.
     remove_nans : bool, optional
-        Remove NaN values in the normalised data.
+        Remove NaN and Inf values in the normalised data.
 
     Returns
     -------
@@ -103,9 +103,6 @@ def normalize(
             denom = eps;
         }
         float v = (float(data) - float(darks))/denom;
-        if (v > cutoff) {
-            v = cutoff;
-        }
         """
     if minus_log:
         kernel += "v = -log(v);\n"
@@ -115,7 +112,9 @@ def normalize(
         kernel_name += "_nneg"
     if remove_nans:
         kernel += "if (isnan(v)) v = 0.0f;\n"
+        kernel += "if (isinf(v)) v = 0.0f;\n"
         kernel_name += "_remnan"
+    kernel += "if (v > cutoff) v = cutoff;\n"
     kernel += "out = v;\n"
 
     normalisation_kernel = cp.ElementwiseKernel(
