@@ -33,8 +33,8 @@ from httomolibgpu.decorator import method_proj
 
 __all__ = [
     "fresnel_filter",
-    "paganin_filter",
-    "paganin_filter2",
+    "paganin_filter_savu",
+    "paganin_filter_tomopy",
 ]
 
 # Define constants used in phase retrieval method
@@ -175,7 +175,7 @@ def _make_window(height, width, ratio, pattern):
     return win2d
 
 
-def _calc_max_slices_paganin_filter(
+def _calc_max_slices_paganin_filter_savu(
     non_slice_dims_shape: Tuple[int, int],
     dtype: np.dtype,
     available_memory: int,
@@ -201,9 +201,9 @@ def _calc_max_slices_paganin_filter(
 
 ## %%%%%%%%%%%%%%%%%%%%%%% paganin_filter %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 #: CuPy implementation of Paganin filter from Savu
-@method_proj(_calc_max_slices_paganin_filter)
+@method_proj(_calc_max_slices_paganin_filter_savu)
 @nvtx.annotate()
-def paganin_filter(
+def paganin_filter_savu(
     data: cp.ndarray,
     ratio: float = 250.0,
     energy: float = 53.0,
@@ -427,7 +427,7 @@ def _reciprocal_coord(pixel_size: float, num_grid: int) -> cp.ndarray:
     return rc
 
 
-def _calc_max_slices_paganin_filter2(
+def _calc_max_slices_paganin_filter_tomopy(
     non_slice_dims_shape: Tuple[int, int],
     dtype: np.dtype,
     available_memory: int,
@@ -473,9 +473,9 @@ def _calc_max_slices_paganin_filter2(
 
 
 # Adaptation with some corrections of retrieve_phase (Paganin filter) from TomoPy
-@method_proj(_calc_max_slices_paganin_filter2)
+@method_proj(_calc_max_slices_paganin_filter_tomopy)
 @nvtx.annotate()
-def paganin_filter2(
+def paganin_filter_tomopy(
     tomo: cp.ndarray,
     pixel_size: float = 1e-4,
     dist: float = 50.0,
@@ -546,16 +546,15 @@ def paganin_filter2(
     # crop the padded filtered data:
     tomo = ifft_filtered_tomo[slc_indices].astype(cp.float32)
 
-    # taking the negative log
-    c = 4 * PI / _wavelength(energy)
+    # taking the negative log    
     _log_kernel = cp.ElementwiseKernel(
-        "C tomo, raw float32 c",
+        "C tomo",
         "C out",
-        "out = -log(tomo) * 1/c",
+        "out = -log(tomo)",
         name="log_kernel",
     )
 
-    return _log_kernel(tomo, c)
+    return _log_kernel(tomo)
 
 
 def _shift_bit_length(x: int) -> int:
@@ -602,5 +601,5 @@ def _pad_projections_to_second_power(tomo: cp.ndarray) -> tuple[cp.ndarray, tupl
 
 
 def _paganin_filter_factor2(energy, dist, alpha, w2):
-    # Alpha represents the ratio of delta/beta.
-    return 1 / (1 + (dist * alpha * _wavelength(energy) * w2 / (4 * PI)))
+    # Alpha represents the ratio of delta/beta.    
+    return 1 / (_wavelength(energy) * dist * w2 / (4 * PI) + alpha)
