@@ -4,7 +4,7 @@ import cupy as cp
 import numpy as np
 import pytest
 from cupy.cuda import nvtx
-from httomolibgpu.prep.phase import fresnel_filter, paganin_filter, paganin_filter2
+from httomolibgpu.prep.phase import fresnel_filter, paganin_filter_savu, paganin_filter_tomopy
 from numpy.testing import assert_allclose
 from httomolibgpu import method_registry
 from tests import MaxMemoryHook
@@ -55,7 +55,7 @@ def test_fresnel_filter_1D_raises(ensure_clean_memory):
 @cp.testing.gpu
 def test_paganin_filter(data):
     # --- testing the Paganin filter on tomo_standard ---#
-    filtered_data = paganin_filter(data).get()
+    filtered_data = paganin_filter_savu(data).get()
     
     assert filtered_data.ndim == 3
     assert_allclose(np.mean(filtered_data), -770.5339, rtol=eps)
@@ -79,25 +79,25 @@ def test_paganin_filter_meta(pad, slices, dtype, ensure_clean_memory):
         data = cp.asarray(data * 300.0, dtype=np.uint16)    
     hook = MaxMemoryHook(data.size * data.itemsize)
     with hook:
-        paganin_filter(data, **kwargs)
+        paganin_filter_savu(data, **kwargs)
     
     # make sure estimator function is within range (80% min, 100% max)
     max_mem = hook.max_mem
     actual_slices = data.shape[0]
-    estimated_slices, dtype_out, output_dims = paganin_filter.meta.calc_max_slices(
+    estimated_slices, dtype_out, output_dims = paganin_filter_savu.meta.calc_max_slices(
         0, 
         (data.shape[1], data.shape[2]),
         data.dtype, max_mem, **kwargs)
     assert estimated_slices <= actual_slices
     assert estimated_slices / actual_slices >= 0.8    
 
-    assert paganin_filter.meta.pattern == 'projection'
-    assert 'paganin_filter' in method_registry['httomolibgpu']['prep']['phase']
+    assert paganin_filter_savu.meta.pattern == 'projection'
+    assert 'paganin_filter_savu' in method_registry['httomolibgpu']['prep']['phase']
 
 
 @cp.testing.gpu
 def test_paganin_filter_energy100(data):
-    filtered_data = paganin_filter(data, energy=100.0).get()
+    filtered_data = paganin_filter_savu(data, energy=100.0).get()
 
     assert_allclose(np.mean(filtered_data), -778.61926, rtol=1e-05)
     assert_allclose(np.min(filtered_data), -808.9013, rtol=eps)
@@ -108,7 +108,7 @@ def test_paganin_filter_energy100(data):
 
 @cp.testing.gpu
 def test_paganin_filter_padmean(data):
-    filtered_data = paganin_filter(data, pad_method="mean").get()
+    filtered_data = paganin_filter_savu(data, pad_method="mean").get()
 
     assert_allclose(np.mean(filtered_data), -765.3401, rtol=eps)
     assert_allclose(np.min(filtered_data), -793.68787, rtol=eps)
@@ -148,7 +148,7 @@ def test_paganin_filter_performance(ensure_clean_memory):
 
     # run code and time it
     # cold run first
-    paganin_filter(
+    paganin_filter_savu(
         data,
         ratio=250.0,
         energy=53.0,
@@ -165,7 +165,7 @@ def test_paganin_filter_performance(ensure_clean_memory):
     start = time.perf_counter_ns()
     nvtx.RangePush("Core")
     for _ in range(10):
-        paganin_filter(
+        paganin_filter_savu(
             data,
             ratio=250.0,
             energy=53.0,
@@ -187,28 +187,28 @@ def test_paganin_filter_performance(ensure_clean_memory):
 def test_paganin_filter_1D_raises(ensure_clean_memory):
     _data = cp.ones(10)
     with pytest.raises(ValueError):
-        paganin_filter(_data)
+        paganin_filter_savu(_data)
 
     _data = None  #: free up GPU memory
 
 
 @cp.testing.gpu
-def test_paganin_filter2_1D_raises(ensure_clean_memory):
+def test_paganin_filter_tomopy_1D_raises(ensure_clean_memory):
     _data = cp.ones(10)
     with pytest.raises(ValueError):
-        paganin_filter2(_data)
+        paganin_filter_tomopy(_data)
 
     _data = None  #: free up GPU memory
 
 
 @cp.testing.gpu
-def test_paganin_filter2(data):
+def test_paganin_filter_tomopy(data):
     # --- testing the Paganin filter from TomoPy on tomo_standard ---#
-    filtered_data = paganin_filter2(data).get()
+    filtered_data = paganin_filter_tomopy(data).get()
 
     assert filtered_data.ndim == 3
-    assert_allclose(np.mean(filtered_data), -1.227684e-09, rtol=eps)
-    assert_allclose(np.max(filtered_data), -7.713906e-10, rtol=eps)
+    assert_allclose(np.mean(filtered_data), -6.74213, rtol=eps)
+    assert_allclose(np.max(filtered_data), -6.496699, rtol=eps)
 
     #: make sure the output is float32
     assert filtered_data.dtype == np.float32
@@ -216,10 +216,10 @@ def test_paganin_filter2(data):
 
 @cp.testing.gpu
 def test_paganin_filter2_energy100(data):
-    filtered_data = paganin_filter2(data, energy=100.0).get()
+    filtered_data = paganin_filter_tomopy(data, energy=100.0).get()
 
-    assert_allclose(np.mean(filtered_data), -6.506681e-10, rtol=1e-05)
-    assert_allclose(np.min(filtered_data), -6.939478e-10, rtol=eps)
+    assert_allclose(np.mean(filtered_data), -6.73455, rtol=1e-05)
+    assert_allclose(np.min(filtered_data), -6.909582, rtol=eps)
 
     assert filtered_data.ndim == 3
     assert filtered_data.dtype == np.float32
@@ -227,12 +227,12 @@ def test_paganin_filter2_energy100(data):
 
 @cp.testing.gpu
 def test_paganin_filter2_dist75(data):
-    filtered_data = paganin_filter2(data, dist=75.0, alpha=1e-6).get()
+    filtered_data = paganin_filter_tomopy(data, dist=75.0, alpha=1e-6).get()
 
-    assert_allclose(np.sum(np.mean(filtered_data, axis=(1, 2))), -2.2097976e-07, rtol=1e-6)
-    assert_allclose(np.sum(filtered_data), -0.0045256666, rtol=1e-6)
-    assert_allclose(np.mean(filtered_data[0, 60:63, 90]), -1.1674713e-09, rtol=1e-6)
-    assert_allclose(np.sum(filtered_data[50:100, 40, 1]), -6.416675e-08, rtol=1e-6)
+    assert_allclose(np.sum(np.mean(filtered_data, axis=(1, 2))), -1215.4985, rtol=1e-6)
+    assert_allclose(np.sum(filtered_data), -24893412., rtol=1e-6)
+    assert_allclose(np.mean(filtered_data[0, 60:63, 90]), -6.645878, rtol=1e-6)
+    assert_allclose(np.sum(filtered_data[50:100, 40, 1]), -343.5908, rtol=1e-6)
 
 
 @cp.testing.gpu
@@ -254,14 +254,14 @@ def test_paganin_filter2_performance(ensure_clean_memory):
 
     # run code and time it
     # cold run first
-    paganin_filter2(data)
+    paganin_filter_tomopy(data)
     dev = cp.cuda.Device()
     dev.synchronize()
 
     start = time.perf_counter_ns()
     nvtx.RangePush("Core")
     for _ in range(10):
-        paganin_filter2(data)
+        paganin_filter_tomopy(data)
 
     nvtx.RangePop()
     dev.synchronize()
@@ -282,17 +282,17 @@ def test_paganin_filter2_meta(slices, dtype, ensure_clean_memory):
         data = cp.asarray(data * 300.0, dtype=np.uint16)
     hook = MaxMemoryHook(data.size * data.itemsize)
     with hook:
-        paganin_filter2(data, **kwargs)
+        paganin_filter_tomopy(data, **kwargs)
 
-    assert paganin_filter2.meta.pattern == 'projection'
-    assert 'paganin_filter2' in method_registry['httomolibgpu']['prep']['phase']
-    assert not paganin_filter2.meta.cpu
-    assert paganin_filter2.meta.gpu
+    assert paganin_filter_tomopy.meta.pattern == 'projection'
+    assert 'paganin_filter_tomopy' in method_registry['httomolibgpu']['prep']['phase']
+    assert not paganin_filter_tomopy.meta.cpu
+    assert paganin_filter_tomopy.meta.gpu
 
     # make sure estimator function is within range (80% min, 100% max)
     max_mem = hook.max_mem
     actual_slices = data.shape[0]
-    estimated_slices, dtype_out, output_dims = paganin_filter2.meta.calc_max_slices(
+    estimated_slices, dtype_out, output_dims = paganin_filter_tomopy.meta.calc_max_slices(
         0,
         (data.shape[1], data.shape[2]),
         data.dtype, max_mem, **kwargs)
