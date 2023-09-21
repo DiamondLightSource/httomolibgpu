@@ -1,0 +1,11 @@
+runners:
+  - name: gpu-runner
+    cloud: aws
+    gpu: "nvidia-tesla-t4"
+    instance_type: g4dn.xlarge
+    machine_image: ami-00ac0c28c01352e53
+    preemptible: false
+    workflow: .github/workflows/pytest.yml
+    count: 1
+    labels:
+      - "cirun-gpu-runner"
