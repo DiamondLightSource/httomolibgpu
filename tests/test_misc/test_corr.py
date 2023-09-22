@@ -90,28 +90,6 @@ def test_median_filter3d(data):
 
 
 @cp.testing.gpu
-def test_median_filter3d_memory_calc():
-    dy = 5
-    dx = 2560
-    available_memory = (dx*dy*200 + 42) * 2
-    args=dict(kernel_size=3, dif=1.5)
-
-    assert 'median_filter3d' in method_registry['httomolibgpu']['misc']['corr']
-    assert median_filter3d.meta.calc_max_slices(0, 
-                                                (dy, dx),
-                                                np.uint16(), available_memory, **args) == (100, np.uint16(), (dy, dx))
-    assert median_filter3d.meta.calc_max_slices(0, 
-                                                (dy, dx),
-                                                np.float32(), available_memory, **args) == (50, np.float32(), (dy, dx))
-    assert median_filter3d.meta.calc_max_slices(1, 
-                                                (dy, dx),
-                                                np.uint16(), available_memory, **args) == (100, np.uint16(), (dy, dx))
-    assert median_filter3d.meta.calc_max_slices(1, 
-                                                (dy, dx),
-                                                np.float32(), available_memory, **args) == (50, np.float32(), (dy, dx))
-
-
-@cp.testing.gpu
 @pytest.mark.perf
 def test_median_filter3d_performance(ensure_clean_memory):
     dev = cp.cuda.Device()

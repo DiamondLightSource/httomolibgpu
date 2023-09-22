@@ -42,33 +42,8 @@ SPEED_OF_LIGHT = 299792458e2  # [cm/s]
 PI = 3.14159265359
 PLANCK_CONSTANT = 6.58211928e-19  # [keV*s]
 
-def _calc_max_slices_paganin_filter_savu(
-    non_slice_dims_shape: Tuple[int, int],
-    dtype: np.dtype,
-    available_memory: int,
-    **kwargs,
-) -> Tuple[int, np.dtype, Tuple[int, int]]:
-    pad_x = kwargs["pad_x"]
-    pad_y = kwargs["pad_y"]
-    input_size = np.prod(non_slice_dims_shape) * dtype.itemsize
-    in_slice_size = (
-        (non_slice_dims_shape[0] + 2 * pad_y)
-        * (non_slice_dims_shape[1] + 2 * pad_x)
-        * dtype.itemsize
-    )
-    # FFT needs complex inputs, so copy to complex happens first
-    complex_slice = in_slice_size / dtype.itemsize * np.complex64().nbytes
-    fftplan_slice = complex_slice
-    filter_size = complex_slice
-    res_slice = np.prod(non_slice_dims_shape) * np.float32().nbytes
-    slice_size = input_size + in_slice_size + complex_slice + fftplan_slice + res_slice
-    available_memory -= filter_size
-    return (int(available_memory // slice_size), float32(), non_slice_dims_shape)
-
-
 ## %%%%%%%%%%%%%%%%%%%%%%% paganin_filter %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 #: CuPy implementation of Paganin filter from Savu
-@method_proj(_calc_max_slices_paganin_filter_savu)
 @nvtx.annotate()
 def paganin_filter_savu(
     data: cp.ndarray,
@@ -293,7 +268,11 @@ def _reciprocal_coord(pixel_size: float, num_grid: int) -> cp.ndarray:
     rc *= 2 * PI / (n * pixel_size)
     return rc
 
-# Adaptation with some corrections of retrieve_phase (Paganin filter) from TomoPy
+##-------------------------------------------------------------##
+##-------------------------------------------------------------##
+
+# Adaptation with some corrections of retrieve_phase (Paganin filter)
+# from TomoPy
 @nvtx.annotate()
 def paganin_filter_tomopy(
     tomo: cp.ndarray,

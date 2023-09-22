@@ -3,31 +3,8 @@ import cupy as cp
 import numpy as np
 from cupy.cuda import nvtx
 import pytest
-#from tomopy.misc.morph import sino_360_to_180 as tomopy_sino_360_to_180
 from httomolibgpu.misc.morph import sino_360_to_180
 
-
-"""
-@cp.testing.gpu
-@pytest.mark.parametrize("overlap", [0, 1, 3, 15, 32])
-@pytest.mark.parametrize("rotation", ["left", "right"])
-@cp.testing.numpy_cupy_allclose(rtol=1e-6)
-def test_sino_360_to_180_unity(ensure_clean_memory, xp, overlap, rotation):
-    # this combination has a bug in tomopy, so we'll skip it for now
-    if rotation == "right" and overlap == 0:
-        pytest.skip("Skipping test due to bug in tomopy")
-
-    np.random.seed(12345)
-    data_host = (
-        np.random.random_sample(size=(123, 54, 128)).astype(np.float32) * 200.0 - 100.0
-    )
-    data = xp.asarray(data_host)
-
-    if xp.__name__ == "numpy":
-        return tomopy_sino_360_to_180(data, overlap, rotation)
-    else:
-        return sino_360_to_180(data, overlap, rotation)
-"""
 
 @pytest.mark.parametrize(
     "overlap, rotation",
@@ -53,11 +30,6 @@ def test_sino_360_to_180_invalid(ensure_clean_memory, overlap, rotation):
 def test_sino_360_to_180_wrong_dims(ensure_clean_memory, shape):
     with pytest.raises(ValueError):
         sino_360_to_180(cp.ones(shape, dtype=cp.float32))
-
-
-def test_sino_360_to_180_meta():
-    assert sino_360_to_180.meta.gpu is True
-    assert sino_360_to_180.meta.pattern == 'sinogram'
 
 
 @pytest.mark.parametrize("rotation", ["left", "right"])
