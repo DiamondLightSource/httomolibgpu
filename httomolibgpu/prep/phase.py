@@ -32,7 +32,6 @@ from httomolibgpu.cuda_kernels import load_cuda_module
 from httomolibgpu.decorator import method_proj
 
 __all__ = [
-    "fresnel_filter",
     "paganin_filter_savu",
     "paganin_filter_tomopy",
 ]
@@ -42,138 +41,6 @@ BOLTZMANN_CONSTANT = 1.3806488e-16  # [erg/k]
 SPEED_OF_LIGHT = 299792458e2  # [cm/s]
 PI = 3.14159265359
 PLANCK_CONSTANT = 6.58211928e-19  # [keV*s]
-
-
-def _calc_max_slices_fresnel(
-    non_slice_dims_shape: Tuple[int, int],
-    dtype: np.dtype,
-    available_memory: int,
-    **kwargs,
-) -> Tuple[int, np.dtype, Tuple[int, int]]:
-    height1, width1 = non_slice_dims_shape
-    window_size = (height1 * width1) * np.float64().nbytes
-    pad_width = min(150, int(0.1 * width1))
-    padded_height = height1 + 2 * pad_width
-    padded_width = width1 * 2 * pad_width
-    in_slice_size = height1 * width1 * dtype.itemsize
-    # float64 here as res is internally computed in double
-    internal_slice_size = padded_height * padded_width * np.float64().nbytes
-    out_slice_size = padded_height * padded_width * np.float32().nbytes
-    slice_size = in_slice_size + out_slice_size + internal_slice_size
-    # the internal data is computed using a for loop, so the temporaries won't have
-    # a significant impact. But we add a safety margin for that
-    safety = in_slice_size * 4
-
-    available_memory -= window_size + safety
-    return (available_memory // slice_size, float32(), non_slice_dims_shape)
-
-
-# CuPy implementation of Fresnel filter ported from Savu
-@method_proj(_calc_max_slices_fresnel)
-def fresnel_filter(
-    mat: cp.ndarray, pattern: str, ratio: float, apply_log: bool = True
-) -> cp.ndarray:
-    """
-    Apply Fresnel filter.
-
-    Parameters
-    ----------
-    mat : cp.ndarray
-        The data to apply filtering to.
-
-    pattern : str
-        Choose 'PROJECTION' for filtering projection, otherwise, will be handled
-        generically for other cases.
-
-    ratio : float
-        Control the strength of the filter. Greater is stronger.
-
-    apply_log : bool, optional
-        Apply negative log function to the data being filtered.
-
-    Returns
-    -------
-    cp.ndarray
-        The filtered data.
-    """
-
-    if mat.ndim == 2:
-        mat = cp.expand_dims(mat, 0)
-
-    if mat.ndim != 3:
-        raise ValueError(
-            f"Invalid number of dimensions in data: {mat.ndim},"
-            " please provide a stack of 2D projections."
-        )
-
-    if apply_log is True:
-        mat = -cp.log(mat)
-
-    # Define window
-    (depth1, height1, width1) = mat.shape[:3]
-    window = _make_window(height1, width1, ratio, pattern)
-    pad_width = min(150, int(0.1 * width1))
-
-    # Regardless of working with projections or sinograms, the rows and columns
-    # in the images to filter are in the same dimensions of the data: rows in
-    # dimension 1, columns in dimension 2 (ie, for projection images, `nrow` is
-    # the number of rows in a projection image, and for sinogram images, `nrow`
-    # is the number of rows in a sinogram image).
-    (_, nrow, ncol) = mat.shape
-
-    # Define array to hold result. Note that, due to the padding applied, the
-    # shape of the filtered images are different to the shape of the
-    # original/unfiltered images.
-    padded_height = mat.shape[1] + pad_width * 2
-    res_height = min(nrow, padded_height - pad_width)
-    padded_width = mat.shape[2] + pad_width * 2
-    res_width = min(ncol, padded_width - pad_width)
-    res = cp.zeros((mat.shape[0], res_height, res_width))
-
-    # Loop over images and apply filter
-    for i in range(mat.shape[0]):
-        if pattern == "PROJECTION":
-            top_drop = 10  # To remove the time stamp in some data
-            mat_pad = cp.pad(
-                mat[i][top_drop:],
-                ((pad_width + top_drop, pad_width), (pad_width, pad_width)),
-                mode="edge",
-            )
-            win_pad = cp.pad(window, pad_width, mode="edge")
-            mat_dec = cp.fft.ifft2(cp.fft.fft2(mat_pad) / cp.fft.ifftshift(win_pad))
-            mat_dec = cp.real(
-                mat_dec[pad_width : pad_width + nrow, pad_width : pad_width + ncol]
-            )
-            res[i] = mat_dec
-        else:
-            mat_pad = cp.pad(mat[i], ((0, 0), (pad_width, pad_width)), mode="edge")
-            win_pad = cp.pad(window, ((0, 0), (pad_width, pad_width)), mode="edge")
-            mat_fft = cp.fft.fftshift(cp.fft.fft(mat_pad), axes=1) / win_pad
-            mat_dec = cp.fft.ifft(cp.fft.ifftshift(mat_fft, axes=1))
-            mat_dec = cp.real(mat_dec[:, pad_width : pad_width + ncol])
-            res[i] = mat_dec
-
-    if apply_log is True:
-        res = cp.exp(-res)
-
-    return cp.asarray(res, dtype=cp.float32)
-
-
-def _make_window(height, width, ratio, pattern):
-    center_hei = int(cp.ceil((height - 1) * 0.5))
-    center_wid = int(cp.ceil((width - 1) * 0.5))
-    if pattern == "PROJECTION":
-        ulist = (1.0 * cp.arange(0, width) - center_wid) / width
-        vlist = (1.0 * cp.arange(0, height) - center_hei) / height
-        u, v = cp.meshgrid(ulist, vlist)
-        win2d = 1.0 + ratio * (u**2 + v**2)
-    else:
-        ulist = (1.0 * cp.arange(0, width) - center_wid) / width
-        win1d = 1.0 + ratio * ulist**2
-        win2d = cp.tile(win1d, (height, 1))
-
-    return win2d
-
 
 def _calc_max_slices_paganin_filter_savu(
     non_slice_dims_shape: Tuple[int, int],
@@ -426,54 +293,7 @@ def _reciprocal_coord(pixel_size: float, num_grid: int) -> cp.ndarray:
     rc *= 2 * PI / (n * pixel_size)
     return rc
 
-
-def _calc_max_slices_paganin_filter_tomopy(
-    non_slice_dims_shape: Tuple[int, int],
-    dtype: np.dtype,
-    available_memory: int,
-    **kwargs,
-) -> Tuple[int, np.dtype, Tuple[int, int]]:
-    pad_tup = []
-    for index, element in enumerate(non_slice_dims_shape):
-        diff = _shift_bit_length(element + 1) - element
-        if element % 2 == 0:
-            pad_width = diff // 2
-            pad_width = (pad_width, pad_width)
-        else:
-            # need an uneven padding for odd-number lengths
-            left_pad = diff // 2
-            right_pad = diff - left_pad
-            pad_width = (left_pad, right_pad)
-        pad_tup.append(pad_width)
-
-    input_size = np.prod(non_slice_dims_shape) * dtype.itemsize
-    in_slice_size = (
-        (non_slice_dims_shape[0] + pad_tup[0][0]+pad_tup[0][1])
-        * (non_slice_dims_shape[1] + pad_tup[1][0]+pad_tup[1][1])
-        * dtype.itemsize
-    )
-    out_slice_size = (
-        (non_slice_dims_shape[0] + pad_tup[0][0]+pad_tup[0][1])
-        * (non_slice_dims_shape[1] + pad_tup[1][0]+pad_tup[1][1])
-        * np.float32().nbytes
-    )
-    
-    # FFT needs complex inputs, so copy to complex happens first
-    complex_slice = in_slice_size / dtype.itemsize * np.complex64().nbytes
-    fftplan_slice = complex_slice
-    grid_size = np.prod(non_slice_dims_shape) * np.float32().nbytes
-    filter_size = grid_size    
-    res_slice = grid_size    
-    
-    tot_memory = input_size + in_slice_size + out_slice_size + 2*complex_slice + fftplan_slice + res_slice
-    available_memory -= filter_size
-    available_memory -= grid_size
-    
-    return (int(available_memory // tot_memory), float32(), non_slice_dims_shape)
-
-
 # Adaptation with some corrections of retrieve_phase (Paganin filter) from TomoPy
-@method_proj(_calc_max_slices_paganin_filter_tomopy)
 @nvtx.annotate()
 def paganin_filter_tomopy(
     tomo: cp.ndarray,
