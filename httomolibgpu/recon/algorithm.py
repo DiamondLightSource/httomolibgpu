@@ -62,6 +62,18 @@ def _calc_max_slices_FBP(
     slices_max = available_memory // int(2*in_slice_size + filtered_in_data + freq_slice + fftplan_size + 2*astra_out_size)
     return (slices_max, float32(), output_dims)
 
+def _apply_circular_mask(data, recon_mask_radius):
+    
+    recon_size = data.shape[1]
+    Y, X = cp.ogrid[:recon_size, :recon_size]
+    half_size = recon_size//2
+    dist_from_center = cp.sqrt((X - half_size)**2 + (Y-half_size)**2)
+    if recon_mask_radius <= 1.0:
+        mask = dist_from_center <= half_size - abs(half_size - half_size/recon_mask_radius)
+    else:
+        mask = dist_from_center <= half_size + abs(half_size - half_size/recon_mask_radius)    
+    return data*mask
+
 
 ## %%%%%%%%%%%%%%%%%%%%%%% FBP reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 @method_sino(_calc_max_slices_FBP)
@@ -70,12 +82,13 @@ def FBP(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
-    objsize: Optional[int] = None,
+    recon_size: Optional[int] = None,
+    recon_mask_radius: Optional[float] = None,
     gpu_id: int = 0,
 ) -> cp.ndarray:
     """
     Perform Filtered Backprojection (FBP) reconstruction using ASTRA toolbox and ToMoBAR wrappers.
-    This is 3D recon from a CuPy array and a custom built filter.
+    This is a 3D recon from a CuPy array and a custom built filter.
 
     Parameters
     ----------
@@ -85,8 +98,13 @@ def FBP(
         An array of angles given in radians.
     center : float, optional
         The center of rotation (CoR).
-    objsize : int, optional
-        The size in pixels of the reconstructed object.
+    recon_size : int, optional
+        The [recon_size, recon_size] shape of the reconstructed slice in pixels. 
+        By default (None), the reconstructed size will be the dimension of the horizontal detector.
+    recon_mask_radius: int, optional
+        The radius of the circular mask that applies to the reconstructed slice in order to crop
+        out some undesirable artefacts. The values outside the diameter will be set to zero. 
+        None by default, to see the effect of the mask try setting the value in the range [0.7-1.0]. 
     gpu_id : int, optional
         A GPU device index to perform operation on.
 
@@ -99,17 +117,20 @@ def FBP(
 
     if center is None:
         center = data.shape[2] // 2  # making a crude guess
-    if objsize is None:
-        objsize = data.shape[2]
+    if recon_size is None:
+        recon_size = data.shape[2]
     RecToolsCP = RecToolsDIRCuPy(DetectorsDimH=data.shape[2],  # Horizontal detector dimension
                                  DetectorsDimV=data.shape[1],  # Vertical detector dimension (3D case)
                                  CenterRotOffset=data.shape[2] / 2 - center - 0.5,  # Center of Rotation scalar or a vector
                                  AnglesVec=-angles,  # A vector of projection angles in radians
-                                 ObjSize=objsize,  # Reconstructed object dimensions (scalar)
+                                 ObjSize=recon_size,  # Reconstructed object dimensions (scalar)
                                  device_projector=gpu_id,
                                  )
     reconstruction = RecToolsCP.FBP3D(data)
     cp._default_memory_pool.free_all_blocks()
+    # perform masking to the result of reconstruction if needed 
+    if recon_mask_radius is not None:
+        reconstruction = _apply_circular_mask(reconstruction, recon_mask_radius)
     return cp.swapaxes(reconstruction,0,1)
 
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
@@ -149,9 +170,10 @@ def SIRT(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
-    objsize: Optional[int] = None,
+    recon_size: Optional[int] = None,    
     iterations: Optional[int] = 300,
     nonnegativity: Optional[bool] = True,
+    recon_mask_radius: Optional[float] = None,
     gpu_id: int = 0,
 ) -> cp.ndarray:
     """
@@ -166,12 +188,17 @@ def SIRT(
         An array of angles given in radians.
     center : float, optional
         The center of rotation (CoR).
-    objsize : int, optional
-        The size in pixels of the reconstructed object.
+    recon_size : int, optional
+        The [recon_size, recon_size] shape of the reconstructed slice in pixels. 
+        By default (None), the reconstructed size will be the dimension of the horizontal detector.
     iterations : int, optional
         The number of SIRT iterations.
     nonnegativity : bool, optional
         Impose nonnegativity constraint on reconstructed image.
+    recon_mask_radius: int, optional
+        The radius of the circular mask that applies to the reconstructed slice in order to crop
+        out some undesirable artefacts. The values outside the diameter will be set to zero. 
+        None by default, to see the effect of the mask try setting the value in the range [0.7-1.0].
     gpu_id : int, optional
         A GPU device index to perform operation on.
 
@@ -184,20 +211,23 @@ def SIRT(
 
     if center is None:
         center = data.shape[2] // 2  # making a crude guess
-    if objsize is None:
-        objsize = data.shape[2]
+    if recon_size is None:
+        recon_size = data.shape[2]
         
     RecToolsCP = RecToolsIRCuPy(DetectorsDimH=data.shape[2],  # Horizontal detector dimension
                                  DetectorsDimV=data.shape[1],  # Vertical detector dimension (3D case)
                                  CenterRotOffset=data.shape[2] / 2 - center - 0.5,  # Center of Rotation scalar or a vector
                                  AnglesVec=-angles,  # A vector of projection angles in radians
-                                 ObjSize=objsize,  # Reconstructed object dimensions (scalar)
+                                 ObjSize=recon_size,  # Reconstructed object dimensions (scalar)
                                  device_projector=gpu_id,
                                  )
     _data_ = {"projection_norm_data": data}  # data dictionary
     _algorithm_ = {"iterations": iterations, "nonnegativity": nonnegativity}
     reconstruction = RecToolsCP.SIRT(_data_, _algorithm_)
     cp._default_memory_pool.free_all_blocks()
+    # perform masking to the result of reconstruction if needed 
+    if recon_mask_radius is not None:
+        reconstruction = _apply_circular_mask(reconstruction, recon_mask_radius)    
     return cp.swapaxes(reconstruction,0,1)
 
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
@@ -235,9 +265,10 @@ def CGLS(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
-    objsize: Optional[int] = None,
+    recon_size: Optional[int] = None,
     iterations: Optional[int] = 20,
     nonnegativity: Optional[bool] = True,
+    recon_mask_radius: Optional[float] = None,
     gpu_id: int = 0,
 ) -> cp.ndarray:
     """
@@ -252,12 +283,17 @@ def CGLS(
         An array of angles given in radians.
     center : float, optional
         The center of rotation (CoR).
-    objsize : int, optional
-        The size in pixels of the reconstructed object.
+    recon_size : int, optional
+        The [recon_size, recon_size] shape of the reconstructed slice in pixels. 
+        By default (None), the reconstructed size will be the dimension of the horizontal detector.
     iterations : int, optional
         The number of CGLS iterations.
     nonnegativity : bool, optional
         Impose nonnegativity constraint on reconstructed image.
+    recon_mask_radius: int, optional
+        The radius of the circular mask that applies to the reconstructed slice in order to crop
+        out some undesirable artefacts. The values outside the diameter will be set to zero. 
+        None by default, to see the effect of the mask try setting the value in the range [0.7-1.0].        
     gpu_id : int, optional
         A GPU device index to perform operation on.
 
@@ -270,20 +306,23 @@ def CGLS(
 
     if center is None:
         center = data.shape[2] // 2  # making a crude guess
-    if objsize is None:
-        objsize = data.shape[2]
+    if recon_size is None:
+        recon_size = data.shape[2]
         
     RecToolsCP = RecToolsIRCuPy(DetectorsDimH=data.shape[2],  # Horizontal detector dimension
                                  DetectorsDimV=data.shape[1],  # Vertical detector dimension (3D case)
                                  CenterRotOffset=data.shape[2] / 2 - center - 0.5,  # Center of Rotation scalar or a vector
                                  AnglesVec=-angles,  # A vector of projection angles in radians
-                                 ObjSize=objsize,  # Reconstructed object dimensions (scalar)
+                                 ObjSize=recon_size,  # Reconstructed object dimensions (scalar)
                                  device_projector=gpu_id,
                                  )
     _data_ = {"projection_norm_data": data}  # data dictionary
     _algorithm_ = {"iterations": iterations, "nonnegativity": nonnegativity}
     reconstruction = RecToolsCP.CGLS(_data_, _algorithm_)
     cp._default_memory_pool.free_all_blocks()
+    # perform masking to the result of reconstruction if needed 
+    if recon_mask_radius is not None:
+        reconstruction = _apply_circular_mask(reconstruction, recon_mask_radius)
     return cp.swapaxes(reconstruction,0,1)
 
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
