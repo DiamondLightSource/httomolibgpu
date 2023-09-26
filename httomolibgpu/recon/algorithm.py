@@ -27,7 +27,6 @@ from cupy import float32, complex64
 import cupyx
 import numpy as np
 import nvtx
-from httomolibgpu.decorator import method_sino
 
 from httomolibgpu.cuda_kernels import load_cuda_module
 
@@ -36,31 +35,6 @@ __all__ = [
     "SIRT",
     "CGLS",
 ]
-
-def _calc_max_slices_FBP(
-    non_slice_dims_shape: Tuple[int, int],
-    dtype: np.dtype,
-    available_memory: int,
-    **kwargs
-) -> Tuple[int, np.dtype, Tuple[int, int]]:
-    # we first run filtersync, and calc the memory for that
-    DetectorsLengthH = non_slice_dims_shape[1]
-    in_slice_size = np.prod(non_slice_dims_shape) * dtype.itemsize
-    filter_size = (DetectorsLengthH//2+1) * float32().itemsize
-    freq_slice = non_slice_dims_shape[0] * (DetectorsLengthH//2+1) * complex64().itemsize
-    fftplan_size = freq_slice * 2
-    filtered_in_data = np.prod(non_slice_dims_shape) * float32().itemsize
-    # calculate the output shape
-    objsize = kwargs['objsize']
-    if objsize is None:
-        objsize = DetectorsLengthH
-    output_dims = (objsize, objsize)
-    # astra backprojection will generate an output array 
-    astra_out_size = (np.prod(output_dims) * float32().itemsize)
-
-    available_memory -= filter_size
-    slices_max = available_memory // int(2*in_slice_size + filtered_in_data + freq_slice + fftplan_size + 2*astra_out_size)
-    return (slices_max, float32(), output_dims)
 
 def _apply_circular_mask(data, recon_mask_radius):
     
@@ -76,7 +50,6 @@ def _apply_circular_mask(data, recon_mask_radius):
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% FBP reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-@method_sino(_calc_max_slices_FBP)
 @nvtx.annotate()
 def FBP(
     data: cp.ndarray,
@@ -135,36 +108,7 @@ def FBP(
 
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 
-def _calc_max_slices_SIRT(
-    non_slice_dims_shape: Tuple[int, int],
-    dtype: np.dtype,
-    available_memory: int, **kwargs
-) -> Tuple[int, np.dtype, Tuple[int, int]]:
-    # calculate the output shape
-    DetectorsLengthH = non_slice_dims_shape[1]
-    objsize = kwargs['objsize']
-    if objsize is None:
-        objsize = DetectorsLengthH
-    output_dims = (objsize, objsize) 
-    
-    # input/output
-    data_out = np.prod(non_slice_dims_shape) * dtype.itemsize
-    x_rec = np.prod(output_dims) * dtype.itemsize
-    # preconditioning matrices R and C
-    R_mat = data_out
-    C_mat = x_rec
-    # update_term
-    C_R_res = C_mat + 2*R_mat
-    # a guess for astra toolbox memory usage for projection/backprojection
-    astra_size = 2*(x_rec+data_out)
-   
-    total_mem = int(data_out + x_rec + R_mat + C_mat + C_R_res + astra_size)
-    slices_max = available_memory // total_mem
-    return (slices_max, float32(), output_dims)
-
-
 ## %%%%%%%%%%%%%%%%%%%%%%% SIRT reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-@method_sino(_calc_max_slices_SIRT)
 @nvtx.annotate()
 def SIRT(
     data: cp.ndarray,
@@ -230,36 +174,7 @@ def SIRT(
         reconstruction = _apply_circular_mask(reconstruction, recon_mask_radius)    
     return cp.swapaxes(reconstruction,0,1)
 
-## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-def _calc_max_slices_CGLS(
-    non_slice_dims_shape: Tuple[int, int],
-    dtype: np.dtype,
-    available_memory: int, **kwargs
-) -> Tuple[int, np.dtype, Tuple[int, int]]:
-    # calculate the output shape
-    DetectorsLengthH = non_slice_dims_shape[1]
-    objsize = kwargs['objsize']
-    if objsize is None:
-        objsize = DetectorsLengthH
-    output_dims = (objsize, objsize) 
-    
-    # input/output
-    data_out = np.prod(non_slice_dims_shape) * dtype.itemsize
-    x_rec = np.prod(output_dims) * dtype.itemsize
-    # d and r vectors    
-    d = x_rec
-    r = data_out
-    Ad = 2*data_out
-    s = x_rec
-    # a guess for astra toolbox memory usage for projection/backprojection
-    astra_size = 2*(x_rec+data_out)
-   
-    total_mem = int(data_out + x_rec + d + r + Ad + s + astra_size)
-    slices_max = available_memory // total_mem
-    return (slices_max, float32(), output_dims)
-
 ## %%%%%%%%%%%%%%%%%%%%%%% CGLS reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-@method_sino(_calc_max_slices_CGLS)
 @nvtx.annotate()
 def CGLS(
     data: cp.ndarray,
@@ -324,5 +239,4 @@ def CGLS(
     if recon_mask_radius is not None:
         reconstruction = _apply_circular_mask(reconstruction, recon_mask_radius)
     return cp.swapaxes(reconstruction,0,1)
-
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
