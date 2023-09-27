@@ -254,9 +254,9 @@ def distortion_correction_proj_discorpy(
     cp.ndarray
         3D array. Distortion-corrected image(s).
     """
-    # Check if it's a stack of 2D images, or only a single 2D image
-    if len(data.shape) == 2:
-        data = cp.expand_dims(data, axis=0)
+    # Check if it's a stack of 2D images only
+    if data.ndim != 3:
+        raise ValueError("Input data must be a stack of 2D images only")
 
     # Get info from metadata txt file
     xcenter, ycenter, list_fact = _load_metadata_txt(metadata_path)
