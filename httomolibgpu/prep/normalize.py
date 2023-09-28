@@ -25,33 +25,9 @@ import cupy as cp
 import numpy as np
 import nvtx
 from cupy import uint16, float32, mean
-from httomolibgpu.decorator import method_proj
 
 __all__ = ["normalize"]
 
-
-def _normalize_max_slices(
-    non_slice_dims_shape: Tuple[int, int],
-    dtype: cp.dtype, available_memory: int, **kwargs
-) -> Tuple[int, np.dtype, Tuple[int, int]]:
-    """Calculate the max chunk size it can fit in the available memory"""
-
-    # normalize needs space to store the darks + flats and their means as a fixed cost
-    flats_mean_space = np.prod(non_slice_dims_shape) * float32().nbytes
-    darks_mean_space = np.prod(non_slice_dims_shape) * float32().nbytes
-    available_memory -= flats_mean_space + darks_mean_space
-
-    # it also needs space for data input and output (we don't care about slice_dim)
-    # data: [x, 10, 20], dtype => other_dims = [10, 20]
-    in_slice_memory = np.prod(non_slice_dims_shape) * dtype.itemsize
-    out_slice_memory = np.prod(non_slice_dims_shape) * float32().nbytes
-    slice_memory = in_slice_memory + out_slice_memory
-    max_slices = available_memory // slice_memory  # rounds down
-
-    return (max_slices, float32(), non_slice_dims_shape)
-
-
-@method_proj(calc_max_slices=_normalize_max_slices)
 @nvtx.annotate()
 def normalize(
     data: cp.ndarray,

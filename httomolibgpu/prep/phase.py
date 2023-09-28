@@ -29,7 +29,6 @@ import numpy as np
 import nvtx
 
 from httomolibgpu.cuda_kernels import load_cuda_module
-from httomolibgpu.decorator import method_proj
 
 __all__ = [
     "paganin_filter_savu",

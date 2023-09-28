@@ -6,7 +6,6 @@ import pytest
 
 from numpy.testing import assert_allclose, assert_equal
 from httomolibgpu.prep.normalize import normalize
-from httomolibgpu import method_registry
 
 from cupy.cuda import nvtx
 

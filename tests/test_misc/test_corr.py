@@ -10,7 +10,6 @@ from httomolibgpu.misc.corr import (
     median_filter3d,
     remove_outlier3d,
 )
-from httomolibgpu import method_registry
 from numpy.testing import assert_allclose, assert_equal
 
 eps = 1e-6

@@ -8,7 +8,6 @@ import numpy as np
 import pytest
 from httomolibgpu.prep.normalize import normalize
 from httomolibgpu.recon.rotation import _calculate_chunks, find_center_360, find_center_vo
-from httomolibgpu import method_registry
 from numpy.testing import assert_allclose
 from .rotation_cpu_reference import find_center_360_numpy
 

@@ -6,7 +6,6 @@ import pytest
 from cupy.cuda import nvtx
 from httomolibgpu.prep.phase import paganin_filter_savu, paganin_filter_tomopy
 from numpy.testing import assert_allclose
-from httomolibgpu import method_registry
 
 eps = 1e-6
 

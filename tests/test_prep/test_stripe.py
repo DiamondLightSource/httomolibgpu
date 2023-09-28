@@ -8,7 +8,6 @@ from httomolibgpu.prep.stripe import (
     remove_stripe_based_sorting,
     remove_stripe_ti,
 )
-from httomolibgpu import method_registry
 from numpy.testing import assert_allclose
 
 @cp.testing.gpu

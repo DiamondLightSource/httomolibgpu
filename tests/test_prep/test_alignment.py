@@ -6,7 +6,6 @@ import pytest
 from httomolibgpu.prep.alignment import (
     distortion_correction_proj_discorpy,
 )
-from httomolibgpu import method_registry
 from imageio.v2 import imread
 from numpy.testing import assert_allclose
 
