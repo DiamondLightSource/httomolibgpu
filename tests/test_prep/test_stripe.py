@@ -7,6 +7,7 @@ from httomolibgpu.prep.normalize import normalize
 from httomolibgpu.prep.stripe import (
     remove_stripe_based_sorting,
     remove_stripe_ti,
+    remove_all_stripe,
 )
 from numpy.testing import assert_allclose
 
@@ -121,3 +122,22 @@ def test_remove_stripe_ti_performance(ensure_clean_memory):
     duration_ms = float(time.perf_counter_ns() - start) * 1e-6 / 10
 
     assert "performance in ms" == duration_ms
+
+
+@cp.testing.gpu
+def test_remove_all_stripe_on_data(data, flats, darks):
+    # --- testing the CuPy implementation from TomoCupy ---#
+    data = normalize(data, flats, darks, cutoff=10, minus_log=True)
+    
+    data_after_stripe_removal = remove_all_stripe(cp.copy(data)).get()
+
+    assert_allclose(np.mean(data_after_stripe_removal), 0.266914, rtol=1e-05)
+    assert_allclose(
+        np.mean(data_after_stripe_removal, axis=(1, 2)).sum(), 48.04459, rtol=1e-06
+    )
+    assert_allclose(np.median(data_after_stripe_removal), 0.015338, rtol=1e-04)
+    assert_allclose(np.max(data_after_stripe_removal), 2.298123, rtol=1e-05)
+    
+    data = None  #: free up GPU memory
+    # make sure the output is float32
+    assert data_after_stripe_removal.dtype == np.float32
