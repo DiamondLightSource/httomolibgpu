@@ -35,6 +35,7 @@ __all__ = [
     "FBP",
     "SIRT",
     "CGLS",
+    "FBP_CIL",
 ]
 
 def _calc_max_slices_FBP(
@@ -112,6 +113,45 @@ def FBP(
     cp._default_memory_pool.free_all_blocks()
     return cp.swapaxes(reconstruction,0,1)
 
+@method_sino(_calc_max_slices_FBP)
+@nvtx.annotate()
+def FBP_CIL(
+    data: np.ndarray,
+    angles: np.ndarray,
+    center: Optional[float] = None,
+    objsize: Optional[int] = None,
+    gpu_id: int = 0,
+    filter: str='ram-lak',
+    num_slices: int = None,
+) -> np.ndarray:
+    """
+    Perform Filtered Backprojection (FBP) reconstruction using CIL.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Projection data as a NumPy array.
+    angles : np.ndarray
+        An array of angles given in radians.
+    center : float, optional
+        The center of rotation (CoR).
+    objsize : int, optional
+        The size in pixels of the reconstructed object.
+    gpu_id : int, optional
+        A GPU device index to perform operation on.
+    filter : str, optional
+        The Filter of the FBP algorithm, default 'ram-lak'
+    num_slices : int, optional
+        The number of slices to process in each chunk.
+    
+
+    Returns
+    -------
+    np.ndarray
+        The FBP reconstructed volume as a NumPy array.
+    """
+    reconstruction = None
+    return reconstruction
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 
 def _calc_max_slices_SIRT(
