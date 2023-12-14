@@ -11,7 +11,6 @@ from httomolibgpu.prep.stripe import (
 )
 from numpy.testing import assert_allclose
 
-@cp.testing.gpu
 def test_remove_stripe_ti_on_data(data, flats, darks):
     # --- testing the CuPy implementation from TomoCupy ---#
     data = normalize(data, flats, darks, cutoff=10, minus_log=True)
@@ -36,7 +35,6 @@ def test_remove_stripe_ti_on_flats(host_flats):
     assert_allclose(np.mean(corrected_data, axis=(1, 2)).sum(), 19531.168945, rtol=1e-7)
     assert_allclose(np.median(corrected_data), 976.0, rtol=1e-7)
 
-@cp.testing.gpu
 def test_remove_stripe_ti_numpy_vs_cupy_on_random_data():
     host_data = np.random.random_sample(size=(181, 5, 256)).astype(np.float32) * 2.0
     corrected_host_data = remove_stripe_ti(np.copy(host_data))
@@ -49,7 +47,6 @@ def test_remove_stripe_ti_numpy_vs_cupy_on_random_data():
         np.median(corrected_data), np.median(corrected_host_data), rtol=1e-6
     )
 
-@cp.testing.gpu
 def test_stripe_removal_sorting_cupy(data, flats, darks):
     # --- testing the CuPy port of TomoPy's implementation ---#
     data = normalize(data, flats, darks, cutoff=10, minus_log=True)
@@ -63,7 +60,6 @@ def test_stripe_removal_sorting_cupy(data, flats, darks):
     # make sure the output is float32
     assert corrected_data.dtype == np.float32
 
-@cp.testing.gpu
 @cp.testing.numpy_cupy_allclose(rtol=1e-6)
 def test_stripe_removal_sorting_numpy_vs_cupy_on_random_data(ensure_clean_memory, xp):
     np.random.seed(12345)
@@ -72,7 +68,6 @@ def test_stripe_removal_sorting_numpy_vs_cupy_on_random_data(ensure_clean_memory
     return xp.asarray(remove_stripe_based_sorting(data))
 
 
-@cp.testing.gpu
 @pytest.mark.perf
 def test_stripe_removal_sorting_cupy_performance(ensure_clean_memory):
     data_host = (
@@ -98,7 +93,6 @@ def test_stripe_removal_sorting_cupy_performance(ensure_clean_memory):
     assert "performance in ms" == duration_ms
 
 
-@cp.testing.gpu
 @pytest.mark.perf
 def test_remove_stripe_ti_performance(ensure_clean_memory):
     data_host = (
@@ -124,7 +118,6 @@ def test_remove_stripe_ti_performance(ensure_clean_memory):
     assert "performance in ms" == duration_ms
 
 
-@cp.testing.gpu
 def test_remove_all_stripe_on_data(data, flats, darks):
     # --- testing the CuPy implementation from TomoCupy ---#
     data = normalize(data, flats, darks, cutoff=10, minus_log=True)

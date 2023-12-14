@@ -9,7 +9,6 @@ from httomolibgpu.prep.normalize import normalize
 
 from cupy.cuda import nvtx
 
-@cp.testing.gpu
 def test_normalize_1D_raises(data, flats, darks, ensure_clean_memory):
     _data_1d = cp.ones(10)
 
@@ -21,7 +20,6 @@ def test_normalize_1D_raises(data, flats, darks, ensure_clean_memory):
     with pytest.raises(ValueError):
         normalize(data, _data_1d, darks)
 
-@cp.testing.gpu
 def test_normalize(data, flats, darks, ensure_clean_memory):
     # --- testing normalize  ---#
     data_normalize = normalize(cp.copy(data), flats, darks, minus_log=True).get()
@@ -34,7 +32,6 @@ def test_normalize(data, flats, darks, ensure_clean_memory):
     assert_allclose(np.std(data_normalize), 0.524382, rtol=1e-06)
 
 
-@cp.testing.gpu
 @pytest.mark.perf
 def test_normalize_performance(ensure_clean_memory):
     # Note: low/high and size values taken from sample2_medium.yaml real run

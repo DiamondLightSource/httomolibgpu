@@ -15,7 +15,6 @@ from numpy.testing import assert_allclose, assert_equal
 eps = 1e-6
 
 
-@cp.testing.gpu
 def test_median_filter3d_vs_scipy_on_arange(ensure_clean_memory):
     mat = np.arange(4 * 5 * 6).reshape(4, 5, 6)
     assert_equal(
@@ -24,7 +23,6 @@ def test_median_filter3d_vs_scipy_on_arange(ensure_clean_memory):
     )
 
 
-@cp.testing.gpu
 def test_median_filter3d_vs_scipy(host_data, ensure_clean_memory):
     assert_equal(
         scipy.ndimage.median_filter(np.float32(host_data), size=3),
@@ -44,33 +42,28 @@ def test_scipy_median_filter_benchmark(data, ensure_clean_memory, benchmark, siz
     benchmark(median_filter_cupy, data.astype(cp.float32), size=size)
 
 
-@cp.testing.gpu
 def test_median_filter3d_1D_raises(ensure_clean_memory):
     _data = cp.ones(10)
     with pytest.raises(ValueError):
         median_filter3d(_data, kernel_size=3)
 
 
-@cp.testing.gpu
 def test_median_filter3d_zero_dim(ensure_clean_memory):
     _data = cp.ones(shape=(10, 10, 0)) * 100
     with pytest.raises(ValueError):
         median_filter3d(_data, kernel_size=3)
 
 
-@cp.testing.gpu
 def test_median_filter3d_even_kernel_size(data):
     with pytest.raises(ValueError):
         median_filter3d(data, kernel_size=4)
 
 
-@cp.testing.gpu
 def test_median_filter3d_wrong_dtype(data):
     with pytest.raises(ValueError):
         median_filter3d(data.astype(cp.float64), kernel_size=3)
 
 
-@cp.testing.gpu
 def test_median_filter3d(data):
     filtered_data = median_filter3d(data, kernel_size=3).get()
 
@@ -87,8 +80,6 @@ def test_median_filter3d(data):
         == np.float32
     )
 
-
-@cp.testing.gpu
 @pytest.mark.perf
 def test_median_filter3d_performance(ensure_clean_memory):
     dev = cp.cuda.Device()
@@ -110,7 +101,6 @@ def test_median_filter3d_performance(ensure_clean_memory):
     assert "performance in ms" == duration_ms
 
 
-@cp.testing.gpu
 def test_remove_outlier3d(data):
     filtered_data = remove_outlier3d(data, kernel_size=3, dif=1.5).get()
 

@@ -12,7 +12,6 @@ import pytest
 from cupy.cuda import nvtx
 
 
-@cp.testing.gpu
 def test_reconstruct_FBP_1(data, flats, darks, ensure_clean_memory):
     recon_data = FBP(
         normalize_cupy(data, flats, darks, cutoff=10, minus_log=True),
@@ -28,7 +27,6 @@ def test_reconstruct_FBP_1(data, flats, darks, ensure_clean_memory):
     assert recon_data.shape == (160, 128, 160)
 
 
-@cp.testing.gpu
 def test_reconstruct_FBP_2(data, flats, darks, ensure_clean_memory):
     recon_data = FBP(
         normalize_cupy(data, flats, darks, cutoff=20.5, minus_log=False),
@@ -45,7 +43,6 @@ def test_reconstruct_FBP_2(data, flats, darks, ensure_clean_memory):
     assert recon_data.dtype == np.float32
 
 
-@cp.testing.gpu
 def test_reconstruct_FBP_3(data, flats, darks, ensure_clean_memory):
     recon_data = FBP(
         normalize_cupy(data, flats, darks, cutoff=20.5, minus_log=False),
@@ -64,7 +61,7 @@ def test_reconstruct_FBP_3(data, flats, darks, ensure_clean_memory):
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (210, 128, 210)
 
-@cp.testing.gpu
+
 def test_reconstruct_SIRT(data, flats, darks, ensure_clean_memory):
     objrecon_size = data.shape[2]
     recon_data = SIRT(
@@ -80,7 +77,7 @@ def test_reconstruct_SIRT(data, flats, darks, ensure_clean_memory):
     assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.23612846, rtol=1e-05)
     assert recon_data.dtype == np.float32
 
-@cp.testing.gpu
+
 def test_reconstruct_CGLS(data, flats, darks, ensure_clean_memory):
     objrecon_size = data.shape[2]
     recon_data = CGLS(
@@ -96,8 +93,6 @@ def test_reconstruct_CGLS(data, flats, darks, ensure_clean_memory):
     assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.279187, rtol=1e-03)
     assert recon_data.dtype == np.float32
 
-
-@cp.testing.gpu
 @pytest.mark.perf
 def test_FBP_performance(ensure_clean_memory):
     dev = cp.cuda.Device()

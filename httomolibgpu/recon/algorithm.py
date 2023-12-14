@@ -22,6 +22,8 @@
 
 from typing import Optional, Tuple, Union
 
+from typing import Type
+
 import cupy as cp
 from cupy import float32, complex64
 import cupyx
@@ -30,24 +32,14 @@ import nvtx
 
 from httomolibgpu.cuda_kernels import load_cuda_module
 
+from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
+from tomobar.methodsIR_CuPy import RecToolsIRCuPy
+
 __all__ = [
     "FBP",
     "SIRT",
     "CGLS",
 ]
-
-def _apply_circular_mask(data, recon_mask_radius):
-    
-    recon_size = data.shape[1]
-    Y, X = cp.ogrid[:recon_size, :recon_size]
-    half_size = recon_size//2
-    dist_from_center = cp.sqrt((X - half_size)**2 + (Y-half_size)**2)
-    if recon_mask_radius <= 1.0:
-        mask = dist_from_center <= half_size - abs(half_size - half_size/recon_mask_radius)
-    else:
-        mask = dist_from_center <= half_size + abs(half_size - half_size/recon_mask_radius)    
-    return data*mask
-
 
 ## %%%%%%%%%%%%%%%%%%%%%%% FBP reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 @nvtx.annotate()
@@ -74,7 +66,7 @@ def FBP(
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels. 
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
-    recon_mask_radius: int, optional
+    recon_mask_radius: float, optional
         The radius of the circular mask that applies to the reconstructed slice in order to crop
         out some undesirable artefacts. The values outside the diameter will be set to zero. 
         None by default, to see the effect of the mask try setting the value in the range [0.7-1.0]. 
@@ -86,24 +78,10 @@ def FBP(
     cp.ndarray
         The FBP reconstructed volume as a CuPy array.
     """
-    from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
+    RecToolsCP = _instantiate_direct_recon_class(data, angles, center, recon_size, gpu_id)
 
-    if center is None:
-        center = data.shape[2] // 2  # making a crude guess
-    if recon_size is None:
-        recon_size = data.shape[2]
-    RecToolsCP = RecToolsDIRCuPy(DetectorsDimH=data.shape[2],  # Horizontal detector dimension
-                                 DetectorsDimV=data.shape[1],  # Vertical detector dimension (3D case)
-                                 CenterRotOffset=data.shape[2] / 2 - center - 0.5,  # Center of Rotation scalar or a vector
-                                 AnglesVec=-angles,  # A vector of projection angles in radians
-                                 ObjSize=recon_size,  # Reconstructed object dimensions (scalar)
-                                 device_projector=gpu_id,
-                                 )
-    reconstruction = RecToolsCP.FBP3D(data)
+    reconstruction = RecToolsCP.FBP(data, recon_mask_radius=recon_mask_radius)
     cp._default_memory_pool.free_all_blocks()
-    # perform masking to the result of reconstruction if needed 
-    if recon_mask_radius is not None:
-        reconstruction = _apply_circular_mask(reconstruction, recon_mask_radius)
     return cp.swapaxes(reconstruction,0,1)
 
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
@@ -117,7 +95,6 @@ def SIRT(
     recon_size: Optional[int] = None,    
     iterations: Optional[int] = 300,
     nonnegativity: Optional[bool] = True,
-    recon_mask_radius: Optional[float] = None,
     gpu_id: int = 0,
 ) -> cp.ndarray:
     """
@@ -139,10 +116,6 @@ def SIRT(
         The number of SIRT iterations.
     nonnegativity : bool, optional
         Impose nonnegativity constraint on reconstructed image.
-    recon_mask_radius: int, optional
-        The radius of the circular mask that applies to the reconstructed slice in order to crop
-        out some undesirable artefacts. The values outside the diameter will be set to zero. 
-        None by default, to see the effect of the mask try setting the value in the range [0.7-1.0].
     gpu_id : int, optional
         A GPU device index to perform operation on.
 
@@ -151,27 +124,13 @@ def SIRT(
     cp.ndarray
         The SIRT reconstructed volume as a CuPy array.
     """
-    from tomobar.methodsIR_CuPy import RecToolsIRCuPy
 
-    if center is None:
-        center = data.shape[2] // 2  # making a crude guess
-    if recon_size is None:
-        recon_size = data.shape[2]
-        
-    RecToolsCP = RecToolsIRCuPy(DetectorsDimH=data.shape[2],  # Horizontal detector dimension
-                                 DetectorsDimV=data.shape[1],  # Vertical detector dimension (3D case)
-                                 CenterRotOffset=data.shape[2] / 2 - center - 0.5,  # Center of Rotation scalar or a vector
-                                 AnglesVec=-angles,  # A vector of projection angles in radians
-                                 ObjSize=recon_size,  # Reconstructed object dimensions (scalar)
-                                 device_projector=gpu_id,
-                                 )
+    RecToolsCP = _instantiate_iterative_recon_class(data, angles, center, recon_size, gpu_id, datafidelity='LS')
+
     _data_ = {"projection_norm_data": data}  # data dictionary
     _algorithm_ = {"iterations": iterations, "nonnegativity": nonnegativity}
     reconstruction = RecToolsCP.SIRT(_data_, _algorithm_)
     cp._default_memory_pool.free_all_blocks()
-    # perform masking to the result of reconstruction if needed 
-    if recon_mask_radius is not None:
-        reconstruction = _apply_circular_mask(reconstruction, recon_mask_radius)    
     return cp.swapaxes(reconstruction,0,1)
 
 ## %%%%%%%%%%%%%%%%%%%%%%% CGLS reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
@@ -183,7 +142,6 @@ def CGLS(
     recon_size: Optional[int] = None,
     iterations: Optional[int] = 20,
     nonnegativity: Optional[bool] = True,
-    recon_mask_radius: Optional[float] = None,
     gpu_id: int = 0,
 ) -> cp.ndarray:
     """
@@ -205,10 +163,6 @@ def CGLS(
         The number of CGLS iterations.
     nonnegativity : bool, optional
         Impose nonnegativity constraint on reconstructed image.
-    recon_mask_radius: int, optional
-        The radius of the circular mask that applies to the reconstructed slice in order to crop
-        out some undesirable artefacts. The values outside the diameter will be set to zero. 
-        None by default, to see the effect of the mask try setting the value in the range [0.7-1.0].        
     gpu_id : int, optional
         A GPU device index to perform operation on.
 
@@ -217,26 +171,80 @@ def CGLS(
     cp.ndarray
         The CGLS reconstructed volume as a CuPy array.
     """
-    from tomobar.methodsIR_CuPy import RecToolsIRCuPy
+    RecToolsCP = _instantiate_iterative_recon_class(data, angles, center, recon_size, gpu_id, datafidelity='LS')
+
+    _data_ = {"projection_norm_data": data}  # data dictionary
+    _algorithm_ = {"iterations": iterations, "nonnegativity": nonnegativity}
+    reconstruction = RecToolsCP.CGLS(_data_, _algorithm_)
+    cp._default_memory_pool.free_all_blocks()    
+    return cp.swapaxes(reconstruction,0,1)
+## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+
+def _instantiate_direct_recon_class(data: cp.ndarray,
+                               angles: np.ndarray,
+                               center: Optional[float] = None,
+                               recon_size: Optional[int] = None,
+                               gpu_id: int = 0) -> type[RecToolsDIRCuPy]:
+    """instantiate ToMoBAR's direct recon class
+
+    Args:
+        data (cp.ndarray): data array
+        angles (np.ndarray): angles
+        center (Optional[float], optional): center of recon. Defaults to None.
+        recon_size (Optional[int], optional): recon_size. Defaults to None.
+        gpu_id (int, optional): gpu ID. Defaults to 0.
+
+    Returns:
+        type[RecToolsDIRCuPy]: an instance of the class
+    """
+    input_data_axis_labels=["angles", "detY", "detX"]  # set the labels of the input data
 
     if center is None:
         center = data.shape[2] // 2  # making a crude guess
     if recon_size is None:
         recon_size = data.shape[2]
-        
-    RecToolsCP = RecToolsIRCuPy(DetectorsDimH=data.shape[2],  # Horizontal detector dimension
+    RecToolsCP = RecToolsDIRCuPy(DetectorsDimH=data.shape[2],  # Horizontal detector dimension
                                  DetectorsDimV=data.shape[1],  # Vertical detector dimension (3D case)
                                  CenterRotOffset=data.shape[2] / 2 - center - 0.5,  # Center of Rotation scalar or a vector
                                  AnglesVec=-angles,  # A vector of projection angles in radians
                                  ObjSize=recon_size,  # Reconstructed object dimensions (scalar)
                                  device_projector=gpu_id,
+                                 data_axis_labels=input_data_axis_labels,
                                  )
-    _data_ = {"projection_norm_data": data}  # data dictionary
-    _algorithm_ = {"iterations": iterations, "nonnegativity": nonnegativity}
-    reconstruction = RecToolsCP.CGLS(_data_, _algorithm_)
-    cp._default_memory_pool.free_all_blocks()
-    # perform masking to the result of reconstruction if needed 
-    if recon_mask_radius is not None:
-        reconstruction = _apply_circular_mask(reconstruction, recon_mask_radius)
-    return cp.swapaxes(reconstruction,0,1)
-## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+    return RecToolsCP
+
+def _instantiate_iterative_recon_class(data: cp.ndarray,
+                               angles: np.ndarray,
+                               center: Optional[float] = None,
+                               recon_size: Optional[int] = None,                               
+                               gpu_id: int = 0,
+                               datafidelity: str = 'LS') -> type[RecToolsIRCuPy]:
+    """instantiate ToMoBAR's iterative recon class
+
+    Args:
+        data (cp.ndarray): data array
+        angles (np.ndarray): angles
+        center (Optional[float], optional): center of recon. Defaults to None.
+        recon_size (Optional[int], optional): recon_size. Defaults to None.
+        datafidelity (str, optional): Data fidelity
+        gpu_id (int, optional): gpu ID. Defaults to 0.
+
+    Returns:
+        type[RecToolsIRCuPy]: an instance of the class
+    """
+    input_data_axis_labels=["angles", "detY", "detX"]  # set the labels of the input data
+
+    if center is None:
+        center = data.shape[2] // 2  # making a crude guess
+    if recon_size is None:
+        recon_size = data.shape[2]
+    RecToolsCP = RecToolsIRCuPy(DetectorsDimH=data.shape[2],  # Horizontal detector dimension
+                                 DetectorsDimV=data.shape[1],  # Vertical detector dimension (3D case)
+                                 CenterRotOffset=data.shape[2] / 2 - center - 0.5,  # Center of Rotation scalar or a vector
+                                 AnglesVec=-angles,  # A vector of projection angles in radians
+                                 ObjSize=recon_size,  # Reconstructed object dimensions (scalar)
+                                 datafidelity=datafidelity,
+                                 device_projector=gpu_id,
+                                 data_axis_labels=input_data_axis_labels,
+                                 )
+    return RecToolsCP

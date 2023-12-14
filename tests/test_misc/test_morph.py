@@ -17,7 +17,6 @@ from httomolibgpu.misc.morph import sino_360_to_180
         (0, ""),
     ],
 )
-@cp.testing.gpu
 def test_sino_360_to_180_invalid(ensure_clean_memory, overlap, rotation):
     data = cp.ones((10, 10, 10), dtype=cp.float32)
 
@@ -26,7 +25,6 @@ def test_sino_360_to_180_invalid(ensure_clean_memory, overlap, rotation):
 
 
 @pytest.mark.parametrize("shape", [(10,), (10, 10)])
-@cp.testing.gpu
 def test_sino_360_to_180_wrong_dims(ensure_clean_memory, shape):
     with pytest.raises(ValueError):
         sino_360_to_180(cp.ones(shape, dtype=cp.float32))
@@ -34,7 +32,6 @@ def test_sino_360_to_180_wrong_dims(ensure_clean_memory, shape):
 
 @pytest.mark.parametrize("rotation", ["left", "right"])
 @pytest.mark.perf
-@cp.testing.gpu
 def test_sino_360_to_180_performance(ensure_clean_memory, rotation):
     # as this is just an index shuffling operation, the data itself doesn't matter
     data = cp.ones((1801, 400, 2560), dtype=np.float32)

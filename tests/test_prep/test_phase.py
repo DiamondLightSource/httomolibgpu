@@ -9,7 +9,6 @@ from numpy.testing import assert_allclose
 
 eps = 1e-6
 
-@cp.testing.gpu
 def test_paganin_savu_filter(data):
     # --- testing the Paganin filter on tomo_standard ---#
     filtered_data = paganin_filter_savu(data).get()
@@ -21,7 +20,6 @@ def test_paganin_savu_filter(data):
     #: make sure the output is float32
     assert filtered_data.dtype == np.float32
 
-@cp.testing.gpu
 def test_paganin_filter_savu_energy100(data):
     filtered_data = paganin_filter_savu(data, energy=100.0).get()
 
@@ -32,7 +30,6 @@ def test_paganin_filter_savu_energy100(data):
     assert filtered_data.dtype == np.float32
 
 
-@cp.testing.gpu
 def test_paganin_filter_savu_padmean(data):
     filtered_data = paganin_filter_savu(data, pad_method="mean").get()
 
@@ -55,7 +52,6 @@ def test_paganin_filter_savu_padmean(data):
     )
 
 
-@cp.testing.gpu
 @pytest.mark.perf
 def test_paganin_filter_savu_performance(ensure_clean_memory):
     # Note: low/high and size values taken from sample2_medium.yaml real run
@@ -109,7 +105,6 @@ def test_paganin_filter_savu_performance(ensure_clean_memory):
     assert "performance in ms" == duration_ms
 
 
-@cp.testing.gpu
 def test_paganin_filter_savu_1D_raises(ensure_clean_memory):
     _data = cp.ones(10)
     with pytest.raises(ValueError):
@@ -118,7 +113,6 @@ def test_paganin_filter_savu_1D_raises(ensure_clean_memory):
     _data = None  #: free up GPU memory
 
 # paganin filter tomopy
-@cp.testing.gpu
 def test_paganin_filter_tomopy_1D_raises(ensure_clean_memory):
     _data = cp.ones(10)
     with pytest.raises(ValueError):
@@ -126,7 +120,6 @@ def test_paganin_filter_tomopy_1D_raises(ensure_clean_memory):
 
     _data = None  #: free up GPU memory
 
-@cp.testing.gpu
 def test_paganin_filter_tomopy(data):
     # --- testing the Paganin filter from TomoPy on tomo_standard ---#
     filtered_data = paganin_filter_tomopy(data).get()
@@ -138,8 +131,6 @@ def test_paganin_filter_tomopy(data):
     #: make sure the output is float32
     assert filtered_data.dtype == np.float32
 
-
-@cp.testing.gpu
 def test_paganin_filter_tomopy_energy100(data):
     filtered_data = paganin_filter_tomopy(data, energy=100.0).get()
 
@@ -150,7 +141,6 @@ def test_paganin_filter_tomopy_energy100(data):
     assert filtered_data.dtype == np.float32
 
 
-@cp.testing.gpu
 def test_paganin_filter_tomopy_dist75(data):
     filtered_data = paganin_filter_tomopy(data, dist=75.0, alpha=1e-6).get()
 
@@ -160,7 +150,6 @@ def test_paganin_filter_tomopy_dist75(data):
     assert_allclose(np.sum(filtered_data[50:100, 40, 1]), -343.5908, rtol=1e-6)
 
 
-@cp.testing.gpu
 @pytest.mark.perf
 def test_paganin_filter_tomopy_performance(ensure_clean_memory):
     # Note: low/high and size values taken from sample2_medium.yaml real run

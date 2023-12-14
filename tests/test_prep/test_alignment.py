@@ -9,8 +9,6 @@ from httomolibgpu.prep.alignment import (
 from imageio.v2 import imread
 from numpy.testing import assert_allclose
 
-
-@cp.testing.gpu
 @pytest.mark.parametrize(
     "image, max_value, mean_value",
     [
