@@ -16,7 +16,7 @@
 # limitations under the License.
 # ---------------------------------------------------------------------------
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
-# Created Date: 01 November 2022
+# Changes relative to ToMoBAR 2024.01 version
 # ---------------------------------------------------------------------------
 """Module for tomographic reconstruction"""
 
@@ -30,8 +30,6 @@ import cupyx
 import numpy as np
 import nvtx
 
-from httomolibgpu.cuda_kernels import load_cuda_module
-
 from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
 from tomobar.methodsIR_CuPy import RecToolsIRCuPy
 
@@ -40,6 +38,8 @@ __all__ = [
     "SIRT",
     "CGLS",
 ]
+
+input_data_axis_labels=["angles", "detY", "detX"]  # set the labels of the input data
 
 ## %%%%%%%%%%%%%%%%%%%%%%% FBP reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 @nvtx.annotate()
@@ -78,9 +78,11 @@ def FBP(
     cp.ndarray
         The FBP reconstructed volume as a CuPy array.
     """
-    RecToolsCP = _instantiate_direct_recon_class(data, angles, center, recon_size, gpu_id)
+    RecToolsCP = _instantiate_direct_recon_class(data, angles, center, recon_size, gpu_id)   
 
-    reconstruction = RecToolsCP.FBP(data, recon_mask_radius=recon_mask_radius)
+    reconstruction = RecToolsCP.FBP(data, 
+                                    recon_mask_radius=recon_mask_radius,
+                                    data_axes_labels_order=input_data_axis_labels)
     cp._default_memory_pool.free_all_blocks()
     return cp.swapaxes(reconstruction,0,1)
 
@@ -127,8 +129,12 @@ def SIRT(
 
     RecToolsCP = _instantiate_iterative_recon_class(data, angles, center, recon_size, gpu_id, datafidelity='LS')
 
-    _data_ = {"projection_norm_data": data}  # data dictionary
-    _algorithm_ = {"iterations": iterations, "nonnegativity": nonnegativity}
+    _data_ = {"projection_norm_data": data,
+              "data_axes_labels_order": input_data_axis_labels,
+              }  # data dictionary
+    _algorithm_ = {"iterations": iterations, 
+                   "nonnegativity": nonnegativity,                   
+                   }
     reconstruction = RecToolsCP.SIRT(_data_, _algorithm_)
     cp._default_memory_pool.free_all_blocks()
     return cp.swapaxes(reconstruction,0,1)
@@ -173,18 +179,21 @@ def CGLS(
     """
     RecToolsCP = _instantiate_iterative_recon_class(data, angles, center, recon_size, gpu_id, datafidelity='LS')
 
-    _data_ = {"projection_norm_data": data}  # data dictionary
-    _algorithm_ = {"iterations": iterations, "nonnegativity": nonnegativity}
+    _data_ = {"projection_norm_data": data,
+              "data_axes_labels_order": input_data_axis_labels,
+              }  # data dictionary
+    _algorithm_ = {"iterations": iterations,
+                   "nonnegativity": nonnegativity}
     reconstruction = RecToolsCP.CGLS(_data_, _algorithm_)
     cp._default_memory_pool.free_all_blocks()    
     return cp.swapaxes(reconstruction,0,1)
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 
 def _instantiate_direct_recon_class(data: cp.ndarray,
-                               angles: np.ndarray,
-                               center: Optional[float] = None,
-                               recon_size: Optional[int] = None,
-                               gpu_id: int = 0) -> type[RecToolsDIRCuPy]:
+                                    angles: np.ndarray,
+                                    center: Optional[float] = None,
+                                    recon_size: Optional[int] = None,
+                                    gpu_id: int = 0) -> type[RecToolsDIRCuPy]:
     """instantiate ToMoBAR's direct recon class
 
     Args:
@@ -195,10 +204,8 @@ def _instantiate_direct_recon_class(data: cp.ndarray,
         gpu_id (int, optional): gpu ID. Defaults to 0.
 
     Returns:
-        type[RecToolsDIRCuPy]: an instance of the class
+        type[RecToolsDIRCuPy]: an instance of the direct recon class
     """
-    input_data_axis_labels=["angles", "detY", "detX"]  # set the labels of the input data
-
     if center is None:
         center = data.shape[2] // 2  # making a crude guess
     if recon_size is None:
@@ -208,17 +215,16 @@ def _instantiate_direct_recon_class(data: cp.ndarray,
                                  CenterRotOffset=data.shape[2] / 2 - center - 0.5,  # Center of Rotation scalar or a vector
                                  AnglesVec=-angles,  # A vector of projection angles in radians
                                  ObjSize=recon_size,  # Reconstructed object dimensions (scalar)
-                                 device_projector=gpu_id,
-                                 data_axis_labels=input_data_axis_labels,
+                                 device_projector=gpu_id,                                 
                                  )
     return RecToolsCP
 
 def _instantiate_iterative_recon_class(data: cp.ndarray,
-                               angles: np.ndarray,
-                               center: Optional[float] = None,
-                               recon_size: Optional[int] = None,                               
-                               gpu_id: int = 0,
-                               datafidelity: str = 'LS') -> type[RecToolsIRCuPy]:
+                                        angles: np.ndarray,
+                                        center: Optional[float] = None,
+                                        recon_size: Optional[int] = None,
+                                        gpu_id: int = 0,
+                                        datafidelity: str = 'LS') -> type[RecToolsIRCuPy]:
     """instantiate ToMoBAR's iterative recon class
 
     Args:
@@ -230,10 +236,8 @@ def _instantiate_iterative_recon_class(data: cp.ndarray,
         gpu_id (int, optional): gpu ID. Defaults to 0.
 
     Returns:
-        type[RecToolsIRCuPy]: an instance of the class
+        type[RecToolsIRCuPy]: an instance of the iterative class
     """
-    input_data_axis_labels=["angles", "detY", "detX"]  # set the labels of the input data
-
     if center is None:
         center = data.shape[2] // 2  # making a crude guess
     if recon_size is None:
@@ -245,6 +249,5 @@ def _instantiate_iterative_recon_class(data: cp.ndarray,
                                  ObjSize=recon_size,  # Reconstructed object dimensions (scalar)
                                  datafidelity=datafidelity,
                                  device_projector=gpu_id,
-                                 data_axis_labels=input_data_axis_labels,
                                  )
     return RecToolsCP
