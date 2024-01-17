@@ -150,27 +150,17 @@ def FBP_CIL(
     np.ndarray
         The FBP reconstructed volume as a NumPy array.
     """
-    # objsize N by N
-    # data dimension order: vertical angle horizontal
     if center is None:
         center = data.shape[2] // 2  # making a crude guess
-        
-    # RecToolsCP = RecToolsIRCuPy(DetectorsDimH=data.shape[2],  # Horizontal detector dimension
-    #                              DetectorsDimV=data.shape[1],  # Vertical detector dimension (3D case)
-    #                              CenterRotOffset=data.shape[2] / 2 - center - 0.5,  # Center of Rotation scalar or a vector
-    #                              AnglesVec=-angles,  # A vector of projection angles in radians
-    #                              ObjSize=objsize,  # Reconstructed object dimensions (scalar)
-    #                              device_projector=gpu_id,
-    #                              )
-
+    
     from cil.framework import AcquisitionGeometry, ImageGeometry, AcquisitionData
     from cil.recon import FBP
 
     if num_slices is None:
         num_slices = data.shape[0]
+
     # create acquisition geometry
     if len(data.shape) > 2:
-        # detector
         det_y, num_angles, det_x = data.shape
         # this will depend on the assumptions of the data. Is beginning or middle of pixel?
         panel_centre = (det_x - 1) // 2
@@ -209,8 +199,13 @@ def FBP_CIL(
     if num_slices is not None:
         fbp.set_split_processing(slices_per_chunk=num_slices)
 
+    if gpu_id is not None:
+        import astra
+        astra.set_gpu_index(gpu_id)
+    
     reconstruction = fbp.run(verbose=0)
 
+    # return numpy array
     return reconstruction.as_array()
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 
