@@ -150,8 +150,68 @@ def FBP_CIL(
     np.ndarray
         The FBP reconstructed volume as a NumPy array.
     """
-    reconstruction = None
-    return reconstruction
+    # objsize N by N
+    # data dimension order: vertical angle horizontal
+    if center is None:
+        center = data.shape[2] // 2  # making a crude guess
+        
+    # RecToolsCP = RecToolsIRCuPy(DetectorsDimH=data.shape[2],  # Horizontal detector dimension
+    #                              DetectorsDimV=data.shape[1],  # Vertical detector dimension (3D case)
+    #                              CenterRotOffset=data.shape[2] / 2 - center - 0.5,  # Center of Rotation scalar or a vector
+    #                              AnglesVec=-angles,  # A vector of projection angles in radians
+    #                              ObjSize=objsize,  # Reconstructed object dimensions (scalar)
+    #                              device_projector=gpu_id,
+    #                              )
+
+    from cil.framework import AcquisitionGeometry, ImageGeometry, AcquisitionData
+    from cil.recon import FBP
+
+    if num_slices is None:
+        num_slices = data.shape[0]
+    # create acquisition geometry
+    if len(data.shape) > 2:
+        # detector
+        det_y, num_angles, det_x = data.shape
+        # this will depend on the assumptions of the data. Is beginning or middle of pixel?
+        panel_centre = (det_x - 1) // 2
+        ag = AcquisitionGeometry.create_Parallel3D(rotation_axis_position=(center - panel_centre, 0, 0))
+        ag.set_panel(num_pixels=(det_x, det_y), pixel_size=(1.,1.))
+        
+        if objsize is not None:
+            ig = ImageGeometry(voxel_num_x=objsize, voxel_num_y=objsize, voxel_num_z=det_y, \
+                               voxel_size_x=1., voxel_size_y=1., voxel_size_z=1.)
+        
+    else:
+        num_angles, det_x = data.shape
+        # this will depend on the assumptions of the data. Is beginning or middle of pixel?
+        panel_centre = (det_x - 1) // 2
+        ag = AcquisitionGeometry.create_Parallel2D(rotation_axis_position=(center - panel_centre, 0))
+        ag.set_panel(num_pixels=det_x, pixel_size=1.)
+        
+        if objsize is not None:
+            ig = ImageGeometry(voxel_num_x=objsize, voxel_num_y=objsize, \
+                               voxel_size_x=1., voxel_size_y=1.)
+
+    ag.set_angles(angles, angle_unit='radian')
+
+    if objsize is None:
+        ig = ag.get_ImageGeometry()
+
+    # create acquisition data
+    adata = AcquisitionData(data, geometry=ag, deep_copy=False)
+    
+    # make sure the data is in the correct order
+    adata.reorder(order='astra')
+
+    # create the FBP recon with backend ASTRA
+    fbp = FBP(input=adata, image_geometry=ig, filter=filter, backend='astra')
+
+    if num_slices is not None:
+        fbp.set_split_processing(slices_per_chunk=num_slices)
+
+    reconstruction = fbp.run(verbose=0)
+
+    return reconstruction.as_array()
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 
 def _calc_max_slices_SIRT(
