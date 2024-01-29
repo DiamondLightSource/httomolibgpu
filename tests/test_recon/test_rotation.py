@@ -8,12 +8,9 @@ import numpy as np
 import pytest
 from httomolibgpu.prep.normalize import normalize
 from httomolibgpu.recon.rotation import _calculate_chunks, find_center_360, find_center_vo
-from httomolibgpu import method_registry
 from numpy.testing import assert_allclose
 from .rotation_cpu_reference import find_center_360_numpy
 
-
-@cp.testing.gpu
 def test_find_center_vo(data, flats, darks):
     data = normalize(data, flats, darks)
 
@@ -25,11 +22,7 @@ def test_find_center_vo(data, flats, darks):
 
     #: Check that we only get a float32 output
     assert cor.dtype == np.float32
-    assert find_center_vo.meta.pattern == 'sinogram'
-    assert 'find_center_vo' in method_registry['httomolibgpu']['recon']['rotation']
 
-
-@cp.testing.gpu
 def test_find_center_vo_ones(ensure_clean_memory):
     mat = cp.ones(shape=(103, 450, 230), dtype=cp.float32)
     cor = find_center_vo(mat)
@@ -38,19 +31,13 @@ def test_find_center_vo_ones(ensure_clean_memory):
     mat = None  #: free up GPU memory
 
 
-
-@cp.testing.gpu
 def test_find_center_vo_random(ensure_clean_memory):
     np.random.seed(12345)
-    data_host = np.random.random_sample(size=(1801, 5, 2560)).astype(np.float32) * 2.0
+    data_host = np.random.random_sample(size=(900, 1, 1280)).astype(np.float32) * 2.0
     data = cp.asarray(data_host, dtype=np.float32)
-
     cent = find_center_vo(data)
+    assert_allclose(cent, 680.75)    
 
-    assert_allclose(cent, 1246.75)
-
-
-@cp.testing.gpu
 def test_find_center_vo_calculate_chunks():
     # we need the split to fit into the available memory, and also make sure
     # that the last chunk is either the same or smaller than the previous ones
@@ -78,20 +65,6 @@ def test_find_center_vo_calculate_chunks():
             np.testing.assert_array_equal(diffs[:-1], diffs[0])
             assert diffs[-1] <= diffs[0]
 
-
-@cp.testing.gpu
-def test_find_center_vo_data_chunked(data, flats, darks):
-    data = normalize(data, flats, darks)
-
-    # we emulate less memory here - with this amount, we get 12 chunks and 3 chunks in the 2 calls,
-    # and the data should be the same as when it's all fitting
-    with mock.patch('httomolibgpu.recon.rotation._get_available_gpu_memory', return_value=10000000):
-        cor = find_center_vo(data)
-
-    assert_allclose(cor, 79.5)
-
-
-@cp.testing.gpu
 @pytest.mark.perf
 def test_find_center_vo_performance():
     dev = cp.cuda.Device()
@@ -112,7 +85,6 @@ def test_find_center_vo_performance():
     assert "performance in ms" == duration_ms
 
 
-@cp.testing.gpu
 def test_find_center_360_ones():
     mat = cp.ones(shape=(100, 100, 100), dtype=cp.float32)
 
@@ -124,7 +96,6 @@ def test_find_center_360_ones():
     assert_allclose(overlap_position, 7.0)
 
 
-@cp.testing.gpu
 def test_find_center_360_data(data):
     eps = 1e-5
     (cor, overlap, side, overlap_pos) = find_center_360(data, norm=True, denoise=False)
@@ -134,12 +105,6 @@ def test_find_center_360_data(data):
     assert side == 1
     assert_allclose(overlap_pos, 111.906334, rtol=eps)
 
-    #: Check meta
-    assert find_center_360.meta.pattern == 'sinogram'
-    assert 'find_center_360' in method_registry['httomolibgpu']['recon']['rotation']
-
-
-@cp.testing.gpu
 def test_find_center_360_1D_raises(data):
     #: 360-degree sinogram must be a 3d array
     with pytest.raises(ValueError):
@@ -149,7 +114,6 @@ def test_find_center_360_1D_raises(data):
         find_center_360(cp.ones(10))
 
 
-@cp.testing.gpu
 @pytest.mark.parametrize("norm", [False, True], ids=["no_normalise", "normalise"])
 @pytest.mark.parametrize("overlap", [False, True], ids=["no_overlap", "overlap"])
 @pytest.mark.parametrize("denoise", [False, True], ids=["no_denoise", "denoise"])

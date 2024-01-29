@@ -29,15 +29,12 @@ import numpy as np
 import nvtx
 
 from httomolibgpu.cuda_kernels import load_cuda_module
-from httomolibgpu.decorator import calc_max_slices_default, method_all
 
 __all__ = [
     "median_filter3d",
     "remove_outlier3d",
 ]
 
-
-@method_all(calc_max_slices=calc_max_slices_default)
 @nvtx.annotate()
 def median_filter3d(
     data: cp.ndarray, kernel_size: int = 3, dif: float = 0.0
@@ -102,8 +99,6 @@ def median_filter3d(
 
     return out
 
-
-@method_all(calc_max_slices=calc_max_slices_default)
 def remove_outlier3d(
     data: cp.ndarray, kernel_size: int = 3, dif: float = 0.1
 ) -> cp.ndarray:

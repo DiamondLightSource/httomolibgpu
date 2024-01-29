@@ -24,29 +24,12 @@ import cupy as cp
 import numpy as np
 import nvtx
 from typing import Literal, Tuple
-from httomolibgpu.decorator import method_sino
 
 __all__ = [
     "sino_360_to_180",
 ]
 
 
-def _calc_max_slices_sino_360_to_180(
-    other_dims: Tuple[int, int], dtype: np.dtype, available_memory: int, **kwargs
-) -> Tuple[int, np.dtype]:
-    assert 'overlap' in kwargs, "Overlap not given"
-    overlap = int(np.round(kwargs['overlap']))
-    in_slice = np.prod(other_dims) * dtype.itemsize
-    out_slice = other_dims[0] * (other_dims[1] * 2 - overlap) / 2 * dtype.itemsize
-    # we have to leave this as 64bit to match tomopy?
-    weights = overlap * np.float64().nbytes
-
-    available_memory -= weights
-    return int(np.floor(available_memory / (in_slice + out_slice))), dtype
-
-
-
-@method_sino(_calc_max_slices_sino_360_to_180)
 @nvtx.annotate()
 def sino_360_to_180(
     data: cp.ndarray, overlap: int = 0, rotation: Literal["left", "right"] = "left"
