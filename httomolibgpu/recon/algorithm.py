@@ -146,6 +146,7 @@ def FBP_CIL(
             rotation_axis_position=(center - panel_centre, 0, 0)
         )
         ag.set_panel(num_pixels=(det_x, det_y), pixel_size=(1.0, 1.0))
+        ag.dimension_labels = [AcquisitionGeometry.VERTICAL, AcquisitionGeometry.ANGLE, AcquisitionGeometry.HORIZONTAL]
 
         if objsize is not None:
             ig = ImageGeometry(
@@ -165,6 +166,7 @@ def FBP_CIL(
             rotation_axis_position=(center - panel_centre, 0)
         )
         ag.set_panel(num_pixels=det_x, pixel_size=1.0)
+        ag.dimension_labels = [AcquisitionGeometry.ANGLE, AcquisitionGeometry.HORIZONTAL]
 
         if objsize is not None:
             ig = ImageGeometry(
