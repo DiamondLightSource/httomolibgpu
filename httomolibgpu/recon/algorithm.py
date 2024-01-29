@@ -37,7 +37,6 @@ __all__ = [
     "FBP",
     "SIRT",
     "CGLS",
-    "FBP_CIL",
 ]
 
 input_data_axis_labels=["angles", "detY", "detX"]  # set the labels of the input data
@@ -87,100 +86,6 @@ def FBP(
     cp._default_memory_pool.free_all_blocks()
     return cp.swapaxes(reconstruction,0,1)
 
-@method_sino(_calc_max_slices_FBP)
-@nvtx.annotate()
-def FBP_CIL(
-    data: np.ndarray,
-    angles: np.ndarray,
-    center: Optional[float] = None,
-    objsize: Optional[int] = None,
-    gpu_id: int = 0,
-    filter: str='ram-lak',
-    num_slices: int = None,
-) -> np.ndarray:
-    """
-    Perform Filtered Backprojection (FBP) reconstruction using CIL.
-
-    Parameters
-    ----------
-    data : np.ndarray
-        Projection data as a NumPy array.
-    angles : np.ndarray
-        An array of angles given in radians.
-    center : float, optional
-        The center of rotation (CoR).
-    objsize : int, optional
-        The size in pixels of the reconstructed object.
-    gpu_id : int, optional
-        A GPU device index to perform operation on.
-    filter : str, optional
-        The Filter of the FBP algorithm, default 'ram-lak'
-    num_slices : int, optional
-        The number of slices to process in each chunk.
-    
-
-    Returns
-    -------
-    np.ndarray
-        The FBP reconstructed volume as a NumPy array.
-    """
-    if center is None:
-        center = data.shape[2] // 2  # making a crude guess
-    
-    from cil.framework import AcquisitionGeometry, ImageGeometry, AcquisitionData
-    from cil.recon import FBP
-
-    if num_slices is None:
-        num_slices = data.shape[0]
-
-    # create acquisition geometry
-    if len(data.shape) > 2:
-        det_y, num_angles, det_x = data.shape
-        # this will depend on the assumptions of the data. Is beginning or middle of pixel?
-        panel_centre = (det_x - 1) // 2
-        ag = AcquisitionGeometry.create_Parallel3D(rotation_axis_position=(center - panel_centre, 0, 0))
-        ag.set_panel(num_pixels=(det_x, det_y), pixel_size=(1.,1.))
-        
-        if objsize is not None:
-            ig = ImageGeometry(voxel_num_x=objsize, voxel_num_y=objsize, voxel_num_z=det_y, \
-                               voxel_size_x=1., voxel_size_y=1., voxel_size_z=1.)
-        
-    else:
-        num_angles, det_x = data.shape
-        # this will depend on the assumptions of the data. Is beginning or middle of pixel?
-        panel_centre = (det_x - 1) // 2
-        ag = AcquisitionGeometry.create_Parallel2D(rotation_axis_position=(center - panel_centre, 0))
-        ag.set_panel(num_pixels=det_x, pixel_size=1.)
-        
-        if objsize is not None:
-            ig = ImageGeometry(voxel_num_x=objsize, voxel_num_y=objsize, \
-                               voxel_size_x=1., voxel_size_y=1.)
-
-    ag.set_angles(angles, angle_unit='radian')
-
-    if objsize is None:
-        ig = ag.get_ImageGeometry()
-
-    # create acquisition data
-    adata = AcquisitionData(data, geometry=ag, deep_copy=False)
-    
-    # make sure the data is in the correct order
-    adata.reorder(order='astra')
-
-    # create the FBP recon with backend ASTRA
-    fbp = FBP(input=adata, image_geometry=ig, filter=filter, backend='astra')
-
-    if num_slices is not None:
-        fbp.set_split_processing(slices_per_chunk=num_slices)
-
-    if gpu_id is not None:
-        import astra
-        astra.set_gpu_index(gpu_id)
-    
-    reconstruction = fbp.run(verbose=0)
-
-    # return numpy array
-    return reconstruction.as_array()
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 
 ## %%%%%%%%%%%%%%%%%%%%%%% SIRT reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
@@ -346,4 +251,3 @@ def _instantiate_iterative_recon_class(data: cp.ndarray,
                                  device_projector=gpu_id,
                                  )
     return RecToolsCP
-
