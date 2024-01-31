@@ -39,7 +39,8 @@ __all__ = [
     "CGLS",
 ]
 
-input_data_axis_labels=["angles", "detY", "detX"]  # set the labels of the input data
+input_data_axis_labels = ["angles", "detY", "detX"]  # set the labels of the input data
+
 
 ## %%%%%%%%%%%%%%%%%%%%%%% FBP reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 @nvtx.annotate()
@@ -64,12 +65,12 @@ def FBP(
     center : float, optional
         The center of rotation (CoR).
     recon_size : int, optional
-        The [recon_size, recon_size] shape of the reconstructed slice in pixels. 
+        The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
     recon_mask_radius: float, optional
         The radius of the circular mask that applies to the reconstructed slice in order to crop
-        out some undesirable artefacts. The values outside the diameter will be set to zero. 
-        None by default, to see the effect of the mask try setting the value in the range [0.7-1.0]. 
+        out some undesirable artefacts. The values outside the diameter will be set to zero.
+        None by default, to see the effect of the mask try setting the value in the range [0.7-1.0].
     gpu_id : int, optional
         A GPU device index to perform operation on.
 
@@ -78,15 +79,18 @@ def FBP(
     cp.ndarray
         The FBP reconstructed volume as a CuPy array.
     """
-    RecToolsCP = _instantiate_direct_recon_class(data, angles, center, recon_size, gpu_id)   
+    RecToolsCP = _instantiate_direct_recon_class(
+        data, angles, center, recon_size, gpu_id
+    )
 
-    reconstruction = RecToolsCP.FBP(data, 
-                                    recon_mask_radius=recon_mask_radius,
-                                    data_axes_labels_order=input_data_axis_labels)
+    reconstruction = RecToolsCP.FBP(
+        data,
+        recon_mask_radius=recon_mask_radius,
+        data_axes_labels_order=input_data_axis_labels,
+    )
     cp._default_memory_pool.free_all_blocks()
-    return cp.swapaxes(reconstruction,0,1)
+    return cp.require(cp.swapaxes(reconstruction, 0, 1), requirements="C")
 
-## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 
 ## %%%%%%%%%%%%%%%%%%%%%%% SIRT reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 @nvtx.annotate()
@@ -94,7 +98,7 @@ def SIRT(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
-    recon_size: Optional[int] = None,    
+    recon_size: Optional[int] = None,
     iterations: Optional[int] = 300,
     nonnegativity: Optional[bool] = True,
     gpu_id: int = 0,
@@ -112,7 +116,7 @@ def SIRT(
     center : float, optional
         The center of rotation (CoR).
     recon_size : int, optional
-        The [recon_size, recon_size] shape of the reconstructed slice in pixels. 
+        The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
     iterations : int, optional
         The number of SIRT iterations.
@@ -127,17 +131,22 @@ def SIRT(
         The SIRT reconstructed volume as a CuPy array.
     """
 
-    RecToolsCP = _instantiate_iterative_recon_class(data, angles, center, recon_size, gpu_id, datafidelity='LS')
+    RecToolsCP = _instantiate_iterative_recon_class(
+        data, angles, center, recon_size, gpu_id, datafidelity="LS"
+    )
 
-    _data_ = {"projection_norm_data": data,
-              "data_axes_labels_order": input_data_axis_labels,
-              }  # data dictionary
-    _algorithm_ = {"iterations": iterations, 
-                   "nonnegativity": nonnegativity,                   
-                   }
+    _data_ = {
+        "projection_norm_data": data,
+        "data_axes_labels_order": input_data_axis_labels,
+    }  # data dictionary
+    _algorithm_ = {
+        "iterations": iterations,
+        "nonnegativity": nonnegativity,
+    }
     reconstruction = RecToolsCP.SIRT(_data_, _algorithm_)
     cp._default_memory_pool.free_all_blocks()
-    return cp.swapaxes(reconstruction,0,1)
+    return cp.require(cp.swapaxes(reconstruction, 0, 1), requirements="C")
+
 
 ## %%%%%%%%%%%%%%%%%%%%%%% CGLS reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 @nvtx.annotate()
@@ -163,7 +172,7 @@ def CGLS(
     center : float, optional
         The center of rotation (CoR).
     recon_size : int, optional
-        The [recon_size, recon_size] shape of the reconstructed slice in pixels. 
+        The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
     iterations : int, optional
         The number of CGLS iterations.
@@ -177,23 +186,28 @@ def CGLS(
     cp.ndarray
         The CGLS reconstructed volume as a CuPy array.
     """
-    RecToolsCP = _instantiate_iterative_recon_class(data, angles, center, recon_size, gpu_id, datafidelity='LS')
+    RecToolsCP = _instantiate_iterative_recon_class(
+        data, angles, center, recon_size, gpu_id, datafidelity="LS"
+    )
 
-    _data_ = {"projection_norm_data": data,
-              "data_axes_labels_order": input_data_axis_labels,
-              }  # data dictionary
-    _algorithm_ = {"iterations": iterations,
-                   "nonnegativity": nonnegativity}
+    _data_ = {
+        "projection_norm_data": data,
+        "data_axes_labels_order": input_data_axis_labels,
+    }  # data dictionary
+    _algorithm_ = {"iterations": iterations, "nonnegativity": nonnegativity}
     reconstruction = RecToolsCP.CGLS(_data_, _algorithm_)
-    cp._default_memory_pool.free_all_blocks()    
-    return cp.swapaxes(reconstruction,0,1)
-## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+    cp._default_memory_pool.free_all_blocks()
+    return cp.require(cp.swapaxes(reconstruction, 0, 1), requirements="C")
 
-def _instantiate_direct_recon_class(data: cp.ndarray,
-                                    angles: np.ndarray,
-                                    center: Optional[float] = None,
-                                    recon_size: Optional[int] = None,
-                                    gpu_id: int = 0) -> type[RecToolsDIRCuPy]:
+
+## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+def _instantiate_direct_recon_class(
+    data: cp.ndarray,
+    angles: np.ndarray,
+    center: Optional[float] = None,
+    recon_size: Optional[int] = None,
+    gpu_id: int = 0,
+) -> type[RecToolsDIRCuPy]:
     """instantiate ToMoBAR's direct recon class
 
     Args:
@@ -210,21 +224,27 @@ def _instantiate_direct_recon_class(data: cp.ndarray,
         center = data.shape[2] // 2  # making a crude guess
     if recon_size is None:
         recon_size = data.shape[2]
-    RecToolsCP = RecToolsDIRCuPy(DetectorsDimH=data.shape[2],  # Horizontal detector dimension
-                                 DetectorsDimV=data.shape[1],  # Vertical detector dimension (3D case)
-                                 CenterRotOffset=data.shape[2] / 2 - center - 0.5,  # Center of Rotation scalar or a vector
-                                 AnglesVec=-angles,  # A vector of projection angles in radians
-                                 ObjSize=recon_size,  # Reconstructed object dimensions (scalar)
-                                 device_projector=gpu_id,                                 
-                                 )
+    RecToolsCP = RecToolsDIRCuPy(
+        DetectorsDimH=data.shape[2],  # Horizontal detector dimension
+        DetectorsDimV=data.shape[1],  # Vertical detector dimension (3D case)
+        CenterRotOffset=data.shape[2] / 2
+        - center
+        - 0.5,  # Center of Rotation scalar or a vector
+        AnglesVec=-angles,  # A vector of projection angles in radians
+        ObjSize=recon_size,  # Reconstructed object dimensions (scalar)
+        device_projector=gpu_id,
+    )
     return RecToolsCP
 
-def _instantiate_iterative_recon_class(data: cp.ndarray,
-                                        angles: np.ndarray,
-                                        center: Optional[float] = None,
-                                        recon_size: Optional[int] = None,
-                                        gpu_id: int = 0,
-                                        datafidelity: str = 'LS') -> type[RecToolsIRCuPy]:
+
+def _instantiate_iterative_recon_class(
+    data: cp.ndarray,
+    angles: np.ndarray,
+    center: Optional[float] = None,
+    recon_size: Optional[int] = None,
+    gpu_id: int = 0,
+    datafidelity: str = "LS",
+) -> type[RecToolsIRCuPy]:
     """instantiate ToMoBAR's iterative recon class
 
     Args:
@@ -242,12 +262,15 @@ def _instantiate_iterative_recon_class(data: cp.ndarray,
         center = data.shape[2] // 2  # making a crude guess
     if recon_size is None:
         recon_size = data.shape[2]
-    RecToolsCP = RecToolsIRCuPy(DetectorsDimH=data.shape[2],  # Horizontal detector dimension
-                                 DetectorsDimV=data.shape[1],  # Vertical detector dimension (3D case)
-                                 CenterRotOffset=data.shape[2] / 2 - center - 0.5,  # Center of Rotation scalar or a vector
-                                 AnglesVec=-angles,  # A vector of projection angles in radians
-                                 ObjSize=recon_size,  # Reconstructed object dimensions (scalar)
-                                 datafidelity=datafidelity,
-                                 device_projector=gpu_id,
-                                 )
+    RecToolsCP = RecToolsIRCuPy(
+        DetectorsDimH=data.shape[2],  # Horizontal detector dimension
+        DetectorsDimV=data.shape[1],  # Vertical detector dimension (3D case)
+        CenterRotOffset=data.shape[2] / 2
+        - center
+        - 0.5,  # Center of Rotation scalar or a vector
+        AnglesVec=-angles,  # A vector of projection angles in radians
+        ObjSize=recon_size,  # Reconstructed object dimensions (scalar)
+        datafidelity=datafidelity,
+        device_projector=gpu_id,
+    )
     return RecToolsCP
