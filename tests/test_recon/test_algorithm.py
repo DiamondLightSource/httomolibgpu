@@ -18,6 +18,7 @@ def test_reconstruct_FBP_1(data, flats, darks, ensure_clean_memory):
         np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
         79.5,
     )
+    assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
     assert_allclose(np.mean(recon_data), 0.000798, rtol=1e-07, atol=1e-6)
     assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.102106, rtol=1e-05)
@@ -46,17 +47,16 @@ def test_reconstruct_FBP_2(data, flats, darks, ensure_clean_memory):
 def test_reconstruct_FBP_3(data, flats, darks, ensure_clean_memory):
     recon_data = FBP(
         normalize_cupy(data, flats, darks, cutoff=20.5, minus_log=False),
-        np.linspace(5.0 * np.pi / 360.0, 180.0 * np.pi / 360.0,
-                    data.shape[0]),
-                    79,  # center
-                    210, # recon_size
-                    0.9, # recon_mask_radius
+        np.linspace(5.0 * np.pi / 360.0, 180.0 * np.pi / 360.0, data.shape[0]),
+        79,  # center
+        210,  # recon_size
+        0.9,  # recon_mask_radius
     )
 
     recon_data = recon_data.get()
     assert_allclose(np.mean(recon_data), -0.000252, atol=1e-6)
     assert_allclose(
-         np.mean(recon_data, axis=(0, 2)).sum(), -0.03229, rtol=1e-06, atol=1e-5
+        np.mean(recon_data, axis=(0, 2)).sum(), -0.03229, rtol=1e-06, atol=1e-5
     )
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (210, 128, 210)
@@ -72,6 +72,7 @@ def test_reconstruct_SIRT(data, flats, darks, ensure_clean_memory):
         iterations=10,
         nonnegativity=True,
     )
+    assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
     assert_allclose(np.mean(recon_data), 0.0018447536, rtol=1e-07, atol=1e-6)
     assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.23612846, rtol=1e-05)
@@ -88,10 +89,12 @@ def test_reconstruct_CGLS(data, flats, darks, ensure_clean_memory):
         iterations=5,
         nonnegativity=True,
     )
+    assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
     assert_allclose(np.mean(recon_data), 0.0021818762, rtol=1e-07, atol=1e-6)
     assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.279187, rtol=1e-03)
     assert recon_data.dtype == np.float32
+
 
 @pytest.mark.perf
 def test_FBP_performance(ensure_clean_memory):

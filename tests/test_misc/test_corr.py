@@ -32,8 +32,14 @@ def test_median_filter3d_vs_scipy(host_data, ensure_clean_memory):
 
 @pytest.mark.perf
 @pytest.mark.parametrize("kernel_size", [3, 5])
-def test_median_filter3d_benchmark(host_data, ensure_clean_memory, kernel_size, benchmark):
-    benchmark(median_filter3d, cp.asarray(host_data, dtype=cp.float32), kernel_size=kernel_size)
+def test_median_filter3d_benchmark(
+    host_data, ensure_clean_memory, kernel_size, benchmark
+):
+    benchmark(
+        median_filter3d,
+        cp.asarray(host_data, dtype=cp.float32),
+        kernel_size=kernel_size,
+    )
 
 
 @pytest.mark.perf
@@ -74,11 +80,13 @@ def test_median_filter3d(data):
     assert_allclose(np.min(filtered_data), 89.0)
 
     assert filtered_data.dtype == np.uint16
+    assert filtered_data.flags.c_contiguous
 
     assert (
         median_filter3d(data.astype(cp.float32), kernel_size=5, dif=1.5).get().dtype
         == np.float32
     )
+
 
 @pytest.mark.perf
 def test_median_filter3d_performance(ensure_clean_memory):
@@ -107,7 +115,7 @@ def test_remove_outlier3d(data):
     assert filtered_data.ndim == 3
     assert_allclose(np.mean(filtered_data), 808.753494, rtol=eps)
     assert_allclose(np.mean(filtered_data, axis=(1, 2)).sum(), 145575.628906)
-    assert_allclose(np.median(filtered_data), 976.)
+    assert_allclose(np.median(filtered_data), 976.0)
     assert_allclose(np.median(filtered_data, axis=(1, 2)).sum(), 175741.5)
 
     assert filtered_data.dtype == np.uint16
@@ -116,3 +124,4 @@ def test_remove_outlier3d(data):
         remove_outlier3d(data.astype(cp.float32), kernel_size=5, dif=1.5).get().dtype
         == np.float32
     )
+    assert filtered_data.flags.c_contiguous

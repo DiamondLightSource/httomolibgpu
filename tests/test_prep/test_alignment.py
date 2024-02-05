@@ -9,6 +9,7 @@ from httomolibgpu.prep.alignment import (
 from imageio.v2 import imread
 from numpy.testing import assert_allclose
 
+
 @pytest.mark.parametrize(
     "image, max_value, mean_value",
     [
@@ -41,7 +42,8 @@ def test_correct_distortion(
 
     preview = {"starts": [0, 0], "stops": [im.shape[0], im.shape[1]], "steps": [1, 1]}
     corrected_data = implementation(im, distortion_coeffs_path, preview).get()
-    
+
     assert_allclose(np.mean(corrected_data), mean_value)
     assert np.max(corrected_data) == max_value
     assert corrected_data.dtype == np.uint8
+    assert corrected_data.flags.c_contiguous

@@ -48,6 +48,7 @@ def test_data_scaler(data, axis, ensure_clean_memory):
         assert_allclose(np.max(scaled_data), 1115.5359)
     assert_allclose(np.min(scaled_data), 0.0)
     assert scaled_data.dtype == np.float32
+    assert scaled_data.flags.c_contiguous
 
 
 @pytest.mark.parametrize("rotation", ["left", "right"])
