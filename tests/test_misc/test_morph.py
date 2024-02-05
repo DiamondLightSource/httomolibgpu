@@ -3,7 +3,8 @@ import cupy as cp
 import numpy as np
 from cupy.cuda import nvtx
 import pytest
-from httomolibgpu.misc.morph import sino_360_to_180
+from numpy.testing import assert_allclose
+from httomolibgpu.misc.morph import sino_360_to_180, data_scaler
 
 
 @pytest.mark.parametrize(
@@ -28,6 +29,25 @@ def test_sino_360_to_180_invalid(ensure_clean_memory, overlap, rotation):
 def test_sino_360_to_180_wrong_dims(ensure_clean_memory, shape):
     with pytest.raises(ValueError):
         sino_360_to_180(cp.ones(shape, dtype=cp.float32))
+
+
+@pytest.mark.parametrize("axis", [0, 1, 2])
+def test_data_scaler(data, axis, ensure_clean_memory):
+    newshape = (200, 250)
+    scaled_data = data_scaler(data, newshape=newshape, axis=axis, method="linear").get()
+
+    assert scaled_data.ndim == 3
+    if axis == 0:
+        assert scaled_data.shape == (180, newshape[0], newshape[1])
+        assert_allclose(np.max(scaled_data), 1113.2)
+    if axis == 1:
+        assert scaled_data.shape == (newshape[0], 128, newshape[1])
+        assert_allclose(np.max(scaled_data), 1118.0)
+    if axis == 2:
+        assert scaled_data.shape == (newshape[0], newshape[1], 160)
+        assert_allclose(np.max(scaled_data), 1115.5359)
+    assert_allclose(np.min(scaled_data), 0.0)
+    assert scaled_data.dtype == np.float32
 
 
 @pytest.mark.parametrize("rotation", ["left", "right"])

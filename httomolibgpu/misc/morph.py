@@ -20,13 +20,17 @@
 # ---------------------------------------------------------------------------
 """Module for data type morphing functions"""
 
-import cupy as cp 
+import cupy as cp
 import numpy as np
 import nvtx
 from typing import Literal, Tuple
 
+from cupyx.scipy.interpolate import interpn
+
+
 __all__ = [
     "sino_360_to_180",
+    "data_scaler",
 ]
 
 
@@ -88,3 +92,109 @@ def sino_360_to_180(
         raise ValueError('rotation parameter must be either "left" or "right"')
 
     return out
+
+
+@nvtx.annotate()
+def data_scaler(
+    data: cp.ndarray, newshape: tuple, axis: int = 1, method: str = "linear"
+) -> cp.ndarray:
+    """Down/Up-scaler of the input data implemented through interpn function.
+       Please note that the method will leave the specified axis
+       dimension unchanged, e.g. (128,128,128) -> (128,256,256) for axis = 0 and
+       newshape = (256,256).
+
+    Args:
+        data (cp.ndarray): 3d cupy array.
+        newshape (tuple): 2d tuple that defines the new shape size.
+        axis (int, optional): Axis along which the scaling is applied. Defaults to 1.
+        method (str, optional): Selection of interpn method for interpolation. Defaults to 'linear'.
+
+    Raises:
+        ValueError: When data is not 3D
+
+    Returns:
+        cp.ndarray: Up/Down-scaled 3D cupy array
+    """
+
+    if data.ndim != 3:
+        raise ValueError("only 3D data is supported")
+
+    N, M, Z = cp.shape(data)
+
+    if axis == 0:
+        xaxis = cp.arange(M) - M / 2
+        yaxis = cp.arange(Z) - Z / 2
+        step_x = M / newshape[0]
+        step_y = Z / newshape[1]
+        scaled_data = cp.empty((N, newshape[0], newshape[1]), dtype=cp.float32)
+    elif axis == 1:
+        xaxis = cp.arange(N) - N / 2
+        yaxis = cp.arange(Z) - Z / 2
+        step_x = N / newshape[0]
+        step_y = Z / newshape[1]
+        scaled_data = cp.empty((newshape[0], M, newshape[1]), dtype=cp.float32)
+    elif axis == 2:
+        xaxis = cp.arange(N) - N / 2
+        yaxis = cp.arange(M) - M / 2
+        step_x = N / newshape[0]
+        step_y = M / newshape[1]
+        scaled_data = cp.empty((newshape[0], newshape[1], Z), dtype=cp.float32)
+    else:
+        raise ValueError("Only 0,1,2 values for axes are supported")
+
+    points = (xaxis, yaxis)
+
+    scale_x = 2 / step_x
+    scale_y = 2 / step_y
+
+    xi = np.mgrid[
+        -newshape[0] / scale_x : newshape[0] / scale_x : step_x,
+        -newshape[1] / scale_y : newshape[1] / scale_y : step_y,
+    ]
+    xi_size = xi.size
+    xi = np.rollaxis(xi, 0, 3)
+    xi = np.reshape(xi, [xi_size // 2, 2])
+    xi = cp.asarray(xi, dtype=cp.float32, order="C")
+
+    if axis == 0:
+        for j in range(N):
+            res = interpn(
+                points,
+                data[j, :, :],
+                xi,
+                method=method,
+                bounds_error=False,
+                fill_value=0.0,
+            )
+            scaled_data[j, :, :] = cp.reshape(
+                res, [newshape[0], newshape[1]], order="C"
+            )
+    elif axis == 1:
+
+        for j in range(M):
+            res = interpn(
+                points,
+                data[:, j, :],
+                xi,
+                method=method,
+                bounds_error=False,
+                fill_value=0.0,
+            )
+            scaled_data[:, j, :] = cp.reshape(
+                res, [newshape[0], newshape[1]], order="C"
+            )
+    else:
+        for j in range(Z):
+            res = interpn(
+                points,
+                data[:, :, j],
+                xi,
+                method=method,
+                bounds_error=False,
+                fill_value=0.0,
+            )
+            scaled_data[:, :, j] = cp.reshape(
+                res, [newshape[0], newshape[1]], order="C"
+            )
+
+    return scaled_data
