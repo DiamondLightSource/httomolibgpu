@@ -30,7 +30,7 @@ from cupyx.scipy.interpolate import interpn
 
 __all__ = [
     "sino_360_to_180",
-    "data_scaler",
+    "data_resampler",
 ]
 
 
@@ -95,10 +95,10 @@ def sino_360_to_180(
 
 
 @nvtx.annotate()
-def data_scaler(
+def data_resampler(
     data: cp.ndarray, newshape: tuple, axis: int = 1, method: str = "linear"
 ) -> cp.ndarray:
-    """Down/Up-scaler of the input data implemented through interpn function.
+    """Down/Up-resampler of the input data implemented through interpn function.
        Please note that the method will leave the specified axis
        dimension unchanged, e.g. (128,128,128) -> (128,256,256) for axis = 0 and
        newshape = (256,256).
