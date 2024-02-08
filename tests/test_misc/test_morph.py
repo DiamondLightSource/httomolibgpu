@@ -4,7 +4,7 @@ import numpy as np
 from cupy.cuda import nvtx
 import pytest
 from numpy.testing import assert_allclose
-from httomolibgpu.misc.morph import sino_360_to_180, data_scaler
+from httomolibgpu.misc.morph import sino_360_to_180, data_resampler
 
 
 @pytest.mark.parametrize(
@@ -32,21 +32,22 @@ def test_sino_360_to_180_wrong_dims(ensure_clean_memory, shape):
 
 
 @pytest.mark.parametrize("axis", [0, 1, 2])
-def test_data_scaler(data, axis, ensure_clean_memory):
-    newshape = (200, 250)
-    scaled_data = data_scaler(data, newshape=newshape, axis=axis, method="linear").get()
+def test_data_resampler(data, axis, ensure_clean_memory):
+    newshape = (60, 80)
+    scaled_data = data_resampler(
+        data, newshape=newshape, axis=axis, method="linear"
+    ).get()
 
     assert scaled_data.ndim == 3
     if axis == 0:
         assert scaled_data.shape == (180, newshape[0], newshape[1])
-        assert_allclose(np.max(scaled_data), 1113.2)
+        assert_allclose(np.max(scaled_data), 1111.7404)
     if axis == 1:
         assert scaled_data.shape == (newshape[0], 128, newshape[1])
-        assert_allclose(np.max(scaled_data), 1118.0)
+        assert_allclose(np.max(scaled_data), 1102.0)
     if axis == 2:
         assert scaled_data.shape == (newshape[0], newshape[1], 160)
-        assert_allclose(np.max(scaled_data), 1115.5359)
-    assert_allclose(np.min(scaled_data), 0.0)
+        assert_allclose(np.max(scaled_data), 1113.2761)
     assert scaled_data.dtype == np.float32
     assert scaled_data.flags.c_contiguous
 

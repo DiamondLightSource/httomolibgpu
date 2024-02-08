@@ -147,10 +147,23 @@ def data_resampler(
     scale_x = 2 / step_x
     scale_y = 2 / step_y
 
-    xi = np.mgrid[
-        -newshape[0] / scale_x : newshape[0] / scale_x : step_x,
-        -newshape[1] / scale_y : newshape[1] / scale_y : step_y,
-    ]
+    y1 = np.linspace(
+        -newshape[0] / scale_x,
+        newshape[0] / scale_x - step_x,
+        num=newshape[0],
+        endpoint=False,
+    ).astype(np.float32)
+    x1 = np.linspace(
+        -newshape[1] / scale_y,
+        newshape[1] / scale_y - step_y,
+        num=newshape[1],
+        endpoint=False,
+    ).astype(np.float32)
+
+    xi_mesh = np.meshgrid(x1, y1)
+    xi = np.empty((2, newshape[0], newshape[1]), dtype=np.float32)
+    xi[0, :, :] = xi_mesh[1]
+    xi[1, :, :] = xi_mesh[0]
     xi_size = xi.size
     xi = np.rollaxis(xi, 0, 3)
     xi = np.reshape(xi, [xi_size // 2, 2])
