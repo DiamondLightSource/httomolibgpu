@@ -33,9 +33,9 @@ def test_sino_360_to_180_wrong_dims(ensure_clean_memory, shape):
 
 @pytest.mark.parametrize("axis", [0, 1, 2])
 def test_data_resampler(data, axis, ensure_clean_memory):
-    newshape = (60, 80)
+    newshape = [60, 80]
     scaled_data = data_resampler(
-        data, newshape=newshape, axis=axis, method="linear"
+        data, newshape=newshape, axis=axis, interpolation="linear"
     ).get()
 
     assert scaled_data.ndim == 3

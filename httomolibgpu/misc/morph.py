@@ -96,18 +96,18 @@ def sino_360_to_180(
 
 @nvtx.annotate()
 def data_resampler(
-    data: cp.ndarray, newshape: tuple, axis: int = 1, method: str = "linear"
+    data: cp.ndarray, newshape: list, axis: int = 1, interpolation: str = "linear"
 ) -> cp.ndarray:
     """Down/Up-resampler of the input data implemented through interpn function.
        Please note that the method will leave the specified axis
        dimension unchanged, e.g. (128,128,128) -> (128,256,256) for axis = 0 and
-       newshape = (256,256).
+       newshape = [256,256].
 
     Args:
         data (cp.ndarray): 3d cupy array.
-        newshape (tuple): 2d tuple that defines the new shape size.
+        newshape (list): 2d list that defines the 2D slice shape of new shape data.
         axis (int, optional): Axis along which the scaling is applied. Defaults to 1.
-        method (str, optional): Selection of interpn method for interpolation. Defaults to 'linear'.
+        interpolation (str, optional): Selection of interpolation method. Defaults to 'linear'.
 
     Raises:
         ValueError: When data is not 3D
@@ -175,7 +175,7 @@ def data_resampler(
                 points,
                 data[j, :, :],
                 xi,
-                method=method,
+                method=interpolation,
                 bounds_error=False,
                 fill_value=0.0,
             )
@@ -189,7 +189,7 @@ def data_resampler(
                 points,
                 data[:, j, :],
                 xi,
-                method=method,
+                method=interpolation,
                 bounds_error=False,
                 fill_value=0.0,
             )
@@ -202,7 +202,7 @@ def data_resampler(
                 points,
                 data[:, :, j],
                 xi,
-                method=method,
+                method=interpolation,
                 bounds_error=False,
                 fill_value=0.0,
             )
