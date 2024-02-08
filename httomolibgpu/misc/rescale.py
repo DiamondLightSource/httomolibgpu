@@ -1,6 +1,7 @@
 import cupy as cp
 import numpy as np
 from typing import Literal, Optional, Tuple, Union
+import nvtx
 
 __all__ = [
     "rescale_to_int",
@@ -19,6 +20,7 @@ rescale_kernel = cp.ElementwiseKernel(
     'rescale_to_int'
 )
 
+@nvtx.annotate()
 def rescale_to_int(data: cp.ndarray, 
             perc_range_min: float = 0.0,
             perc_range_max: float = 100.0,
