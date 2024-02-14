@@ -30,7 +30,9 @@ import nvtx
 import cupyx.scipy.ndimage as cpndi
 from cupy import ndarray
 from cupyx.scipy.ndimage import gaussian_filter, shift
-from skimage.registration import phase_cross_correlation
+
+#from skimage.registration import phase_cross_correlation
+from cucim.skimage.registration import phase_cross_correlation
 
 from httomolibgpu.cuda_kernels import load_cuda_module
 from httomolibgpu.decorator import method_sino
@@ -387,11 +389,16 @@ def find_center_pc(proj1, proj2, tol=0.5, rotc_guess=None):
     proj2 = cp.fliplr(proj2)
 
     # Determine shift between images using scikit-image pcm
-    skimage_shift = phase_cross_correlation(proj1.get(), proj2.get(), upsample_factor=1.0 / tol)
+    #shift = phase_cross_correlation(proj1.get(), proj2.get(), upsample_factor=1.0 / tol)
+    
+    # using cucim of rapids to do phase cross correlation
+    shift = phase_cross_correlation(reference_image=proj1,
+                                    moving_image=proj2,
+                                    upsample_factor=1.0/tol)
 
     # Compute center of rotation as the center of first image and the
     # registered translation with the second image
-    center = (proj1.shape[1] + skimage_shift[0][1] - 1.0) / 2.0
+    center = (proj1.shape[1] + shift[0][1] - 1.0) / 2.0
 
     return center + imgshift
 

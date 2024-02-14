@@ -135,6 +135,15 @@ def test_find_center_pc(data, flats, darks, ensure_clean_memory):
 
     assert_allclose(cor, 73., rtol=1e-7)
 
+def test_find_center_pc2(data, flats, darks, ensure_clean_memory):
+    data = normalize(data, flats, darks)
+    proj1 = data[0,:,:]
+    proj2 = data[179,:,:]
+
+    # --- testing the center of rotation on tomo_standard ---#
+    cor = find_center_pc(proj1, proj2)
+
+    assert_allclose(cor, 79.5, rtol=1e-7)
 
 @pytest.mark.perf
 def test_find_center_pc_performance(ensure_clean_memory):
