@@ -146,7 +146,11 @@ def FBP_CIL(
             rotation_axis_position=(center - panel_centre, 0, 0)
         )
         ag.set_panel(num_pixels=(det_x, det_y), pixel_size=(1.0, 1.0))
-        ag.dimension_labels = [AcquisitionGeometry.VERTICAL, AcquisitionGeometry.ANGLE, AcquisitionGeometry.HORIZONTAL]
+        ag.dimension_labels = [
+            AcquisitionGeometry.VERTICAL,
+            AcquisitionGeometry.ANGLE,
+            AcquisitionGeometry.HORIZONTAL,
+        ]
 
         if objsize is not None:
             ig = ImageGeometry(
@@ -166,7 +170,10 @@ def FBP_CIL(
             rotation_axis_position=(center - panel_centre, 0)
         )
         ag.set_panel(num_pixels=det_x, pixel_size=1.0)
-        ag.dimension_labels = [AcquisitionGeometry.ANGLE, AcquisitionGeometry.HORIZONTAL]
+        ag.dimension_labels = [
+            AcquisitionGeometry.ANGLE,
+            AcquisitionGeometry.HORIZONTAL,
+        ]
 
         if objsize is not None:
             ig = ImageGeometry(
@@ -176,7 +183,7 @@ def FBP_CIL(
                 voxel_size_y=1.0,
             )
 
-    ag.set_angles(angles, angle_unit="radian")
+    ag.set_angles(-angles, angle_unit="radian")
 
     if objsize is None:
         ig = ag.get_ImageGeometry()
@@ -190,15 +197,18 @@ def FBP_CIL(
     # create the FBP recon with backend ASTRA
     fbp = FBP(input=adata, image_geometry=ig, filter=filter, backend="astra")
 
-    if num_slices is not None:
-        fbp.set_split_processing(slices_per_chunk=num_slices)
+    # if num_slices is not None:
+    #    fbp.set_split_processing(slices_per_chunk=num_slices)
 
-    if gpu_id is not None:
-        import astra
+    # if gpu_id is not None:
+    #     import astra
 
-        astra.set_gpu_index(gpu_id)
+    #     astra.set_gpu_index(gpu_id)
 
     reconstruction = fbp.run(verbose=0)
+    reconstruction.reorder(
+        [ImageGeometry.HORIZONTAL_X, ImageGeometry.VERTICAL, ImageGeometry.HORIZONTAL_Y]
+    )
 
     # return numpy array
     return reconstruction.as_array()

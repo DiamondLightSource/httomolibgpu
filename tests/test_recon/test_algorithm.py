@@ -98,10 +98,9 @@ def test_reconstruct_FBP_CIL(data, flats, darks, ensure_clean_memory):
     center = 79.5
     recon_data = FBP_CIL(normalized_data, angles, center, objsize=objrecon_size)
 
-    # assert_allclose(np.mean(recon_data), 0.000798, rtol=1e-07, atol=1e-6)
-    # assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.102106, rtol=1e-05)
-    # assert_allclose(np.std(recon_data), 0.006293, rtol=1e-07, atol=1e-6)
-    # assert_allclose(np.median(recon_data), -0.000555, rtol=1e-07, atol=1e-6)
+    assert_allclose(np.mean(recon_data), 0.0017743068, atol=1e-6)
+    assert_allclose(np.max(recon_data), 0.03704812, atol=1e-6)
+    assert_allclose(np.min(recon_data), -0.013717581, atol=1e-6)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (160, 128, 160)
 
