@@ -4,12 +4,19 @@ import time
 from unittest import mock
 import cupy as cp
 from cupy.cuda import nvtx
+from cupyx.scipy.ndimage import shift
 import numpy as np
 import pytest
 from httomolibgpu.prep.normalize import normalize
-from httomolibgpu.recon.rotation import _calculate_chunks, find_center_360, find_center_vo
+from httomolibgpu.recon.rotation import (
+    _calculate_chunks,
+    find_center_360,
+    find_center_vo,
+    find_center_pc,
+)
 from numpy.testing import assert_allclose
 from .rotation_cpu_reference import find_center_360_numpy
+
 
 def test_find_center_vo(data, flats, darks):
     data = normalize(data, flats, darks)
@@ -22,6 +29,7 @@ def test_find_center_vo(data, flats, darks):
 
     #: Check that we only get a float32 output
     assert cor.dtype == np.float32
+
 
 def test_find_center_vo_ones(ensure_clean_memory):
     mat = cp.ones(shape=(103, 450, 230), dtype=cp.float32)
@@ -36,7 +44,8 @@ def test_find_center_vo_random(ensure_clean_memory):
     data_host = np.random.random_sample(size=(900, 1, 1280)).astype(np.float32) * 2.0
     data = cp.asarray(data_host, dtype=np.float32)
     cent = find_center_vo(data)
-    assert_allclose(cent, 680.75)    
+    assert_allclose(cent, 680.75)
+
 
 def test_find_center_vo_calculate_chunks():
     # we need the split to fit into the available memory, and also make sure
@@ -53,7 +62,9 @@ def test_find_center_vo_calculate_chunks():
     # add a bit of randomness here, to check basic assumptions
     random.seed(123456)
     for _ in range(100):
-        available = random.randint(1*300+100, 100*300 + 100)  # memory to fit anywhere between 1 and 100 shifts
+        available = random.randint(
+            1 * 300 + 100, 100 * 300 + 100
+        )  # memory to fit anywhere between 1 and 100 shifts
         nshifts = random.randint(1, 1000)
         chunks = _calculate_chunks(nshifts, 100, available)
         assert len(chunks) > 0
@@ -64,6 +75,7 @@ def test_find_center_vo_calculate_chunks():
             assert diffs[0] > 0
             np.testing.assert_array_equal(diffs[:-1], diffs[0])
             assert diffs[-1] <= diffs[0]
+
 
 @pytest.mark.perf
 def test_find_center_vo_performance():
@@ -104,6 +116,7 @@ def test_find_center_360_data(data):
     assert_allclose(overlap, 53.093666, rtol=eps)
     assert side == 1
     assert_allclose(overlap_pos, 111.906334, rtol=eps)
+
 
 def test_find_center_360_1D_raises(data):
     #: 360-degree sinogram must be a 3d array
@@ -157,6 +170,48 @@ def test_find_center_360_performance(ensure_clean_memory):
     nvtx.RangePop()
     dev.synchronize()
 
+    duration_ms = float(time.perf_counter_ns() - start) * 1e-6 / 10
+
+    assert "performance in ms" == duration_ms
+
+
+def test_find_center_pc(data, flats, darks, ensure_clean_memory):
+    data = normalize(data, flats, darks)[:, :, 3]
+    shifted_data = shift(cp.fliplr(data), (0, 18.75), mode="reflect")
+
+    # --- testing the center of rotation on tomo_standard ---#
+    cor = find_center_pc(data, shifted_data)
+
+    assert_allclose(cor, 73.0, rtol=1e-7)
+
+
+def test_find_center_pc2(data, flats, darks, ensure_clean_memory):
+    data = normalize(data, flats, darks)
+    proj1 = data[0, :, :]
+    proj2 = data[179, :, :]
+
+    # --- testing the center of rotation on tomo_standard ---#
+    cor = find_center_pc(proj1, proj2)
+
+    assert_allclose(cor, 79.5, rtol=1e-7)
+
+
+@pytest.mark.perf
+def test_find_center_pc_performance(ensure_clean_memory):
+    dev = cp.cuda.Device()
+    data_host = np.random.random_sample(size=(1801, 2560, 5)).astype(np.float32) * 2.0
+    data = cp.asarray(data_host, dtype=np.float32)[:, :, 3]
+    shifted_data = shift(cp.fliplr(data), (0, 18.75), mode="reflect")
+
+    # cold run first
+    find_center_pc(data, shifted_data)
+
+    start = time.perf_counter_ns()
+    nvtx.RangePush("Core")
+    for _ in range(10):
+        find_center_pc(data, shifted_data)
+    nvtx.RangePop()
+    dev.synchronize()
     duration_ms = float(time.perf_counter_ns() - start) * 1e-6 / 10
 
     assert "performance in ms" == duration_ms
