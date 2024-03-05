@@ -6,7 +6,7 @@ channels:
   - httomo
   - rapidsai
 dependencies:
-  - conda-forge::cupy
+  - conda-forge::cupy=12.3.0
   - conda-forge::numpy<=1.24
   - conda-forge::nvtx
   - conda-forge::scipy
