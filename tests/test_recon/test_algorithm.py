@@ -17,6 +17,7 @@ def test_reconstruct_FBP_1(data, flats, darks, ensure_clean_memory):
         normalize_cupy(data, flats, darks, cutoff=10, minus_log=True),
         np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
         79.5,
+        filter_freq_cutoff=1.1,
     )
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
@@ -33,6 +34,7 @@ def test_reconstruct_FBP_2(data, flats, darks, ensure_clean_memory):
         normalize_cupy(data, flats, darks, cutoff=20.5, minus_log=False),
         np.linspace(5.0 * np.pi / 360.0, 180.0 * np.pi / 360.0, data.shape[0]),
         15.5,
+        filter_freq_cutoff=1.1,
     )
 
     recon_data = recon_data.get()
@@ -49,6 +51,7 @@ def test_reconstruct_FBP_3(data, flats, darks, ensure_clean_memory):
         normalize_cupy(data, flats, darks, cutoff=20.5, minus_log=False),
         np.linspace(5.0 * np.pi / 360.0, 180.0 * np.pi / 360.0, data.shape[0]),
         79,  # center
+        1.1, # filter_freq_cutoff
         210,  # recon_size
         0.9,  # recon_mask_radius
     )
@@ -103,9 +106,11 @@ def test_FBP_performance(ensure_clean_memory):
     data = cp.asarray(data_host, dtype=np.float32)
     angles = np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0])
     cor = 79.5
+    filter_freq_cutoff=1.1
+
 
     # cold run first
-    FBP(data, angles, cor)
+    FBP(data, angles, cor, filter_freq_cutoff)
     dev.synchronize()
 
     start = time.perf_counter_ns()

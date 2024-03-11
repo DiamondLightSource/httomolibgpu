@@ -48,6 +48,7 @@ def FBP(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
+    filter_freq_cutoff: Optional[float] = 0.6,
     recon_size: Optional[int] = None,
     recon_mask_radius: Optional[float] = None,
     gpu_id: int = 0,
@@ -64,6 +65,8 @@ def FBP(
         An array of angles given in radians.
     center : float, optional
         The center of rotation (CoR).
+    filter_freq_cutoff : float, optional
+        Cutoff frequency parameter for the sinc filter, the lowest values produce more crispy but noisy reconstruction.
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
@@ -85,7 +88,8 @@ def FBP(
 
     reconstruction = RecToolsCP.FBP(
         data,
-        recon_mask_radius=recon_mask_radius,
+        cutoff_freq=filter_freq_cutoff,
+        recon_mask_radius=recon_mask_radius,        
         data_axes_labels_order=input_data_axis_labels,
     )
     cp._default_memory_pool.free_all_blocks()
