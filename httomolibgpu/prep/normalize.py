@@ -28,6 +28,7 @@ from cupy import uint16, float32, mean
 
 __all__ = ["normalize"]
 
+
 @nvtx.annotate()
 def normalize(
     data: cp.ndarray,
@@ -94,7 +95,7 @@ def normalize(
     kernel += "out = v;\n"
 
     normalisation_kernel = cp.ElementwiseKernel(
-        "T data, U flats, V darks, raw float32 cutoff",
+        "T data, U flats, U darks, raw float32 cutoff",
         "float32 out",
         kernel,
         kernel_name,

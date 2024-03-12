@@ -27,6 +27,7 @@ except ImportError:
 from typing import Tuple
 import numpy as np
 import nvtx
+from cupy import float32
 
 from cucim.skimage.filters import median
 from cucim.skimage.morphology import disk
@@ -38,12 +39,13 @@ __all__ = [
     "remove_outlier",
 ]
 
+
 @nvtx.annotate()
 def median_filter(
     data: cp.ndarray,
     kernel_size: int = 3,
     axis: int = 0,
-    dif: float = 0.0,    
+    dif: float = 0.0,
 ) -> cp.ndarray:
     """
     Apply 2D or 3D median or dezinger (when dif>0) filter to a 3D array.
@@ -90,19 +92,20 @@ def median_filter(
     dz, dy, dx = data.shape
     output = cp.empty(data.shape, dtype=input_type, order="C")
 
-    if axis == 0:        
+    if axis == 0:
         for j in range(dz):
-            median(data[j, :, :],footprint=disk(kernel_size // 2), out=output[j, :, :])
+            median(data[j, :, :], footprint=disk(kernel_size // 2), out=output[j, :, :])
     elif axis == 1:
         for j in range(dy):
-            median(data[:, j, :],footprint=disk(kernel_size // 2), out=output[:, j, :])
+            median(data[:, j, :], footprint=disk(kernel_size // 2), out=output[:, j, :])
     elif axis == 2:
         for j in range(dx):
-            median(data[:, :, j],footprint=disk(kernel_size // 2), out=output[:, :, j])
+            median(data[:, :, j], footprint=disk(kernel_size // 2), out=output[:, :, j])
     else:
+        # 3d median or dezinger
         kernel_args = "median_general_kernel3d<{0}, {1}>".format(
             "float" if input_type == "float32" else "unsigned short", kernel_size
-        )        
+        )
         block_x = 128
         # setting grid/block parameters
         block_dims = (block_x, 1, 1)
@@ -112,27 +115,36 @@ def median_filter(
         grid_dims = (grid_x, grid_y, grid_z)
         params = (data, output, dif, dz, dy, dx)
 
-        median_module = load_cuda_module("median_kernel", name_expressions=[kernel_args])
+        median_module = load_cuda_module(
+            "median_kernel", name_expressions=[kernel_args]
+        )
         median_filt = median_module.get_function(kernel_args)
 
         median_filt(grid_dims, block_dims, params)
-    if axis is not None:
-        # perform dezingering        
+
+    if axis is not None and dif > 0:
+        # 2d dezingering enabled
         kernel_name = "thresholding"
         kernel = r"""
             float dif_curr = abs(float(data) - float(output));
             if (dif_curr < dif) {
                 output = data;
-            }            
+            }
             """
-        print("boo")
+        thresholding_kernel = cp.ElementwiseKernel(
+            "T data, raw float32 dif",
+            "T output",
+            kernel,
+            kernel_name,
+            options=("-std=c++11",),
+            no_return=True,
+        )
+        thresholding_kernel(data, float32(dif), output)
     return output
 
+
 def remove_outlier(
-    data: cp.ndarray,
-    kernel_size: int = 3,
-    axis: int = 0,
-    dif: float = 0.1
+    data: cp.ndarray, kernel_size: int = 3, axis: int = 0, dif: float = 0.1
 ) -> cp.ndarray:
     """
     Selectively applies 3D median filter to a 3D array to remove outliers. Also called a dezinger.
@@ -157,6 +169,10 @@ def remove_outlier(
     Raises
     ------
     ValueError
-        If the input array is not three dimensional.
+        Threshold value (dif) must be positive and nonzero.
     """
+
+    if dif <= 0.0:
+        raise ValueError("Threshold value (dif) must be positive and nonzero.")
+
     return median_filter(data=data, kernel_size=kernel_size, axis=axis, dif=dif)

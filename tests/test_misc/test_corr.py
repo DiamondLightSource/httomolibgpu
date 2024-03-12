@@ -19,14 +19,18 @@ def test_median_filter3d_vs_scipy_on_arange(ensure_clean_memory):
     mat = np.arange(4 * 5 * 6).reshape(4, 5, 6)
     assert_equal(
         scipy.ndimage.median_filter(np.float32(mat), size=3),
-        median_filter(cp.asarray(mat, dtype=cp.float32), kernel_size=3, axis=None).get(),
+        median_filter(
+            cp.asarray(mat, dtype=cp.float32), kernel_size=3, axis=None
+        ).get(),
     )
 
 
 def test_median_filter3d_vs_scipy(host_data, ensure_clean_memory):
     assert_equal(
         scipy.ndimage.median_filter(np.float32(host_data), size=3),
-        median_filter(cp.asarray(host_data, dtype=cp.float32), kernel_size=3, axis=None).get(),
+        median_filter(
+            cp.asarray(host_data, dtype=cp.float32), kernel_size=3, axis=None
+        ).get(),
     )
 
 
@@ -39,7 +43,7 @@ def test_median_filter3d_benchmark(
         median_filter,
         cp.asarray(host_data, dtype=cp.float32),
         kernel_size=kernel_size,
-        axis=None
+        axis=None,
     )
 
 
@@ -84,9 +88,12 @@ def test_median_filter3d(data):
     assert filtered_data.flags.c_contiguous
 
     assert (
-        median_filter(data.astype(cp.float32), kernel_size=5, axis=None, dif=1.5).get().dtype
+        median_filter(data.astype(cp.float32), kernel_size=5, axis=None, dif=1.5)
+        .get()
+        .dtype
         == np.float32
     )
+
 
 @pytest.mark.parametrize("axis", [0, 1, 2])
 def test_median_filter2d_axes(data, axis):
@@ -94,7 +101,8 @@ def test_median_filter2d_axes(data, axis):
 
     assert filtered_data.ndim == 3
     assert filtered_data.dtype == np.uint16
-    assert filtered_data.flags.c_contiguous    
+    assert filtered_data.flags.c_contiguous
+
 
 def test_median_filter2d(data):
     filtered_data = median_filter(data, kernel_size=3, axis=0).get()
@@ -106,7 +114,7 @@ def test_median_filter2d(data):
     assert_allclose(np.min(filtered_data), 80)
 
     assert filtered_data.dtype == np.uint16
-    assert filtered_data.flags.c_contiguous    
+    assert filtered_data.flags.c_contiguous
 
 
 @pytest.mark.perf
@@ -145,4 +153,17 @@ def test_remove_outlier3d(data):
         remove_outlier(data.astype(cp.float32), kernel_size=5, dif=1.5).get().dtype
         == np.float32
     )
+    assert filtered_data.flags.c_contiguous
+
+
+def test_remove_outlier2d(data):
+    filtered_data = remove_outlier(data, kernel_size=3, axis=0, dif=1.5).get()
+
+    assert filtered_data.ndim == 3
+    assert_allclose(np.mean(filtered_data), 808.861578504, rtol=eps)
+    assert_allclose(np.mean(filtered_data, axis=(1, 2)).sum(), 145595.0841308)
+    assert_allclose(np.max(filtered_data), 1080)
+    assert_allclose(np.min(filtered_data), 80)
+
+    assert filtered_data.dtype == np.uint16
     assert filtered_data.flags.c_contiguous
