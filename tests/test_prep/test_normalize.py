@@ -6,13 +6,10 @@ import pytest
 
 from numpy.testing import assert_allclose, assert_equal
 from httomolibgpu.prep.normalize import normalize
-from httomolibgpu import method_registry
+
 from cupy.cuda import nvtx
 
-from tests import MaxMemoryHook
 
-
-@cp.testing.gpu
 def test_normalize_1D_raises(data, flats, darks, ensure_clean_memory):
     _data_1d = cp.ones(10)
 
@@ -24,7 +21,7 @@ def test_normalize_1D_raises(data, flats, darks, ensure_clean_memory):
     with pytest.raises(ValueError):
         normalize(data, _data_1d, darks)
 
-@cp.testing.gpu
+
 def test_normalize(data, flats, darks, ensure_clean_memory):
     # --- testing normalize  ---#
     data_normalize = normalize(cp.copy(data), flats, darks, minus_log=True).get()
@@ -35,29 +32,9 @@ def test_normalize(data, flats, darks, ensure_clean_memory):
     assert_allclose(np.mean(data_normalize, axis=(1, 2)).sum(), 52.064465, rtol=1e-06)
     assert_allclose(np.median(data_normalize), 0.01723744, rtol=1e-06)
     assert_allclose(np.std(data_normalize), 0.524382, rtol=1e-06)
+    assert data_normalize.flags.c_contiguous
 
 
-@cp.testing.gpu
-def test_normalize_meta(data, flats, darks, ensure_clean_memory):
-    # --- testing normalize  ---#
-    hook = MaxMemoryHook()
-    with hook:
-        data_normalize = normalize(cp.copy(data), flats, darks, minus_log=True).get()
-
-    # make sure estimator function is within range (80% min, 100% max)
-    max_mem = hook.max_mem
-    actual_slices = data.shape[0]
-    estimated_slices, dtype_out, output_dims = normalize.meta.calc_max_slices(0,
-                                                         (data.shape[1], data.shape[2]),                                                         
-                                                         data.dtype, max_mem,
-                                                         flats=flats, darks=darks)
-    assert estimated_slices <= actual_slices
-    assert estimated_slices / actual_slices >= 0.8
-    assert normalize.meta.pattern == 'projection'
-    assert 'normalize' in method_registry['httomolibgpu']['prep']['normalize']
-    
-
-@cp.testing.gpu
 @pytest.mark.perf
 def test_normalize_performance(ensure_clean_memory):
     # Note: low/high and size values taken from sample2_medium.yaml real run
@@ -105,4 +82,3 @@ def test_normalize_performance(ensure_clean_memory):
     duration_ms = float(end - start) * 1e-6 / 10
 
     assert "performance in ms" == duration_ms
-    

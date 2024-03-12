@@ -1,5 +1,5 @@
 template <typename Type, int diameter>
-__global__ void median_general_kernel(const Type *in, Type *out, float dif,
+__global__ void median_general_kernel3d(const Type *in, Type *out, float dif,
                                       int Z, int M, int N) {
   constexpr int radius = diameter / 2;
   constexpr int d3 = diameter * diameter * diameter;

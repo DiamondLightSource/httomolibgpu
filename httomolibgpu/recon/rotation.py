@@ -32,30 +32,21 @@ from cupy import ndarray
 from cupyx.scipy.ndimage import gaussian_filter, shift
 
 from httomolibgpu.cuda_kernels import load_cuda_module
-from httomolibgpu.decorator import method_sino
 
 __all__ = [
     "find_center_vo",
     "find_center_360",
+    "find_center_pc",
 ]
 
 
-def _calc_max_slices_center_vo(
-    non_slice_dims_shape: Tuple[int, int],
-    dtype: np.dtype, available_memory: int, **kwargs
-) -> Tuple[int, np.dtype, Tuple[int, int]]:
-    # the function works on one slice from the sinogram all the way through (picks a specific index)
-    # so memory is not restricted as long as a single slice can fit
-    return (1000000, dtype, non_slice_dims_shape)
-
-@method_sino(_calc_max_slices_center_vo)
 @nvtx.annotate()
 def find_center_vo(
     data: cp.ndarray,
     ind: Optional[int] = None,
     smin: int = -50,
     smax: int = 50,
-    srad: float = 6.,
+    srad: float = 6.0,
     step: float = 0.25,
     ratio: float = 0.5,
     drop: int = 20,
@@ -124,6 +115,58 @@ def find_center_vo(
 
     return fine_cen.get()
 
+
+@nvtx.annotate()
+def find_center_pc(proj1, proj2, tol=0.5, rotc_guess=None):
+    """
+    Find rotation axis location by finding the offset between the first
+    projection and a mirrored projection 180 degrees apart using
+    phase correlation in Fourier space.
+    The ``phase_cross_correlation`` function uses cross-correlation in Fourier
+    space, optionally employing an upsampled matrix-multiplication DFT to
+    achieve arbitrary subpixel precision. :cite:`Guizar:08`.
+
+    Parameters
+    ----------
+    proj1 : cp.ndarray
+        Projection data
+
+    proj2 : cp.ndarray
+        Projection data
+
+    tol : scalar, optional
+        Subpixel accuracy
+
+    rotc_guess : float, optional
+        Initial guess value for the rotation center
+
+    Returns
+    -------
+    float
+        Rotation axis location.
+    """
+    from cucim.skimage.registration import phase_cross_correlation
+
+    imgshift = 0.0 if rotc_guess is None else rotc_guess - (proj1.shape[1] - 1.0) / 2.0
+
+    proj1 = cpndi.shift(proj1, [0, -imgshift], mode="constant", cval=0)
+    proj2 = cpndi.shift(proj2, [0, -imgshift], mode="constant", cval=0)
+
+    # create reflection of second projection
+    proj2 = cp.fliplr(proj2)
+
+    # using cucim of rapids to do phase cross correlation between two images
+    shift = phase_cross_correlation(
+        reference_image=proj1, moving_image=proj2, upsample_factor=1.0 / tol
+    )
+
+    # Compute center of rotation as the center of first image and the
+    # registered translation with the second image
+    center = (proj1.shape[1] + shift[0][1] - 1.0) / 2.0
+
+    return center + imgshift
+
+
 @nvtx.annotate()
 def _search_coarse(sino, smin, smax, ratio, drop):
     (nrow, ncol) = sino.shape
@@ -186,10 +229,10 @@ def _create_mask(nrow, ncol, radius, drop):
     block_x = 128
     block_y = 1
     block_dims = (block_x, block_y)
-    grid_x = (ncol//2+1 + block_x - 1) // block_x
+    grid_x = (ncol // 2 + 1 + block_x - 1) // block_x
     grid_y = nrow
     grid_dims = (grid_x, grid_y)
-    mask = cp.empty((nrow, ncol//2+1), dtype="uint16")
+    mask = cp.empty((nrow, ncol // 2 + 1), dtype="uint16")
     params = (
         ncol,
         nrow,
@@ -213,6 +256,7 @@ def round_up(x: float) -> int:
     else:
         return int(math.floor(x))
 
+
 def _get_available_gpu_memory() -> int:
     dev = cp.cuda.Device()
     # first, let's make some space
@@ -222,12 +266,17 @@ def _get_available_gpu_memory() -> int:
     available_memory = dev.mem_info[0] + cp.get_default_memory_pool().free_bytes()
     return int(available_memory * 0.9)  # 10% safety margin
 
-def _calculate_chunks(nshifts: int, shift_size: int, available_memory: Optional[int] = None) -> List[int]:
+
+def _calculate_chunks(
+    nshifts: int, shift_size: int, available_memory: Optional[int] = None
+) -> List[int]:
     if available_memory is None:
         available_memory = _get_available_gpu_memory()
-    
+
     available_memory -= shift_size
-    freq_domain_size = shift_size  # it needs only half (RFFT), but complex64, so it's the same
+    freq_domain_size = (
+        shift_size  # it needs only half (RFFT), but complex64, so it's the same
+    )
     fft_plan_size = freq_domain_size
     size_per_shift = fft_plan_size + freq_domain_size + shift_size
     nshift_max = available_memory // size_per_shift
@@ -260,42 +309,53 @@ def _calculate_metric(list_shift, sino1, sino2, sino3, mask, out):
     # note: we don't have to calculate the mean here, as we're only looking for minimum metric.
     # The sum is enough.
     masked_sum_abs_kernel = cp.ReductionKernel(
-        in_params="complex64 x, uint16 mask",                   # input, complex + mask
-        out_params="float32 out",                        # output, real
+        in_params="complex64 x, uint16 mask",  # input, complex + mask
+        out_params="float32 out",  # output, real
         map_expr="mask ? abs(x) : 0.0f",
-        reduce_expr="a + b",            
-        post_map_expr="out = a",   
-        identity='0.0f',
+        reduce_expr="a + b",
+        post_map_expr="out = a",
+        identity="0.0f",
         reduce_type="float",
-        name="masked_sum_abs", 
+        name="masked_sum_abs",
     )
 
     # determine how many shifts we can fit in the available memory
     # and iterate in chunks
-    chunks = _calculate_chunks(nshifts, (na1 + na2) * sino2.shape[1] * cp.float32().nbytes)
+    chunks = _calculate_chunks(
+        nshifts, (na1 + na2) * sino2.shape[1] * cp.float32().nbytes
+    )
 
     mat = cp.empty((chunks[0], na1 + na2, sino2.shape[1]), dtype=cp.float32)
     mat[:, :na1, :] = sino1
     # explicitly create FFT plan here, so it's not cached and clearly re-used
-    plan = cupyx.scipy.fftpack.get_fft_plan(mat, mat.shape[-2:], axes=(1, 2), value_type='R2C')
+    plan = cupyx.scipy.fftpack.get_fft_plan(
+        mat, mat.shape[-2:], axes=(1, 2), value_type="R2C"
+    )
 
-    for i,stop_idx in enumerate(chunks):
+    for i, stop_idx in enumerate(chunks):
         if i > 0:
             # more than one iteration means we're tight on memory, so clear up freed blocks
             mat_freq = None
             cp.get_default_memory_pool().free_all_blocks()
-        
-        start_idx = 0 if i == 0 else chunks[i-1]
+
+        start_idx = 0 if i == 0 else chunks[i - 1]
         size = stop_idx - start_idx
-        
+
         # first, handle the integer shifts without spline in a raw kernel,
         # and shift in the sino3 one accordingly
         bx = 128
         gx = (sino3.shape[1] + bx - 1) // bx
         shift_whole_shifts(
-            grid=(gx, na2, size), ####
+            grid=(gx, na2, size),  ####
             block=(bx, 1, 1),
-            args=(sino2, sino3, list_shift[start_idx:stop_idx], mat[:, na1:, :], sino3.shape[1], na1 + na2),
+            args=(
+                sino2,
+                sino3,
+                list_shift[start_idx:stop_idx],
+                mat[:, na1:, :],
+                sino3.shape[1],
+                na1 + na2,
+            ),
         )
 
         # now we can only look at the spline shifting, the rest is done
@@ -311,10 +371,12 @@ def _calculate_metric(list_shift, sino1, sino2, sino3, mask, out):
                     mat[i, na1:, :shift_int] = shifted[:, :shift_int]
 
         # stack and transform
-        # (we do the full sized mat FFT, even though the last chunk may be smaller, to 
+        # (we do the full sized mat FFT, even though the last chunk may be smaller, to
         # make sure we can re-use the same FFT plan as before)
         mat_freq = cupyx.scipy.fft.rfft2(mat, axes=(1, 2), norm=None, plan=plan)
-        masked_sum_abs_kernel(mat_freq[:size, :, :], mask, out=out[start_idx:stop_idx], axis=(1, 2))
+        masked_sum_abs_kernel(
+            mat_freq[:size, :, :], mask, out=out[start_idx:stop_idx], axis=(1, 2)
+        )
 
 
 @nvtx.annotate()
@@ -346,17 +408,7 @@ def _downsample(sino, level, axis):
     return downsampled_data
 
 
-def _calc_max_slices_center_360(
-    non_slice_dims_shape: Tuple[int, int],
-    dtype: np.dtype, available_memory: int, **kwargs
-) -> Tuple[int, np.dtype, Tuple[int, int]]:
-    # the function works on one slice from the sinogram all the way through (picks 0 or a specific index)
-    # so memory is not restricted as long as a single slice can fit
-    return (1000000, dtype, non_slice_dims_shape)
-
-
 # --- Center of rotation (COR) estimation method ---#
-@method_sino(_calc_max_slices_center_360)
 @nvtx.annotate()
 def find_center_360(
     data: cp.ndarray,
@@ -436,7 +488,7 @@ def find_center_360(
 
 def _find_overlap(
     mat1, mat2, win_width, side=None, denoise=True, norm=False, use_overlap=False
-) :
+):
     """
     Find the overlap area and overlap side between two images (Ref. [1]) where
     the overlap side referring to the first image.
