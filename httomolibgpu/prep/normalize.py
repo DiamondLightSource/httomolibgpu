@@ -35,7 +35,7 @@ def normalize(
     flats: cp.ndarray,
     darks: cp.ndarray,
     cutoff: float = 10.0,
-    minus_log: bool = False,
+    minus_log: bool = True,
     nonnegativity: bool = False,
     remove_nans: bool = False,
 ) -> cp.ndarray:
