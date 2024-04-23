@@ -29,9 +29,6 @@ import numpy as np
 import nvtx
 from cupy import float32
 
-from cucim.skimage.filters import median
-from cucim.skimage.morphology import disk
-
 from httomolibgpu.cuda_kernels import load_cuda_module
 
 __all__ = [
@@ -72,6 +69,9 @@ def median_filter(
     ValueError
         If the input array is not three dimensional.
     """
+    from cucim.skimage.filters import median
+    from cucim.skimage.morphology import disk
+
     input_type = data.dtype
 
     if input_type not in ["float32", "uint16"]:
