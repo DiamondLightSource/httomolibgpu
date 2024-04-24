@@ -10,8 +10,9 @@ source:
   path: ../../
 
 build:
-  preserve_egg_dir: False
+  noarch: python
   number: 0
+  script: python -m pip install --no-deps --ignore-installed .
 
 requirements:
   host:
@@ -21,8 +22,8 @@ requirements:
     - setuptools-git-versioning
   run:
     - python
-    - numpy
-    - cupy
+    - numpy>= 1.20, <= 1.25
+    - cupy<=12.3.0
     - cucim
     - astra-toolbox
     - nvtx
