@@ -3,31 +3,9 @@ import cupy as cp
 import numpy as np
 from cupy.cuda import nvtx
 import pytest
-#from tomopy.misc.morph import sino_360_to_180 as tomopy_sino_360_to_180
-from httomolibgpu.misc.morph import sino_360_to_180
+from numpy.testing import assert_allclose
+from httomolibgpu.misc.morph import sino_360_to_180, data_resampler
 
-
-"""
-@cp.testing.gpu
-@pytest.mark.parametrize("overlap", [0, 1, 3, 15, 32])
-@pytest.mark.parametrize("rotation", ["left", "right"])
-@cp.testing.numpy_cupy_allclose(rtol=1e-6)
-def test_sino_360_to_180_unity(ensure_clean_memory, xp, overlap, rotation):
-    # this combination has a bug in tomopy, so we'll skip it for now
-    if rotation == "right" and overlap == 0:
-        pytest.skip("Skipping test due to bug in tomopy")
-
-    np.random.seed(12345)
-    data_host = (
-        np.random.random_sample(size=(123, 54, 128)).astype(np.float32) * 200.0 - 100.0
-    )
-    data = xp.asarray(data_host)
-
-    if xp.__name__ == "numpy":
-        return tomopy_sino_360_to_180(data, overlap, rotation)
-    else:
-        return sino_360_to_180(data, overlap, rotation)
-"""
 
 @pytest.mark.parametrize(
     "overlap, rotation",
@@ -40,7 +18,6 @@ def test_sino_360_to_180_unity(ensure_clean_memory, xp, overlap, rotation):
         (0, ""),
     ],
 )
-@cp.testing.gpu
 def test_sino_360_to_180_invalid(ensure_clean_memory, overlap, rotation):
     data = cp.ones((10, 10, 10), dtype=cp.float32)
 
@@ -49,20 +26,34 @@ def test_sino_360_to_180_invalid(ensure_clean_memory, overlap, rotation):
 
 
 @pytest.mark.parametrize("shape", [(10,), (10, 10)])
-@cp.testing.gpu
 def test_sino_360_to_180_wrong_dims(ensure_clean_memory, shape):
     with pytest.raises(ValueError):
         sino_360_to_180(cp.ones(shape, dtype=cp.float32))
 
 
-def test_sino_360_to_180_meta():
-    assert sino_360_to_180.meta.gpu is True
-    assert sino_360_to_180.meta.pattern == 'sinogram'
+@pytest.mark.parametrize("axis", [0, 1, 2])
+def test_data_resampler(data, axis, ensure_clean_memory):
+    newshape = [60, 80]
+    scaled_data = data_resampler(
+        data, newshape=newshape, axis=axis, interpolation="linear"
+    ).get()
+
+    assert scaled_data.ndim == 3
+    if axis == 0:
+        assert scaled_data.shape == (180, newshape[0], newshape[1])
+        assert_allclose(np.max(scaled_data), 1111.7404)
+    if axis == 1:
+        assert scaled_data.shape == (newshape[0], 128, newshape[1])
+        assert_allclose(np.max(scaled_data), 1102.0)
+    if axis == 2:
+        assert scaled_data.shape == (newshape[0], newshape[1], 160)
+        assert_allclose(np.max(scaled_data), 1113.2761)
+    assert scaled_data.dtype == np.float32
+    assert scaled_data.flags.c_contiguous
 
 
 @pytest.mark.parametrize("rotation", ["left", "right"])
 @pytest.mark.perf
-@cp.testing.gpu
 def test_sino_360_to_180_performance(ensure_clean_memory, rotation):
     # as this is just an index shuffling operation, the data itself doesn't matter
     data = cp.ones((1801, 400, 2560), dtype=np.float32)

@@ -7,18 +7,15 @@ from httomolibgpu.prep.normalize import normalize
 from httomolibgpu.prep.stripe import (
     remove_stripe_based_sorting,
     remove_stripe_ti,
+    remove_all_stripe,
 )
-from httomolibgpu import method_registry
 from numpy.testing import assert_allclose
 
-from tests import MaxMemoryHook
 
-
-@cp.testing.gpu
 def test_remove_stripe_ti_on_data(data, flats, darks):
     # --- testing the CuPy implementation from TomoCupy ---#
     data = normalize(data, flats, darks, cutoff=10, minus_log=True)
-    
+
     data_after_stripe_removal = remove_stripe_ti(cp.copy(data)).get()
 
     assert_allclose(np.mean(data_after_stripe_removal), 0.28924704, rtol=1e-05)
@@ -27,32 +24,11 @@ def test_remove_stripe_ti_on_data(data, flats, darks):
     )
     assert_allclose(np.median(data_after_stripe_removal), 0.026177486, rtol=1e-05)
     assert_allclose(np.max(data_after_stripe_removal), 2.715983, rtol=1e-05)
-    
+    assert data_after_stripe_removal.flags.c_contiguous
+
     data = None  #: free up GPU memory
     # make sure the output is float32
     assert data_after_stripe_removal.dtype == np.float32
-
-@cp.testing.gpu
-def test_remove_stripe_ti_on_data_meta(data, flats, darks):
-    # --- testing the CuPy implementation from TomoCupy ---#
-    data = normalize(data, flats, darks, cutoff=10, minus_log=True)
-    
-    hook = MaxMemoryHook()
-    with hook:
-        data_after_stripe_removal = remove_stripe_ti(cp.copy(data)).get()
-
-    # make sure estimator function is within range (80% min, 100% max)
-    max_mem = hook.max_mem
-    actual_slices = data.shape[1]
-    estimated_slices, dtype_out, output_dims = remove_stripe_ti.meta.calc_max_slices(1,
-                                                                (data.shape[0], data.shape[2]),
-                                                                 data.dtype, max_mem)
-    assert estimated_slices <= actual_slices
-    assert estimated_slices / actual_slices >= 0.8 
-
-    data = None  #: free up GPU memory   
-    assert remove_stripe_ti.meta.pattern == 'sinogram'
-    assert 'remove_stripe_ti' in method_registry['httomolibgpu']['prep']['stripe']
 
 
 def test_remove_stripe_ti_on_flats(host_flats):
@@ -63,7 +39,6 @@ def test_remove_stripe_ti_on_flats(host_flats):
     assert_allclose(np.median(corrected_data), 976.0, rtol=1e-7)
 
 
-@cp.testing.gpu
 def test_remove_stripe_ti_numpy_vs_cupy_on_random_data():
     host_data = np.random.random_sample(size=(181, 5, 256)).astype(np.float32) * 2.0
     corrected_host_data = remove_stripe_ti(np.copy(host_data))
@@ -77,12 +52,11 @@ def test_remove_stripe_ti_numpy_vs_cupy_on_random_data():
     )
 
 
-@cp.testing.gpu
 def test_stripe_removal_sorting_cupy(data, flats, darks):
     # --- testing the CuPy port of TomoPy's implementation ---#
     data = normalize(data, flats, darks, cutoff=10, minus_log=True)
-    corrected_data = remove_stripe_based_sorting(data).get()    
-   
+    corrected_data = remove_stripe_based_sorting(data).get()
+
     data = None  #: free up GPU memory
     assert_allclose(np.mean(corrected_data), 0.288198, rtol=1e-06)
     assert_allclose(np.mean(corrected_data, axis=(1, 2)).sum(), 51.87565, rtol=1e-06)
@@ -90,30 +64,9 @@ def test_stripe_removal_sorting_cupy(data, flats, darks):
 
     # make sure the output is float32
     assert corrected_data.dtype == np.float32
-
-@cp.testing.gpu
-def test_stripe_removal_sorting_cupy_meta(data, flats, darks):
-    # --- testing the CuPy port of TomoPy's implementation ---#
-    data = normalize(data, flats, darks, cutoff=10, minus_log=True)
-    hook = MaxMemoryHook(data.size * data.itemsize)
-    with hook:
-        corrected_data = remove_stripe_based_sorting(data).get()
-    
-    # make sure estimator function is within range (80% min, 100% max)
-    max_mem = hook.max_mem
-    actual_slices = data.shape[1]
-    estimated_slices, dtype_out, output_dims = remove_stripe_based_sorting.meta.calc_max_slices(1,
-                                                                           (data.shape[0], data.shape[2]),                                                                           
-                                                                           data.dtype, max_mem)
-    assert estimated_slices <= actual_slices
-    assert estimated_slices / actual_slices >= 0.8 
-    
-    data = None  #: free up GPU memory
-    assert remove_stripe_based_sorting.meta.pattern == 'sinogram'
-    assert 'remove_stripe_based_sorting' in method_registry['httomolibgpu']['prep']['stripe']
+    assert corrected_data.flags.c_contiguous
 
 
-@cp.testing.gpu
 @cp.testing.numpy_cupy_allclose(rtol=1e-6)
 def test_stripe_removal_sorting_numpy_vs_cupy_on_random_data(ensure_clean_memory, xp):
     np.random.seed(12345)
@@ -122,7 +75,6 @@ def test_stripe_removal_sorting_numpy_vs_cupy_on_random_data(ensure_clean_memory
     return xp.asarray(remove_stripe_based_sorting(data))
 
 
-@cp.testing.gpu
 @pytest.mark.perf
 def test_stripe_removal_sorting_cupy_performance(ensure_clean_memory):
     data_host = (
@@ -148,7 +100,6 @@ def test_stripe_removal_sorting_cupy_performance(ensure_clean_memory):
     assert "performance in ms" == duration_ms
 
 
-@cp.testing.gpu
 @pytest.mark.perf
 def test_remove_stripe_ti_performance(ensure_clean_memory):
     data_host = (
@@ -172,3 +123,22 @@ def test_remove_stripe_ti_performance(ensure_clean_memory):
     duration_ms = float(time.perf_counter_ns() - start) * 1e-6 / 10
 
     assert "performance in ms" == duration_ms
+
+
+def test_remove_all_stripe_on_data(data, flats, darks):
+    # --- testing the CuPy implementation from TomoCupy ---#
+    data = normalize(data, flats, darks, cutoff=10, minus_log=True)
+
+    data_after_stripe_removal = remove_all_stripe(cp.copy(data)).get()
+
+    assert_allclose(np.mean(data_after_stripe_removal), 0.266914, rtol=1e-05)
+    assert_allclose(
+        np.mean(data_after_stripe_removal, axis=(1, 2)).sum(), 48.04459, rtol=1e-06
+    )
+    assert_allclose(np.median(data_after_stripe_removal), 0.015338, rtol=1e-04)
+    assert_allclose(np.max(data_after_stripe_removal), 2.298123, rtol=1e-05)
+
+    data = None  #: free up GPU memory
+    # make sure the output is float32
+    assert data_after_stripe_removal.dtype == np.float32
+    assert data_after_stripe_removal.flags.c_contiguous
