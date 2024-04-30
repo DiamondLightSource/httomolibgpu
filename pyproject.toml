@@ -6,7 +6,8 @@ build-backend = "setuptools.build_meta"
 include-package-data = true
 packages = ["httomolibgpu",
             "httomolibgpu.misc",
-            "httomolibgpu.prep",            
+            "httomolibgpu.prep",
+            "httomolibgpu.recon",
             "httomolibgpu.cuda_kernels"]
 
 [tool.setuptools.package-data]

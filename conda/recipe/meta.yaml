@@ -42,6 +42,7 @@ test:
     - httomolibgpu
     - httomolibgpu.misc
     - httomolibgpu.prep
+    - httomolibgpu.recon
   source_files:
     - tests/*
   commands:
