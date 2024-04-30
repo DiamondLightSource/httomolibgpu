@@ -20,14 +20,32 @@
 # ---------------------------------------------------------------------------
 """ Module for data correction """
 
+
+import numpy as xp
+
 cupy_run = False
+
 try:
     import cupy as cp
 
-    # import nvtx
-    cupy_run = True
+    try:
+        cp.cuda.Device(0).compute_capability
+        cupy_run = True
+
+    except cp.cuda.runtime.CUDARuntimeError:
+        print("Cupy library is a required dependency for HTTomolibgpu, please install")
+        import numpy as np
 except ImportError:
-    print("Cupy library is a required dependency for HTTomolibgpu, please install")
+    import numpy as np
+
+# cupy_run = False
+# try:
+#     import cupy as cp
+
+#     # import nvtx
+#     cupy_run = True
+# except ImportError:
+#     print("Cupy library is a required dependency for HTTomolibgpu, please install")
 
 try:
     from cucim.skimage.filters import median
@@ -38,7 +56,8 @@ except ImportError:
     )
 
 from typing import Tuple
-import numpy as np
+
+# import numpy as np
 from numpy import float32
 
 if cupy_run:
@@ -52,11 +71,11 @@ __all__ = [
 
 # @nvtx.annotate()
 def median_filter(
-    data: cp.ndarray,
+    data: xp.ndarray,
     kernel_size: int = 3,
     axis: int = 0,
     dif: float = 0.0,
-) -> cp.ndarray:
+) -> xp.ndarray:
     """
     Apply 2D or 3D median or dezinger (when dif>0) filter to a 3D array.
 
@@ -101,7 +120,7 @@ def median_filter(
         raise ValueError("The axis should be 0,1,2 or None for full 3d processing")
 
     dz, dy, dx = data.shape
-    output = cp.empty(data.shape, dtype=input_type, order="C")
+    output = xp.empty(data.shape, dtype=input_type, order="C")
 
     if axis == 0:
         for j in range(dz):
@@ -142,7 +161,7 @@ def median_filter(
                 output = data;
             }
             """
-        thresholding_kernel = cp.ElementwiseKernel(
+        thresholding_kernel = xp.ElementwiseKernel(
             "T data, raw float32 dif",
             "T output",
             kernel,
@@ -155,8 +174,8 @@ def median_filter(
 
 
 def remove_outlier(
-    data: cp.ndarray, kernel_size: int = 3, axis: int = 0, dif: float = 0.1
-) -> cp.ndarray:
+    data: xp.ndarray, kernel_size: int = 3, axis: int = 0, dif: float = 0.1
+) -> xp.ndarray:
     """
     Selectively applies 3D median filter to a 3D array to remove outliers. Also called a dezinger.
 
