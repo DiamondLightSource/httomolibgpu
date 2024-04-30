@@ -22,11 +22,18 @@
 
 try:
     import cupy as cp
+    import nvtx
 except ImportError:
     print("Cupy library is a required dependency for HTTomolibgpu, please install")
+
+try:
+    from cucim.skimage.filters import median
+    from cucim.skimage.morphology import disk    
+except ImportError:
+    print("Cucim library of RapidsAI is a required dependency for HTTomolibgpu, please install")
+
 from typing import Tuple
 import numpy as np
-import nvtx
 from numpy import float32
 
 from httomolibgpu.cuda_kernels import load_cuda_module
@@ -69,9 +76,6 @@ def median_filter(
     ValueError
         If the input array is not three dimensional.
     """
-    from cucim.skimage.filters import median
-    from cucim.skimage.morphology import disk
-
     input_type = data.dtype
 
     if input_type not in ["float32", "uint16"]:
