@@ -20,21 +20,29 @@
 # ---------------------------------------------------------------------------
 """ Module for data correction """
 
+cupy_run = False
 try:
     import cupy as cp
-    #import nvtx
+
+    # import nvtx
+    cupy_run = True
 except ImportError:
     print("Cupy library is a required dependency for HTTomolibgpu, please install")
 
 try:
     from cucim.skimage.filters import median
-    from cucim.skimage.morphology import disk    
+    from cucim.skimage.morphology import disk
 except ImportError:
-    print("Cucim library of RapidsAI is a required dependency for HTTomolibgpu, please install")
+    print(
+        "Cucim library of RapidsAI is a required dependency for HTTomolibgpu, please install"
+    )
 
 from typing import Tuple
 import numpy as np
 from numpy import float32
+
+if cupy_run:
+    from httomolibgpu.cuda_kernels import load_cuda_module
 
 __all__ = [
     "median_filter",
@@ -42,7 +50,7 @@ __all__ = [
 ]
 
 
-#@nvtx.annotate()
+# @nvtx.annotate()
 def median_filter(
     data: cp.ndarray,
     kernel_size: int = 3,
@@ -74,8 +82,7 @@ def median_filter(
     ValueError
         If the input array is not three dimensional.
     """
-    from httomolibgpu.cuda_kernels import load_cuda_module    
-    
+
     input_type = data.dtype
 
     if input_type not in ["float32", "uint16"]:
@@ -145,6 +152,7 @@ def median_filter(
         )
         thresholding_kernel(data, float32(dif), output)
     return output
+
 
 def remove_outlier(
     data: cp.ndarray, kernel_size: int = 3, axis: int = 0, dif: float = 0.1
