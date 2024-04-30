@@ -20,45 +20,32 @@
 # ---------------------------------------------------------------------------
 """ Module for data correction """
 
-
 import numpy as xp
 
 cupy_run = False
-
 try:
-    import cupy as cp
+    import cupy as xp
 
     try:
-        cp.cuda.Device(0).compute_capability
+        xp.cuda.Device(0).compute_capability
         cupy_run = True
 
-    except cp.cuda.runtime.CUDARuntimeError:
-        print("Cupy library is a required dependency for HTTomolibgpu, please install")
+    except xp.cuda.runtime.CUDARuntimeError:
+        print("CuPy library is a major dependency for HTTomolibgpu, please install")
         import numpy as np
 except ImportError:
     import numpy as np
-
-# cupy_run = False
-# try:
-#     import cupy as cp
-
-#     # import nvtx
-#     cupy_run = True
-# except ImportError:
-#     print("Cupy library is a required dependency for HTTomolibgpu, please install")
 
 try:
     from cucim.skimage.filters import median
     from cucim.skimage.morphology import disk
 except ImportError:
     print(
-        "Cucim library of RapidsAI is a required dependency for HTTomolibgpu, please install"
+        "Cucim library of RapidsAI is a required dependency for some modules, please install"
     )
 
-from typing import Tuple
-
-# import numpy as np
 from numpy import float32
+import nvtx
 
 if cupy_run:
     from httomolibgpu.cuda_kernels import load_cuda_module
@@ -69,7 +56,7 @@ __all__ = [
 ]
 
 
-# @nvtx.annotate()
+@nvtx.annotate()
 def median_filter(
     data: xp.ndarray,
     kernel_size: int = 3,
