@@ -41,7 +41,7 @@ try:
     from cucim.skimage.morphology import disk
 except ImportError:
     print(
-        "Cucim library of RapidsAI is a required dependency for some modules, please install"
+        "Cucim library of Rapidsai is a required dependency for some modules, please install"
     )
 
 from numpy import float32

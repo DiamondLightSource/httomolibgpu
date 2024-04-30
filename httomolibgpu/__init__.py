@@ -1,5 +1,6 @@
 from httomolibgpu.misc.corr import *
-#from httomolibgpu.misc.morph import *
+from httomolibgpu.misc.morph import *
+from httomolibgpu.misc.rescale import *
 #from httomolibgpu.prep.alignment import *
 #from httomolibgpu.prep.normalize import *
 #from httomolibgpu.prep.phase import *
