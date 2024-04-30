@@ -22,7 +22,7 @@
 
 try:
     import cupy as cp
-    import nvtx
+    #import nvtx
 except ImportError:
     print("Cupy library is a required dependency for HTTomolibgpu, please install")
 
@@ -36,15 +36,13 @@ from typing import Tuple
 import numpy as np
 from numpy import float32
 
-from httomolibgpu.cuda_kernels import load_cuda_module
-
 __all__ = [
     "median_filter",
     "remove_outlier",
 ]
 
 
-@nvtx.annotate()
+#@nvtx.annotate()
 def median_filter(
     data: cp.ndarray,
     kernel_size: int = 3,
@@ -76,6 +74,8 @@ def median_filter(
     ValueError
         If the input array is not three dimensional.
     """
+    from httomolibgpu.cuda_kernels import load_cuda_module    
+    
     input_type = data.dtype
 
     if input_type not in ["float32", "uint16"]:
@@ -145,7 +145,6 @@ def median_filter(
         )
         thresholding_kernel(data, float32(dif), output)
     return output
-
 
 def remove_outlier(
     data: cp.ndarray, kernel_size: int = 3, axis: int = 0, dif: float = 0.1
