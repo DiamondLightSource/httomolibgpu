@@ -41,6 +41,7 @@ test:
   imports:
     - httomolibgpu
     - httomolibgpu.misc
+    - httomolibgpu.prep
   source_files:
     - tests/*
   commands:
