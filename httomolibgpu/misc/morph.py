@@ -20,13 +20,13 @@
 # ---------------------------------------------------------------------------
 """Module for data type morphing functions"""
 
-import cupy as cp
+try:
+    import cupy as cp
+except ImportError:
+    print("Cupy library is a required dependency for HTTomolibgpu, please install")
 import numpy as np
 import nvtx
 from typing import Literal, Tuple
-
-from cupyx.scipy.interpolate import interpn
-
 
 __all__ = [
     "sino_360_to_180",
@@ -115,6 +115,7 @@ def data_resampler(
     Returns:
         cp.ndarray: Up/Down-scaled 3D cupy array
     """
+    from cupyx.scipy.interpolate import interpn
 
     if data.ndim != 3:
         raise ValueError("only 3D data is supported")

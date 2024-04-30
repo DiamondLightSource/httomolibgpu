@@ -27,7 +27,7 @@ except ImportError:
 from typing import Tuple
 import numpy as np
 import nvtx
-from cupy import float32
+from numpy import float32
 
 from httomolibgpu.cuda_kernels import load_cuda_module
 

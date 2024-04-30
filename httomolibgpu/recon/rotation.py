@@ -23,14 +23,16 @@
 import math
 from typing import List, Literal, Optional, Tuple, Union
 
-import cupy as cp
-import numpy as np
-import cupyx
-import nvtx
-import cupyx.scipy.ndimage as cpndi
-from cupy import ndarray
-from cupyx.scipy.ndimage import gaussian_filter, shift
+try:
+    import cupy as cp
+    import cupyx
+    import nvtx
+    import cupyx.scipy.ndimage as cpndi
+    from cupyx.scipy.ndimage import gaussian_filter, shift
+except ImportError:
+    print("Cupy library is a required dependency for HTTomolibgpu, please install")
 
+import numpy as np
 from httomolibgpu.cuda_kernels import load_cuda_module
 
 __all__ = [

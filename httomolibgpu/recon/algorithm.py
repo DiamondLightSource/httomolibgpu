@@ -21,14 +21,16 @@
 """Module for tomographic reconstruction"""
 
 from typing import Optional, Tuple, Union
-
 from typing import Type
 
-import cupy as cp
-from cupy import float32, complex64
-import cupyx
+try:
+    import cupy as cp
+    import nvtx
+except ImportError:
+    print("Cupy library is a required dependency for HTTomolibgpu, please install")
+
+from numpy import float32, complex64
 import numpy as np
-import nvtx
 
 from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
 from tomobar.methodsIR_CuPy import RecToolsIRCuPy
@@ -89,7 +91,7 @@ def FBP(
     reconstruction = RecToolsCP.FBP(
         data,
         cutoff_freq=filter_freq_cutoff,
-        recon_mask_radius=recon_mask_radius,        
+        recon_mask_radius=recon_mask_radius,
         data_axes_labels_order=input_data_axis_labels,
     )
     cp._default_memory_pool.free_all_blocks()

@@ -22,9 +22,13 @@
 
 import math
 from typing import Tuple
-import cupy as cp
-from cupy import float32
-import cupyx
+
+try:
+    import cupy as cp
+except ImportError:
+    print("Cupy library is a required dependency for HTTomolibgpu, please install")
+
+from numpy import float32
 import numpy as np
 import nvtx
 
@@ -40,6 +44,7 @@ BOLTZMANN_CONSTANT = 1.3806488e-16  # [erg/k]
 SPEED_OF_LIGHT = 299792458e2  # [cm/s]
 PI = 3.14159265359
 PLANCK_CONSTANT = 6.58211928e-19  # [keV*s]
+
 
 ## %%%%%%%%%%%%%%%%%%%%%%% paganin_filter %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 #: CuPy implementation of Paganin filter from Savu
@@ -93,6 +98,8 @@ def paganin_filter_savu(
     cp.ndarray
         The stack of filtered projections.
     """
+    import cupyx
+
     # Check the input data is valid
     if data.ndim != 3:
         raise ValueError(
@@ -267,8 +274,10 @@ def _reciprocal_coord(pixel_size: float, num_grid: int) -> cp.ndarray:
     rc *= 2 * PI / (n * pixel_size)
     return rc
 
+
 ##-------------------------------------------------------------##
 ##-------------------------------------------------------------##
+
 
 # Adaptation with some corrections of retrieve_phase (Paganin filter)
 # from TomoPy
@@ -302,6 +311,7 @@ def paganin_filter_tomopy(
     cp.ndarray
         The 3D array of Paganin phase-filtered projection images.
     """
+    import cupyx
 
     # Check the input data is valid
     if tomo.ndim != 3:
@@ -312,7 +322,7 @@ def paganin_filter_tomopy(
 
     dz_orig, dy_orig, dx_orig = cp.shape(tomo)
 
-    # Perform padding to the power of 2 as FFT is O(n*log(n)) complexity    
+    # Perform padding to the power of 2 as FFT is O(n*log(n)) complexity
     # TODO: adding other options of padding?
     padded_tomo, pad_tup = _pad_projections_to_second_power(tomo)
 
@@ -326,7 +336,9 @@ def paganin_filter_tomopy(
     w2 = _reciprocal_grid(pixel_size, (dy, dx))
 
     # Build filter in the Fourier space.
-    phase_filter = cupyx.scipy.fft.fftshift(_paganin_filter_factor2(energy, dist, alpha, w2))
+    phase_filter = cupyx.scipy.fft.fftshift(
+        _paganin_filter_factor2(energy, dist, alpha, w2)
+    )
     phase_filter = phase_filter / phase_filter.max()  # normalisation
 
     # Apply filter and take inverse FFT
@@ -344,7 +356,7 @@ def paganin_filter_tomopy(
     # crop the padded filtered data:
     tomo = ifft_filtered_tomo[slc_indices].astype(cp.float32)
 
-    # taking the negative log    
+    # taking the negative log
     _log_kernel = cp.ElementwiseKernel(
         "C tomo",
         "C out",
@@ -399,5 +411,5 @@ def _pad_projections_to_second_power(tomo: cp.ndarray) -> tuple[cp.ndarray, tupl
 
 
 def _paganin_filter_factor2(energy, dist, alpha, w2):
-    # Alpha represents the ratio of delta/beta.    
+    # Alpha represents the ratio of delta/beta.
     return 1 / (_wavelength(energy) * dist * w2 / (4 * PI) + alpha)

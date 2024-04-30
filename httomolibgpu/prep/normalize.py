@@ -21,10 +21,15 @@
 """Modules for raw projection data normalization"""
 
 from typing import Tuple
-import cupy as cp
+
+try:
+    import cupy as cp
+    import nvtx
+except ImportError:
+    print("Cupy library is a required dependency for HTTomolibgpu, please install")
+
 import numpy as np
-import nvtx
-from cupy import uint16, float32, mean
+from numpy import uint16, float32
 
 __all__ = ["normalize"]
 
@@ -65,6 +70,8 @@ def normalize(
     cp.ndarray
         Normalised 3D tomographic data as a CuPy array.
     """
+    from cupy import mean
+
     _check_valid_input(data, flats, darks)
 
     dark0 = cp.empty(darks.shape[1:], dtype=float32)

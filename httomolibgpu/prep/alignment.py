@@ -23,14 +23,18 @@
 import os
 from typing import Dict, List, Optional, Tuple
 
-import cupy as cp
-from cupyx.scipy.ndimage import map_coordinates
+try:
+    import cupy as cp
+except ImportError:
+    print("Cupy library is a required dependency for HTTomolibgpu, please install")
+
 import nvtx
 import numpy as np
 
 __all__ = [
     "distortion_correction_proj_discorpy",
 ]
+
 
 # CuPy implementation of distortion correction from Discorpy
 # https://github.com/DiamondLightSource/discorpy/blob/67743842b60bf5dd45b21b8460e369d4a5e94d67/discorpy/post/postprocessing.py#L111-L148
@@ -74,6 +78,8 @@ def distortion_correction_proj_discorpy(
     cp.ndarray
         3D array. Distortion-corrected image(s).
     """
+    from cupyx.scipy.ndimage import map_coordinates
+
     # Check if it's a stack of 2D images, or only a single 2D image
     if len(data.shape) == 2:
         data = cp.expand_dims(data, axis=0)

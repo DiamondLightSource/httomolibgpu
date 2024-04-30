@@ -21,13 +21,15 @@
 """Modules for stripes removal"""
 from typing import Tuple, Union
 
-import cupy as cp
+try:
+    import cupy as cp
+    import nvtx
+    from cupyx.scipy.ndimage import median_filter
+    from cupyx.scipy.ndimage import binary_dilation
+    from cupyx.scipy.ndimage import uniform_filter1d
+except ImportError:
+    print("Cupy library is a required dependency for HTTomolibgpu, please install")
 import numpy as np
-import nvtx
-from cupyx.scipy.ndimage import median_filter
-from cupyx.scipy import signal
-from cupyx.scipy.ndimage import binary_dilation
-from cupyx.scipy.ndimage import uniform_filter1d
 
 __all__ = [
     "remove_stripe_based_sorting",
