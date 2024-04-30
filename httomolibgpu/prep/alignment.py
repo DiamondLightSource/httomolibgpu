@@ -23,12 +23,14 @@
 import numpy as xp
 import numpy as np
 
+cupy_run = False
 try:
     import cupy as xp
     from cupy import mean
 
     try:
         xp.cuda.Device(0).compute_capability
+        cupy_run = True
     except xp.cuda.runtime.CUDARuntimeError:
         print("CuPy library is a major dependency for HTTomolibgpu, please install")
         import numpy as np
@@ -37,6 +39,11 @@ except ImportError:
 
 from typing import Dict, List
 import nvtx
+
+if cupy_run:
+    from cupyx.scipy.ndimage import map_coordinates
+else:
+    from scipy.ndimage import map_coordinates
 
 __all__ = [
     "distortion_correction_proj_discorpy",
@@ -85,8 +92,6 @@ def distortion_correction_proj_discorpy(
     cp.ndarray
         3D array. Distortion-corrected image(s).
     """
-    from cupyx.scipy.ndimage import map_coordinates
-
     # Check if it's a stack of 2D images, or only a single 2D image
     if len(data.shape) == 2:
         data = xp.expand_dims(data, axis=0)
