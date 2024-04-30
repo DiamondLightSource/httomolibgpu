@@ -19,18 +19,6 @@ __all__ = [
     "rescale_to_int",
 ]
 
-rescale_kernel = xp.ElementwiseKernel(
-    "T x, raw T input_min, raw T input_max, raw T factor",
-    "O out",
-    """
-      T x_clean = isnan(x) || isinf(x) ? T(0) : x;
-      T x_clipped = x_clean < input_min ? input_min : (x_clean > input_max ? input_max : x_clean);
-      T x_rebased = x_clipped - input_min;
-      out = O(x_rebased * factor);
-    """,
-    "rescale_to_int",
-)
-
 
 @nvtx.annotate()
 def rescale_to_int(
@@ -97,5 +85,16 @@ def rescale_to_int(
     factor = (output_max - output_min) / (input_max - input_min)
 
     res = xp.empty(data.shape, dtype=output_dtype)
+    rescale_kernel = xp.ElementwiseKernel(
+        "T x, raw T input_min, raw T input_max, raw T factor",
+        "O out",
+        """
+        T x_clean = isnan(x) || isinf(x) ? T(0) : x;
+        T x_clipped = x_clean < input_min ? input_min : (x_clean > input_max ? input_max : x_clean);
+        T x_rebased = x_clipped - input_min;
+        out = O(x_rebased * factor);
+        """,
+        "rescale_to_int",
+    )
     rescale_kernel(data, input_min, input_max, factor, res)
     return res
