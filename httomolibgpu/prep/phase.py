@@ -38,6 +38,7 @@ except ImportError:
 from numpy import float32
 from typing import Union
 import nvtx
+import math
 
 if cupy_run:
     from httomolibgpu.cuda_kernels import load_cuda_module
@@ -49,13 +50,6 @@ __all__ = [
     "paganin_filter_savu",
     "paganin_filter_tomopy",
 ]
-
-# Define constants used in phase retrieval method
-BOLTZMANN_CONSTANT = 1.3806488e-16  # [erg/k]
-SPEED_OF_LIGHT = 299792458e2  # [cm/s]
-PI = 3.14159265359
-PLANCK_CONSTANT = 6.58211928e-19  # [keV*s]
-
 
 ## %%%%%%%%%%%%%%%%%%%%%%% paganin_filter %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 #: CuPy implementation of Paganin filter from Savu
@@ -206,7 +200,7 @@ def paganin_filter_savu(
         no_return=True,
     )
     fft_scale = 1.0 / (data.shape[1] * data.shape[2])
-    res = xp.empty((data.shape[0], height, width), dtype=np.float32)
+    res = xp.empty((data.shape[0], height, width), dtype=xp.float32)
     post_kernel(
         data[:, pad_y : pad_y + height, pad_x : pad_x + width],
         np.float32(increment),
@@ -219,17 +213,19 @@ def paganin_filter_savu(
 
 
 def _wavelength(energy: float) -> float:
-    return 2 * PI * PLANCK_CONSTANT * SPEED_OF_LIGHT / energy
+    SPEED_OF_LIGHT = 299792458e2  # [cm/s]
+    PLANCK_CONSTANT = 6.58211928e-19  # [keV*s]
+    return 2 * math.pi * PLANCK_CONSTANT * SPEED_OF_LIGHT / energy
 
 
 def _paganin_filter_factor(
     energy: float, dist: float, alpha: float, w2: xp.ndarray
 ) -> xp.ndarray:
-    return 1 / (_wavelength(energy) * dist * w2 / (4 * PI) + alpha)
+    return 1 / (_wavelength(energy) * dist * w2 / (4 * math.pi) + alpha)
 
 
 def _calc_pad_width(dim: int, pixel_size: float, wavelength: float, dist: float) -> int:
-    pad_pix = xp.ceil(PI * wavelength * dist / pixel_size**2)
+    pad_pix = xp.ceil(math.pi * wavelength * dist / pixel_size**2)
     return int((pow(2, xp.ceil(xp.log2(dim + pad_pix))) - dim) * 0.5)
 
 
@@ -281,7 +277,7 @@ def _reciprocal_coord(pixel_size: float, num_grid: int) -> xp.ndarray:
     """
     n = num_grid - 1
     rc = xp.arange(-n, num_grid, 2, dtype=xp.float32)
-    rc *= 2 * PI / (n * pixel_size)
+    rc *= 2 * math.pi / (n * pixel_size)
     return rc
 
 
@@ -329,13 +325,13 @@ def paganin_filter_tomopy(
             " please provide a stack of 2D projections."
         )
 
-    dz_orig, dy_orig, dx_orig = xp.shape(tomo)
+    dz_orig, dy_orig, dx_orig = tomo.shape
 
     # Perform padding to the power of 2 as FFT is O(n*log(n)) complexity
     # TODO: adding other options of padding?
     padded_tomo, pad_tup = _pad_projections_to_second_power(tomo)
 
-    dz, dy, dx = xp.shape(padded_tomo)
+    dz, dy, dx = padded_tomo.shape
 
     # 3D FFT of tomo data
     padded_tomo = xp.asarray(padded_tomo, dtype=xp.complex64)
@@ -421,4 +417,4 @@ def _pad_projections_to_second_power(tomo: xp.ndarray) -> Union[xp.ndarray, tupl
 
 def _paganin_filter_factor2(energy, dist, alpha, w2):
     # Alpha represents the ratio of delta/beta.
-    return 1 / (_wavelength(energy) * dist * w2 / (4 * PI) + alpha)
+    return 1 / (_wavelength(energy) * dist * w2 / (4 * math.pi) + alpha)
