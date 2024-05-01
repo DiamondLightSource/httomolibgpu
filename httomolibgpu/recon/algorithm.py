@@ -38,8 +38,12 @@ import nvtx
 from numpy import float32, complex64
 from typing import Optional, Type
 
-from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
-from tomobar.methodsIR_CuPy import RecToolsIRCuPy
+if cupy_run:
+    from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
+    from tomobar.methodsIR_CuPy import RecToolsIRCuPy
+else:
+    from tomobar.methodsDIR import RecToolsDIR as RecToolsDIRCuPy
+    from tomobar.methodsIR import RecToolsIR as RecToolsIRCuPy
 
 __all__ = [
     "FBP",

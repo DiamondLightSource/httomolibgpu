@@ -20,8 +20,8 @@
 # ---------------------------------------------------------------------------
 """Modules for phase retrieval and phase-contrast enhancement"""
 
-cupy_run = False
 import numpy as np
+cupy_run = False
 try:
     import cupy as xp
 
@@ -176,7 +176,7 @@ def paganin_filter_savu(
     data = fft2(data, axes=(-2, -1), overwrite_x=True, norm="backward")
 
     # prepare filter here, while the GPU is busy with the FFT
-    filtercomplex = xp.empty((height1, width1), dtype=np.complex64)
+    filtercomplex = xp.empty((height1, width1), dtype=xp.complex64)
     bx = 16
     by = 8
     gx = (width1 + bx - 1) // bx
