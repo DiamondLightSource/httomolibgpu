@@ -35,27 +35,26 @@ try:
 except ImportError:
     import numpy as xp
 
-try:
-    from cucim.skimage.filters import median
-    from cucim.skimage.morphology import disk
-except ImportError:
-    print(
-        "Cucim library of Rapidsai is a required dependency for median_filter and remove_outlier modules, please install"
-    )
-    from skimage.filters import median
-    from skimage.morphology import disk
+# try:
+#     from cucim.skimage.filters import median
+#     from cucim.skimage.morphology import disk
+# except ImportError:
+#     print(
+#         "Cucim library of Rapidsai is a required dependency for median_filter and remove_outlier modules, please install"
+#     )
+#     from skimage.filters import median
+#     from skimage.morphology import disk
 
 from numpy import float32
 import nvtx
 
-if cupy_run:
-    from httomolibgpu.cuda_kernels import load_cuda_module
+# if cupy_run:
+#     from httomolibgpu.cuda_kernels import load_cuda_module
 
 __all__ = [
     "median_filter",
     "remove_outlier",
 ]
-
 
 @nvtx.annotate()
 def median_filter(
@@ -89,6 +88,19 @@ def median_filter(
     ValueError
         If the input array is not three dimensional.
     """
+    return __median_filter(data,kernel_size,axis,dif)
+
+
+def __median_filter(
+    data: xp.ndarray,
+    kernel_size: int = 3,
+    axis: int = 0,
+    dif: float = 0.0,
+) -> xp.ndarray:
+
+    from cucim.skimage.filters import median
+    from cucim.skimage.morphology import disk
+    from httomolibgpu.cuda_kernels import load_cuda_module
 
     input_type = data.dtype
 
