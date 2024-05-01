@@ -21,13 +21,20 @@
 """Modules for stripes removal"""
 from typing import Tuple, Union
 
-import cupy as cp
+try:
+    import nvtx
+    import cupy as cp
+    from cupyx.scipy.ndimage import median_filter
+    from cupyx.scipy import signal
+    from cupyx.scipy.ndimage import binary_dilation
+    from cupyx.scipy.ndimage import uniform_filter1d
+except ImportError as e:
+    print(f"Failed to import module in {__file__} with error: {e}; defaulting to CPU-only mode")
+    import numpy as cp
+    from unittest.mock import Mock
+    nvtx = Mock()
+
 import numpy as np
-import nvtx
-from cupyx.scipy.ndimage import median_filter
-from cupyx.scipy import signal
-from cupyx.scipy.ndimage import binary_dilation
-from cupyx.scipy.ndimage import uniform_filter1d
 
 __all__ = [
     "remove_stripe_based_sorting",

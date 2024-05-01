@@ -20,15 +20,19 @@
 # ---------------------------------------------------------------------------
 """Modules for phase retrieval and phase-contrast enhancement"""
 
-import math
-from typing import Tuple
-import cupy as cp
-from cupy import float32
-import cupyx
-import numpy as np
-import nvtx
+try:
+    import nvtx
+    import cupyx
+    import cupy as cp
+    from httomolibgpu.cuda_kernels import load_cuda_module
+except ImportError as e:
+    print(f"Failed to import module in {__file__} with error: {e}; defaulting to CPU-only mode")
+    import numpy as cp
+    from unittest.mock import Mock
+    nvtx = Mock()
 
-from httomolibgpu.cuda_kernels import load_cuda_module
+import numpy as np
+
 
 __all__ = [
     "paganin_filter_savu",

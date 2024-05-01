@@ -23,15 +23,22 @@
 import math
 from typing import List, Literal, Optional, Tuple, Union
 
-import cupy as cp
-import numpy as np
-import cupyx
-import nvtx
-import cupyx.scipy.ndimage as cpndi
-from cupy import ndarray
-from cupyx.scipy.ndimage import gaussian_filter, shift
+try:
+    import nvtx
+    import cupyx
+    import cupy as cp
+    import cupyx.scipy.ndimage as cpndi
+    from cupy import ndarray
+    from cupyx.scipy.ndimage import gaussian_filter, shift
+    from httomolibgpu.cuda_kernels import load_cuda_module
+except ImportError as e:
+    print(f"Failed to import module in {__file__} with error: {e}; defaulting to CPU-only mode")
+    import numpy as cp
+    from unittest.mock import Mock
+    nvtx = Mock()
 
-from httomolibgpu.cuda_kernels import load_cuda_module
+import numpy as np
+
 
 __all__ = [
     "find_center_vo",

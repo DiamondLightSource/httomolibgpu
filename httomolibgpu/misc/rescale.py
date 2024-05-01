@@ -1,24 +1,20 @@
-import cupy as cp
+try:
+    import nvtx
+    import cupy as cp
+except ImportError as e:
+    print(f"Failed to import module in {__file__} with error: {e}; defaulting to CPU-only mode")
+    import numpy as cp
+    from unittest.mock import Mock
+    nvtx = Mock()
+
 import numpy as np
 from typing import Literal, Optional, Tuple, Union
-import nvtx
 
 __all__ = [
     "rescale_to_int",
 ]
 
 
-rescale_kernel = cp.ElementwiseKernel(
-    'T x, raw T input_min, raw T input_max, raw T factor',
-    'O out',
-    '''
-      T x_clean = isnan(x) || isinf(x) ? T(0) : x;
-      T x_clipped = x_clean < input_min ? input_min : (x_clean > input_max ? input_max : x_clean);
-      T x_rebased = x_clipped - input_min;
-      out = O(x_rebased * factor);
-    ''',
-    'rescale_to_int'
-)
 
 @nvtx.annotate()
 def rescale_to_int(data: cp.ndarray, 
@@ -57,6 +53,17 @@ def rescale_to_int(data: cp.ndarray,
             The original data, clipped to the range specified with the perc_range_min and 
             perc_range_max, and scaled to the full range of the output integer type
     """
+    rescale_kernel = cp.ElementwiseKernel(
+        'T x, raw T input_min, raw T input_max, raw T factor',
+        'O out',
+        '''
+          T x_clean = isnan(x) || isinf(x) ? T(0) : x;
+          T x_clipped = x_clean < input_min ? input_min : (x_clean > input_max ? input_max : x_clean);
+          T x_rebased = x_clipped - input_min;
+          out = O(x_rebased * factor);
+        ''',
+        'rescale_to_int'
+    )
     
     if bits == 8:
         output_dtype: Union[type[np.uint8], type[np.uint16], type[np.uint32]] = np.uint8

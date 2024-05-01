@@ -24,14 +24,21 @@ from typing import Optional, Tuple, Union
 
 from typing import Type
 
-import cupy as cp
-from cupy import float32, complex64
-import cupyx
-import numpy as np
-import nvtx
+try:
+    import nvtx
+    import cupy as cp
+    from cupy import float32, complex64
+    import cupyx
+    from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
+    from tomobar.methodsIR_CuPy import RecToolsIRCuPy
+except ImportError as e:
+    print(f"Failed to import module in {__file__} with error: {e}; defaulting to CPU-only mode")
+    import numpy as cp
+    from unittest.mock import Mock
+    nvtx = Mock()
 
-from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
-from tomobar.methodsIR_CuPy import RecToolsIRCuPy
+import numpy as np
+
 
 __all__ = [
     "FBP",

@@ -21,15 +21,18 @@
 """ Module for data correction """
 
 try:
+    import nvtx
     import cupy as cp
-except ImportError:
-    print("Cupy library is a required dependency for HTTomolibgpu, please install")
-from typing import Tuple
-import numpy as np
-import nvtx
-from cupy import float32
+    from cucim.skimage.filters import median
+    from cucim.skimage.morphology import disk
+    from httomolibgpu.cuda_kernels import load_cuda_module
+except ImportError as e:
+    print(f"Failed to import module in {__file__} with error: {e}; defaulting to CPU-only mode")
+    import numpy as cp
+    from unittest.mock import Mock
+    nvtx = Mock()
 
-from httomolibgpu.cuda_kernels import load_cuda_module
+from numpy import float32
 
 __all__ = [
     "median_filter",
@@ -69,9 +72,6 @@ def median_filter(
     ValueError
         If the input array is not three dimensional.
     """
-    from cucim.skimage.filters import median
-    from cucim.skimage.morphology import disk
-
     input_type = data.dtype
 
     if input_type not in ["float32", "uint16"]:

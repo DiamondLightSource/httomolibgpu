@@ -23,10 +23,15 @@
 import os
 from typing import Dict, List, Optional, Tuple
 
-import cupy as cp
-from cupyx.scipy.ndimage import map_coordinates
-import nvtx
-import numpy as np
+try:
+    import nvtx
+    import cupy as cp
+    from cupyx.scipy.ndimage import map_coordinates
+except ImportError as e:
+    print(f"Failed to import module in {__file__} with error: {e}; defaulting to CPU-only mode")
+    import numpy as cp
+    from unittest.mock import Mock
+    nvtx = Mock()
 
 __all__ = [
     "distortion_correction_proj_discorpy",

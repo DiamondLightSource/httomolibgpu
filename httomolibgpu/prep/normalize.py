@@ -20,11 +20,15 @@
 # ---------------------------------------------------------------------------
 """Modules for raw projection data normalization"""
 
-from typing import Tuple
-import cupy as cp
-import numpy as np
-import nvtx
-from cupy import uint16, float32, mean
+try:
+    import nvtx
+    import cupy as cp
+    from cupy import uint16, float32, mean
+except ImportError as e:
+    print(f"Failed to import module in {__file__} with error: {e}; defaulting to CPU-only mode")
+    import numpy as cp
+    from unittest.mock import Mock
+    nvtx = Mock()
 
 __all__ = ["normalize"]
 

@@ -20,12 +20,18 @@
 # ---------------------------------------------------------------------------
 """Module for data type morphing functions"""
 
-import cupy as cp
-import numpy as np
-import nvtx
-from typing import Literal, Tuple
+try:
+    import nvtx
+    import cupy as cp
+    from cupyx.scipy.interpolate import interpn
+except ImportError as e:
+    print(f"Failed to import module in {__file__} with error: {e}; defaulting to CPU-only mode")
+    import numpy as cp
+    from unittest.mock import Mock
+    nvtx = Mock()
 
-from cupyx.scipy.interpolate import interpn
+import numpy as np
+from typing import Literal, Tuple
 
 
 __all__ = [
