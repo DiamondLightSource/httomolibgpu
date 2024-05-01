@@ -24,11 +24,9 @@ import numpy as np
 cupy_run = False
 try:
     import cupy as xp
-
     try:
         xp.cuda.Device(0).compute_capability
         cupy_run = True
-
     except xp.cuda.runtime.CUDARuntimeError:
         print("CuPy library is a major dependency for HTTomolibgpu, please install")
         import numpy as np
@@ -39,12 +37,6 @@ from numpy import float32
 from typing import Union
 import nvtx
 import math
-
-if cupy_run:
-    from httomolibgpu.cuda_kernels import load_cuda_module
-    from cupyx.scipy.fft import fft2, ifft2, fftshift
-else:
-    from scipy.fft import fft2, ifft2, fftshift
 
 __all__ = [
     "paganin_filter_savu",
@@ -102,7 +94,27 @@ def paganin_filter_savu(
     -------
     cp.ndarray
         The stack of filtered projections.
-    """    
+    """   
+    if cupy_run:
+        return __paganin_filter_savu(data, ratio, energy, distance, resolution,  pad_y, pad_x, pad_method, increment)
+    else:
+        print("__paganin_filter_savu won't be executed because CuPy is not installed")
+        return data
+
+def __paganin_filter_savu(
+    data: xp.ndarray,
+    ratio: float = 250.0,
+    energy: float = 53.0,
+    distance: float = 1.0,
+    resolution: float = 1.28,
+    pad_y: int = 100,
+    pad_x: int = 100,
+    pad_method: str = "edge",
+    increment: float = 0.0,
+) -> xp.ndarray:
+    
+    from httomolibgpu.cuda_kernels import load_cuda_module
+    from cupyx.scipy.fft import fft2, ifft2
 
     # Check the input data is valid
     if data.ndim != 3:
@@ -208,30 +220,12 @@ def paganin_filter_savu(
         np.float32(fft_scale),
         res,
     )
-
     return res
-
 
 def _wavelength(energy: float) -> float:
     SPEED_OF_LIGHT = 299792458e2  # [cm/s]
     PLANCK_CONSTANT = 6.58211928e-19  # [keV*s]
     return 2 * math.pi * PLANCK_CONSTANT * SPEED_OF_LIGHT / energy
-
-
-def _paganin_filter_factor(
-    energy: float, dist: float, alpha: float, w2: xp.ndarray
-) -> xp.ndarray:
-    return 1 / (_wavelength(energy) * dist * w2 / (4 * math.pi) + alpha)
-
-
-def _calc_pad_width(dim: int, pixel_size: float, wavelength: float, dist: float) -> int:
-    pad_pix = xp.ceil(math.pi * wavelength * dist / pixel_size**2)
-    return int((pow(2, xp.ceil(xp.log2(dim + pad_pix))) - dim) * 0.5)
-
-
-def _calc_pad_val(tomo: xp.ndarray) -> float:
-    return xp.mean((tomo[..., 0] + tomo[..., -1]) * 0.5)
-
 
 def _reciprocal_grid(pixel_size: float, shape_proj: tuple) -> xp.ndarray:
     """
@@ -257,7 +251,6 @@ def _reciprocal_grid(pixel_size: float, shape_proj: tuple) -> xp.ndarray:
 
     return xp.add.outer(indx_sq, indy_sq)
 
-
 def _reciprocal_coord(pixel_size: float, num_grid: int) -> xp.ndarray:
     """
     Calculate reciprocal grid coordinates for a given pixel size
@@ -280,11 +273,8 @@ def _reciprocal_coord(pixel_size: float, num_grid: int) -> xp.ndarray:
     rc *= 2 * math.pi / (n * pixel_size)
     return rc
 
-
 ##-------------------------------------------------------------##
 ##-------------------------------------------------------------##
-
-
 # Adaptation with some corrections of retrieve_phase (Paganin filter)
 # from TomoPy
 @nvtx.annotate()
@@ -317,6 +307,21 @@ def paganin_filter_tomopy(
     cp.ndarray
         The 3D array of Paganin phase-filtered projection images.
     """
+    if cupy_run:
+        return __paganin_filter_tomopy(tomo, pixel_size, dist, energy, alpha)
+    else:
+        print("paganin_filter_tomopy won't be executed because CuPy is not installed")
+        return tomo
+
+def __paganin_filter_tomopy(
+    tomo: xp.ndarray,
+    pixel_size: float = 1e-4,
+    dist: float = 50.0,
+    energy: float = 53.0,
+    alpha: float = 1e-3,
+) -> xp.ndarray:
+
+    from cupyx.scipy.fft import fft2, ifft2, fftshift
 
     # Check the input data is valid
     if tomo.ndim != 3:
@@ -375,7 +380,6 @@ def paganin_filter_tomopy(
 def _shift_bit_length(x: int) -> int:
     return 1 << (x - 1).bit_length()
 
-
 def _pad_projections_to_second_power(tomo: xp.ndarray) -> Union[xp.ndarray, tuple]:
     """
     Performs padding of each projection to the next power of 2.
@@ -413,7 +417,6 @@ def _pad_projections_to_second_power(tomo: xp.ndarray) -> Union[xp.ndarray, tupl
     padded_tomo = xp.pad(tomo, tuple(pad_tup), "edge")
 
     return padded_tomo, pad_tup
-
 
 def _paganin_filter_factor2(energy, dist, alpha, w2):
     # Alpha represents the ratio of delta/beta.

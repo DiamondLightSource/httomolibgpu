@@ -24,7 +24,6 @@ import numpy as np
 cupy_run = False
 try:
     import cupy as xp
-    from cupy import mean
 
     try:
         xp.cuda.Device(0).compute_capability
@@ -35,21 +34,8 @@ try:
 except ImportError:
     import numpy as xp
 
-# try:
-#     from cucim.skimage.filters import median
-#     from cucim.skimage.morphology import disk
-# except ImportError:
-#     print(
-#         "Cucim library of Rapidsai is a required dependency for median_filter and remove_outlier modules, please install"
-#     )
-#     from skimage.filters import median
-#     from skimage.morphology import disk
-
 from numpy import float32
 import nvtx
-
-# if cupy_run:
-#     from httomolibgpu.cuda_kernels import load_cuda_module
 
 __all__ = [
     "median_filter",
@@ -88,7 +74,11 @@ def median_filter(
     ValueError
         If the input array is not three dimensional.
     """
-    return __median_filter(data,kernel_size,axis,dif)
+    if cupy_run:
+        return __median_filter(data, kernel_size, axis, dif)
+    else:
+        print("median_filter won't be executed because CuPy is not installed")
+        return data
 
 
 def __median_filter(
@@ -98,8 +88,13 @@ def __median_filter(
     dif: float = 0.0,
 ) -> xp.ndarray:
 
-    from cucim.skimage.filters import median
-    from cucim.skimage.morphology import disk
+    try:
+        from cucim.skimage.filters import median
+        from cucim.skimage.morphology import disk
+    except ImportError:
+        print(
+            "Cucim library of Rapidsai is a required dependency for median_filter and remove_outlier modules, please install"
+        )
     from httomolibgpu.cuda_kernels import load_cuda_module
 
     input_type = data.dtype
@@ -172,7 +167,7 @@ def __median_filter(
         thresholding_kernel(data, float32(dif), output)
     return output
 
-
+@nvtx.annotate()
 def remove_outlier(
     data: xp.ndarray, kernel_size: int = 3, axis: int = 0, dif: float = 0.1
 ) -> xp.ndarray:
@@ -205,4 +200,8 @@ def remove_outlier(
     if dif <= 0.0:
         raise ValueError("Threshold value (dif) must be positive and nonzero.")
 
-    return median_filter(data=data, kernel_size=kernel_size, axis=axis, dif=dif)
+    if cupy_run:
+        return __median_filter(data, kernel_size, axis, dif)
+    else:
+        print("remove_outlier won't be executed because CuPy is not installed")
+        return data
