@@ -20,21 +20,25 @@
 # ---------------------------------------------------------------------------
 """Modules for raw projection data normalization"""
 
-
-import numpy as np
+cupy_run = False
 try:
-    import cupy as xp
-    from cupy import mean
+    import cupy as xp    
 
     try:
         xp.cuda.Device(0).compute_capability
+        cupy_run = True
     except xp.cuda.runtime.CUDARuntimeError:
         print("CuPy library is a major dependency for HTTomolibgpu, please install")
         import numpy as xp
 except ImportError:
     import numpy as xp
 
+if cupy_run:
+    from cupy import mean
+else:
+    from numpy import mean
 import nvtx
+import numpy as np
 from numpy import float32
 from typing import Tuple
 
