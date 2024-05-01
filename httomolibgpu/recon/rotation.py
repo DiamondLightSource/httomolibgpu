@@ -720,6 +720,57 @@ __all__ = [
 
 
 # %%%%%%%%%%%%%%%%%%%%%%find_center_pc%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# @nvtx.annotate()
+# def find_center_pc(
+#     proj1: xp.ndarray, proj2: xp.ndarray, tol: float = 0.5, rotc_guess: Union[float, Optional[str]] = None
+# ) -> float:
+#     """Find rotation axis location by finding the offset between the first
+#     projection and a mirrored projection 180 degrees apart using
+#     phase correlation in Fourier space.
+#     The `phase_cross_correlation` function uses cross-correlation in Fourier
+#     space, optionally employing an upsampled matrix-multiplication DFT to
+#     achieve arbitrary subpixel precision. :cite:`Guizar:08`.
+
+#     Args:
+#         proj1 (xp.ndarray): Projection from the 0th degree
+#         proj2 (xp.ndarray): Projection from the 180th degree
+#         tol (float, optional): Subpixel accuracy. Defaults to 0.5.
+#         rotc_guess (float, optional): Initial guess value for the rotation center. Defaults to None.
+
+#     Returns:
+#         float: Rotation axis location.
+#     """
+#     if xp.__name__ == "cupy":
+#         from cupyx.scipy.ndimage import shift
+#         try:
+#             from cucim.skimage.registration import phase_cross_correlation
+#         except ImportError:
+#             print(
+#             "Cucim library of Rapidsai is a required dependency for find_center_pc module, please install"
+#             )
+#     else:
+#         from skimage.registration import phase_cross_correlation  
+#         from scipy.ndimage import shift
+    
+#     imgshift = 0.0 if rotc_guess is None else rotc_guess - (proj1.shape[1] - 1.0) / 2.0
+
+#     proj1 = shift(proj1, [0, -imgshift], mode="constant", cval=0)
+#     proj2 = shift(proj2, [0, -imgshift], mode="constant", cval=0)
+
+#     # create reflection of second projection
+#     proj2 = xp.fliplr(proj2)
+
+#     # using cucim of rapids to do phase cross correlation between two images
+#     shiftr = phase_cross_correlation(
+#         reference_image=proj1, moving_image=proj2, upsample_factor=1.0 / tol
+#     )
+
+#     # Compute center of rotation as the center of first image and the
+#     # registered translation with the second image
+#     center = (proj1.shape[1] + shiftr[0][1] - 1.0) / 2.0
+
+#     return center + imgshift
+
 @nvtx.annotate()
 def find_center_pc(
     proj1: xp.ndarray, proj2: xp.ndarray, tol: float = 0.5, rotc_guess: Union[float, Optional[str]] = None
@@ -740,36 +791,6 @@ def find_center_pc(
     Returns:
         float: Rotation axis location.
     """
-    if xp.__name__ == "cupy":
-        from cupyx.scipy.ndimage import shift
-        try:
-            from cucim.skimage.registration import phase_cross_correlation
-        except ImportError:
-            print(
-            "Cucim library of Rapidsai is a required dependency for find_center_pc module, please install"
-            )
-    else:
-        from skimage.registration import phase_cross_correlation  
-        from scipy.ndimage import shift
-    
-    imgshift = 0.0 if rotc_guess is None else rotc_guess - (proj1.shape[1] - 1.0) / 2.0
 
-    proj1 = shift(proj1, [0, -imgshift], mode="constant", cval=0)
-    proj2 = shift(proj2, [0, -imgshift], mode="constant", cval=0)
-
-    # create reflection of second projection
-    proj2 = xp.fliplr(proj2)
-
-    # using cucim of rapids to do phase cross correlation between two images
-    shiftr = phase_cross_correlation(
-        reference_image=proj1, moving_image=proj2, upsample_factor=1.0 / tol
-    )
-
-    # Compute center of rotation as the center of first image and the
-    # registered translation with the second image
-    center = (proj1.shape[1] + shiftr[0][1] - 1.0) / 2.0
-
-    return center + imgshift
-
-
+    return 0.5
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
