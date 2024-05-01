@@ -39,23 +39,23 @@ import nvtx
 import math
 from typing import List, Literal, Optional, Tuple, Union
 
-if cupy_run:
-    from httomolibgpu.cuda_kernels import load_cuda_module
-    from cupyx.scipy.ndimage import shift, gaussian_filter
-    from cupyx.scipy.fftpack import get_fft_plan
-    from cupyx.scipy.fft import rfft2
-else:
-    from scipy.ndimage import shift, gaussian_filter
-    from scipy.fft import fftfreq as get_fft_plan # get_fft_plan doesn't exist in scipyfft
-    from scipy.fft import rfft2
+# if cupy_run:
+#     from httomolibgpu.cuda_kernels import load_cuda_module
+#     from cupyx.scipy.ndimage import shift, gaussian_filter
+#     from cupyx.scipy.fftpack import get_fft_plan
+#     from cupyx.scipy.fft import rfft2
+# else:
+#     from scipy.ndimage import shift, gaussian_filter
+#     from scipy.fft import fftfreq as get_fft_plan # get_fft_plan doesn't exist in scipyfft
+#     from scipy.fft import rfft2
 
-try:
-    from cucim.skimage.registration import phase_cross_correlation
-except ImportError:
-    print(
-        "Cucim library of Rapidsai is a required dependency for find_center_pc module, please install"
-    )
-    from skimage.registration import phase_cross_correlation  
+# try:
+#     from cucim.skimage.registration import phase_cross_correlation
+# except ImportError:
+#     print(
+#         "Cucim library of Rapidsai is a required dependency for find_center_pc module, please install"
+#     )
+#     from skimage.registration import phase_cross_correlation  
 
 __all__ = [
     # "find_center_vo",
@@ -740,6 +740,18 @@ def find_center_pc(
     Returns:
         float: Rotation axis location.
     """
+    if cupy_run:
+        from cupyx.scipy.ndimage import shift
+        try:
+            from cucim.skimage.registration import phase_cross_correlation
+        except ImportError:
+            print(
+            "Cucim library of Rapidsai is a required dependency for find_center_pc module, please install"
+            )
+    else:
+        from skimage.registration import phase_cross_correlation  
+        from scipy.ndimage import shift
+    
     imgshift = 0.0 if rotc_guess is None else rotc_guess - (proj1.shape[1] - 1.0) / 2.0
 
     proj1 = shift(proj1, [0, -imgshift], mode="constant", cval=0)
