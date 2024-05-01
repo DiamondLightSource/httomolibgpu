@@ -40,6 +40,7 @@ test:
     - pytest
   imports:
     - httomolibgpu
+    - httomolibgpu.cupywrapper
     - httomolibgpu.misc
     - httomolibgpu.prep
     - httomolibgpu.recon

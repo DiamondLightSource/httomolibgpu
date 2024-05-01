@@ -5,6 +5,7 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 include-package-data = true
 packages = ["httomolibgpu",
+            "httomolibgpu.cupywrapper",
             "httomolibgpu.misc",
             "httomolibgpu.prep",
             "httomolibgpu.recon",
