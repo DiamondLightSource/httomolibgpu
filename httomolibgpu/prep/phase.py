@@ -21,6 +21,7 @@
 """Modules for phase retrieval and phase-contrast enhancement"""
 
 cupy_run = False
+import numpy as np
 try:
     import cupy as xp
 
@@ -35,11 +36,13 @@ except ImportError:
     import numpy as np
 
 from numpy import float32
-import numpy as np
 import nvtx
 
 if cupy_run:
     from httomolibgpu.cuda_kernels import load_cuda_module
+    from cupyx.scipy.fft import fft2, ifft2, fftshift
+else:
+    from scipy.fft import fft2, ifft2, fftshift
 
 __all__ = [
     "paganin_filter_savu",
@@ -104,8 +107,7 @@ def paganin_filter_savu(
     -------
     cp.ndarray
         The stack of filtered projections.
-    """
-    import cupyx
+    """    
 
     # Check the input data is valid
     if data.ndim != 3:
@@ -170,7 +172,7 @@ def paganin_filter_savu(
 
     # avoid normalising in both directions - we include multiplier in the post_kernel
     data = xp.asarray(data, dtype=xp.complex64)
-    data = cupyx.scipy.fft.fft2(data, axes=(-2, -1), overwrite_x=True, norm="backward")
+    data = fft2(data, axes=(-2, -1), overwrite_x=True, norm="backward")
 
     # prepare filter here, while the GPU is busy with the FFT
     filtercomplex = xp.empty((height1, width1), dtype=np.complex64)
@@ -193,7 +195,7 @@ def paganin_filter_savu(
     )
     data *= filtercomplex
 
-    data = cupyx.scipy.fft.ifft2(data, axes=(-2, -1), overwrite_x=True, norm="forward")
+    data = ifft2(data, axes=(-2, -1), overwrite_x=True, norm="forward")
 
     post_kernel = xp.ElementwiseKernel(
         "C pci1, raw float32 increment, raw float32 ratio, raw float32 fft_scale",
@@ -318,7 +320,6 @@ def paganin_filter_tomopy(
     cp.ndarray
         The 3D array of Paganin phase-filtered projection images.
     """
-    import cupyx
 
     # Check the input data is valid
     if tomo.ndim != 3:
@@ -337,20 +338,20 @@ def paganin_filter_tomopy(
 
     # 3D FFT of tomo data
     padded_tomo = xp.asarray(padded_tomo, dtype=xp.complex64)
-    fft_tomo = cupyx.scipy.fft.fft2(padded_tomo, axes=(-2, -1), overwrite_x=True)
+    fft_tomo = fft2(padded_tomo, axes=(-2, -1), overwrite_x=True)
 
     # Compute the reciprocal grid.
     w2 = _reciprocal_grid(pixel_size, (dy, dx))
 
     # Build filter in the Fourier space.
-    phase_filter = cupyx.scipy.fft.fftshift(
+    phase_filter = fftshift(
         _paganin_filter_factor2(energy, dist, alpha, w2)
     )
     phase_filter = phase_filter / phase_filter.max()  # normalisation
 
     # Apply filter and take inverse FFT
     ifft_filtered_tomo = (
-        cupyx.scipy.fft.ifft2(phase_filter * fft_tomo, axes=(-2, -1), overwrite_x=True)
+        ifft2(phase_filter * fft_tomo, axes=(-2, -1), overwrite_x=True)
     ).real
 
     # slicing indices for cropping
