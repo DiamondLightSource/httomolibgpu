@@ -2,16 +2,20 @@ import os
 from typing import List, Optional, Tuple
 
 try:
-    import cupy as cp
+    import cupy as xp
+    try:
+        xp.cuda.Device(0).compute_capability
+    except xp.cuda.runtime.CUDARuntimeError:
+        print("CuPy library is a major dependency for HTTomolibgpu, please install")
+        import numpy as xp
 except ImportError:
-    print("Cupy library is a required dependency for HTTomolibgpu, please install")
-
+    import numpy as xp
 
 def load_cuda_module(
     file: str,
     name_expressions: Optional[List[str]] = None,
     options: Tuple[str, ...] = tuple(),
-) -> cp.RawModule:
+) -> xp.RawModule:
     """Load a CUDA module file, i.e. a .cu file, from the file system,
     compile it, and return is as a CuPy RawModule for further
     processing.
@@ -25,6 +29,6 @@ def load_cuda_module(
     with open(file, "r") as f:
         code += f.read()
 
-    return cp.RawModule(
+    return xp.RawModule(
         options=("-std=c++11", *options), code=code, name_expressions=name_expressions
     )
