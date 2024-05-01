@@ -21,18 +21,8 @@
 """ Module for data correction """
 
 import numpy as np
-cupy_run = False
-try:
-    import cupy as xp
-
-    try:
-        xp.cuda.Device(0).compute_capability
-        cupy_run = True
-    except xp.cuda.runtime.CUDARuntimeError:
-        print("CuPy library is a major dependency for HTTomolibgpu, please install")
-        import numpy as xp
-except ImportError:
-    import numpy as xp
+from httomolibgpu import cupywrapper
+cp = cupywrapper.cp
 
 from numpy import float32
 import nvtx
@@ -44,11 +34,11 @@ __all__ = [
 
 @nvtx.annotate()
 def median_filter(
-    data: xp.ndarray,
+    data: cp.ndarray,
     kernel_size: int = 3,
     axis: int = 0,
     dif: float = 0.0,
-) -> xp.ndarray:
+) -> cp.ndarray:
     """
     Apply 2D or 3D median or dezinger (when dif>0) filter to a 3D array.
 
@@ -74,7 +64,7 @@ def median_filter(
     ValueError
         If the input array is not three dimensional.
     """
-    if cupy_run:
+    if cupywrapper.cupy_run:
         return __median_filter(data, kernel_size, axis, dif)
     else:
         print("median_filter won't be executed because CuPy is not installed")
@@ -82,11 +72,11 @@ def median_filter(
 
 
 def __median_filter(
-    data: xp.ndarray,
+    data: cp.ndarray,
     kernel_size: int = 3,
     axis: int = 0,
     dif: float = 0.0,
-) -> xp.ndarray:
+) -> cp.ndarray:
 
     try:
         from cucim.skimage.filters import median
@@ -115,7 +105,7 @@ def __median_filter(
         raise ValueError("The axis should be 0,1,2 or None for full 3d processing")
 
     dz, dy, dx = data.shape
-    output = xp.empty(data.shape, dtype=input_type, order="C")
+    output = cp.empty(data.shape, dtype=input_type, order="C")
 
     if axis == 0:
         for j in range(dz):
@@ -156,7 +146,7 @@ def __median_filter(
                 output = data;
             }
             """
-        thresholding_kernel = xp.ElementwiseKernel(
+        thresholding_kernel = cp.ElementwiseKernel(
             "T data, raw float32 dif",
             "T output",
             kernel,
@@ -169,8 +159,8 @@ def __median_filter(
 
 @nvtx.annotate()
 def remove_outlier(
-    data: xp.ndarray, kernel_size: int = 3, axis: int = 0, dif: float = 0.1
-) -> xp.ndarray:
+    data: cp.ndarray, kernel_size: int = 3, axis: int = 0, dif: float = 0.1
+) -> cp.ndarray:
     """
     Selectively applies 3D median filter to a 3D array to remove outliers. Also called a dezinger.
 
@@ -200,7 +190,7 @@ def remove_outlier(
     if dif <= 0.0:
         raise ValueError("Threshold value (dif) must be positive and nonzero.")
 
-    if cupy_run:
+    if cupywrapper.cupy_run:
         return __median_filter(data, kernel_size, axis, dif)
     else:
         print("remove_outlier won't be executed because CuPy is not installed")
