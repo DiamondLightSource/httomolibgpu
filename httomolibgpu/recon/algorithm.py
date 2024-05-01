@@ -20,9 +20,7 @@
 # ---------------------------------------------------------------------------
 """Module for tomographic reconstruction"""
 
-import numpy as xp
 import numpy as np
-
 cupy_run = False
 try:
     import cupy as xp
@@ -30,17 +28,15 @@ try:
     try:
         xp.cuda.Device(0).compute_capability
         cupy_run = True
-
     except xp.cuda.runtime.CUDARuntimeError:
         print("CuPy library is a major dependency for HTTomolibgpu, please install")
-        import numpy as np
+        import numpy as xp
 except ImportError:
-    import numpy as np
+    import numpy as xp
 
 import nvtx
 from numpy import float32, complex64
-from typing import Optional, Tuple, Union
-from typing import Type
+from typing import Optional, Type
 
 from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
 from tomobar.methodsIR_CuPy import RecToolsIRCuPy
@@ -223,7 +219,7 @@ def _instantiate_direct_recon_class(
     center: Optional[float] = None,
     recon_size: Optional[int] = None,
     gpu_id: int = 0,
-) -> type[RecToolsDIRCuPy]:
+) -> Type[RecToolsDIRCuPy]:
     """instantiate ToMoBAR's direct recon class
 
     Args:
@@ -234,7 +230,7 @@ def _instantiate_direct_recon_class(
         gpu_id (int, optional): gpu ID. Defaults to 0.
 
     Returns:
-        type[RecToolsDIRCuPy]: an instance of the direct recon class
+        Type[RecToolsDIRCuPy]: an instance of the direct recon class
     """
     if center is None:
         center = data.shape[2] // 2  # making a crude guess
@@ -260,7 +256,7 @@ def _instantiate_iterative_recon_class(
     recon_size: Optional[int] = None,
     gpu_id: int = 0,
     datafidelity: str = "LS",
-) -> type[RecToolsIRCuPy]:
+) -> Type[RecToolsIRCuPy]:
     """instantiate ToMoBAR's iterative recon class
 
     Args:
@@ -272,7 +268,7 @@ def _instantiate_iterative_recon_class(
         gpu_id (int, optional): gpu ID. Defaults to 0.
 
     Returns:
-        type[RecToolsIRCuPy]: an instance of the iterative class
+        Type[RecToolsIRCuPy]: an instance of the iterative class
     """
     if center is None:
         center = data.shape[2] // 2  # making a crude guess
