@@ -20,22 +20,19 @@
 # ---------------------------------------------------------------------------
 """Modules for data correction"""
 
-import numpy as xp
 import numpy as np
-
 cupy_run = False
 try:
     import cupy as xp
-    from cupy import mean
 
     try:
         xp.cuda.Device(0).compute_capability
         cupy_run = True
     except xp.cuda.runtime.CUDARuntimeError:
         print("CuPy library is a major dependency for HTTomolibgpu, please install")
-        import numpy as np
+        import numpy as xp
 except ImportError:
-    import numpy as np
+    import numpy as xp
 
 from typing import Dict, List
 import nvtx

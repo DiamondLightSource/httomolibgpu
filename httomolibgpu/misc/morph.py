@@ -20,20 +20,25 @@
 # ---------------------------------------------------------------------------
 """Module for data type morphing functions"""
 
-import numpy as xp
 import numpy as np
-
+cupy_run = False
 try:
     import cupy as xp
 
     try:
         xp.cuda.Device(0).compute_capability
-
+        cupy_run = True
     except xp.cuda.runtime.CUDARuntimeError:
         print("CuPy library is a major dependency for HTTomolibgpu, please install")
-        import numpy as np
+        import numpy as xp
 except ImportError:
-    import numpy as np
+    import numpy as xp
+
+if cupy_run:
+    from cupyx.scipy.interpolate import interpn
+else:
+    from scipy.interpolate import interpn
+
 import nvtx
 from typing import Literal
 
@@ -123,8 +128,7 @@ def data_resampler(
 
     Returns:
         cp.ndarray: Up/Down-scaled 3D cupy array
-    """
-    from cupyx.scipy.interpolate import interpn
+    """   
 
     if data.ndim != 3:
         raise ValueError("only 3D data is supported")

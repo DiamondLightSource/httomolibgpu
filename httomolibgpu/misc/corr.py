@@ -20,29 +20,30 @@
 # ---------------------------------------------------------------------------
 """ Module for data correction """
 
-import numpy as xp
-
+import numpy as np
 cupy_run = False
 try:
     import cupy as xp
+    from cupy import mean
 
     try:
         xp.cuda.Device(0).compute_capability
         cupy_run = True
-
     except xp.cuda.runtime.CUDARuntimeError:
         print("CuPy library is a major dependency for HTTomolibgpu, please install")
-        import numpy as np
+        import numpy as xp
 except ImportError:
-    import numpy as np
+    import numpy as xp
 
 try:
     from cucim.skimage.filters import median
     from cucim.skimage.morphology import disk
 except ImportError:
     print(
-        "Cucim library of Rapidsai is a required dependency for some modules, please install"
+        "Cucim library of Rapidsai is a required dependency for median_filter and remove_outlier modules, please install"
     )
+    from skimage.filters import median
+    from skimage.morphology import disk
 
 from numpy import float32
 import nvtx
