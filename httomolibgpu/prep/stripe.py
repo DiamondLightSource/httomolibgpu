@@ -111,11 +111,6 @@ def _rs_sort(sinogram, size, dim):
     sino_sort = xp.take_along_axis(sinogram, sortvals, axis=1)
 
     #: Now apply the median filter on the sorted image along each row
-    if xp.__name__ == "cupy":
-        from cupyx.scipy.ndimage import median_filter
-    else:
-        from scipy.ndimage import median_filter
-
     sino_sort = median_filter(sino_sort, (size, 1) if dim == 1 else (size, size))
 
     #: step 3: re-sort the smoothed image columns to the original rows
