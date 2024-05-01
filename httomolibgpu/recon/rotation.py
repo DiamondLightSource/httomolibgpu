@@ -20,13 +20,10 @@
 # ---------------------------------------------------------------------------
 """Modules for finding the axis of rotation"""
 
-import numpy as xp
 import numpy as np
-
 cupy_run = False
 try:
     import cupy as xp
-    import cupyx
 
     try:
         xp.cuda.Device(0).compute_capability
@@ -45,10 +42,20 @@ from typing import List, Literal, Optional, Tuple
 if cupy_run:
     from httomolibgpu.cuda_kernels import load_cuda_module
     from cupyx.scipy.ndimage import shift, gaussian_filter
-    from cucim.skimage.registration import phase_cross_correlation
+    from cupyx.scipy.fftpack import get_fft_plan
+    from cupyx.scipy.fft import rfft2
 else:
     from scipy.ndimage import shift, gaussian_filter
-    from skimage.registration import phase_cross_correlation
+    from scipy.fft import fftfreq as get_fft_plan # get_fft_plan doesn't exist in scipyfft
+    from scipy.fft import rfft2
+
+try:
+    from cucim.skimage.registration import phase_cross_correlation
+except ImportError:
+    print(
+        "Cucim library of Rapidsai is a required dependency for find_center_pc module, please install"
+    )
+    from skimage.registration import phase_cross_correlation  
 
 __all__ = [
     "find_center_vo",
@@ -295,7 +302,7 @@ def _calculate_metric(list_shift, sino1, sino2, sino3, mask, out):
     mat = xp.empty((chunks[0], na1 + na2, sino2.shape[1]), dtype=xp.float32)
     mat[:, :na1, :] = sino1
     # explicitly create FFT plan here, so it's not cached and clearly re-used
-    plan = cupyx.scipy.fftpack.get_fft_plan(
+    plan = get_fft_plan(
         mat, mat.shape[-2:], axes=(1, 2), value_type="R2C"
     )
 
@@ -340,7 +347,7 @@ def _calculate_metric(list_shift, sino1, sino2, sino3, mask, out):
         # stack and transform
         # (we do the full sized mat FFT, even though the last chunk may be smaller, to
         # make sure we can re-use the same FFT plan as before)
-        mat_freq = cupyx.scipy.fft.rfft2(mat, axes=(1, 2), norm=None, plan=plan)
+        mat_freq = rfft2(mat, axes=(1, 2), norm=None, plan=plan)
         masked_sum_abs_kernel(
             mat_freq[:size, :, :], mask, out=out[start_idx:stop_idx], axis=(1, 2)
         )
