@@ -21,23 +21,8 @@
 """Module for data type morphing functions"""
 
 import numpy as np
-cupy_run = False
-try:
-    import cupy as xp
-
-    try:
-        xp.cuda.Device(0).compute_capability
-        cupy_run = True
-    except xp.cuda.runtime.CUDARuntimeError:
-        print("CuPy library is a major dependency for HTTomolibgpu, please install")
-        import numpy as xp
-except ImportError:
-    import numpy as xp
-
-if cupy_run:
-    from cupyx.scipy.interpolate import interpn
-else:
-    from scipy.interpolate import interpn
+from httomolibgpu import cupywrapper
+cp = cupywrapper.cp
 
 import nvtx
 from typing import Literal
@@ -47,11 +32,10 @@ __all__ = [
     "data_resampler",
 ]
 
-
 @nvtx.annotate()
 def sino_360_to_180(
-    data: xp.ndarray, overlap: int = 0, rotation: Literal["left", "right"] = "left"
-) -> xp.ndarray:
+    data: cp.ndarray, overlap: int = 0, rotation: Literal["left", "right"] = "left"
+) -> cp.ndarray:
     """
     Converts 0-360 degrees sinogram to a 0-180 sinogram.
     If the number of projections in the input data is odd, the last projection
@@ -71,6 +55,17 @@ def sino_360_to_180(
     cp.ndarray
         Output 3D data.
     """
+    if cupywrapper.cupy_run:
+        return __sino_360_to_180(data, overlap, rotation)
+    else:
+        print("sino_360_to_180 won't be executed because CuPy is not installed")
+        return data
+
+
+def __sino_360_to_180(
+    data: cp.ndarray, overlap: int = 0, rotation: Literal["left", "right"] = "left"
+) -> cp.ndarray:
+
     if data.ndim != 3:
         raise ValueError("only 3D data is supported")
 
@@ -84,10 +79,10 @@ def sino_360_to_180(
 
     n = dx // 2
 
-    out = xp.empty((n, dy, 2 * dz - overlap), dtype=data.dtype)
+    out = cp.empty((n, dy, 2 * dz - overlap), dtype=data.dtype)
 
     if rotation == "left":
-        weights = xp.linspace(0, 1.0, overlap)
+        weights = cp.linspace(0, 1.0, overlap)
         out[:, :, -dz + overlap :] = data[:n, :, overlap:]
         out[:, :, : dz - overlap] = data[n : 2 * n, :, overlap:][:, :, ::-1]
         out[:, :, dz - overlap : dz] = (
@@ -95,7 +90,7 @@ def sino_360_to_180(
             + (weights * data[n : 2 * n, :, :overlap])[:, :, ::-1]
         )
     elif rotation == "right":
-        weights = xp.linspace(1.0, 0, overlap)
+        weights = cp.linspace(1.0, 0, overlap)
         out[:, :, : dz - overlap] = data[:n, :, :-overlap]
         out[:, :, -dz + overlap :] = data[n : 2 * n, :, :-overlap][:, :, ::-1]
         out[:, :, dz - overlap : dz] = (
@@ -110,8 +105,8 @@ def sino_360_to_180(
 
 @nvtx.annotate()
 def data_resampler(
-    data: xp.ndarray, newshape: list, axis: int = 1, interpolation: str = "linear"
-) -> xp.ndarray:
+    data: cp.ndarray, newshape: list, axis: int = 1, interpolation: str = "linear"
+) -> cp.ndarray:
     """Down/Up-resampler of the input data implemented through interpn function.
        Please note that the method will leave the specified axis
        dimension unchanged, e.g. (128,128,128) -> (128,256,256) for axis = 0 and
@@ -128,31 +123,42 @@ def data_resampler(
 
     Returns:
         cp.ndarray: Up/Down-scaled 3D cupy array
-    """   
+    """  
+    if cupywrapper.cupy_run:
+        return __data_resampler(data, newshape, axis, interpolation)
+    else:
+        print("data_resampler won't be executed because CuPy is not installed")
+        return data
+
+def __data_resampler(
+    data: cp.ndarray, newshape: list, axis: int = 1, interpolation: str = "linear"
+) -> cp.ndarray:
+    
+    from cupyx.scipy.interpolate import interpn
 
     if data.ndim != 3:
         raise ValueError("only 3D data is supported")
 
-    N, M, Z = xp.shape(data)
+    N, M, Z = cp.shape(data)
 
     if axis == 0:
-        xaxis = xp.arange(M) - M / 2
-        yaxis = xp.arange(Z) - Z / 2
+        xaxis = cp.arange(M) - M / 2
+        yaxis = cp.arange(Z) - Z / 2
         step_x = M / newshape[0]
         step_y = Z / newshape[1]
-        scaled_data = xp.empty((N, newshape[0], newshape[1]), dtype=xp.float32)
+        scaled_data = cp.empty((N, newshape[0], newshape[1]), dtype=cp.float32)
     elif axis == 1:
-        xaxis = xp.arange(N) - N / 2
-        yaxis = xp.arange(Z) - Z / 2
+        xaxis = cp.arange(N) - N / 2
+        yaxis = cp.arange(Z) - Z / 2
         step_x = N / newshape[0]
         step_y = Z / newshape[1]
-        scaled_data = xp.empty((newshape[0], M, newshape[1]), dtype=xp.float32)
+        scaled_data = cp.empty((newshape[0], M, newshape[1]), dtype=cp.float32)
     elif axis == 2:
-        xaxis = xp.arange(N) - N / 2
-        yaxis = xp.arange(M) - M / 2
+        xaxis = cp.arange(N) - N / 2
+        yaxis = cp.arange(M) - M / 2
         step_x = N / newshape[0]
         step_y = M / newshape[1]
-        scaled_data = xp.empty((newshape[0], newshape[1], Z), dtype=xp.float32)
+        scaled_data = cp.empty((newshape[0], newshape[1], Z), dtype=cp.float32)
     else:
         raise ValueError("Only 0,1,2 values for axes are supported")
 
@@ -181,7 +187,7 @@ def data_resampler(
     xi_size = xi.size
     xi = np.rollaxis(xi, 0, 3)
     xi = np.reshape(xi, [xi_size // 2, 2])
-    xi = xp.asarray(xi, dtype=xp.float32, order="C")
+    xi = cp.asarray(xi, dtype=cp.float32, order="C")
 
     if axis == 0:
         for j in range(N):
@@ -193,7 +199,7 @@ def data_resampler(
                 bounds_error=False,
                 fill_value=0.0,
             )
-            scaled_data[j, :, :] = xp.reshape(
+            scaled_data[j, :, :] = cp.reshape(
                 res, [newshape[0], newshape[1]], order="C"
             )
     elif axis == 1:
@@ -207,7 +213,7 @@ def data_resampler(
                 bounds_error=False,
                 fill_value=0.0,
             )
-            scaled_data[:, j, :] = xp.reshape(
+            scaled_data[:, j, :] = cp.reshape(
                 res, [newshape[0], newshape[1]], order="C"
             )
     else:
@@ -220,7 +226,7 @@ def data_resampler(
                 bounds_error=False,
                 fill_value=0.0,
             )
-            scaled_data[:, :, j] = xp.reshape(
+            scaled_data[:, :, j] = cp.reshape(
                 res, [newshape[0], newshape[1]], order="C"
             )
 
