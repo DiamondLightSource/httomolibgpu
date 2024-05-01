@@ -727,7 +727,7 @@ def find_center_pc(
     """Find rotation axis location by finding the offset between the first
     projection and a mirrored projection 180 degrees apart using
     phase correlation in Fourier space.
-    The ``phase_cross_correlation`` function uses cross-correlation in Fourier
+    The `phase_cross_correlation` function uses cross-correlation in Fourier
     space, optionally employing an upsampled matrix-multiplication DFT to
     achieve arbitrary subpixel precision. :cite:`Guizar:08`.
 
@@ -740,7 +740,7 @@ def find_center_pc(
     Returns:
         float: Rotation axis location.
     """
-    if cupy_run:
+    if xp.__name__ == "cupy":
         from cupyx.scipy.ndimage import shift
         try:
             from cucim.skimage.registration import phase_cross_correlation
