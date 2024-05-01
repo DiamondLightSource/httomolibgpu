@@ -36,6 +36,7 @@ except ImportError:
     import numpy as np
 
 from numpy import float32
+from typing import Union
 import nvtx
 
 if cupy_run:
@@ -379,7 +380,7 @@ def _shift_bit_length(x: int) -> int:
     return 1 << (x - 1).bit_length()
 
 
-def _pad_projections_to_second_power(tomo: xp.ndarray) -> tuple[xp.ndarray, tuple]:
+def _pad_projections_to_second_power(tomo: xp.ndarray) -> Union[xp.ndarray, tuple]:
     """
     Performs padding of each projection to the next power of 2.
     If the shape is not even we also care of that before padding.
@@ -403,8 +404,8 @@ def _pad_projections_to_second_power(tomo: xp.ndarray) -> tuple[xp.ndarray, tupl
         else:
             diff = _shift_bit_length(element + 1) - element
             if element % 2 == 0:
-                pad_width = diff // 2
-                pad_width = (pad_width, pad_width)
+                pad_width_scalar = diff // 2
+                pad_width = (pad_width_scalar, pad_width_scalar)
             else:
                 # need an uneven padding for odd-number lengths
                 left_pad = diff // 2

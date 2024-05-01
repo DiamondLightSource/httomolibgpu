@@ -20,22 +20,24 @@
 # ---------------------------------------------------------------------------
 """Modules for stripes removal"""
 
-import numpy as xp
 import numpy as np
-
+cupy_run = False
 try:
     import cupy as xp
-    from cupyx.scipy.ndimage import median_filter
-    from cupyx.scipy.ndimage import binary_dilation
-    from cupyx.scipy.ndimage import uniform_filter1d
 
     try:
         xp.cuda.Device(0).compute_capability
+        cupy_run = True
     except xp.cuda.runtime.CUDARuntimeError:
         print("CuPy library is a major dependency for HTTomolibgpu, please install")
-        import numpy as np
+        import numpy as xp
 except ImportError:
-    import numpy as np
+    import numpy as xp
+
+if cupy_run:
+    from cupyx.scipy.ndimage import median_filter, binary_dilation, uniform_filter1d
+else:
+    from scipy.ndimage import median_filter, binary_dilation, uniform_filter1d
 
 import nvtx
 from typing import Union
