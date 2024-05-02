@@ -21,26 +21,12 @@
 """Modules for data correction"""
 
 import numpy as np
-cupy_run = False
-try:
-    import cupy as xp
+from httomolibgpu import cupywrapper
 
-    try:
-        xp.cuda.Device(0).compute_capability
-        cupy_run = True
-    except xp.cuda.runtime.CUDARuntimeError:
-        print("CuPy library is a major dependency for HTTomolibgpu, please install")
-        import numpy as xp
-except ImportError:
-    import numpy as xp
+cp = cupywrapper.cp
+nvtx = cupywrapper.nvtx
 
 from typing import Dict, List
-import nvtx
-
-if cupy_run:
-    from cupyx.scipy.ndimage import map_coordinates
-else:
-    from scipy.ndimage import map_coordinates
 
 __all__ = [
     "distortion_correction_proj_discorpy",
@@ -52,9 +38,8 @@ __all__ = [
 # (which is the same as the TomoPy version
 # https://github.com/tomopy/tomopy/blob/c236a2969074f5fc70189fb5545f0a165924f916/source/tomopy/prep/alignment.py#L950-L981
 # but with the additional params `order` and `mode`).
-@nvtx.annotate()
 def distortion_correction_proj_discorpy(
-    data: xp.ndarray,
+    data: cp.ndarray,
     metadata_path: str,
     preview: Dict[str, List[int]],
     order: int = 1,
@@ -89,9 +74,60 @@ def distortion_correction_proj_discorpy(
     cp.ndarray
         3D array. Distortion-corrected image(s).
     """
+    if cupywrapper.cupy_run:
+        return __distortion_correction_proj_discorpy(
+            data, metadata_path, preview, order, mode
+        )
+    else:
+        print(
+            "distortion_correction_proj_discorpy won't be executed because CuPy is not installed"
+        )
+        return data
+
+
+@nvtx.annotate()
+def __distortion_correction_proj_discorpy(
+    data: cp.ndarray,
+    metadata_path: str,
+    preview: Dict[str, List[int]],
+    order: int = 1,
+    mode: str = "reflect",
+):
+    """Unwarp a stack of images using a backward model.
+
+    Parameters
+    ----------
+    data : cp.ndarray
+        3D array.
+
+    metadata_path : str
+        The path to the file containing the distortion coefficients for the
+        data.
+
+    preview : Dict[str, List[int]]
+        A dict containing three key-value pairs:
+        - a list containing the `start` value of each dimension
+        - a list containing the `stop` value of each dimension
+        - a list containing the `step` value of each dimension
+
+    order : int, optional.
+        The order of the spline interpolation.
+
+    mode : {'reflect', 'grid-mirror', 'constant', 'grid-constant', 'nearest',
+           'mirror', 'grid-wrap', 'wrap'}, optional
+        To determine how to handle image boundaries.
+
+    Returns
+    -------
+    cp.ndarray
+        3D array. Distortion-corrected image(s).
+    """
+
+    from cupyx.scipy.ndimage import map_coordinates
+
     # Check if it's a stack of 2D images, or only a single 2D image
     if len(data.shape) == 2:
-        data = xp.expand_dims(data, axis=0)
+        data = cp.expand_dims(data, axis=0)
 
     # Get info from metadata txt file
     xcenter, ycenter, list_fact = _load_metadata_txt(metadata_path)
@@ -118,26 +154,26 @@ def distortion_correction_proj_discorpy(
     ycenter = ycenter - y_offset
 
     height, width = data.shape[y_dim + 1], data.shape[x_dim + 1]
-    xu_list = xp.arange(width) - xcenter
-    yu_list = xp.arange(height) - ycenter
-    xu_mat, yu_mat = xp.meshgrid(xu_list, yu_list)
-    ru_mat = xp.sqrt(xu_mat**2 + yu_mat**2)
-    fact_mat = xp.sum(
-        xp.asarray([factor * ru_mat**i for i, factor in enumerate(list_fact)]), axis=0
+    xu_list = cp.arange(width) - xcenter
+    yu_list = cp.arange(height) - ycenter
+    xu_mat, yu_mat = cp.meshgrid(xu_list, yu_list)
+    ru_mat = cp.sqrt(xu_mat**2 + yu_mat**2)
+    fact_mat = cp.sum(
+        cp.asarray([factor * ru_mat**i for i, factor in enumerate(list_fact)]), axis=0
     )
-    xd_mat = xp.asarray(
-        xp.clip(xcenter + fact_mat * xu_mat, 0, width - 1), dtype=xp.float32
+    xd_mat = cp.asarray(
+        cp.clip(xcenter + fact_mat * xu_mat, 0, width - 1), dtype=cp.float32
     )
-    yd_mat = xp.asarray(
-        xp.clip(ycenter + fact_mat * yu_mat, 0, height - 1), dtype=xp.float32
+    yd_mat = cp.asarray(
+        cp.clip(ycenter + fact_mat * yu_mat, 0, height - 1), dtype=cp.float32
     )
-    indices = [xp.reshape(yd_mat, (-1, 1)), xp.reshape(xd_mat, (-1, 1))]
-    indices = xp.asarray(indices, dtype=xp.float32)
+    indices = [cp.reshape(yd_mat, (-1, 1)), cp.reshape(xd_mat, (-1, 1))]
+    indices = cp.asarray(indices, dtype=cp.float32)
 
     # Loop over images and unwarp them
     for i in range(data.shape[0]):
         mat = map_coordinates(data[i], indices, order=order, mode=mode)
-        mat = xp.reshape(mat, (height, width))
+        mat = cp.reshape(mat, (height, width))
         data[i] = mat
 
     return data

@@ -20,41 +20,28 @@
 # ---------------------------------------------------------------------------
 """Modules for raw projection data normalization"""
 
-cupy_run = False
-try:
-    import cupy as xp    
-
-    try:
-        xp.cuda.Device(0).compute_capability
-        cupy_run = True
-    except xp.cuda.runtime.CUDARuntimeError:
-        print("CuPy library is a major dependency for HTTomolibgpu, please install")
-        import numpy as xp
-except ImportError:
-    import numpy as xp
-
-if cupy_run:
-    from cupy import mean
-else:
-    from numpy import mean
-import nvtx
 import numpy as np
+from httomolibgpu import cupywrapper
+
+cp = cupywrapper.cp
+
+nvtx = cupywrapper.nvtx
+
 from numpy import float32
 from typing import Tuple
 
 __all__ = ["normalize"]
 
 
-@nvtx.annotate()
 def normalize(
-    data: xp.ndarray,
-    flats: xp.ndarray,
-    darks: xp.ndarray,
+    data: cp.ndarray,
+    flats: cp.ndarray,
+    darks: cp.ndarray,
     cutoff: float = 10.0,
     minus_log: bool = True,
     nonnegativity: bool = False,
     remove_nans: bool = False,
-) -> xp.ndarray:
+) -> cp.ndarray:
     """
     Normalize raw projection data using the flat and dark field projections.
     This is a raw CUDA kernel implementation with CuPy wrappers.
@@ -81,12 +68,33 @@ def normalize(
     cp.ndarray
         Normalised 3D tomographic data as a CuPy array.
     """
+    if cupywrapper.cupy_run:
+        return __normalize(
+            data, flats, darks, cutoff, minus_log, nonnegativity, remove_nans
+        )
+    else:
+        print("normalize won't be executed because CuPy is not installed")
+        return data
+
+
+@nvtx.annotate()
+def __normalize(
+    data: cp.ndarray,
+    flats: cp.ndarray,
+    darks: cp.ndarray,
+    cutoff: float = 10.0,
+    minus_log: bool = True,
+    nonnegativity: bool = False,
+    remove_nans: bool = False,
+) -> cp.ndarray:
+
+    from cupy import mean
 
     _check_valid_input(data, flats, darks)
 
-    dark0 = xp.empty(darks.shape[1:], dtype=float32)
-    flat0 = xp.empty(flats.shape[1:], dtype=float32)
-    out = xp.empty(data.shape, dtype=float32)
+    dark0 = cp.empty(darks.shape[1:], dtype=float32)
+    flat0 = cp.empty(flats.shape[1:], dtype=float32)
+    out = cp.empty(data.shape, dtype=float32)
     mean(darks, axis=0, dtype=float32, out=dark0)
     mean(flats, axis=0, dtype=float32, out=flat0)
 
@@ -111,7 +119,7 @@ def normalize(
     kernel += "if (v > cutoff) v = cutoff;\n"
     kernel += "out = v;\n"
 
-    normalisation_kernel = xp.ElementwiseKernel(
+    normalisation_kernel = cp.ElementwiseKernel(
         "T data, U flats, U darks, raw float32 cutoff",
         "float32 out",
         kernel,
@@ -138,6 +146,6 @@ def _check_valid_input(data, flats, darks) -> None:
         raise ValueError("Input darks must be 2D or 3D data only")
 
     if flats.ndim == 2:
-        flats = flats[xp.newaxis, :, :]
+        flats = flats[cp.newaxis, :, :]
     if darks.ndim == 2:
-        darks = darks[xp.newaxis, :, :]
+        darks = darks[cp.newaxis, :, :]

@@ -21,29 +21,13 @@
 """Module for tomographic reconstruction"""
 
 import numpy as np
-cupy_run = False
-try:
-    import cupy as xp
+from httomolibgpu import cupywrapper
 
-    try:
-        xp.cuda.Device(0).compute_capability
-        cupy_run = True
-    except xp.cuda.runtime.CUDARuntimeError:
-        print("CuPy library is a major dependency for HTTomolibgpu, please install")
-        import numpy as xp
-except ImportError:
-    import numpy as xp
+cp = cupywrapper.cp
 
-import nvtx
+nvtx = cupywrapper.nvtx
 from numpy import float32, complex64
 from typing import Optional, Type
-
-if cupy_run:
-    from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
-    from tomobar.methodsIR_CuPy import RecToolsIRCuPy
-else:
-    from tomobar.methodsDIR import RecToolsDIR as RecToolsDIRCuPy
-    from tomobar.methodsIR import RecToolsIR as RecToolsIRCuPy
 
 __all__ = [
     "FBP",
@@ -55,16 +39,15 @@ input_data_axis_labels = ["angles", "detY", "detX"]  # set the labels of the inp
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% FBP reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-@nvtx.annotate()
 def FBP(
-    data: xp.ndarray,
+    data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
     filter_freq_cutoff: Optional[float] = 0.6,
     recon_size: Optional[int] = None,
     recon_mask_radius: Optional[float] = None,
     gpu_id: int = 0,
-) -> xp.ndarray:
+) -> cp.ndarray:
     """
     Perform Filtered Backprojection (FBP) reconstruction using ASTRA toolbox and ToMoBAR wrappers.
     This is a 3D recon from a CuPy array and a custom built filter.
@@ -94,6 +77,32 @@ def FBP(
     cp.ndarray
         The FBP reconstructed volume as a CuPy array.
     """
+    if cupywrapper.cupy_run:
+        return __FBP(
+            data,
+            angles,
+            center,
+            filter_freq_cutoff,
+            recon_size,
+            recon_mask_radius,
+            gpu_id,
+        )
+    else:
+        print("FBP won't be executed because CuPy is not installed")
+        return data
+
+
+@nvtx.annotate()
+def __FBP(
+    data: cp.ndarray,
+    angles: np.ndarray,
+    center: Optional[float] = None,
+    filter_freq_cutoff: Optional[float] = 0.6,
+    recon_size: Optional[int] = None,
+    recon_mask_radius: Optional[float] = None,
+    gpu_id: int = 0,
+) -> cp.ndarray:
+
     RecToolsCP = _instantiate_direct_recon_class(
         data, angles, center, recon_size, gpu_id
     )
@@ -104,21 +113,20 @@ def FBP(
         recon_mask_radius=recon_mask_radius,
         data_axes_labels_order=input_data_axis_labels,
     )
-    xp._default_memory_pool.free_all_blocks()
-    return xp.require(xp.swapaxes(reconstruction, 0, 1), requirements="C")
+    cp._default_memory_pool.free_all_blocks()
+    return cp.require(cp.swapaxes(reconstruction, 0, 1), requirements="C")
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% SIRT reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-@nvtx.annotate()
 def SIRT(
-    data: xp.ndarray,
+    data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
     recon_size: Optional[int] = None,
     iterations: Optional[int] = 300,
     nonnegativity: Optional[bool] = True,
     gpu_id: int = 0,
-) -> xp.ndarray:
+) -> cp.ndarray:
     """
     Perform Simultaneous Iterative Recostruction Technique (SIRT) using ASTRA toolbox and ToMoBAR wrappers.
     This is 3D recon directly from a CuPy array while using ASTRA GPUlink capability.
@@ -146,6 +154,31 @@ def SIRT(
     cp.ndarray
         The SIRT reconstructed volume as a CuPy array.
     """
+    if cupywrapper.cupy_run:
+        return __SIRT(
+            data,
+            angles,
+            center,
+            recon_size,
+            iterations,
+            nonnegativity,
+            gpu_id,
+        )
+    else:
+        print("SIRT won't be executed because CuPy is not installed")
+        return data
+
+
+@nvtx.annotate()
+def __SIRT(
+    data: cp.ndarray,
+    angles: np.ndarray,
+    center: Optional[float] = None,
+    recon_size: Optional[int] = None,
+    iterations: Optional[int] = 300,
+    nonnegativity: Optional[bool] = True,
+    gpu_id: int = 0,
+) -> cp.ndarray:
 
     RecToolsCP = _instantiate_iterative_recon_class(
         data, angles, center, recon_size, gpu_id, datafidelity="LS"
@@ -160,21 +193,20 @@ def SIRT(
         "nonnegativity": nonnegativity,
     }
     reconstruction = RecToolsCP.SIRT(_data_, _algorithm_)
-    xp._default_memory_pool.free_all_blocks()
-    return xp.require(xp.swapaxes(reconstruction, 0, 1), requirements="C")
+    cp._default_memory_pool.free_all_blocks()
+    return cp.require(cp.swapaxes(reconstruction, 0, 1), requirements="C")
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% CGLS reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-@nvtx.annotate()
 def CGLS(
-    data: xp.ndarray,
+    data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
     recon_size: Optional[int] = None,
     iterations: Optional[int] = 20,
     nonnegativity: Optional[bool] = True,
     gpu_id: int = 0,
-) -> xp.ndarray:
+) -> cp.ndarray:
     """
     Perform Congugate Gradient Least Squares (CGLS) using ASTRA toolbox and ToMoBAR wrappers.
     This is 3D recon directly from a CuPy array while using ASTRA GPUlink capability.
@@ -202,6 +234,32 @@ def CGLS(
     cp.ndarray
         The CGLS reconstructed volume as a CuPy array.
     """
+    if cupywrapper.cupy_run:
+        return __CGLS(
+            data,
+            angles,
+            center,
+            recon_size,
+            iterations,
+            nonnegativity,
+            gpu_id,
+        )
+    else:
+        print("CGLS won't be executed because CuPy is not installed")
+        return data
+
+
+@nvtx.annotate()
+def __CGLS(
+    data: cp.ndarray,
+    angles: np.ndarray,
+    center: Optional[float] = None,
+    recon_size: Optional[int] = None,
+    iterations: Optional[int] = 20,
+    nonnegativity: Optional[bool] = True,
+    gpu_id: int = 0,
+) -> cp.ndarray:
+
     RecToolsCP = _instantiate_iterative_recon_class(
         data, angles, center, recon_size, gpu_id, datafidelity="LS"
     )
@@ -212,18 +270,18 @@ def CGLS(
     }  # data dictionary
     _algorithm_ = {"iterations": iterations, "nonnegativity": nonnegativity}
     reconstruction = RecToolsCP.CGLS(_data_, _algorithm_)
-    xp._default_memory_pool.free_all_blocks()
-    return xp.require(xp.swapaxes(reconstruction, 0, 1), requirements="C")
+    cp._default_memory_pool.free_all_blocks()
+    return cp.require(cp.swapaxes(reconstruction, 0, 1), requirements="C")
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 def _instantiate_direct_recon_class(
-    data: xp.ndarray,
+    data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
     recon_size: Optional[int] = None,
     gpu_id: int = 0,
-) -> Type[RecToolsDIRCuPy]:
+) -> Type:
     """instantiate ToMoBAR's direct recon class
 
     Args:
@@ -236,6 +294,8 @@ def _instantiate_direct_recon_class(
     Returns:
         Type[RecToolsDIRCuPy]: an instance of the direct recon class
     """
+    from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
+
     if center is None:
         center = data.shape[2] // 2  # making a crude guess
     if recon_size is None:
@@ -254,13 +314,13 @@ def _instantiate_direct_recon_class(
 
 
 def _instantiate_iterative_recon_class(
-    data: xp.ndarray,
+    data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
     recon_size: Optional[int] = None,
     gpu_id: int = 0,
     datafidelity: str = "LS",
-) -> Type[RecToolsIRCuPy]:
+) -> Type:
     """instantiate ToMoBAR's iterative recon class
 
     Args:
@@ -274,6 +334,8 @@ def _instantiate_iterative_recon_class(
     Returns:
         Type[RecToolsIRCuPy]: an instance of the iterative class
     """
+    from tomobar.methodsIR_CuPy import RecToolsIRCuPy
+
     if center is None:
         center = data.shape[2] // 2  # making a crude guess
     if recon_size is None:

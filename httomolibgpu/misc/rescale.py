@@ -21,15 +21,17 @@
 
 import numpy as np
 from httomolibgpu import cupywrapper
+
 cp = cupywrapper.cp
 
-import nvtx
+nvtx = cupywrapper.nvtx
 from typing import Literal, Optional, Tuple, Union
 
 __all__ = [
     "rescale_to_int",
 ]
-@nvtx.annotate()
+
+
 def rescale_to_int(
     data: cp.ndarray,
     perc_range_min: float = 0.0,
@@ -72,8 +74,10 @@ def rescale_to_int(
         return __rescale_to_int(data, perc_range_min, perc_range_max, bits, glob_stats)
     else:
         print("rescale_to_int won't be executed because CuPy is not installed")
-        return data    
+        return data
 
+
+@nvtx.annotate()
 def __rescale_to_int(
     data: cp.ndarray,
     perc_range_min: float = 0.0,

@@ -22,17 +22,18 @@
 
 import numpy as np
 from httomolibgpu import cupywrapper
+
 cp = cupywrapper.cp
 
+nvtx = cupywrapper.nvtx
 from numpy import float32
-import nvtx
 
 __all__ = [
     "median_filter",
     "remove_outlier",
 ]
 
-@nvtx.annotate()
+
 def median_filter(
     data: cp.ndarray,
     kernel_size: int = 3,
@@ -71,6 +72,7 @@ def median_filter(
         return data
 
 
+@nvtx.annotate()
 def __median_filter(
     data: cp.ndarray,
     kernel_size: int = 3,
@@ -157,7 +159,7 @@ def __median_filter(
         thresholding_kernel(data, float32(dif), output)
     return output
 
-@nvtx.annotate()
+
 def remove_outlier(
     data: cp.ndarray, kernel_size: int = 3, axis: int = 0, dif: float = 0.1
 ) -> cp.ndarray:

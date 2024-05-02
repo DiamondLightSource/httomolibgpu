@@ -22,9 +22,10 @@
 
 import numpy as np
 from httomolibgpu import cupywrapper
+
 cp = cupywrapper.cp
 
-import nvtx
+nvtx = cupywrapper.nvtx
 from typing import Literal
 
 __all__ = [
@@ -32,7 +33,7 @@ __all__ = [
     "data_resampler",
 ]
 
-@nvtx.annotate()
+
 def sino_360_to_180(
     data: cp.ndarray, overlap: int = 0, rotation: Literal["left", "right"] = "left"
 ) -> cp.ndarray:
@@ -62,6 +63,7 @@ def sino_360_to_180(
         return data
 
 
+@nvtx.annotate()
 def __sino_360_to_180(
     data: cp.ndarray, overlap: int = 0, rotation: Literal["left", "right"] = "left"
 ) -> cp.ndarray:
@@ -103,7 +105,6 @@ def __sino_360_to_180(
     return out
 
 
-@nvtx.annotate()
 def data_resampler(
     data: cp.ndarray, newshape: list, axis: int = 1, interpolation: str = "linear"
 ) -> cp.ndarray:
@@ -123,17 +124,19 @@ def data_resampler(
 
     Returns:
         cp.ndarray: Up/Down-scaled 3D cupy array
-    """  
+    """
     if cupywrapper.cupy_run:
         return __data_resampler(data, newshape, axis, interpolation)
     else:
         print("data_resampler won't be executed because CuPy is not installed")
         return data
 
+
+@nvtx.annotate()
 def __data_resampler(
     data: cp.ndarray, newshape: list, axis: int = 1, interpolation: str = "linear"
 ) -> cp.ndarray:
-    
+
     from cupyx.scipy.interpolate import interpn
 
     if data.ndim != 3:
