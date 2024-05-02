@@ -20,13 +20,13 @@
 # ---------------------------------------------------------------------------
 """Module for data type morphing functions"""
 
-import cupy as cp
 import numpy as np
-import nvtx
-from typing import Literal, Tuple
+from httomolibgpu import cupywrapper
 
-from cupyx.scipy.interpolate import interpn
+cp = cupywrapper.cp
 
+nvtx = cupywrapper.nvtx
+from typing import Literal
 
 __all__ = [
     "sino_360_to_180",
@@ -34,7 +34,6 @@ __all__ = [
 ]
 
 
-@nvtx.annotate()
 def sino_360_to_180(
     data: cp.ndarray, overlap: int = 0, rotation: Literal["left", "right"] = "left"
 ) -> cp.ndarray:
@@ -57,6 +56,18 @@ def sino_360_to_180(
     cp.ndarray
         Output 3D data.
     """
+    if cupywrapper.cupy_run:
+        return __sino_360_to_180(data, overlap, rotation)
+    else:
+        print("sino_360_to_180 won't be executed because CuPy is not installed")
+        return data
+
+
+@nvtx.annotate()
+def __sino_360_to_180(
+    data: cp.ndarray, overlap: int = 0, rotation: Literal["left", "right"] = "left"
+) -> cp.ndarray:
+
     if data.ndim != 3:
         raise ValueError("only 3D data is supported")
 
@@ -94,7 +105,6 @@ def sino_360_to_180(
     return out
 
 
-@nvtx.annotate()
 def data_resampler(
     data: cp.ndarray, newshape: list, axis: int = 1, interpolation: str = "linear"
 ) -> cp.ndarray:
@@ -115,6 +125,19 @@ def data_resampler(
     Returns:
         cp.ndarray: Up/Down-scaled 3D cupy array
     """
+    if cupywrapper.cupy_run:
+        return __data_resampler(data, newshape, axis, interpolation)
+    else:
+        print("data_resampler won't be executed because CuPy is not installed")
+        return data
+
+
+@nvtx.annotate()
+def __data_resampler(
+    data: cp.ndarray, newshape: list, axis: int = 1, interpolation: str = "linear"
+) -> cp.ndarray:
+
+    from cupyx.scipy.interpolate import interpn
 
     if data.ndim != 3:
         raise ValueError("only 3D data is supported")

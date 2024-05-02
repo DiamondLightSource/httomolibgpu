@@ -20,18 +20,14 @@
 # ---------------------------------------------------------------------------
 """Module for tomographic reconstruction"""
 
-from typing import Optional, Tuple, Union
-
-from typing import Type
-
-import cupy as cp
-from cupy import float32, complex64
-import cupyx
 import numpy as np
-import nvtx
+from httomolibgpu import cupywrapper
 
-from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
-from tomobar.methodsIR_CuPy import RecToolsIRCuPy
+cp = cupywrapper.cp
+
+nvtx = cupywrapper.nvtx
+from numpy import float32, complex64
+from typing import Optional, Type
 
 __all__ = [
     "FBP",
@@ -43,7 +39,6 @@ input_data_axis_labels = ["angles", "detY", "detX"]  # set the labels of the inp
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% FBP reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-@nvtx.annotate()
 def FBP(
     data: cp.ndarray,
     angles: np.ndarray,
@@ -82,6 +77,32 @@ def FBP(
     cp.ndarray
         The FBP reconstructed volume as a CuPy array.
     """
+    if cupywrapper.cupy_run:
+        return __FBP(
+            data,
+            angles,
+            center,
+            filter_freq_cutoff,
+            recon_size,
+            recon_mask_radius,
+            gpu_id,
+        )
+    else:
+        print("FBP won't be executed because CuPy is not installed")
+        return data
+
+
+@nvtx.annotate()
+def __FBP(
+    data: cp.ndarray,
+    angles: np.ndarray,
+    center: Optional[float] = None,
+    filter_freq_cutoff: Optional[float] = 0.6,
+    recon_size: Optional[int] = None,
+    recon_mask_radius: Optional[float] = None,
+    gpu_id: int = 0,
+) -> cp.ndarray:
+
     RecToolsCP = _instantiate_direct_recon_class(
         data, angles, center, recon_size, gpu_id
     )
@@ -89,7 +110,7 @@ def FBP(
     reconstruction = RecToolsCP.FBP(
         data,
         cutoff_freq=filter_freq_cutoff,
-        recon_mask_radius=recon_mask_radius,        
+        recon_mask_radius=recon_mask_radius,
         data_axes_labels_order=input_data_axis_labels,
     )
     cp._default_memory_pool.free_all_blocks()
@@ -97,7 +118,6 @@ def FBP(
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% SIRT reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-@nvtx.annotate()
 def SIRT(
     data: cp.ndarray,
     angles: np.ndarray,
@@ -134,6 +154,31 @@ def SIRT(
     cp.ndarray
         The SIRT reconstructed volume as a CuPy array.
     """
+    if cupywrapper.cupy_run:
+        return __SIRT(
+            data,
+            angles,
+            center,
+            recon_size,
+            iterations,
+            nonnegativity,
+            gpu_id,
+        )
+    else:
+        print("SIRT won't be executed because CuPy is not installed")
+        return data
+
+
+@nvtx.annotate()
+def __SIRT(
+    data: cp.ndarray,
+    angles: np.ndarray,
+    center: Optional[float] = None,
+    recon_size: Optional[int] = None,
+    iterations: Optional[int] = 300,
+    nonnegativity: Optional[bool] = True,
+    gpu_id: int = 0,
+) -> cp.ndarray:
 
     RecToolsCP = _instantiate_iterative_recon_class(
         data, angles, center, recon_size, gpu_id, datafidelity="LS"
@@ -153,7 +198,6 @@ def SIRT(
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% CGLS reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-@nvtx.annotate()
 def CGLS(
     data: cp.ndarray,
     angles: np.ndarray,
@@ -190,6 +234,32 @@ def CGLS(
     cp.ndarray
         The CGLS reconstructed volume as a CuPy array.
     """
+    if cupywrapper.cupy_run:
+        return __CGLS(
+            data,
+            angles,
+            center,
+            recon_size,
+            iterations,
+            nonnegativity,
+            gpu_id,
+        )
+    else:
+        print("CGLS won't be executed because CuPy is not installed")
+        return data
+
+
+@nvtx.annotate()
+def __CGLS(
+    data: cp.ndarray,
+    angles: np.ndarray,
+    center: Optional[float] = None,
+    recon_size: Optional[int] = None,
+    iterations: Optional[int] = 20,
+    nonnegativity: Optional[bool] = True,
+    gpu_id: int = 0,
+) -> cp.ndarray:
+
     RecToolsCP = _instantiate_iterative_recon_class(
         data, angles, center, recon_size, gpu_id, datafidelity="LS"
     )
@@ -211,7 +281,7 @@ def _instantiate_direct_recon_class(
     center: Optional[float] = None,
     recon_size: Optional[int] = None,
     gpu_id: int = 0,
-) -> type[RecToolsDIRCuPy]:
+) -> Type:
     """instantiate ToMoBAR's direct recon class
 
     Args:
@@ -222,8 +292,10 @@ def _instantiate_direct_recon_class(
         gpu_id (int, optional): gpu ID. Defaults to 0.
 
     Returns:
-        type[RecToolsDIRCuPy]: an instance of the direct recon class
+        Type[RecToolsDIRCuPy]: an instance of the direct recon class
     """
+    from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
+
     if center is None:
         center = data.shape[2] // 2  # making a crude guess
     if recon_size is None:
@@ -248,7 +320,7 @@ def _instantiate_iterative_recon_class(
     recon_size: Optional[int] = None,
     gpu_id: int = 0,
     datafidelity: str = "LS",
-) -> type[RecToolsIRCuPy]:
+) -> Type:
     """instantiate ToMoBAR's iterative recon class
 
     Args:
@@ -260,8 +332,10 @@ def _instantiate_iterative_recon_class(
         gpu_id (int, optional): gpu ID. Defaults to 0.
 
     Returns:
-        type[RecToolsIRCuPy]: an instance of the iterative class
+        Type[RecToolsIRCuPy]: an instance of the iterative class
     """
+    from tomobar.methodsIR_CuPy import RecToolsIRCuPy
+
     if center is None:
         center = data.shape[2] // 2  # making a crude guess
     if recon_size is None:

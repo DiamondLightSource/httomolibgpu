@@ -20,30 +20,25 @@
 # ---------------------------------------------------------------------------
 """Modules for phase retrieval and phase-contrast enhancement"""
 
-import math
-from typing import Tuple
-import cupy as cp
-from cupy import float32
-import cupyx
 import numpy as np
-import nvtx
+from httomolibgpu import cupywrapper
 
-from httomolibgpu.cuda_kernels import load_cuda_module
+cp = cupywrapper.cp
+
+nvtx = cupywrapper.nvtx
+
+from numpy import float32
+from typing import Union
+import math
 
 __all__ = [
     "paganin_filter_savu",
     "paganin_filter_tomopy",
 ]
 
-# Define constants used in phase retrieval method
-BOLTZMANN_CONSTANT = 1.3806488e-16  # [erg/k]
-SPEED_OF_LIGHT = 299792458e2  # [cm/s]
-PI = 3.14159265359
-PLANCK_CONSTANT = 6.58211928e-19  # [keV*s]
 
 ## %%%%%%%%%%%%%%%%%%%%%%% paganin_filter %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 #: CuPy implementation of Paganin filter from Savu
-@nvtx.annotate()
 def paganin_filter_savu(
     data: cp.ndarray,
     ratio: float = 250.0,
@@ -93,6 +88,39 @@ def paganin_filter_savu(
     cp.ndarray
         The stack of filtered projections.
     """
+    if cupywrapper.cupy_run:
+        return __paganin_filter_savu(
+            data,
+            ratio,
+            energy,
+            distance,
+            resolution,
+            pad_y,
+            pad_x,
+            pad_method,
+            increment,
+        )
+    else:
+        print("__paganin_filter_savu won't be executed because CuPy is not installed")
+        return data
+
+
+@nvtx.annotate()
+def __paganin_filter_savu(
+    data: cp.ndarray,
+    ratio: float = 250.0,
+    energy: float = 53.0,
+    distance: float = 1.0,
+    resolution: float = 1.28,
+    pad_y: int = 100,
+    pad_x: int = 100,
+    pad_method: str = "edge",
+    increment: float = 0.0,
+) -> cp.ndarray:
+
+    from httomolibgpu.cuda_kernels import load_cuda_module
+    from cupyx.scipy.fft import fft2, ifft2
+
     # Check the input data is valid
     if data.ndim != 3:
         raise ValueError(
@@ -156,10 +184,10 @@ def paganin_filter_savu(
 
     # avoid normalising in both directions - we include multiplier in the post_kernel
     data = cp.asarray(data, dtype=cp.complex64)
-    data = cupyx.scipy.fft.fft2(data, axes=(-2, -1), overwrite_x=True, norm="backward")
+    data = fft2(data, axes=(-2, -1), overwrite_x=True, norm="backward")
 
     # prepare filter here, while the GPU is busy with the FFT
-    filtercomplex = cp.empty((height1, width1), dtype=np.complex64)
+    filtercomplex = cp.empty((height1, width1), dtype=cp.complex64)
     bx = 16
     by = 8
     gx = (width1 + bx - 1) // bx
@@ -179,7 +207,7 @@ def paganin_filter_savu(
     )
     data *= filtercomplex
 
-    data = cupyx.scipy.fft.ifft2(data, axes=(-2, -1), overwrite_x=True, norm="forward")
+    data = ifft2(data, axes=(-2, -1), overwrite_x=True, norm="forward")
 
     post_kernel = cp.ElementwiseKernel(
         "C pci1, raw float32 increment, raw float32 ratio, raw float32 fft_scale",
@@ -189,7 +217,7 @@ def paganin_filter_savu(
         no_return=True,
     )
     fft_scale = 1.0 / (data.shape[1] * data.shape[2])
-    res = cp.empty((data.shape[0], height, width), dtype=np.float32)
+    res = cp.empty((data.shape[0], height, width), dtype=cp.float32)
     post_kernel(
         data[:, pad_y : pad_y + height, pad_x : pad_x + width],
         np.float32(increment),
@@ -197,27 +225,13 @@ def paganin_filter_savu(
         np.float32(fft_scale),
         res,
     )
-
     return res
 
 
 def _wavelength(energy: float) -> float:
-    return 2 * PI * PLANCK_CONSTANT * SPEED_OF_LIGHT / energy
-
-
-def _paganin_filter_factor(
-    energy: float, dist: float, alpha: float, w2: cp.ndarray
-) -> cp.ndarray:
-    return 1 / (_wavelength(energy) * dist * w2 / (4 * PI) + alpha)
-
-
-def _calc_pad_width(dim: int, pixel_size: float, wavelength: float, dist: float) -> int:
-    pad_pix = cp.ceil(PI * wavelength * dist / pixel_size**2)
-    return int((pow(2, cp.ceil(cp.log2(dim + pad_pix))) - dim) * 0.5)
-
-
-def _calc_pad_val(tomo: cp.ndarray) -> float:
-    return cp.mean((tomo[..., 0] + tomo[..., -1]) * 0.5)
+    SPEED_OF_LIGHT = 299792458e2  # [cm/s]
+    PLANCK_CONSTANT = 6.58211928e-19  # [keV*s]
+    return 2 * math.pi * PLANCK_CONSTANT * SPEED_OF_LIGHT / energy
 
 
 def _reciprocal_grid(pixel_size: float, shape_proj: tuple) -> cp.ndarray:
@@ -264,15 +278,13 @@ def _reciprocal_coord(pixel_size: float, num_grid: int) -> cp.ndarray:
     """
     n = num_grid - 1
     rc = cp.arange(-n, num_grid, 2, dtype=cp.float32)
-    rc *= 2 * PI / (n * pixel_size)
+    rc *= 2 * math.pi / (n * pixel_size)
     return rc
 
-##-------------------------------------------------------------##
-##-------------------------------------------------------------##
 
-# Adaptation with some corrections of retrieve_phase (Paganin filter)
-# from TomoPy
-@nvtx.annotate()
+##-------------------------------------------------------------##
+##-------------------------------------------------------------##
+# Adaptation of retrieve_phase (Paganin filter) from TomoPy
 def paganin_filter_tomopy(
     tomo: cp.ndarray,
     pixel_size: float = 1e-4,
@@ -302,6 +314,23 @@ def paganin_filter_tomopy(
     cp.ndarray
         The 3D array of Paganin phase-filtered projection images.
     """
+    if cupywrapper.cupy_run:
+        return __paganin_filter_tomopy(tomo, pixel_size, dist, energy, alpha)
+    else:
+        print("paganin_filter_tomopy won't be executed because CuPy is not installed")
+        return tomo
+
+
+@nvtx.annotate()
+def __paganin_filter_tomopy(
+    tomo: cp.ndarray,
+    pixel_size: float = 1e-4,
+    dist: float = 50.0,
+    energy: float = 53.0,
+    alpha: float = 1e-3,
+) -> cp.ndarray:
+
+    from cupyx.scipy.fft import fft2, ifft2, fftshift
 
     # Check the input data is valid
     if tomo.ndim != 3:
@@ -310,28 +339,28 @@ def paganin_filter_tomopy(
             " please provide a stack of 2D projections."
         )
 
-    dz_orig, dy_orig, dx_orig = cp.shape(tomo)
+    dz_orig, dy_orig, dx_orig = tomo.shape
 
-    # Perform padding to the power of 2 as FFT is O(n*log(n)) complexity    
+    # Perform padding to the power of 2 as FFT is O(n*log(n)) complexity
     # TODO: adding other options of padding?
     padded_tomo, pad_tup = _pad_projections_to_second_power(tomo)
 
-    dz, dy, dx = cp.shape(padded_tomo)
+    dz, dy, dx = padded_tomo.shape
 
     # 3D FFT of tomo data
     padded_tomo = cp.asarray(padded_tomo, dtype=cp.complex64)
-    fft_tomo = cupyx.scipy.fft.fft2(padded_tomo, axes=(-2, -1), overwrite_x=True)
+    fft_tomo = fft2(padded_tomo, axes=(-2, -1), overwrite_x=True)
 
     # Compute the reciprocal grid.
     w2 = _reciprocal_grid(pixel_size, (dy, dx))
 
     # Build filter in the Fourier space.
-    phase_filter = cupyx.scipy.fft.fftshift(_paganin_filter_factor2(energy, dist, alpha, w2))
+    phase_filter = fftshift(_paganin_filter_factor2(energy, dist, alpha, w2))
     phase_filter = phase_filter / phase_filter.max()  # normalisation
 
     # Apply filter and take inverse FFT
     ifft_filtered_tomo = (
-        cupyx.scipy.fft.ifft2(phase_filter * fft_tomo, axes=(-2, -1), overwrite_x=True)
+        ifft2(phase_filter * fft_tomo, axes=(-2, -1), overwrite_x=True)
     ).real
 
     # slicing indices for cropping
@@ -344,7 +373,7 @@ def paganin_filter_tomopy(
     # crop the padded filtered data:
     tomo = ifft_filtered_tomo[slc_indices].astype(cp.float32)
 
-    # taking the negative log    
+    # taking the negative log
     _log_kernel = cp.ElementwiseKernel(
         "C tomo",
         "C out",
@@ -359,7 +388,7 @@ def _shift_bit_length(x: int) -> int:
     return 1 << (x - 1).bit_length()
 
 
-def _pad_projections_to_second_power(tomo: cp.ndarray) -> tuple[cp.ndarray, tuple]:
+def _pad_projections_to_second_power(tomo: cp.ndarray) -> Union[cp.ndarray, tuple]:
     """
     Performs padding of each projection to the next power of 2.
     If the shape is not even we also care of that before padding.
@@ -383,8 +412,8 @@ def _pad_projections_to_second_power(tomo: cp.ndarray) -> tuple[cp.ndarray, tupl
         else:
             diff = _shift_bit_length(element + 1) - element
             if element % 2 == 0:
-                pad_width = diff // 2
-                pad_width = (pad_width, pad_width)
+                pad_width_scalar = diff // 2
+                pad_width = (pad_width_scalar, pad_width_scalar)
             else:
                 # need an uneven padding for odd-number lengths
                 left_pad = diff // 2
@@ -399,5 +428,5 @@ def _pad_projections_to_second_power(tomo: cp.ndarray) -> tuple[cp.ndarray, tupl
 
 
 def _paganin_filter_factor2(energy, dist, alpha, w2):
-    # Alpha represents the ratio of delta/beta.    
-    return 1 / (_wavelength(energy) * dist * w2 / (4 * PI) + alpha)
+    # Alpha represents the ratio of delta/beta.
+    return 1 / (_wavelength(energy) * dist * w2 / (4 * math.pi) + alpha)

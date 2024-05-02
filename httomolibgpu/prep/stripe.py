@@ -19,15 +19,14 @@
 # Created Date: 01 November 2022
 # ---------------------------------------------------------------------------
 """Modules for stripes removal"""
-from typing import Tuple, Union
 
-import cupy as cp
 import numpy as np
-import nvtx
-from cupyx.scipy.ndimage import median_filter
-from cupyx.scipy import signal
-from cupyx.scipy.ndimage import binary_dilation
-from cupyx.scipy.ndimage import uniform_filter1d
+from httomolibgpu import cupywrapper
+
+cp = cupywrapper.cp
+
+nvtx = cupywrapper.nvtx
+from typing import Union
 
 __all__ = [
     "remove_stripe_based_sorting",
@@ -36,7 +35,6 @@ __all__ = [
 ]
 
 
-@nvtx.annotate()
 def remove_stripe_based_sorting(
     data: Union[cp.ndarray, np.ndarray],
     size: int = 11,
@@ -71,6 +69,21 @@ def remove_stripe_based_sorting(
     ----------
     .. [1] https://doi.org/10.1364/OE.26.028396
     """
+    if cupywrapper.cupy_run:
+        return __remove_stripe_based_sorting(data, size, dim)
+    else:
+        print(
+            "remove_stripe_based_sorting won't be executed because CuPy is not installed"
+        )
+        return data
+
+
+@nvtx.annotate()
+def __remove_stripe_based_sorting(
+    data: Union[cp.ndarray, np.ndarray],
+    size: int = 11,
+    dim: int = 1,
+) -> Union[cp.ndarray, np.ndarray]:
 
     if size is None:
         if data.shape[2] > 2000:
@@ -89,30 +102,25 @@ def _rs_sort(sinogram, size, dim):
     """
     Remove stripes using the sorting technique.
     """
-    xp = cp.get_array_module(sinogram)
-    sinogram = xp.transpose(sinogram)
+    from cupyx.scipy.ndimage import median_filter
+
+    sinogram = cp.transpose(sinogram)
 
     #: Sort each column of the sinogram by its grayscale values
     #: Keep track of the sorting indices so we can reverse it below
-    sortvals = xp.argsort(sinogram, axis=1)
-    sortvals_reverse = xp.argsort(sortvals, axis=1)
-    sino_sort = xp.take_along_axis(sinogram, sortvals, axis=1)
+    sortvals = cp.argsort(sinogram, axis=1)
+    sortvals_reverse = cp.argsort(sortvals, axis=1)
+    sino_sort = cp.take_along_axis(sinogram, sortvals, axis=1)
 
     #: Now apply the median filter on the sorted image along each row
-    if xp.__name__ == "cupy":
-        from cupyx.scipy.ndimage import median_filter
-    else:
-        from scipy.ndimage import median_filter
-
     sino_sort = median_filter(sino_sort, (size, 1) if dim == 1 else (size, size))
 
     #: step 3: re-sort the smoothed image columns to the original rows
-    sino_corrected = xp.take_along_axis(sino_sort, sortvals_reverse, axis=1)
+    sino_corrected = cp.take_along_axis(sino_sort, sortvals_reverse, axis=1)
 
-    return xp.transpose(sino_corrected)
+    return cp.transpose(sino_corrected)
 
 
-@nvtx.annotate()
 def remove_stripe_ti(
     data: Union[cp.ndarray, np.ndarray],
     beta: float = 0.1,
@@ -133,17 +141,28 @@ def remove_stripe_ti(
     ndarray
         3D array of de-striped projections.
     """
+    if cupywrapper.cupy_run:
+        return __remove_stripe_ti(data, beta)
+    else:
+        print("remove_stripe_ti won't be executed because CuPy is not installed")
+        return data
+
+
+@nvtx.annotate()
+def __remove_stripe_ti(
+    data: Union[cp.ndarray, np.ndarray],
+    beta: float = 0.1,
+) -> Union[cp.ndarray, np.ndarray]:
+
     # TODO: detector dimensions must be even otherwise error
-    xp = cp.get_array_module(data)
-    gamma = beta * ((1 - beta) / (1 + beta)) ** xp.abs(
-        xp.fft.fftfreq(data.shape[-1]) * data.shape[-1]
+    gamma = beta * ((1 - beta) / (1 + beta)) ** cp.abs(
+        cp.fft.fftfreq(data.shape[-1]) * data.shape[-1]
     )
     gamma[0] -= 1
-    v = xp.mean(data, axis=0)
+    v = cp.mean(data, axis=0)
     v = v - v[:, 0:1]
-    v = xp.fft.irfft(xp.fft.rfft(v) * xp.fft.rfft(gamma)).astype(data.dtype)
+    v = cp.fft.irfft(cp.fft.rfft(v) * cp.fft.rfft(gamma)).astype(data.dtype)
     data[:] += v
-
     return data
 
 
@@ -171,7 +190,6 @@ def remove_stripe_ti(
 #                                                                             #
 #                                                                             #
 # *************************************************************************** #
-@nvtx.annotate()
 def remove_all_stripe(
     data: cp.ndarray,
     snr: float = 3.0,
@@ -207,6 +225,22 @@ def remove_all_stripe(
     .. [1] https://doi.org/10.1364/OE.26.028396
 
     """
+    if cupywrapper.cupy_run:
+        return __remove_all_stripe(data, snr, la_size, sm_size, dim)
+    else:
+        print("remove_all_stripe won't be executed because CuPy is not installed")
+        return data
+
+
+@nvtx.annotate()
+def __remove_all_stripe(
+    data: cp.ndarray,
+    snr: float = 3.0,
+    la_size: int = 61,
+    sm_size: int = 21,
+    dim: int = 1,
+) -> cp.ndarray:
+
     matindex = _create_matindex(data.shape[2], data.shape[0])
     for m in range(data.shape[1]):
         sino = data[:, m, :]
@@ -221,6 +255,8 @@ def _rs_sort2(sinogram, size, matindex, dim):
     """
     Remove stripes using the sorting technique.
     """
+    from cupyx.scipy.ndimage import median_filter
+
     sinogram = cp.transpose(sinogram)
     matcomb = cp.asarray(cp.dstack((matindex, sinogram)))
 
@@ -264,6 +300,7 @@ def _detect_stripe(listdata, snr):
     """
     Algorithm 4 in :cite:`Vo:18`. Used to locate stripes.
     """
+
     numdata = len(listdata)
     listsorted = cp.sort(listdata)[::-1]
     xlist = cp.arange(0, numdata, 1.0)
@@ -294,6 +331,9 @@ def _rs_large(sinogram, snr, size, matindex, drop_ratio=0.1, norm=True):
     """
     Remove large stripes.
     """
+    from cupyx.scipy.ndimage import median_filter
+    from cupyx.scipy.ndimage import binary_dilation
+
     drop_ratio = max(min(drop_ratio, 0.8), 0)  # = cp.clip(drop_ratio, 0.0, 0.8)
     (nrow, ncol) = sinogram.shape
     ndrop = int(0.5 * drop_ratio * nrow)
@@ -342,6 +382,10 @@ def _rs_dead(sinogram, snr, size, matindex, norm=True):
     """
     Remove unresponsive and fluctuating stripes.
     """
+    from cupyx.scipy.ndimage import median_filter
+    from cupyx.scipy.ndimage import binary_dilation
+    from cupyx.scipy.ndimage import uniform_filter1d
+
     sinogram = cp.copy(sinogram)  # Make it mutable
     (nrow, _) = sinogram.shape
     # sinosmooth = cp.apply_along_axis(uniform_filter1d, 0, sinogram, 10)

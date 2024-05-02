@@ -20,16 +20,13 @@
 # ---------------------------------------------------------------------------
 """ Module for data correction """
 
-try:
-    import cupy as cp
-except ImportError:
-    print("Cupy library is a required dependency for HTTomolibgpu, please install")
-from typing import Tuple
 import numpy as np
-import nvtx
-from cupy import float32
+from httomolibgpu import cupywrapper
 
-from httomolibgpu.cuda_kernels import load_cuda_module
+cp = cupywrapper.cp
+
+nvtx = cupywrapper.nvtx
+from numpy import float32
 
 __all__ = [
     "median_filter",
@@ -37,7 +34,6 @@ __all__ = [
 ]
 
 
-@nvtx.annotate()
 def median_filter(
     data: cp.ndarray,
     kernel_size: int = 3,
@@ -69,8 +65,29 @@ def median_filter(
     ValueError
         If the input array is not three dimensional.
     """
-    from cucim.skimage.filters import median
-    from cucim.skimage.morphology import disk
+    if cupywrapper.cupy_run:
+        return __median_filter(data, kernel_size, axis, dif)
+    else:
+        print("median_filter won't be executed because CuPy is not installed")
+        return data
+
+
+@nvtx.annotate()
+def __median_filter(
+    data: cp.ndarray,
+    kernel_size: int = 3,
+    axis: int = 0,
+    dif: float = 0.0,
+) -> cp.ndarray:
+
+    try:
+        from cucim.skimage.filters import median
+        from cucim.skimage.morphology import disk
+    except ImportError:
+        print(
+            "Cucim library of Rapidsai is a required dependency for median_filter and remove_outlier modules, please install"
+        )
+    from httomolibgpu.cuda_kernels import load_cuda_module
 
     input_type = data.dtype
 
@@ -175,4 +192,8 @@ def remove_outlier(
     if dif <= 0.0:
         raise ValueError("Threshold value (dif) must be positive and nonzero.")
 
-    return median_filter(data=data, kernel_size=kernel_size, axis=axis, dif=dif)
+    if cupywrapper.cupy_run:
+        return __median_filter(data, kernel_size, axis, dif)
+    else:
+        print("remove_outlier won't be executed because CuPy is not installed")
+        return data

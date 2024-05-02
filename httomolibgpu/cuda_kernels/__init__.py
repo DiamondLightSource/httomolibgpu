@@ -1,10 +1,13 @@
 import os
 from typing import List, Optional, Tuple
-import cupy as cp
 
+from httomolibgpu import cupywrapper
+cp = cupywrapper.cp
 
 def load_cuda_module(
-    file: str, name_expressions: Optional[List[str]] = None, options: Tuple[str, ...] = tuple()
+    file: str,
+    name_expressions: Optional[List[str]] = None,
+    options: Tuple[str, ...] = tuple(),
 ) -> cp.RawModule:
     """Load a CUDA module file, i.e. a .cu file, from the file system,
     compile it, and return is as a CuPy RawModule for further
