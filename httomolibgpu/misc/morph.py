@@ -40,7 +40,7 @@ def sino_360_to_180(
     """
     Converts 0-360 degrees sinogram to a 0-180 sinogram.
     If the number of projections in the input data is odd, the last projection
-    will be discarded.
+    will be discarded. See :cite:`vo2021data`.
 
     Parameters
     ----------

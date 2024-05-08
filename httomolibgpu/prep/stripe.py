@@ -42,14 +42,12 @@ def remove_stripe_based_sorting(
 ) -> Union[cp.ndarray, np.ndarray]:
     """
     Remove full and partial stripe artifacts from sinogram using Nghia Vo's
-    approach, algorithm 3 in Ref. [1]. Angular direction is along the axis 0.
-    This algorithm works particularly well for removing partial stripes.
+    approach, see :cite:`vo2018superior`. This algorithm works particularly
+    well for removing partial stripes.
 
-    Steps of the algorithm:
-    1. Sort each column of the sinogram by its grayscale values.
-    2. Apply a smoothing (median) filter on the sorted image along each row.
-    3. Re-sort the smoothed image columns to the original rows to
-       get the corrected sinogram.
+    Steps of the algorithm: 1. Sort each column of the sinogram by its grayscale values.
+    2. Apply a smoothing (median) filter on the sorted image along each row. 3. Re-sort the smoothed image columns to the original rows to
+    get the corrected sinogram.
 
     Parameters
     ----------
@@ -65,9 +63,6 @@ def remove_stripe_based_sorting(
     ndarray
         Corrected 3D tomographic data as a CuPy or NumPy array.
 
-    References
-    ----------
-    .. [1] https://doi.org/10.1364/OE.26.028396
     """
     if cupywrapper.cupy_run:
         return __remove_stripe_based_sorting(data, size, dim)
@@ -126,7 +121,8 @@ def remove_stripe_ti(
     beta: float = 0.1,
 ) -> Union[cp.ndarray, np.ndarray]:
     """
-    Removes stripes with the method of V. Titarenko (TomoCuPy implementation)
+    Removes stripes with the method of V. Titarenko (TomoCuPy implementation).
+    See :cite:`titarenko2010analytical`.
 
     Parameters
     ----------
@@ -199,7 +195,7 @@ def remove_all_stripe(
 ) -> cp.ndarray:
     """
     Remove all types of stripe artifacts from sinogram using Nghia Vo's
-    approach :cite:`Vo:18` (combination of algorithm 3,4,5, and 6).
+    approach, see :cite:`vo2018superior` (combination of algorithm 3,4,5, and 6).
 
     Parameters
     ----------
@@ -219,10 +215,6 @@ def remove_all_stripe(
     -------
     ndarray
         Corrected 3D tomographic data as a CuPy or NumPy array.
-
-    References
-    ----------
-    .. [1] https://doi.org/10.1364/OE.26.028396
 
     """
     if cupywrapper.cupy_run:

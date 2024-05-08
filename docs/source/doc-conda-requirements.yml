@@ -1,0 +1,14 @@
+name: httomolibgpu
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - sphinx
+  - sphinx-book-theme
+  - jinja2
+  - sphinx-panels
+  - sphinx-copybutton
+  - sphinxcontrib-bibtex
+  - pyyaml
+  - ghp-import
