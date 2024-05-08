@@ -18,7 +18,7 @@
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 01 November 2022
 # ---------------------------------------------------------------------------
-"""Modules for finding the axis of rotation"""
+"""Modules for finding the axis of rotation for 180 and 360 degrees scans"""
 
 import numpy as np
 from httomolibgpu import cupywrapper
@@ -48,8 +48,8 @@ def find_center_vo(
     drop: int = 20,
 ) -> float:
     """
-    Find rotation axis location using Nghia Vo's method. See the paper
-    https://opg.optica.org/oe/fulltext.cfm?uri=oe-22-16-19078&id=297315
+    Find rotation axis location (aka CoR) using Nghia Vo's method. See the paper
+    :cite:`vo2014reliable`.
 
     Parameters
     ----------
@@ -384,8 +384,6 @@ def _downsample(sino, level, axis):
 ##%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # # %%%%%%%%%%%%%%%%%%%%%%%%%find_center_360%%%%%%%%%%%%%%%%%%%%%%%%%
 # --- Center of rotation (COR) estimation method ---#
-
-
 def find_center_360(
     data: cp.ndarray,
     ind: Optional[int] = None,
@@ -396,11 +394,8 @@ def find_center_360(
     use_overlap: bool = False,
 ) -> Tuple[float, float, Optional[Literal[0, 1]], float]:
     """
-    Find the center-of-rotation (COR) in a 360-degree scan with offset COR use
-    the method presented in Ref. [1] by Nghia Vo.
-
-    This function supports both numpy and cupy - the implementation is selected
-    by where the input data array resides.
+    Find the center-of-rotation (COR) in a 360-degree scan and also an offset
+    to perform data transformation from 360 to 180 degrees scan. See :cite:`vo2021data`.
 
     Parameters
     ----------
@@ -433,10 +428,6 @@ def find_center_360(
     overlap_position : float
         Position of the window in the first image giving the best
         correlation metric.
-
-    References
-    ----------
-    [1] : https://doi.org/10.1364/OE.418448
     """
 
     if cupywrapper.cupy_run:
@@ -752,11 +743,11 @@ def find_center_pc(
     phase correlation in Fourier space.
     The `phase_cross_correlation` function uses cross-correlation in Fourier
     space, optionally employing an upsampled matrix-multiplication DFT to
-    achieve arbitrary subpixel precision. :cite:`Guizar:08`.
+    achieve arbitrary subpixel precision. See :cite:`guizar2008efficient`.
 
     Args:
-        proj1 (cp.ndarray): Projection from the 0th degree
-        proj2 (cp.ndarray): Projection from the 180th degree
+        proj1 (cp.ndarray): Projection from the 0th degree angle.
+        proj2 (cp.ndarray): Projection from the 180th degree angle.
         tol (float, optional): Subpixel accuracy. Defaults to 0.5.
         rotc_guess (float, optional): Initial guess value for the rotation center. Defaults to None.
 

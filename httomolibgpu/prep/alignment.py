@@ -45,7 +45,7 @@ def distortion_correction_proj_discorpy(
     order: int = 1,
     mode: str = "reflect",
 ):
-    """Unwarp a stack of images using a backward model.
+    """Unwarp a stack of images using a backward model. See :cite:`vo2015radial`.
 
     Parameters
     ----------

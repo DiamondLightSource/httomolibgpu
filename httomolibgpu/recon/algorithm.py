@@ -49,8 +49,9 @@ def FBP(
     gpu_id: int = 0,
 ) -> cp.ndarray:
     """
-    Perform Filtered Backprojection (FBP) reconstruction using ASTRA toolbox and ToMoBAR wrappers.
-    This is a 3D recon from a CuPy array and a custom built filter.
+    Perform Filtered Backprojection (FBP) reconstruction using ASTRA toolbox :cite:`van2016fast` and
+    ToMoBAR :cite:`kazantsev2020tomographic` wrappers.
+    This is a 3D recon from a CuPy array directly and a custom built filter.
 
     Parameters
     ----------
@@ -128,7 +129,8 @@ def SIRT(
     gpu_id: int = 0,
 ) -> cp.ndarray:
     """
-    Perform Simultaneous Iterative Recostruction Technique (SIRT) using ASTRA toolbox and ToMoBAR wrappers.
+    Perform Simultaneous Iterative Recostruction Technique (SIRT) using ASTRA toolbox :cite:`van2016fast` and
+    ToMoBAR :cite:`kazantsev2020tomographic` wrappers.
     This is 3D recon directly from a CuPy array while using ASTRA GPUlink capability.
 
     Parameters
@@ -208,7 +210,8 @@ def CGLS(
     gpu_id: int = 0,
 ) -> cp.ndarray:
     """
-    Perform Congugate Gradient Least Squares (CGLS) using ASTRA toolbox and ToMoBAR wrappers.
+    Perform Congugate Gradient Least Squares (CGLS) using ASTRA toolbox :cite:`van2016fast` and
+    ToMoBAR :cite:`kazantsev2020tomographic` wrappers.
     This is 3D recon directly from a CuPy array while using ASTRA GPUlink capability.
 
     Parameters
