@@ -10,5 +10,6 @@ dependencies:
   - sphinx-panels
   - sphinx-copybutton
   - sphinxcontrib-bibtex
+  - nbsphinx
   - pyyaml
   - ghp-import
