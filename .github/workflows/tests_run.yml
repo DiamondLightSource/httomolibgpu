@@ -20,19 +20,19 @@ jobs:
           ref: "main"
           fetch-depth: 0
 
-      - name: create environment with mamba
+      - name: Create conda environment
         uses: conda-incubator/setup-miniconda@v2
         with:
-          mamba-version: "*"
-          channels: conda-forge,bioconda,defaults
+          miniconda-version: latest
+          channels: conda-forge,httomo,defaults,astra-toolbox,anaconda,rapidsai
           auto-activate-base: false
           activate-environment: httomolibgpu
           environment-file: conda/environment.yml
 
       - name: Install httomolibgpu
         run: |
-          $CONDA/bin/conda run -n httomolibgpu pip install -e .
-          $CONDA/bin/conda list
+          conda run -n httomolibgpu pip install -e .
+          conda list
 
       - name: Run tests
         run: |     
