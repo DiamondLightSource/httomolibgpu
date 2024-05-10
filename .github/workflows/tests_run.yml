@@ -18,11 +18,19 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: "main"
-          fetch-depth: 0      
+          fetch-depth: 0
 
-      - name: Install dependencies with conda
-        run: |      
-          $CONDA/bin/conda env create --name httomolibgpu --file conda/environment.yml
+      - name: create environment with mamba
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          mamba-version: "*"
+          channels: conda-forge,bioconda,defaults
+          auto-activate-base: false
+          activate-environment: httomolibgpu
+          environment-file: conda/environment.yml
+
+      - name: Install httomolibgpu
+        run: |
           $CONDA/bin/conda run -n httomolibgpu pip install -e .
           $CONDA/bin/conda list
 
