@@ -1,0 +1,37 @@
+name: httomolibgpu tests on Iris
+
+on:
+  - pull_request
+  - push
+
+jobs:
+  build-linux:
+    runs-on: iris-gpu
+    container: catthehacker/ubuntu:act-latest
+
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v3
+        with:
+          ref: "main"
+          fetch-depth: 0
+
+      # setup Python 3.9
+      - name: Setup Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: Install dependencies with conda
+        run: |      
+          $CONDA/bin/conda env create --name httomolibgpu --file conda/environment.yml
+          $CONDA/bin/conda run -n httomolibgpu pip install -e .
+          $CONDA/bin/conda list
+
+      - name: Run tests
+        run: |     
+          $CONDA/bin/conda run -n httomolibgpu pytest
