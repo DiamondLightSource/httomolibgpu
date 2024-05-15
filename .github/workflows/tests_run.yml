@@ -24,13 +24,10 @@ jobs:
           fetch-depth: 0
 
       - name: Create conda environment
-        uses: conda-incubator/setup-miniconda@v2
-        with:
-          miniconda-version: latest
-          channels: conda-forge,httomo,defaults,astra-toolbox,anaconda,rapidsai
-          auto-activate-base: false
-          activate-environment: httomolibgpu
-          environment-file: conda/environment.yml
+        run: |
+          conda activate "${{ env.NVIDIA_VISIBLE_DEVICES }}"
+          conda install conda-forge::mamba
+          conda list
 
       - name: Install httomolibgpu
         run: |
