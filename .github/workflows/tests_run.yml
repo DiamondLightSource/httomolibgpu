@@ -24,15 +24,17 @@ jobs:
           fetch-depth: 0
 
       - name: Create conda environment
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          python-version: 3.10
         run: |
-          conda activate "${{ env.NVIDIA_VISIBLE_DEVICES }}"
-          conda install conda-forge::mamba
-          conda list
+          $CONDA/bin/conda install conda-forge::mamba
+          $CONDA/bin/conda list
 
       - name: Install httomolibgpu
         run: |
-          conda run -n httomolibgpu pip install -e .
-          conda list
+          $CONDA/bin/conda run -n httomolibgpu pip install -e .
+          $CONDA/bin/conda list
 
       - name: Run tests
         run: |     
