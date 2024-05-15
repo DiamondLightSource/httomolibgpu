@@ -7,7 +7,10 @@ on:
 jobs:
   build-linux:
     runs-on: iris-gpu
-    container: catthehacker/ubuntu:act-latest
+    container:
+      image: nvidia/cuda:11.6.2-devel-ubi8
+      env:
+        NVIDIA_VISIBLE_DEVICES: ${{ env.NVIDIA_VISIBLE_DEVICES }}
 
     defaults:
       run:
@@ -15,7 +18,7 @@ jobs:
 
     steps:
       - name: Checkout repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: "main"
           fetch-depth: 0
