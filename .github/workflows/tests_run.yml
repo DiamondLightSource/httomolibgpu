@@ -23,13 +23,24 @@ jobs:
           ref: "main"
           fetch-depth: 0
 
-      - name: Create conda environment
-      - uses: conda-incubator/setup-miniconda@v3
+      # setup Python 3.10
+      - name: Setup Python 3.10
+        uses: actions/setup-python@v2
         with:
           python-version: 3.10
+      # - name: Create conda environment
+      #   uses: conda-incubator/setup-miniconda@v2
+      #   with:
+      #     miniconda-version: latest
+      #     channels: conda-forge,httomo,defaults,astra-toolbox,anaconda,rapidsai
+      #     auto-activate-base: false
+      #     activate-environment: httomolibgpu
+      #     environment-file: conda/environment.yml
+
+      # install dependencies with conda
+      - name: Install dependencies with Conda
         run: |
-          $CONDA/bin/conda install conda-forge::mamba
-          $CONDA/bin/conda list
+          conda env create httomolibgpu --file conda/environment.yml
 
       - name: Install httomolibgpu
         run: |
