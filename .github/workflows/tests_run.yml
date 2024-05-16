@@ -23,19 +23,14 @@ jobs:
           ref: "main"
           fetch-depth: 0
 
-      # setup Python 3.9
-      - name: Setup Python 3.9
-        uses: actions/setup-python@v2
+      - name: Create conda environment
+        uses: conda-incubator/setup-miniconda@v2
         with:
-          python-version: python-3.9.19-darwin-x64.tar.gz
-      # - name: Create conda environment
-      #   uses: conda-incubator/setup-miniconda@v2
-      #   with:
-      #     miniconda-version: latest
-      #     channels: conda-forge,httomo,defaults,astra-toolbox,anaconda,rapidsai
-      #     auto-activate-base: false
-      #     activate-environment: httomolibgpu
-      #     environment-file: conda/environment.yml
+          miniconda-version: latest
+          channels: conda-forge,httomo,defaults,astra-toolbox,anaconda,rapidsai
+          auto-activate-base: false
+          activate-environment: httomolibgpu
+          environment-file: conda/environment.yml
 
       # install dependencies with conda
       - name: Install dependencies with Conda
