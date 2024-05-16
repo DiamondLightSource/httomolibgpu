@@ -27,7 +27,7 @@ jobs:
       - name: Setup Python 3.9
         uses: actions/setup-python@v2
         with:
-          python-version: 3.9
+          python-version: 3.9.19
       # - name: Create conda environment
       #   uses: conda-incubator/setup-miniconda@v2
       #   with:
