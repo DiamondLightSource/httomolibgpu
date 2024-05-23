@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - name: Checkout repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
         with:
           ref: "main"
           fetch-depth: 0
@@ -34,7 +34,7 @@ jobs:
 
       - name: Install httomolibgpu
         run: |
-          $CONDA/bin/conda run -n httomolibgpu pip install -e .
+          $CONDA/bin/conda run -n httomolibgpu pip install .[dev]
           $CONDA/bin/conda list
 
       - name: Run tests
