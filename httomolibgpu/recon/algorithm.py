@@ -118,6 +118,61 @@ def __FBP(
     return cp.require(cp.swapaxes(reconstruction, 0, 1), requirements="C")
 
 
+## %%%%%%%%%%%%%%%%%%%%%%% LPRec  %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+def LPRec(
+    data: cp.ndarray,
+    angles: np.ndarray,
+    center: Optional[float] = None,
+    filter_freq_cutoff: Optional[float] = 0.6,
+    recon_size: Optional[int] = None,
+    recon_mask_radius: Optional[float] = None,
+    gpu_id: int = 0,
+) -> cp.ndarray:
+    """
+    Perform Filtered Backprojection (FBP) reconstruction using ASTRA toolbox :cite:`van2016fast` and
+    ToMoBAR :cite:`kazantsev2020tomographic` wrappers.
+    This is a 3D recon from a CuPy array directly and a custom built filter.
+
+    Parameters
+    ----------
+    data : cp.ndarray
+        Projection data as a CuPy array.
+    angles : np.ndarray
+        An array of angles given in radians.
+    center : float, optional
+        The center of rotation (CoR).
+    filter_freq_cutoff : float, optional
+        Cutoff frequency parameter for the sinc filter, the lowest values produce more crispy but noisy reconstruction.
+    recon_size : int, optional
+        The [recon_size, recon_size] shape of the reconstructed slice in pixels.
+        By default (None), the reconstructed size will be the dimension of the horizontal detector.
+    recon_mask_radius: float, optional
+        The radius of the circular mask that applies to the reconstructed slice in order to crop
+        out some undesirable artefacts. The values outside the diameter will be set to zero.
+        None by default, to see the effect of the mask try setting the value in the range [0.7-1.0].
+    gpu_id : int, optional
+        A GPU device index to perform operation on.
+
+    Returns
+    -------
+    cp.ndarray
+        The FBP reconstructed volume as a CuPy array.
+    """
+    if cupywrapper.cupy_run:
+        return __FBP(
+            data,
+            angles,
+            center,
+            filter_freq_cutoff,
+            recon_size,
+            recon_mask_radius,
+            gpu_id,
+        )
+    else:
+        print("FBP won't be executed because CuPy is not installed")
+        return data
+
+
 ## %%%%%%%%%%%%%%%%%%%%%%% SIRT reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 def SIRT(
     data: cp.ndarray,
