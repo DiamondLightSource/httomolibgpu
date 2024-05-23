@@ -32,11 +32,6 @@ jobs:
           activate-environment: httomolibgpu
           environment-file: conda/environment.yml
 
-      # install dependencies with conda
-      - name: Install dependencies with Conda
-        run: |
-          conda env create httomolibgpu --file conda/environment.yml
-
       - name: Install httomolibgpu
         run: |
           $CONDA/bin/conda run -n httomolibgpu pip install -e .
