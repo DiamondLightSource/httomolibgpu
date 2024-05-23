@@ -31,6 +31,7 @@ from typing import Optional, Type
 
 __all__ = [
     "FBP",
+    "LPRec",
     "SIRT",
     "CGLS",
 ]
@@ -68,7 +69,7 @@ def FBP(
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
     recon_mask_radius: float, optional
         The radius of the circular mask that applies to the reconstructed slice in order to crop
-        out some undesirable artefacts. The values outside the diameter will be set to zero.
+        out some undesirable artifacts. The values outside the diameter will be set to zero.
         None by default, to see the effect of the mask try setting the value in the range [0.7-1.0].
     gpu_id : int, optional
         A GPU device index to perform operation on.
@@ -111,6 +112,72 @@ def __FBP(
     reconstruction = RecToolsCP.FBP(
         data,
         cutoff_freq=filter_freq_cutoff,
+        recon_mask_radius=recon_mask_radius,
+        data_axes_labels_order=input_data_axis_labels,
+    )
+    cp._default_memory_pool.free_all_blocks()
+    return cp.require(cp.swapaxes(reconstruction, 0, 1), requirements="C")
+
+
+## %%%%%%%%%%%%%%%%%%%%%%% LPRec  %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+def LPRec(
+    data: cp.ndarray,
+    angles: np.ndarray,
+    center: Optional[float] = None,
+    recon_size: Optional[int] = None,
+    recon_mask_radius: Optional[float] = None,
+) -> cp.ndarray:
+    """
+    Fourier direct inversion in 3D on unequally spaced (also called as Log-Polar) grids using
+    CuPy array as an input. This implementation follows V. Nikitin's CUDA-C implementation and TomoCuPy package.
+    :cite: `andersson2016fast`.
+
+    Parameters
+    ----------
+    data : cp.ndarray
+        Projection data as a CuPy array.
+    angles : np.ndarray
+        An array of angles given in radians.
+    center : float, optional
+        The center of rotation (CoR).
+    recon_size : int, optional
+        The [recon_size, recon_size] shape of the reconstructed slice in pixels.
+        By default (None), the reconstructed size will be the dimension of the horizontal detector.
+    recon_mask_radius: float, optional
+        The radius of the circular mask that applies to the reconstructed slice in order to crop
+        out some undesirable artifacts. The values outside the diameter will be set to zero.
+        None by default, to see the effect of the mask try setting the value in the range [0.7-1.0].
+
+    Returns
+    -------
+    cp.ndarray
+        The Log-polar Fourier reconstructed volume as a CuPy array.
+    """
+    if cupywrapper.cupy_run:
+        return __LPRec(
+            data,
+            angles,
+            center,
+            recon_size,
+            recon_mask_radius,
+        )
+    else:
+        print("LPRec won't be executed because CuPy is not installed")
+        return data
+
+
+def __LPRec(
+    data: cp.ndarray,
+    angles: np.ndarray,
+    center: Optional[float] = None,
+    recon_size: Optional[int] = None,
+    recon_mask_radius: Optional[float] = None,
+) -> cp.ndarray:
+
+    RecToolsCP = _instantiate_direct_recon_class(data, angles, center, recon_size, 0)
+
+    reconstruction = RecToolsCP.FOURIER_INV(
+        data,
         recon_mask_radius=recon_mask_radius,
         data_axes_labels_order=input_data_axis_labels,
     )
