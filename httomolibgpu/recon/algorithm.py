@@ -130,7 +130,7 @@ def LPRec(
     """
     Fourier direct inversion in 3D on unequally spaced (also called as Log-Polar) grids using
     CuPy array as an input. This implementation follows V. Nikitin's CUDA-C implementation and TomoCuPy package.
-    :cite: `andersson2016fast`.
+    :cite:`andersson2016fast`.
 
     Parameters
     ----------
