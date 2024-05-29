@@ -114,8 +114,7 @@ def test_reconstruct_CGLS(data, flats, darks, ensure_clean_memory):
 
 def test_reconstruct_FBP_CIL(data, flats, darks, ensure_clean_memory):
     normalized_data = normalize_cupy(data, flats, darks, cutoff=10, minus_log=True)
-    normalized_data = normalized_data.get()
-    normalized_data = np.swapaxes(normalized_data, 0, 1)
+    normalized_data = normalized_data.get()    
     objrecon_size = data.shape[2]
     angles = np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0])
     center = 79.5

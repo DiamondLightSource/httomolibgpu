@@ -151,6 +151,7 @@ def FBP_CIL(
     np.ndarray
         The FBP reconstructed volume as a NumPy array.
     """
+    data = np.swapaxes(data, 0, 1)
     if center is None:
         center = data.shape[2] / 2  # making a crude guess
 
