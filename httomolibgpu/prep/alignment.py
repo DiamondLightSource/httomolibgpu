@@ -20,25 +20,73 @@
 # ---------------------------------------------------------------------------
 """Modules for data correction"""
 
-import os
-from typing import Dict, List, Optional, Tuple
-
-import cupy as cp
-from cupyx.scipy.ndimage import map_coordinates
-import nvtx
 import numpy as np
+from httomolibgpu import cupywrapper
+
+cp = cupywrapper.cp
+nvtx = cupywrapper.nvtx
+
+from typing import Dict, List
 
 __all__ = [
     "distortion_correction_proj_discorpy",
 ]
+
 
 # CuPy implementation of distortion correction from Discorpy
 # https://github.com/DiamondLightSource/discorpy/blob/67743842b60bf5dd45b21b8460e369d4a5e94d67/discorpy/post/postprocessing.py#L111-L148
 # (which is the same as the TomoPy version
 # https://github.com/tomopy/tomopy/blob/c236a2969074f5fc70189fb5545f0a165924f916/source/tomopy/prep/alignment.py#L950-L981
 # but with the additional params `order` and `mode`).
-@nvtx.annotate()
 def distortion_correction_proj_discorpy(
+    data: cp.ndarray,
+    metadata_path: str,
+    preview: Dict[str, List[int]],
+    order: int = 1,
+    mode: str = "reflect",
+):
+    """Unwarp a stack of images using a backward model. See :cite:`vo2015radial`.
+
+    Parameters
+    ----------
+    data : cp.ndarray
+        3D array.
+
+    metadata_path : str
+        The path to the file containing the distortion coefficients for the
+        data.
+
+    preview : Dict[str, List[int]]
+        A dict containing three key-value pairs:
+        - a list containing the `start` value of each dimension
+        - a list containing the `stop` value of each dimension
+        - a list containing the `step` value of each dimension
+
+    order : int, optional.
+        The order of the spline interpolation.
+
+    mode : {'reflect', 'grid-mirror', 'constant', 'grid-constant', 'nearest',
+           'mirror', 'grid-wrap', 'wrap'}, optional
+        To determine how to handle image boundaries.
+
+    Returns
+    -------
+    cp.ndarray
+        3D array. Distortion-corrected image(s).
+    """
+    if cupywrapper.cupy_run:
+        return __distortion_correction_proj_discorpy(
+            data, metadata_path, preview, order, mode
+        )
+    else:
+        print(
+            "distortion_correction_proj_discorpy won't be executed because CuPy is not installed"
+        )
+        return data
+
+
+@nvtx.annotate()
+def __distortion_correction_proj_discorpy(
     data: cp.ndarray,
     metadata_path: str,
     preview: Dict[str, List[int]],
@@ -74,6 +122,9 @@ def distortion_correction_proj_discorpy(
     cp.ndarray
         3D array. Distortion-corrected image(s).
     """
+
+    from cupyx.scipy.ndimage import map_coordinates
+
     # Check if it's a stack of 2D images, or only a single 2D image
     if len(data.shape) == 2:
         data = cp.expand_dims(data, axis=0)

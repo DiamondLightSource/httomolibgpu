@@ -20,21 +20,25 @@
 # ---------------------------------------------------------------------------
 """Modules for raw projection data normalization"""
 
-from typing import Tuple
-import cupy as cp
 import numpy as np
-import nvtx
-from cupy import uint16, float32, mean
+from httomolibgpu import cupywrapper
+
+cp = cupywrapper.cp
+
+nvtx = cupywrapper.nvtx
+
+from numpy import float32
+from typing import Tuple
 
 __all__ = ["normalize"]
 
-@nvtx.annotate()
+
 def normalize(
     data: cp.ndarray,
     flats: cp.ndarray,
     darks: cp.ndarray,
     cutoff: float = 10.0,
-    minus_log: bool = False,
+    minus_log: bool = True,
     nonnegativity: bool = False,
     remove_nans: bool = False,
 ) -> cp.ndarray:
@@ -64,6 +68,28 @@ def normalize(
     cp.ndarray
         Normalised 3D tomographic data as a CuPy array.
     """
+    if cupywrapper.cupy_run:
+        return __normalize(
+            data, flats, darks, cutoff, minus_log, nonnegativity, remove_nans
+        )
+    else:
+        print("normalize won't be executed because CuPy is not installed")
+        return data
+
+
+@nvtx.annotate()
+def __normalize(
+    data: cp.ndarray,
+    flats: cp.ndarray,
+    darks: cp.ndarray,
+    cutoff: float = 10.0,
+    minus_log: bool = True,
+    nonnegativity: bool = False,
+    remove_nans: bool = False,
+) -> cp.ndarray:
+
+    from cupy import mean
+
     _check_valid_input(data, flats, darks)
 
     dark0 = cp.empty(darks.shape[1:], dtype=float32)
@@ -94,7 +120,7 @@ def normalize(
     kernel += "out = v;\n"
 
     normalisation_kernel = cp.ElementwiseKernel(
-        "T data, U flats, V darks, raw float32 cutoff",
+        "T data, U flats, U darks, raw float32 cutoff",
         "float32 out",
         kernel,
         kernel_name,

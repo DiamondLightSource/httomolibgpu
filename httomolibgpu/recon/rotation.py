@@ -18,41 +18,38 @@
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 01 November 2022
 # ---------------------------------------------------------------------------
-"""Modules for finding the axis of rotation"""
+"""Modules for finding the axis of rotation for 180 and 360 degrees scans"""
+
+import numpy as np
+from httomolibgpu import cupywrapper
+
+cp = cupywrapper.cp
+
+nvtx = cupywrapper.nvtx
 
 import math
 from typing import List, Literal, Optional, Tuple, Union
 
-import cupy as cp
-import numpy as np
-import cupyx
-import nvtx
-import cupyx.scipy.ndimage as cpndi
-from cupy import ndarray
-from cupyx.scipy.ndimage import gaussian_filter, shift
-
-from httomolibgpu.cuda_kernels import load_cuda_module
-
 __all__ = [
     "find_center_vo",
     "find_center_360",
+    "find_center_pc",
 ]
 
 
-@nvtx.annotate()
 def find_center_vo(
     data: cp.ndarray,
     ind: Optional[int] = None,
     smin: int = -50,
     smax: int = 50,
-    srad: float = 6.,
+    srad: float = 6.0,
     step: float = 0.25,
     ratio: float = 0.5,
     drop: int = 20,
 ) -> float:
     """
-    Find rotation axis location using Nghia Vo's method. See the paper
-    https://opg.optica.org/oe/fulltext.cfm?uri=oe-22-16-19078&id=297315
+    Find rotation axis location (aka CoR) using Nghia Vo's method. See the paper
+    :cite:`vo2014reliable`.
 
     Parameters
     ----------
@@ -81,6 +78,27 @@ def find_center_vo(
     float
         Rotation axis location.
     """
+    if cupywrapper.cupy_run:
+        return __find_center_vo(data, ind, smin, smax, srad, step, ratio, drop)
+    else:
+        print("find_center_vo won't be executed because CuPy is not installed")
+        return 0.0
+
+
+# %%%%%%%%%%%%%%%%%%%%%%%%%find_center_vo%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+@nvtx.annotate()
+def __find_center_vo(
+    data: cp.ndarray,
+    ind: Optional[int] = None,
+    smin: int = -50,
+    smax: int = 50,
+    srad: float = 6.0,
+    step: float = 0.25,
+    ratio: float = 0.5,
+    drop: int = 20,
+) -> float:
+
+    from cupyx.scipy.ndimage import gaussian_filter
 
     if data.ndim == 2:
         data = cp.expand_dims(data, 1)
@@ -112,7 +130,8 @@ def find_center_vo(
         init_cen = _search_coarse(_sino_cs, smin, smax, ratio, drop)
         fine_cen = _search_fine(_sino_fs, srad, step, init_cen, ratio, drop)
 
-    return fine_cen.get()
+    return cp.asnumpy(fine_cen)
+
 
 @nvtx.annotate()
 def _search_coarse(sino, smin, smax, ratio, drop):
@@ -167,6 +186,8 @@ def _search_fine(sino, srad, step, init_cen, ratio, drop):
 
 @nvtx.annotate()
 def _create_mask(nrow, ncol, radius, drop):
+    from httomolibgpu.cuda_kernels import load_cuda_module
+
     du = 1.0 / ncol
     dv = (nrow - 1.0) / (nrow * 2.0 * np.pi)
     cen_row = int(math.ceil(nrow / 2.0) - 1)
@@ -176,10 +197,10 @@ def _create_mask(nrow, ncol, radius, drop):
     block_x = 128
     block_y = 1
     block_dims = (block_x, block_y)
-    grid_x = (ncol//2+1 + block_x - 1) // block_x
+    grid_x = (ncol // 2 + 1 + block_x - 1) // block_x
     grid_y = nrow
     grid_dims = (grid_x, grid_y)
-    mask = cp.empty((nrow, ncol//2+1), dtype="uint16")
+    mask = cp.empty((nrow, ncol // 2 + 1), dtype="uint16")
     params = (
         ncol,
         nrow,
@@ -203,6 +224,7 @@ def round_up(x: float) -> int:
     else:
         return int(math.floor(x))
 
+
 def _get_available_gpu_memory() -> int:
     dev = cp.cuda.Device()
     # first, let's make some space
@@ -212,12 +234,17 @@ def _get_available_gpu_memory() -> int:
     available_memory = dev.mem_info[0] + cp.get_default_memory_pool().free_bytes()
     return int(available_memory * 0.9)  # 10% safety margin
 
-def _calculate_chunks(nshifts: int, shift_size: int, available_memory: Optional[int] = None) -> List[int]:
+
+def _calculate_chunks(
+    nshifts: int, shift_size: int, available_memory: Optional[int] = None
+) -> List[int]:
     if available_memory is None:
         available_memory = _get_available_gpu_memory()
-    
+
     available_memory -= shift_size
-    freq_domain_size = shift_size  # it needs only half (RFFT), but complex64, so it's the same
+    freq_domain_size = (
+        shift_size  # it needs only half (RFFT), but complex64, so it's the same
+    )
     fft_plan_size = freq_domain_size
     size_per_shift = fft_plan_size + freq_domain_size + shift_size
     nshift_max = available_memory // size_per_shift
@@ -232,6 +259,11 @@ def _calculate_chunks(nshifts: int, shift_size: int, available_memory: Optional[
 
 @nvtx.annotate()
 def _calculate_metric(list_shift, sino1, sino2, sino3, mask, out):
+    from httomolibgpu.cuda_kernels import load_cuda_module
+    from cupyx.scipy.ndimage import shift
+    from cupyx.scipy.fftpack import get_fft_plan
+    from cupyx.scipy.fft import rfft2
+
     # this tries to simplify - if shift_col is integer, no need to spline interpolate
     assert list_shift.dtype == cp.float32, "shifts must be single precision floats"
     assert sino1.dtype == cp.float32, "sino1 must be float32"
@@ -250,42 +282,51 @@ def _calculate_metric(list_shift, sino1, sino2, sino3, mask, out):
     # note: we don't have to calculate the mean here, as we're only looking for minimum metric.
     # The sum is enough.
     masked_sum_abs_kernel = cp.ReductionKernel(
-        in_params="complex64 x, uint16 mask",                   # input, complex + mask
-        out_params="float32 out",                        # output, real
+        in_params="complex64 x, uint16 mask",  # input, complex + mask
+        out_params="float32 out",  # output, real
         map_expr="mask ? abs(x) : 0.0f",
-        reduce_expr="a + b",            
-        post_map_expr="out = a",   
-        identity='0.0f',
+        reduce_expr="a + b",
+        post_map_expr="out = a",
+        identity="0.0f",
         reduce_type="float",
-        name="masked_sum_abs", 
+        name="masked_sum_abs",
     )
 
     # determine how many shifts we can fit in the available memory
     # and iterate in chunks
-    chunks = _calculate_chunks(nshifts, (na1 + na2) * sino2.shape[1] * cp.float32().nbytes)
+    chunks = _calculate_chunks(
+        nshifts, (na1 + na2) * sino2.shape[1] * cp.float32().nbytes
+    )
 
     mat = cp.empty((chunks[0], na1 + na2, sino2.shape[1]), dtype=cp.float32)
     mat[:, :na1, :] = sino1
     # explicitly create FFT plan here, so it's not cached and clearly re-used
-    plan = cupyx.scipy.fftpack.get_fft_plan(mat, mat.shape[-2:], axes=(1, 2), value_type='R2C')
+    plan = get_fft_plan(mat, mat.shape[-2:], axes=(1, 2), value_type="R2C")
 
-    for i,stop_idx in enumerate(chunks):
+    for i, stop_idx in enumerate(chunks):
         if i > 0:
             # more than one iteration means we're tight on memory, so clear up freed blocks
             mat_freq = None
             cp.get_default_memory_pool().free_all_blocks()
-        
-        start_idx = 0 if i == 0 else chunks[i-1]
+
+        start_idx = 0 if i == 0 else chunks[i - 1]
         size = stop_idx - start_idx
-        
+
         # first, handle the integer shifts without spline in a raw kernel,
         # and shift in the sino3 one accordingly
         bx = 128
         gx = (sino3.shape[1] + bx - 1) // bx
         shift_whole_shifts(
-            grid=(gx, na2, size), ####
+            grid=(gx, na2, size),  ####
             block=(bx, 1, 1),
-            args=(sino2, sino3, list_shift[start_idx:stop_idx], mat[:, na1:, :], sino3.shape[1], na1 + na2),
+            args=(
+                sino2,
+                sino3,
+                list_shift[start_idx:stop_idx],
+                mat[:, na1:, :],
+                sino3.shape[1],
+                na1 + na2,
+            ),
         )
 
         # now we can only look at the spline shifting, the rest is done
@@ -301,14 +342,18 @@ def _calculate_metric(list_shift, sino1, sino2, sino3, mask, out):
                     mat[i, na1:, :shift_int] = shifted[:, :shift_int]
 
         # stack and transform
-        # (we do the full sized mat FFT, even though the last chunk may be smaller, to 
+        # (we do the full sized mat FFT, even though the last chunk may be smaller, to
         # make sure we can re-use the same FFT plan as before)
-        mat_freq = cupyx.scipy.fft.rfft2(mat, axes=(1, 2), norm=None, plan=plan)
-        masked_sum_abs_kernel(mat_freq[:size, :, :], mask, out=out[start_idx:stop_idx], axis=(1, 2))
+        mat_freq = rfft2(mat, axes=(1, 2), norm=None, plan=plan)
+        masked_sum_abs_kernel(
+            mat_freq[:size, :, :], mask, out=out[start_idx:stop_idx], axis=(1, 2)
+        )
 
 
 @nvtx.annotate()
 def _downsample(sino, level, axis):
+    from httomolibgpu.cuda_kernels import load_cuda_module
+
     assert sino.dtype == cp.float32, "single precision floating point input required"
     assert sino.flags["C_CONTIGUOUS"], "list_shift must be C-contiguous"
 
@@ -335,8 +380,10 @@ def _downsample(sino, level, axis):
     kernel(grid_dims, block_dims, params, shared_mem=shared_mem_bytes)
     return downsampled_data
 
+
+##%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# # %%%%%%%%%%%%%%%%%%%%%%%%%find_center_360%%%%%%%%%%%%%%%%%%%%%%%%%
 # --- Center of rotation (COR) estimation method ---#
-@nvtx.annotate()
 def find_center_360(
     data: cp.ndarray,
     ind: Optional[int] = None,
@@ -347,11 +394,8 @@ def find_center_360(
     use_overlap: bool = False,
 ) -> Tuple[float, float, Optional[Literal[0, 1]], float]:
     """
-    Find the center-of-rotation (COR) in a 360-degree scan with offset COR use
-    the method presented in Ref. [1] by Nghia Vo.
-
-    This function supports both numpy and cupy - the implementation is selected
-    by where the input data array resides.
+    Find the center-of-rotation (COR) in a 360-degree scan and also an offset
+    to perform data transformation from 360 to 180 degrees scan. See :cite:`vo2021data`.
 
     Parameters
     ----------
@@ -384,11 +428,26 @@ def find_center_360(
     overlap_position : float
         Position of the window in the first image giving the best
         correlation metric.
-
-    References
-    ----------
-    [1] : https://doi.org/10.1364/OE.418448
     """
+
+    if cupywrapper.cupy_run:
+        return __find_center_360(data, ind, win_width, side, denoise, norm, use_overlap)
+    else:
+        print("find_center_360 won't be executed because CuPy is not installed")
+        return (0, 0, 0, 0)
+
+
+@nvtx.annotate()
+def __find_center_360(
+    data: cp.ndarray,
+    ind: Optional[int] = None,
+    win_width: int = 10,
+    side: Optional[Literal[0, 1]] = None,
+    denoise: bool = True,
+    norm: bool = False,
+    use_overlap: bool = False,
+) -> Tuple[float, float, Optional[Literal[0, 1]], float]:
+
     if data.ndim != 3:
         raise ValueError("A 3D array must be provided")
 
@@ -415,7 +474,7 @@ def find_center_360(
 
 def _find_overlap(
     mat1, mat2, win_width, side=None, denoise=True, norm=False, use_overlap=False
-) :
+):
     """
     Find the overlap area and overlap side between two images (Ref. [1]) where
     the overlap side referring to the first image.
@@ -555,11 +614,13 @@ def _search_overlap(
         Initial position of the searching window where the position
         corresponds to the center of the window.
     """
+    from cupyx.scipy.ndimage import gaussian_filter
+
     if denoise is True:
         # note: the filtering makes the output contiguous
         with nvtx.annotate("denoise_filter", color="green"):
-            mat1 = cpndi.gaussian_filter(mat1, (2, 2), mode="reflect")
-            mat2 = cpndi.gaussian_filter(mat2, (2, 2), mode="reflect")
+            mat1 = gaussian_filter(mat1, (2, 2), mode="reflect")
+            mat2 = gaussian_filter(mat2, (2, 2), mode="reflect")
     else:
         mat1 = cp.ascontiguousarray(mat1, dtype=cp.float32)
         mat2 = cp.ascontiguousarray(mat2, dtype=cp.float32)
@@ -583,18 +644,6 @@ def _search_overlap(
     return list_metric, offset
 
 
-_calc_metrics_module = load_cuda_module(
-    "calc_metrics",
-    name_expressions=[
-        "calc_metrics_kernel<false, false>",
-        "calc_metrics_kernel<true, false>",
-        "calc_metrics_kernel<false, true>",
-        "calc_metrics_kernel<true, true>",
-    ],
-    options=("--maxrregcount=32",),
-)
-
-
 @nvtx.annotate()
 def _calc_metrics(mat1, mat2, win_width, side, use_overlap, norm):
     assert mat1.dtype == cp.float32, "only float32 supported"
@@ -602,6 +651,19 @@ def _calc_metrics(mat1, mat2, win_width, side, use_overlap, norm):
     assert mat1.shape[0] == mat2.shape[0]
     assert mat1.flags.c_contiguous, "only contiguos arrays supported"
     assert mat2.flags.c_contiguous, "only contiguos arrays supported"
+
+    from httomolibgpu.cuda_kernels import load_cuda_module
+
+    _calc_metrics_module = load_cuda_module(
+        "calc_metrics",
+        name_expressions=[
+            "calc_metrics_kernel<false, false>",
+            "calc_metrics_kernel<true, false>",
+            "calc_metrics_kernel<false, true>",
+            "calc_metrics_kernel<true, true>",
+        ],
+        options=("--maxrregcount=32",),
+    )
 
     num_pos = mat1.shape[1] - win_width
     list_metric = cp.empty(num_pos, dtype=cp.float32)
@@ -664,3 +726,70 @@ def _calculate_curvature(list_metric):
             min_pos = num
 
     return curvature, np.float32(min_pos)
+
+
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+## %%%%%%%%%%%%%%%%%%%%%%find_center_pc%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+def find_center_pc(
+    proj1: cp.ndarray,
+    proj2: cp.ndarray,
+    tol: float = 0.5,
+    rotc_guess: Union[float, Optional[str]] = None,
+) -> float:
+    """Find rotation axis location by finding the offset between the first
+    projection and a mirrored projection 180 degrees apart using
+    phase correlation in Fourier space.
+    The `phase_cross_correlation` function uses cross-correlation in Fourier
+    space, optionally employing an upsampled matrix-multiplication DFT to
+    achieve arbitrary subpixel precision. See :cite:`guizar2008efficient`.
+
+    Args:
+        proj1 (cp.ndarray): Projection from the 0th degree angle.
+        proj2 (cp.ndarray): Projection from the 180th degree angle.
+        tol (float, optional): Subpixel accuracy. Defaults to 0.5.
+        rotc_guess (float, optional): Initial guess value for the rotation center. Defaults to None.
+
+    Returns:
+        float: Rotation axis location.
+    """
+    if cupywrapper.cupy_run:
+        return __find_center_pc(proj1, proj2, tol, rotc_guess)
+    else:
+        print("find_center_pc won't be executed because CuPy is not installed")
+        return 0
+
+
+@nvtx.annotate()
+def __find_center_pc(
+    proj1: cp.ndarray,
+    proj2: cp.ndarray,
+    tol: float = 0.5,
+    rotc_guess: Union[float, Optional[str]] = None,
+) -> float:
+
+    from cupyx.scipy.ndimage import shift
+    from cucim.skimage.registration import phase_cross_correlation
+
+    imgshift = 0.0 if rotc_guess is None else rotc_guess - (proj1.shape[1] - 1.0) / 2.0
+
+    proj1 = shift(proj1, [0, -imgshift], mode="constant", cval=0)
+    proj2 = shift(proj2, [0, -imgshift], mode="constant", cval=0)
+
+    # create reflection of second projection
+    proj2 = cp.fliplr(proj2)
+
+    # using cucim of rapids to do phase cross correlation between two images
+    shiftr = phase_cross_correlation(
+        reference_image=proj1, moving_image=proj2, upsample_factor=1.0 / tol
+    )
+
+    # Compute center of rotation as the center of first image and the
+    # registered translation with the second image
+    center = (proj1.shape[1] + shiftr[0][1] - 1.0) / 2.0
+
+    return center + imgshift
+
+
+##%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
