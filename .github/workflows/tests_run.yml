@@ -1,8 +1,12 @@
 name: httomolibgpu tests on Iris
 
 on:
-  - pull_request
-  - push
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build-linux:
