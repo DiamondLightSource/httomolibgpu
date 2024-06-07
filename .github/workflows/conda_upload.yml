@@ -29,7 +29,7 @@ jobs:
 
       # install dependencies with conda
       - name: Install dependencies with conda
-        run: |      
+        run: |
           $CONDA/bin/conda env create --name httomolibgpu --file conda/environment.yml
           $CONDA/bin/conda run -n httomolibgpu pip install -e .
           $CONDA/bin/conda list

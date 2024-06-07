@@ -41,5 +41,5 @@ jobs:
           micromamba list
 
       - name: Run tests
-        run: |     
+        run: |
           pytest tests/

@@ -30,4 +30,3 @@ repos:
   rev: 1.7.1
   hooks:
     - id: nbqa-black
-      args: [--nbqa-mutate]
