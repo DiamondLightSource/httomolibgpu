@@ -47,36 +47,36 @@ def test_find_center_vo_random(ensure_clean_memory):
     assert_allclose(cent, 680.75)
 
 
-def test_find_center_vo_big_data(ensure_clean_memory):
-    np.random.seed(12345)
-    data_host = np.random.random_sample(size=(3601, 1, 2560)).astype(np.float32) * 2.0
-    data = cp.asarray(data_host, dtype=np.float32)
-    cent = find_center_vo(data)
-    assert_allclose(cent, 1279.5)
+def test_find_center_vo_big_data(sino3600):
+    cent = find_center_vo(sino3600)
+    assert_allclose(cent, 1333.25)
 
 
 def test_find_center_vo_calculate_chunks():
     # we need the split to fit into the available memory, and also make sure
     # that the last chunk is either the same or smaller than the previous ones
     # (so that we can re-use the same memory as for the previous chunks, incl. FFT plan)
-    # Note: With shift_size = 100 bytes, we need 300 bytes per shift
+    # Note: With shift_size = 100 bytes, we need 600 bytes per shift
+    bytes_per_shift = 600
     assert _calculate_chunks(10, 100, 1000000) == [10]
-    assert _calculate_chunks(10, 100, 10 * 300 + 100) == [10]
-    assert _calculate_chunks(10, 100, 5 * 300 + 100) == [5, 10]
-    assert _calculate_chunks(10, 100, 7 * 300 + 100) == [5, 10]
-    assert _calculate_chunks(10, 100, 9 * 300 + 100) == [5, 10]
-    assert _calculate_chunks(9, 100, 5 * 300 + 100) == [5, 9]
-    assert _calculate_chunks(10, 100, 4 * 300 + 100) == [4, 8, 10]
+    assert _calculate_chunks(10, 100, 10 * bytes_per_shift + 100) == [10]
+    assert _calculate_chunks(10, 100, 5 * bytes_per_shift + 100) == [5, 10]
+    assert _calculate_chunks(10, 100, 7 * bytes_per_shift + 100) == [5, 10]
+    assert _calculate_chunks(10, 100, 9 * bytes_per_shift + 100) == [5, 10]
+    assert _calculate_chunks(9, 100, 5 * bytes_per_shift + 100) == [5, 9]
+    assert _calculate_chunks(10, 100, 4 * bytes_per_shift + 100) == [4, 8, 10]
     # add a bit of randomness here, to check basic assumptions
     random.seed(123456)
     for _ in range(100):
         available = random.randint(
-            1 * 300 + 100, 100 * 300 + 100
+            1 * bytes_per_shift + 100, 100 * bytes_per_shift + 100
         )  # memory to fit anywhere between 1 and 100 shifts
         nshifts = random.randint(1, 1000)
         chunks = _calculate_chunks(nshifts, 100, available)
         assert len(chunks) > 0
-        assert len(chunks) == math.ceil(nshifts / ((available - 100) // 300))
+        assert len(chunks) == math.ceil(
+            nshifts / ((available - 100) // bytes_per_shift)
+        )
         assert chunks[-1] == nshifts
         if len(chunks) > 1:
             diffs = np.diff(chunks)

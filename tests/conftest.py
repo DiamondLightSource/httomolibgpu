@@ -65,6 +65,17 @@ def ensure_clean_memory():
     cp.get_default_pinned_memory_pool().free_all_blocks()
 
 
+@pytest.fixture(scope="session")
+def sino3600_file(test_data_path):
+    in_file = os.path.join(test_data_path, "3600proj_sino.npz")
+    return np.load(in_file)
+
+
+@pytest.fixture
+def sino3600(sino3600_file):
+    return cp.asarray(sino3600_file["sinogram"])
+
+
 @pytest.fixture
 def host_data(data_file):
     return np.copy(data_file["data"])
