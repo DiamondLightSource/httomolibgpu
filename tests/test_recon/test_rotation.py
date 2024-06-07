@@ -47,6 +47,14 @@ def test_find_center_vo_random(ensure_clean_memory):
     assert_allclose(cent, 680.75)
 
 
+def test_find_center_vo_big_data(ensure_clean_memory):
+    np.random.seed(12345)
+    data_host = np.random.random_sample(size=(3601, 1, 2560)).astype(np.float32) * 2.0
+    data = cp.asarray(data_host, dtype=np.float32)
+    cent = find_center_vo(data)
+    assert_allclose(cent, 1279.5)
+
+
 def test_find_center_vo_calculate_chunks():
     # we need the split to fit into the available memory, and also make sure
     # that the last chunk is either the same or smaller than the previous ones
