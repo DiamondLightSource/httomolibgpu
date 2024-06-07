@@ -246,7 +246,7 @@ def _calculate_chunks(
         shift_size  # it needs only half (RFFT), but complex64, so it's the same
     )
     fft_plan_size = freq_domain_size
-    size_per_shift = fft_plan_size + freq_domain_size + shift_size
+    size_per_shift = 2 * (fft_plan_size + freq_domain_size + shift_size)
     nshift_max = available_memory // size_per_shift
     assert nshift_max > 0, "Not enough memory to process"
     num_chunks = int(np.ceil(nshifts / nshift_max))

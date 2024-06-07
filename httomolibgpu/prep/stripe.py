@@ -238,6 +238,7 @@ def __remove_all_stripe(
         sino = data[:, m, :]
         sino = _rs_dead(sino, snr, la_size, matindex)
         sino = _rs_sort2(sino, sm_size, matindex, dim)
+        sino = cp.nan_to_num(sino)
         data[:, m, :] = sino
     return data
 

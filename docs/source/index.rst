@@ -18,7 +18,8 @@
 
     examples/pipeline1_FBP
     examples/pipeline2_iterative
-    examples/DistortionCorr
+    examples/Cor_largesino
+    examples/DistortionCorr    
 
 .. _reference_content:
 
