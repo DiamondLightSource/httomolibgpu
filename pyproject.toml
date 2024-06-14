@@ -57,7 +57,8 @@ dev = [
   "pydocstyle",
   "toml",
   "imageio",
-  "h5py"
+  "h5py",
+  "pre-commit"
 ]
 
 
@@ -67,13 +68,13 @@ dev = [
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = [
-   "-vv", 
-   "-ra", 
+   "-vv",
+   "-ra",
    "-q",
    "--benchmark-sort=mean",
    "--benchmark-columns=mean",
    "--tb=native",
-   "--cov-report=term", 
+   "--cov-report=term",
    "--cov-report=xml:cov.xml",
 ]
 testpaths = [
@@ -115,8 +116,8 @@ add-ignore = [
 # Make flake8 respect black's line length (default 88),
 max-line-length = 88
 extend-ignore = [
-    "E203",  
-    "F811"  
+    "E203",
+    "F811"
 ]
 per-file-ignores = [
     "*pyi:E302"

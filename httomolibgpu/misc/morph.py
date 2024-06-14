@@ -67,7 +67,6 @@ def sino_360_to_180(
 def __sino_360_to_180(
     data: cp.ndarray, overlap: int = 0, rotation: Literal["left", "right"] = "left"
 ) -> cp.ndarray:
-
     if data.ndim != 3:
         raise ValueError("only 3D data is supported")
 
@@ -136,7 +135,6 @@ def data_resampler(
 def __data_resampler(
     data: cp.ndarray, newshape: list, axis: int = 1, interpolation: str = "linear"
 ) -> cp.ndarray:
-
     from cupyx.scipy.interpolate import interpn
 
     if data.ndim != 3:
@@ -206,7 +204,6 @@ def __data_resampler(
                 res, [newshape[0], newshape[1]], order="C"
             )
     elif axis == 1:
-
         for j in range(M):
             res = interpn(
                 points,

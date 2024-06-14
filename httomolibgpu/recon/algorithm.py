@@ -104,7 +104,6 @@ def __FBP(
     recon_mask_radius: Optional[float] = None,
     gpu_id: int = 0,
 ) -> cp.ndarray:
-
     RecToolsCP = _instantiate_direct_recon_class(
         data, angles, center, recon_size, gpu_id
     )
@@ -173,7 +172,6 @@ def __LPRec(
     recon_size: Optional[int] = None,
     recon_mask_radius: Optional[float] = None,
 ) -> cp.ndarray:
-
     RecToolsCP = _instantiate_direct_recon_class(data, angles, center, recon_size, 0)
 
     reconstruction = RecToolsCP.FOURIER_INV(
@@ -248,7 +246,6 @@ def __SIRT(
     nonnegativity: Optional[bool] = True,
     gpu_id: int = 0,
 ) -> cp.ndarray:
-
     RecToolsCP = _instantiate_iterative_recon_class(
         data, angles, center, recon_size, gpu_id, datafidelity="LS"
     )
@@ -329,7 +326,6 @@ def __CGLS(
     nonnegativity: Optional[bool] = True,
     gpu_id: int = 0,
 ) -> cp.ndarray:
-
     RecToolsCP = _instantiate_iterative_recon_class(
         data, angles, center, recon_size, gpu_id, datafidelity="LS"
     )

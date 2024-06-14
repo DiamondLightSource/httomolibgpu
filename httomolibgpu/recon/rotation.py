@@ -97,7 +97,6 @@ def __find_center_vo(
     ratio: float = 0.5,
     drop: int = 20,
 ) -> float:
-
     from cupyx.scipy.ndimage import gaussian_filter
 
     if data.ndim == 2:
@@ -447,7 +446,6 @@ def __find_center_360(
     norm: bool = False,
     use_overlap: bool = False,
 ) -> Tuple[float, float, Optional[Literal[0, 1]], float]:
-
     if data.ndim != 3:
         raise ValueError("A 3D array must be provided")
 
@@ -768,7 +766,6 @@ def __find_center_pc(
     tol: float = 0.5,
     rotc_guess: Union[float, Optional[str]] = None,
 ) -> float:
-
     from cupyx.scipy.ndimage import shift
     from cucim.skimage.registration import phase_cross_correlation
 

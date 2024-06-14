@@ -79,7 +79,6 @@ def __remove_stripe_based_sorting(
     size: int = 11,
     dim: int = 1,
 ) -> Union[cp.ndarray, np.ndarray]:
-
     if size is None:
         if data.shape[2] > 2000:
             size = 21
@@ -149,7 +148,6 @@ def __remove_stripe_ti(
     data: Union[cp.ndarray, np.ndarray],
     beta: float = 0.1,
 ) -> Union[cp.ndarray, np.ndarray]:
-
     # TODO: detector dimensions must be even otherwise error
     gamma = beta * ((1 - beta) / (1 + beta)) ** cp.abs(
         cp.fft.fftfreq(data.shape[-1]) * data.shape[-1]
@@ -232,7 +230,6 @@ def __remove_all_stripe(
     sm_size: int = 21,
     dim: int = 1,
 ) -> cp.ndarray:
-
     matindex = _create_matindex(data.shape[2], data.shape[0])
     for m in range(data.shape[1]):
         sino = data[:, m, :]

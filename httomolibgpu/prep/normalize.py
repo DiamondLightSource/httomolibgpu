@@ -87,7 +87,6 @@ def __normalize(
     nonnegativity: bool = False,
     remove_nans: bool = False,
 ) -> cp.ndarray:
-
     from cupy import mean
 
     _check_valid_input(data, flats, darks)
