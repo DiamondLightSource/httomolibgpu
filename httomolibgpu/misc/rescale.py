@@ -139,7 +139,10 @@ def __rescale_to_int(
     input_min = (perc_range_min * (range_intensity) / 100) + min_value
     input_max = (perc_range_max * (range_intensity) / 100) + min_value
 
-    factor = (output_max - output_min) / (input_max - input_min)
+    if (input_max - input_min) != 0.0:
+        factor = (output_max - output_min) / (input_max - input_min)
+    else:
+        factor = 1.0
 
     res = cp.empty(data.shape, dtype=output_dtype)
     rescale_kernel = cp.ElementwiseKernel(
