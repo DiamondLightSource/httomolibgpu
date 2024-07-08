@@ -11,6 +11,16 @@
 
 .. _jn_examples:
 
+.. _reference_content:
+
+.. toctree::
+    :caption: Reference guides
+    :maxdepth: 2
+
+    reference/methods
+    reference/api
+    bibliography/biblio
+
 .. toctree::
     :caption: Examples
     :titlesonly:
@@ -19,13 +29,4 @@
     examples/pipeline1_FBP
     examples/pipeline2_iterative
     examples/Cor_largesino
-    examples/DistortionCorr    
-
-.. _reference_content:
-
-.. toctree::
-    :caption: Reference guides
-    :maxdepth: 2
-
-    reference/api
-    bibliography/biblio
+    examples/DistortionCorr      

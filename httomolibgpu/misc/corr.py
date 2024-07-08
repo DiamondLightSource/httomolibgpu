@@ -18,14 +18,17 @@
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 21/October/2022
 # ---------------------------------------------------------------------------
-""" Module for data correction """
+""" Module for data correction. For more detailed information see :ref:`data_correction_module`.
+
+"""
 
 import numpy as np
 from httomolibgpu import cupywrapper
+from typing import Union
 
 cp = cupywrapper.cp
-
 nvtx = cupywrapper.nvtx
+
 from numpy import float32
 
 __all__ = [
@@ -37,11 +40,11 @@ __all__ = [
 def median_filter(
     data: cp.ndarray,
     kernel_size: int = 3,
-    axis: int = 0,
+    axis: Union[int, None] = 0,
     dif: float = 0.0,
 ) -> cp.ndarray:
     """
-    Apply 2D or 3D median or dezinger (when dif>0) filter to a 3D array.
+    Apply 2D or 3D median filter to a 3D CuPy array. For more detailed information, see :ref:`method_median_filter`.
 
     Parameters
     ----------
@@ -49,7 +52,7 @@ def median_filter(
         Input CuPy 3D array either float32 or uint16 data type.
     kernel_size : int, optional
         The size of the filter's kernel (a diameter).
-    axis (int, optional):
+    axis: int or None, optional:
         Axis along which the 2D filter kernel should be applied. If set to None, then the kernel is 3D.
     dif : float, optional
         Expected difference value between outlier value and the
@@ -76,7 +79,7 @@ def median_filter(
 def __median_filter(
     data: cp.ndarray,
     kernel_size: int = 3,
-    axis: int = 0,
+    axis: Union[int, None] = 0,
     dif: float = 0.0,
 ) -> cp.ndarray:
 
@@ -107,7 +110,7 @@ def __median_filter(
         raise ValueError("The axis should be 0,1,2 or None for full 3d processing")
 
     dz, dy, dx = data.shape
-    output = cp.empty(data.shape, dtype=input_type, order="C")
+    output = cp.copy(data, order="C")
 
     if axis == 0:
         for j in range(dz):
@@ -130,7 +133,7 @@ def __median_filter(
         grid_y = dy
         grid_z = dz
         grid_dims = (grid_x, grid_y, grid_z)
-        params = (data, output, dif, dz, dy, dx)
+        params = (data, output, cp.float32(dif), dz, dy, dx)
 
         median_module = load_cuda_module(
             "median_kernel", name_expressions=[kernel_args]
@@ -144,7 +147,7 @@ def __median_filter(
         kernel_name = "thresholding"
         kernel = r"""
             float dif_curr = abs(float(data) - float(output));
-            if (dif_curr < dif) {
+            if (dif_curr > dif) {
                 output = data;
             }
             """
@@ -161,10 +164,9 @@ def __median_filter(
 
 
 def remove_outlier(
-    data: cp.ndarray, kernel_size: int = 3, axis: int = 0, dif: float = 0.1
+    data: cp.ndarray, kernel_size: int = 3, axis: Union[int, None] = 0, dif: float = 0.1
 ) -> cp.ndarray:
-    """
-    Selectively applies 3D median filter to a 3D array to remove outliers. Also called a dezinger.
+    """Selectively applies 3D median filter to a 3D array to remove outliers. Also called a dezinger.
 
     Parameters
     ----------
@@ -172,7 +174,7 @@ def remove_outlier(
         Input CuPy 3D array either float32 or uint16 data type.
     kernel_size : int, optional
         The size of the filter's kernel (a diameter).
-    axis (int, optional):
+    axis: int or None, optional:
         Axis along which the 2D filter kernel should be applied. If set to None, then the kernel is 3D.
     dif : float, optional
         Expected difference value between outlier value and the
