@@ -3,7 +3,7 @@
 Outliers removal filter
 ^^^^^^^^^^^^^^^^^^^^^^^
 Also called as **dezinger**. Outliers removal filter is a part of the module :doc:`../../api/httomolibgpu.misc.corr` for data correction. 
-This method seeks the pixels that do not fit normally distributed data and isolate them by using the :ref:`method_median_filter`. The user 
+This method seeks the pixels that do not fit normally distributed data and replace them by using the :ref:`method_median_filter`. The user 
 needs to set the threshold (:code:`dif` parameter of the :code:`remove_outlier` method and :math:`\sigma` in equations bellow), based on which the filter will consider outliers that are **above** 
 the chosen threshold.  Mathematically, one can express it as: 
 
@@ -19,6 +19,8 @@ the chosen threshold.  Mathematically, one can express it as:
 
 .. note:: Increasing the threshold value leads to the filter being more selective and decreasing the value makes it more like the normal median filter. 
   
+When to use:
+
 
 Practical example:
 
