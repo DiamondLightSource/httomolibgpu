@@ -92,7 +92,7 @@ def __sino_360_to_180(
             + (weights * data[n : 2 * n, :, :overlap])[:, :, ::-1]
         )
     elif rotation == "right":
-        weights = cp.linspace(1.0, 0, overlap)
+        weights = cp.linspace(1.0, 0, overlap, dtype=cp.float32)
         out[:, :, : dz - overlap] = data[:n, :, :-overlap]
         out[:, :, -dz + overlap :] = data[n : 2 * n, :, :-overlap][:, :, ::-1]
         out[:, :, dz - overlap : dz] = (
