@@ -2,7 +2,9 @@ import os
 from typing import List, Optional, Tuple
 
 from httomolibgpu import cupywrapper
+
 cp = cupywrapper.cp
+
 
 def load_cuda_module(
     file: str,

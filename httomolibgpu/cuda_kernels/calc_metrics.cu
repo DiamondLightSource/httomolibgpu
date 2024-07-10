@@ -10,17 +10,17 @@
  *
  * The key is the formula to calculate the Peason correlation coefficient.
  * This is calculated manually for every shifted matrix position in the same kernel.
- * 
+ *
  * The correlation coefficient between two vectors (we flatten the matrices) is:
  *
  * m1_norm = m1 - mean(m1)
  * m2_norm = m2 - mean(m2)
- * m1_sqr = dot(m1_norm, m1_norm) 
+ * m1_sqr = dot(m1_norm, m1_norm)
  * m2_sqr = dot(m2_norm, m2_norm)
  * m1_m2  = dot(m1_norm, m2_norm)
  * r = m1_m2 / sqrt(m1_sqr * m2_sqr)
  *
- * The kernels in the following compute these directly pretty much, taking into 
+ * The kernels in the following compute these directly pretty much, taking into
  * consideration normalisation, overlaps, and position offsets. Also note that the
  * version with overlap requries 3 correlation coefficients (between 3 matrices).
  */
@@ -73,7 +73,7 @@ float clip(float x, float min, float max) {
 }
 
 __device__ inline
-float sum_abs_row(const float* row, int win_width) 
+float sum_abs_row(const float* row, int win_width)
 {
     float sum_abs = 0.0;
     for (int x = 0; x < win_width; ++x) {
@@ -116,7 +116,7 @@ __device__ void _calc_metrics_no_overlap(const float *mat1, int mat1_nx,
     {
         float norm_factor = 1.0f;
         if (norm) {
-            norm_factor = sum_abs_row(&mat2_roi[y * mat2_nx], win_width) / 
+            norm_factor = sum_abs_row(&mat2_roi[y * mat2_nx], win_width) /
                 sum_abs_row(&mat1_roi[y * mat1_nx], win_width);
         }
         for (int x = 0; x < win_width; ++x)
@@ -142,7 +142,7 @@ __device__ void _calc_metrics_no_overlap(const float *mat1, int mat1_nx,
     {
         float norm_factor = 1.0f;
         if (norm) {
-            norm_factor = sum_abs_row(&mat2_roi[y * mat2_nx], win_width) / 
+            norm_factor = sum_abs_row(&mat2_roi[y * mat2_nx], win_width) /
                 sum_abs_row(&mat1_roi[y * mat1_nx], win_width);
         }
         for (int x = 0; x < win_width; ++x)
@@ -200,10 +200,10 @@ __device__ void _calc_metrics_overlap(const float *mat1, int mat1_nx,
     extern __shared__ float smem[];
 
     // we need to space for 6 sum reductions for calculating the correlation coefficient
-    float v[6]; 
+    float v[6];
 
     float d_ramp = 1.0f / (win_width - 1);
-    
+
     ////////////////////////
     // 1. We  need the mean of the 3 matrices (flattend)
     v[0] = 0.0f;
@@ -213,7 +213,7 @@ __device__ void _calc_metrics_overlap(const float *mat1, int mat1_nx,
     {
         float norm_factor = 1.0f;
         if (norm) {
-            norm_factor = sum_abs_row(&mat2_roi[y * mat2_nx], win_width) / 
+            norm_factor = sum_abs_row(&mat2_roi[y * mat2_nx], win_width) /
                 sum_abs_row(&mat1_roi[y * mat1_nx], win_width);
         }
         for (int x = 0; x < win_width; ++x)
@@ -222,8 +222,8 @@ __device__ void _calc_metrics_overlap(const float *mat1, int mat1_nx,
             float ramp_up = 1.0f - ramp_down;
             float mat1_roi_val = mat1_roi[y * mat1_nx + x] * norm_factor;
             float mat2_roi_val = mat2_roi[y * mat2_nx + x];
-            float mat_comb_val = side == 1 ? 
-                (mat1_roi_val * ramp_down + mat2_roi_val * ramp_up) : 
+            float mat_comb_val = side == 1 ?
+                (mat1_roi_val * ramp_down + mat2_roi_val * ramp_up) :
                 (mat1_roi_val * ramp_up + mat2_roi_val * ramp_down);
 
             v[0] += mat1_roi_val;
@@ -251,7 +251,7 @@ __device__ void _calc_metrics_overlap(const float *mat1, int mat1_nx,
     {
         float norm_factor = 1.0f;
         if (norm) {
-            norm_factor = sum_abs_row(&mat2_roi[y * mat2_nx], win_width) / 
+            norm_factor = sum_abs_row(&mat2_roi[y * mat2_nx], win_width) /
                 sum_abs_row(&mat1_roi[y * mat1_nx], win_width);
         }
         for (int x = 0; x < win_width; ++x)
@@ -260,8 +260,8 @@ __device__ void _calc_metrics_overlap(const float *mat1, int mat1_nx,
             float ramp_up = 1.0f - ramp_down;
             float mat1_roi_val = mat1_roi[y * mat1_nx + x] * norm_factor;
             float mat2_roi_val = mat2_roi[y * mat2_nx + x];
-            float mat_comb_val = side == 1 ? 
-                (mat1_roi_val * ramp_down + mat2_roi_val * ramp_up) : 
+            float mat_comb_val = side == 1 ?
+                (mat1_roi_val * ramp_down + mat2_roi_val * ramp_up) :
                 (mat1_roi_val * ramp_up + mat2_roi_val * ramp_down);
 
             // for covariance matrix, we need to remove the mean first
@@ -279,7 +279,7 @@ __device__ void _calc_metrics_overlap(const float *mat1, int mat1_nx,
         }
 
     }
-    
+
     // 6 smem reductions
     sum_reduction_n<6>(smem, v);
 

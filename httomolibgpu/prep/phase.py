@@ -117,7 +117,6 @@ def __paganin_filter_savu(
     pad_method: str = "edge",
     increment: float = 0.0,
 ) -> cp.ndarray:
-
     from httomolibgpu.cuda_kernels import load_cuda_module
     from cupyx.scipy.fft import fft2, ifft2
 
@@ -157,7 +156,7 @@ def __paganin_filter_savu(
         "T out",
         """
         if (isnan(data)) {
-            out = T(0); 
+            out = T(0);
         } else if (isinf(data)) {
             out = data < 0.0 ? -3.402823e38f : 3.402823e38f;  // FLT_MAX, not available in cupy
         } else if (data == 0.0) {
@@ -329,7 +328,6 @@ def __paganin_filter_tomopy(
     energy: float = 53.0,
     alpha: float = 1e-3,
 ) -> cp.ndarray:
-
     from cupyx.scipy.fft import fft2, ifft2, fftshift
 
     # Check the input data is valid
