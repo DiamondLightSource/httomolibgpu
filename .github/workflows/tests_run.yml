@@ -47,9 +47,7 @@ jobs:
           coverage xml
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          name: Code Coverage
-          fail_ci_if_error: true
-          files: ./coverage.xml
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: |
+          bash <(curl -s https://codecov.io/bash) -f coverage.xml -F unittests
