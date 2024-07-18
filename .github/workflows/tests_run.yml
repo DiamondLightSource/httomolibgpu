@@ -37,6 +37,7 @@ jobs:
 
       - name: Install httomolibgpu & coverage tools
         run: |
+          micromamba install -y git mercurial
           pip install .[dev]
           pip install coverage
           micromamba list
