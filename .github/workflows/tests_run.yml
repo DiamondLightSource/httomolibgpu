@@ -35,11 +35,21 @@ jobs:
           post-cleanup: 'all'
           init-shell: bash
 
-      - name: Install httomolibgpu
+      - name: Install httomolibgpu & coverage tools
         run: |
           pip install .[dev]
+          pip install coverage
           micromamba list
 
       - name: Run tests
         run: |
-          pytest tests/
+          coverage run -m pytest tests/
+          coverage xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          name: Code Coverage
+          fail_ci_if_error: true
+          files: ./coverage.xml
