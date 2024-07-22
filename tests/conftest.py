@@ -71,6 +71,42 @@ def sino3600_file(test_data_path):
     return np.load(in_file)
 
 
+@pytest.fixture(scope="session")
+def synthdata_file(test_data_path):
+    in_file = os.path.join(test_data_path, "synthdata_nxtomo1.npz")
+    return np.load(in_file)
+
+
+@pytest.fixture
+def synth_proj_raw(synthdata_file):
+    return cp.asarray(synthdata_file["proj_raw"])
+
+
+@pytest.fixture
+def synth_proj_ground_truth(synthdata_file):
+    return cp.asarray(synthdata_file["proj_ground_truth"])
+
+
+@pytest.fixture
+def synth_phantom(synthdata_file):
+    return cp.asarray(synthdata_file["phantom"])
+
+
+@pytest.fixture
+def synth_flats(synthdata_file):
+    return cp.asarray(synthdata_file["flats"])
+
+
+@pytest.fixture
+def synth_darks(synthdata_file):
+    return cp.asarray(synthdata_file["darks"])
+
+
+@pytest.fixture
+def synth_angles_degr(synthdata_file):
+    return synthdata_file["angles"]
+
+
 @pytest.fixture
 def sino3600(sino3600_file):
     return cp.asarray(sino3600_file["sinogram"])

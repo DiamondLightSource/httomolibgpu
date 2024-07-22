@@ -13,7 +13,6 @@ from numpy.testing import assert_allclose
 
 
 def test_remove_stripe_ti_on_data(data, flats, darks):
-    # --- testing the CuPy implementation from TomoCupy ---#
     data = normalize(data, flats, darks, cutoff=10, minus_log=True)
 
     data_after_stripe_removal = remove_stripe_ti(cp.copy(data)).get()
@@ -24,6 +23,26 @@ def test_remove_stripe_ti_on_data(data, flats, darks):
     )
     assert_allclose(np.median(data_after_stripe_removal), 0.026177486, rtol=1e-05)
     assert_allclose(np.max(data_after_stripe_removal), 2.715983, rtol=1e-05)
+    assert data_after_stripe_removal.flags.c_contiguous
+
+    data = None  #: free up GPU memory
+    # make sure the output is float32
+    assert data_after_stripe_removal.dtype == np.float32
+
+
+def test_remove_stripe_ti_on_synth_data(synth_proj_raw, synth_flats, synth_darks):
+    data = normalize(
+        synth_proj_raw, synth_flats, synth_darks, cutoff=10, minus_log=True
+    )
+
+    data_after_stripe_removal = remove_stripe_ti(cp.copy(data)).get()
+
+    assert_allclose(np.mean(data_after_stripe_removal), 0.3372083, rtol=1e-05)
+    assert_allclose(
+        np.mean(data_after_stripe_removal, axis=(1, 2)).sum(), 135.55768, rtol=1e-06
+    )
+    assert_allclose(np.median(data_after_stripe_removal), 0.44410288, rtol=1e-05)
+    assert_allclose(np.max(data_after_stripe_removal), 1.0656269, rtol=1e-05)
     assert data_after_stripe_removal.flags.c_contiguous
 
     data = None  #: free up GPU memory
