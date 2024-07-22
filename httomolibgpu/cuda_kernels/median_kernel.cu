@@ -13,6 +13,8 @@ __global__ void median_general_kernel3d(const Type *in, Type *out, float dif,
   if (i >= N || j >= M || k >= Z)
     return;
 
+  long long index = static_cast<long long>(i) + N * static_cast<long long>(j) + N * M * static_cast<long long>(k);
+
   int counter = 0;
   for (int i_m = -radius; i_m <= radius; i_m++) {
     long long i1 = i + i_m;   // using long long to avoid integer overflows
@@ -30,7 +32,7 @@ __global__ void median_general_kernel3d(const Type *in, Type *out, float dif,
         counter++;
       }
     }
-  }
+  }  
 
   /* do bubble sort here */
   for (int x = 0; x < d3 - 1; x++) {
@@ -43,14 +45,10 @@ __global__ void median_general_kernel3d(const Type *in, Type *out, float dif,
     }
   }
 
-  /* perform median filtration */
-  long long index = static_cast<long long>(i) + N * static_cast<long long>(j) + N * M * static_cast<long long>(k);
-  if (dif == 0.0f)
-    out[index] = ValVec[midpoint];
-  else {
+  if (dif > 0.0f) {
     /* perform dezingering */
-    Type in_value = in[index];
     out[index] =
-        fabsf(in_value - ValVec[midpoint]) >= dif ? ValVec[midpoint] : in_value;
+        fabsf(in[index] - ValVec[midpoint]) >= dif ? ValVec[midpoint] : in[index];
   }
+  else out[index] = ValVec[midpoint]; /* median filtering */
 }
