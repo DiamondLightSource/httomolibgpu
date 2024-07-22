@@ -47,6 +47,10 @@ jobs:
           coverage run -m pytest tests/
           coverage xml -o /home/runner/coverage.xml
 
+      - name: Ensure git is in the path
+        run: |
+          echo "/home/runner/micromamba/envs/httomo/bin" >> $GITHUB_PATH
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
