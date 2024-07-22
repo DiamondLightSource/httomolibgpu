@@ -109,6 +109,7 @@ def run_methods(path_to_data: str, output_folder: str) -> int:
 
     print("Executing methods from the HTTomolibGPU library\n")
 
+    ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods_name = "normalisation"
     print("___{}___".format(methods_name))
     from httomolibgpu.prep.normalize import normalize
@@ -116,13 +117,19 @@ def run_methods(path_to_data: str, output_folder: str) -> int:
     data_normalized = normalize(
         cp.asarray(proj_raw), cp.asarray(flats), cp.asarray(darks), minus_log=True
     )
+    data_normalized_np = data_normalized.get()
+    
+    max_scale_data_normalized = np.max(data_normalized_np)
+    min_scale_data_normalized = np.min(data_normalized_np)
+    assert max_scale_data_normalized > 1.062
+    assert min_scale_data_normalized < -0.04
+    assert np.sum(data_normalized_np) > 41711
+    __save_res_to_image(data_normalized_np, output_folder, methods_name, slice_numb)
 
-    __save_res_to_image(data_normalized.get(), output_folder, methods_name, slice_numb)
-
-    methods_name = "median_filter"
+    ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    methods_name = "remove_outlier"
     print("___{}___".format(methods_name))
     from httomolibgpu.misc.corr import (
-        median_filter,
         remove_outlier,
     )
 
@@ -138,16 +145,16 @@ def run_methods(path_to_data: str, output_folder: str) -> int:
         slice_numb=slice_numb,
     )
 
-    outlier_removal_cp = remove_outlier(
+    res_cp = remove_outlier(
         cp.asarray(proj_raw_mod, dtype=cp.float32),
         kernel_size=5,
         axis=None,
         dif=2000,
     )
-    outlier_removal_np = outlier_removal_cp.get()
+    res_np = res_cp.get()
 
     __save_res_to_image(
-        outlier_removal_np,
+        res_np,
         output_folder,
         methods_name,
         slice_numb,
@@ -155,12 +162,44 @@ def run_methods(path_to_data: str, output_folder: str) -> int:
         min_scale=np.min(proj_raw_mod),
     )
     __save_res_to_image(
-        np.abs(proj_raw_mod - outlier_removal_np),
+        np.abs(proj_raw_mod - res_np),
         output_folder,
         methods_name=methods_name + "_res",
         slice_numb=slice_numb,
     )
-    del outlier_removal_cp
+    del res_cp, res_np, proj_raw_mod
+    
+    ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    methods_name = "median_filter"
+    print("___{}___".format(methods_name))
+    from httomolibgpu.misc.corr import (
+        median_filter,
+    )
+
+    res_cp = median_filter(
+        cp.asarray(data_normalized, dtype=cp.float32),
+        kernel_size=5,
+        axis=None,
+    )
+    res_np = res_cp.get()
+    
+    __save_res_to_image(
+        res_np,
+        output_folder,
+        methods_name,
+        slice_numb,
+        max_scale=max_scale_data_normalized,
+        min_scale=min_scale_data_normalized,
+    )
+    __save_res_to_image(
+        np.abs(data_normalized_np - res_np),
+        output_folder,
+        methods_name=methods_name + "_res",
+        slice_numb=slice_numb,
+        max_scale=0.05,
+        min_scale=0,        
+    )
+    del res_cp, res_np    
 
     return 0
 
