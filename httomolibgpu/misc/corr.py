@@ -82,7 +82,6 @@ def __median_filter(
     axis: Union[int, None] = 0,
     dif: float = 0.0,
 ) -> cp.ndarray:
-
     try:
         from cucim.skimage.filters import median
         from cucim.skimage.morphology import disk
