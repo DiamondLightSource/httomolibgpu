@@ -52,8 +52,9 @@ jobs:
           echo "/home/runner/micromamba/envs/httomo/bin" >> $GITHUB_PATH
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v3
         with:
+          working-directory: /__w/httomolibgpu/httomolibgpu
           token: ${{ secrets.CODECOV_TOKEN }}
           files: /home/runner/coverage.xml
           fail_ci_if_error: true
