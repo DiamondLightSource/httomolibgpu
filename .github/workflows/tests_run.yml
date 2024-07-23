@@ -8,6 +8,12 @@ on:
     branches:
       - main
 
+env:
+  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+  GITHUB_REPOSITORY: ${{ github.repository }}
+  GITHUB_REF: ${{ github.ref }}
+  GITHUB_SHA: ${{ github.sha }}
+
 jobs:
   build-linux:
     runs-on: iris-gpu
@@ -22,7 +28,7 @@ jobs:
 
     steps:
       - name: Checkout repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: "main"
           fetch-depth: 0
@@ -35,11 +41,26 @@ jobs:
           post-cleanup: 'all'
           init-shell: bash
 
-      - name: Install httomolibgpu
+      - name: Install httomolibgpu & coverage tools
         run: |
+          micromamba install -y git mercurial
           pip install .[dev]
+          pip install coverage
           micromamba list
 
       - name: Run tests
         run: |
-          pytest tests/
+          coverage run -m pytest tests/
+          coverage xml -o /home/runner/coverage.xml
+
+      - name: Ensure git is in the path
+        run: |
+          echo "/home/runner/micromamba/envs/httomo/bin" >> $GITHUB_PATH
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: /home/runner/coverage.xml
+          fail_ci_if_error: true
+          verbose: true

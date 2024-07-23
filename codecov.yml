@@ -1,0 +1,8 @@
+coverage:
+  status:
+    project:
+      default:
+        target: 90%
+comment:
+  layout: "header, diff, flags, files"
+  behavior: default
