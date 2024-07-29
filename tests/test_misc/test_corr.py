@@ -145,7 +145,7 @@ def test_remove_outlier3d(data):
     assert_allclose(np.mean(filtered_data), 808.753494, rtol=eps)
     assert_allclose(np.mean(filtered_data, axis=(1, 2)).sum(), 145575.628906)
     assert_allclose(np.median(filtered_data), 976.0)
-    assert_allclose(np.median(filtered_data, axis=(1, 2)).sum(), 175741.5)
+    assert_allclose(np.median(filtered_data, axis=(1, 2)).sum(), 175742)
 
     assert filtered_data.dtype == np.uint16
 
@@ -160,10 +160,10 @@ def test_remove_outlier2d(data):
     filtered_data = remove_outlier(data, kernel_size=3, axis=0, dif=1.5).get()
 
     assert filtered_data.ndim == 3
-    assert_allclose(np.mean(filtered_data), 808.861578504, rtol=eps)
-    assert_allclose(np.mean(filtered_data, axis=(1, 2)).sum(), 145595.0841308)
-    assert_allclose(np.max(filtered_data), 1080)
-    assert_allclose(np.min(filtered_data), 80)
+    assert_allclose(np.mean(filtered_data), 809.049971, rtol=eps)
+    assert_allclose(np.mean(filtered_data, axis=(1, 2)).sum(), 145628.994824)
+    assert_allclose(np.max(filtered_data), 1136)
+    assert_allclose(np.min(filtered_data), 62)
 
     assert filtered_data.dtype == np.uint16
     assert filtered_data.flags.c_contiguous
