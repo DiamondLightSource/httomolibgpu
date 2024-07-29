@@ -85,7 +85,7 @@ def __normalize(
     cutoff: float = 10.0,
     minus_log: bool = True,
     nonnegativity: bool = False,
-    remove_nans: bool = False,
+    remove_nans: bool = True,
 ) -> cp.ndarray:
     from cupy import mean
 
@@ -116,6 +116,7 @@ def __normalize(
         kernel += "if (isinf(v)) v = 0.0f;\n"
         kernel_name += "_remnan"
     kernel += "if (v > cutoff) v = cutoff;\n"
+    kernel += "if (v < -cutoff) v = cutoff;\n"
     kernel += "out = v;\n"
 
     normalisation_kernel = cp.ElementwiseKernel(
