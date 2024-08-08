@@ -3,6 +3,7 @@ import time
 import cupy as cp
 import numpy as np
 import pytest
+from conftest import memory_leak_test
 
 from numpy.testing import assert_allclose, assert_equal
 from httomolibgpu.prep.normalize import normalize
@@ -33,6 +34,31 @@ def test_normalize(data, flats, darks, ensure_clean_memory):
     assert_allclose(np.median(data_normalize), 0.01723744, rtol=1e-06)
     assert_allclose(np.std(data_normalize), 0.524382, rtol=1e-06)
     assert data_normalize.flags.c_contiguous
+
+
+def test_normalize_memoryleak(ensure_clean_memory):
+    # --- testing normalize in a loop for memory leak  ---#
+    input_array_dims = (1801, 50, 2560)
+
+    gpu_device_index = 0
+    with cp.cuda.Device(gpu_device_index):
+        flats = cp.asarray(
+            np.random.random_sample(size=(50, 50, 2560)).astype(np.float32) * 2.0
+        )
+        darks = cp.asarray(
+            np.random.random_sample(size=(50, 50, 2560)).astype(np.float32) * 2.0
+        )
+        tolerance_exceeded = memory_leak_test(
+            normalize,
+            input_array_dims=input_array_dims,
+            iterations=50,
+            tolerance_in_mb=100,
+            device_index=gpu_device_index,
+            flats=flats,
+            darks=darks,
+            minus_log=True,
+        )
+    assert tolerance_exceeded == False
 
 
 @pytest.mark.perf

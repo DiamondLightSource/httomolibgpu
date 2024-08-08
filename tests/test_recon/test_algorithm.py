@@ -7,6 +7,10 @@ from httomolibgpu.recon.algorithm import (
     SIRT,
     CGLS,
 )
+from httomolibgpu.misc.corr import (
+    median_filter,
+)
+from conftest import memory_leak_test
 from numpy.testing import assert_allclose
 import time
 import pytest
@@ -64,6 +68,25 @@ def test_reconstruct_FBP_3(data, flats, darks, ensure_clean_memory):
     )
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (210, 128, 210)
+
+
+def test_FBP3d_memoryleak(ensure_clean_memory):
+    # --- testing fbp3d in a loop for memory leak  ---#
+    input_array_dims = (1801, 30, 2560)
+
+    gpu_device_index = 0
+    with cp.cuda.Device(gpu_device_index):
+        tolerance_exceeded = memory_leak_test(
+            FBP,
+            input_array_dims=input_array_dims,
+            iterations=20,
+            tolerance_in_mb=200,
+            device_index=gpu_device_index,
+            angles=np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, 1801),
+            center=1280,
+            filter_freq_cutoff=1.1,
+        )
+    assert tolerance_exceeded == False
 
 
 def test_reconstruct_LPREC_1(data, flats, darks, ensure_clean_memory):

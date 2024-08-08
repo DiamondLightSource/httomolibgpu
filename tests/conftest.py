@@ -5,6 +5,8 @@ import os
 import cupy as cp
 import numpy as np
 import pytest
+from typing import Callable, Tuple
+
 
 CUR_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -35,6 +37,59 @@ def pytest_collection_modifyitems(config, items):
         for item in items:
             if "perf" in item.keywords:
                 item.add_marker(skip_perf)
+
+
+def __get_memory_mb(device_index: int) -> int:
+    """Get GPU memory in MBs
+
+    Args:
+        device_index (int): device_index (int, optional): GPU index
+
+    Returns:
+        int: Free memory amount in MBs for the given GPU card
+    """
+
+    dev = cp.cuda.Device(device_index)
+    pool = cp.get_default_memory_pool()
+    available_memory_gpu_bytes = dev.mem_info[0] + pool.free_bytes()
+    gpu_memory_mbs = round(available_memory_gpu_bytes / (1024**2), 2)
+
+    return gpu_memory_mbs
+
+
+def memory_leak_test(
+    func: Callable,
+    input_array_dims: Tuple,
+    iterations: int,
+    tolerance_in_mb: float,
+    device_index: int,
+    **kwargs,
+) -> bool:
+    """This function will loop over a given method to check if the GPU memory leak happens.
+
+    Args:
+        func (Callable): A function to call
+        input_array_dims (Tuple): Dimensions of CuPy input array to a function
+        iterations (int): the number of iterations
+        tolerance_in_mb (float): tolerance parameter in MBs
+        device_index (int, optional): GPU index to run the test on a specific device
+
+    Returns:
+        bool: True if the tolerance is exceeded
+    """
+    data_input = cp.asarray(
+        np.random.random_sample(size=input_array_dims).astype(np.float32) * 2.0
+    )
+    gpu_memory_prior_run = __get_memory_mb(device_index)
+    for _ in range(iterations):
+        data_output = func(cp.copy(data_input), **kwargs)
+        del data_output
+        # check the difference in memory after the method's execution bellow tolerance_exceeded
+        gpu_memory_run = __get_memory_mb(device_index)
+        difference_mb = abs(gpu_memory_prior_run - gpu_memory_run)
+        if difference_mb >= tolerance_in_mb:
+            return True
+    return False
 
 
 @pytest.fixture(scope="session")

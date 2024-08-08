@@ -11,6 +11,7 @@ from httomolibgpu.misc.corr import (
     remove_outlier,
 )
 from numpy.testing import assert_allclose, assert_equal
+from conftest import memory_leak_test
 
 eps = 1e-6
 
@@ -95,6 +96,24 @@ def test_median_filter3d(data):
     )
 
 
+def test_median_filter3d_memoryleak(ensure_clean_memory):
+    # --- testing median3d in a loop for memory leak  ---#
+    input_array_dims = (1801, 50, 2560)
+
+    gpu_device_index = 0
+    with cp.cuda.Device(gpu_device_index):
+        tolerance_exceeded = memory_leak_test(
+            median_filter,
+            input_array_dims=input_array_dims,
+            iterations=50,
+            tolerance_in_mb=100,
+            device_index=gpu_device_index,
+            kernel_size=3,
+            axis=None,
+        )
+    assert tolerance_exceeded == False
+
+
 @pytest.mark.parametrize("axis", [0, 1, 2])
 def test_median_filter2d_axes(data, axis):
     filtered_data = median_filter(data, kernel_size=3, axis=axis).get()
@@ -115,6 +134,24 @@ def test_median_filter2d(data):
 
     assert filtered_data.dtype == np.uint16
     assert filtered_data.flags.c_contiguous
+
+
+def test_median_filter2d_memoryleak(ensure_clean_memory):
+    # --- testing median2d in a loop for memory leak  ---#
+    input_array_dims = (1801, 50, 2560)
+
+    gpu_device_index = 0
+    with cp.cuda.Device(gpu_device_index):
+        tolerance_exceeded = memory_leak_test(
+            median_filter,
+            input_array_dims=input_array_dims,
+            iterations=50,
+            tolerance_in_mb=100,
+            device_index=gpu_device_index,
+            kernel_size=3,
+            axis=0,
+        )
+    assert tolerance_exceeded == False
 
 
 @pytest.mark.perf

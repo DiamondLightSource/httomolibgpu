@@ -40,7 +40,7 @@ def normalize(
     cutoff: float = 10.0,
     minus_log: bool = True,
     nonnegativity: bool = False,
-    remove_nans: bool = False,
+    remove_nans: bool = True,
 ) -> cp.ndarray:
     """
     Normalize raw projection data using the flat and dark field projections.
