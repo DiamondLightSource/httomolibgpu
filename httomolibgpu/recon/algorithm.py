@@ -29,6 +29,9 @@ nvtx = cupywrapper.nvtx
 from numpy import float32, complex64
 from typing import Optional, Type
 
+from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
+from tomobar.methodsIR_CuPy import RecToolsIRCuPy
+
 __all__ = [
     "FBP",
     "LPRec",
@@ -360,8 +363,6 @@ def _instantiate_direct_recon_class(
     Returns:
         Type[RecToolsDIRCuPy]: an instance of the direct recon class
     """
-    from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
-
     if center is None:
         center = data.shape[2] // 2  # making a crude guess
     if recon_size is None:
@@ -400,8 +401,6 @@ def _instantiate_iterative_recon_class(
     Returns:
         Type[RecToolsIRCuPy]: an instance of the iterative class
     """
-    from tomobar.methodsIR_CuPy import RecToolsIRCuPy
-
     if center is None:
         center = data.shape[2] // 2  # making a crude guess
     if recon_size is None:
