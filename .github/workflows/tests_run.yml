@@ -40,3 +40,14 @@ jobs:
       - name: Run tests
         run: |
           pytest tests/
+
+      - name: Build api docs
+        run: sphinx-apidoc -feT -t=./docs/source/_templates -o ./docs/source/api ./httomolibgpu
+
+      - name: Build html
+        run: sphinx-build -a -E -b html ./docs/source/ ./docs/build/
+
+      - name: Run ghp-import
+        run: ghp-import -n -p -f ./docs/build
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
