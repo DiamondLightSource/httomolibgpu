@@ -45,7 +45,7 @@ def median_filter(
     dif: float = 0.0,
 ) -> cp.ndarray:
     """
-    Apply 3D median filter to a 3D CuPy array. For more detailed information, see :ref:`method_median_filter`.
+    Applies 3D median filter to a 3D CuPy array. For more detailed information, see :ref:`method_median_filter`.
 
     Parameters
     ----------

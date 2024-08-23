@@ -118,7 +118,7 @@ def run_methods(path_to_data: str, output_folder: str) -> int:
         cp.asarray(proj_raw), cp.asarray(flats), cp.asarray(darks), minus_log=True
     )
     data_normalized_np = data_normalized.get()
-    
+
     max_scale_data_normalized = np.max(data_normalized_np)
     min_scale_data_normalized = np.min(data_normalized_np)
     assert max_scale_data_normalized > 1.062
@@ -168,7 +168,7 @@ def run_methods(path_to_data: str, output_folder: str) -> int:
         slice_numb=slice_numb,
     )
     del res_cp, res_np, proj_raw_mod
-    
+
     ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods_name = "median_filter"
     print("___{}___".format(methods_name))
@@ -182,7 +182,7 @@ def run_methods(path_to_data: str, output_folder: str) -> int:
         axis=None,
     )
     res_np = res_cp.get()
-    
+
     __save_res_to_image(
         res_np,
         output_folder,
@@ -197,9 +197,9 @@ def run_methods(path_to_data: str, output_folder: str) -> int:
         methods_name=methods_name + "_res",
         slice_numb=slice_numb,
         max_scale=0.05,
-        min_scale=0,        
+        min_scale=0,
     )
-    del res_cp, res_np    
+    del res_cp, res_np
 
     return 0
 

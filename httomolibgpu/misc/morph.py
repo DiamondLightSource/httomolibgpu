@@ -28,6 +28,8 @@ cp = cupywrapper.cp
 nvtx = cupywrapper.nvtx
 from typing import Literal
 
+from cupyx.scipy.interpolate import interpn
+
 __all__ = [
     "sino_360_to_180",
     "data_resampler",
@@ -135,8 +137,6 @@ def data_resampler(
 def __data_resampler(
     data: cp.ndarray, newshape: list, axis: int = 1, interpolation: str = "linear"
 ) -> cp.ndarray:
-    from cupyx.scipy.interpolate import interpn
-
     if data.ndim != 3:
         raise ValueError("only 3D data is supported")
 

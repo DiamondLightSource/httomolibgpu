@@ -32,9 +32,11 @@ MOCK_MODULES = [
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = mock.Mock()
 
+
 class CustomMock(mock.Mock):
     def __repr__(self):
         return "<cp.ndarray>"
+
 
 sys.modules["cupy"] = CustomMock()
 sys.modules["numpy"] = CustomMock()
@@ -94,14 +96,6 @@ html_copy_source = True
 html_last_updated_fmt = ""
 html_static_path = ["_static"]
 html_use_smartypants = True
-
-"""
-html_theme_options = {
-    "logo_only": True,
-    "display_version": False,
-    "githuburl": "https://github.com/DiamondLightSource/httomolibgpu",
-}
-"""
 
 html_theme_options = {
     "show_toc_level": 1,
