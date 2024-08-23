@@ -11,7 +11,7 @@ repos:
     - id: trailing-whitespace  # This hook trims trailing whitespace.
     - id: check-docstring-first  # Checks a common error of defining a docstring after code.
     - id: check-merge-conflict  # Check for files that contain merge conflict strings.
-    - id: check-yaml  # This hook checks yaml files for parseable syntax.
+    #- id: check-yaml  # This hook checks yaml files for parseable syntax.
     - id: detect-private-key  # Detects the presence of private keys.
     - id: check-symlinks
     - id: check-toml

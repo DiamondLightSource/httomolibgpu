@@ -1,13 +1,11 @@
 name: httomolibgpu
 channels:
   - conda-forge
-  - anaconda
-  - astra-toolbox
   - httomo
   - rapidsai
 dependencies:
   - conda-forge::cupy=12.3.0
-  - conda-forge::numpy<=1.24
+  - conda-forge::numpy<=1.25
   - conda-forge::nvtx
   - conda-forge::scipy
   - conda-forge::python
@@ -19,9 +17,9 @@ dependencies:
   - conda-forge::pydocstyle
   - conda-forge::imageio
   - conda-forge::toml
-  - anaconda::ipython
-  - anaconda::h5py
-  - astra-toolbox::astra-toolbox
+  - conda-forge::ipython
+  - conda-forge::h5py
+  - conda-forge::astra-toolbox
   - httomo::tomobar
   - rapidsai::cucim
-  - anaconda::scikit-image
+  - conda-forge::scikit-image
