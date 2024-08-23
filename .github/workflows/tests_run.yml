@@ -41,9 +41,13 @@ jobs:
         run: |
           pytest tests/
 
+      - name: Install docs dependencies
+        run: |
+          micromamba install -c conda-forge sphinx sphinx-book-theme jinja2 sphinx-panels sphinx-copybutton sphinxcontrib-bibtex nbsphinx pyyaml ghp-import
+          micromamba list
+
       - name: Build api docs
         run: |
-          mamba install -c conda-forge sphinx sphinx-book-theme jinja2 sphinx-panels sphinx-copybutton sphinxcontrib-bibtex nbsphinx pyyaml ghp-import
           sphinx-apidoc -feT -t=./docs/source/_templates -o ./docs/source/api ./httomolibgpu
 
       - name: Build html
