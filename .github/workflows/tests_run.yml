@@ -42,7 +42,9 @@ jobs:
           pytest tests/
 
       - name: Build api docs
-        run: sphinx-apidoc -feT -t=./docs/source/_templates -o ./docs/source/api ./httomolibgpu
+        run: |
+          mamba install -c conda-forge sphinx sphinx-book-theme jinja2 sphinx-panels sphinx-copybutton sphinxcontrib-bibtex nbsphinx pyyaml ghp-import
+          sphinx-apidoc -feT -t=./docs/source/_templates -o ./docs/source/api ./httomolibgpu
 
       - name: Build html
         run: sphinx-build -a -E -b html ./docs/source/ ./docs/build/
