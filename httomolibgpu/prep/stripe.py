@@ -24,8 +24,10 @@ import numpy as np
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
-
 nvtx = cupywrapper.nvtx
+
+from cupyx.scipy.ndimage import median_filter, binary_dilation, uniform_filter1d
+
 from typing import Union
 
 __all__ = [
@@ -96,8 +98,6 @@ def _rs_sort(sinogram, size, dim):
     """
     Remove stripes using the sorting technique.
     """
-    from cupyx.scipy.ndimage import median_filter
-
     sinogram = cp.transpose(sinogram)
 
     #: Sort each column of the sinogram by its grayscale values
@@ -245,8 +245,6 @@ def _rs_sort2(sinogram, size, matindex, dim):
     """
     Remove stripes using the sorting technique.
     """
-    from cupyx.scipy.ndimage import median_filter
-
     sinogram = cp.transpose(sinogram)
     matcomb = cp.asarray(cp.dstack((matindex, sinogram)))
 
@@ -321,9 +319,6 @@ def _rs_large(sinogram, snr, size, matindex, drop_ratio=0.1, norm=True):
     """
     Remove large stripes.
     """
-    from cupyx.scipy.ndimage import median_filter
-    from cupyx.scipy.ndimage import binary_dilation
-
     drop_ratio = max(min(drop_ratio, 0.8), 0)  # = cp.clip(drop_ratio, 0.0, 0.8)
     (nrow, ncol) = sinogram.shape
     ndrop = int(0.5 * drop_ratio * nrow)
@@ -372,10 +367,6 @@ def _rs_dead(sinogram, snr, size, matindex, norm=True):
     """
     Remove unresponsive and fluctuating stripes.
     """
-    from cupyx.scipy.ndimage import median_filter
-    from cupyx.scipy.ndimage import binary_dilation
-    from cupyx.scipy.ndimage import uniform_filter1d
-
     sinogram = cp.copy(sinogram)  # Make it mutable
     (nrow, _) = sinogram.shape
     # sinosmooth = cp.apply_along_axis(uniform_filter1d, 0, sinogram, 10)

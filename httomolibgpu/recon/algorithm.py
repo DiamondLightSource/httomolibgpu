@@ -24,13 +24,14 @@ import numpy as np
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
-
 nvtx = cupywrapper.nvtx
-from numpy import float32, complex64
-from typing import Optional, Type
 
 from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
 from tomobar.methodsIR_CuPy import RecToolsIRCuPy
+
+from numpy import float32, complex64
+from typing import Optional, Type
+
 
 __all__ = [
     "FBP",

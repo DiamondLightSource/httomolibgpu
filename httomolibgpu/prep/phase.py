@@ -24,8 +24,10 @@ import numpy as np
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
-
 nvtx = cupywrapper.nvtx
+
+from httomolibgpu.cuda_kernels import load_cuda_module
+from cupyx.scipy.fft import fft2, ifft2, fftshift
 
 from numpy import float32
 from typing import Union
@@ -117,8 +119,6 @@ def __paganin_filter_savu(
     pad_method: str = "edge",
     increment: float = 0.0,
 ) -> cp.ndarray:
-    from httomolibgpu.cuda_kernels import load_cuda_module
-    from cupyx.scipy.fft import fft2, ifft2
 
     # Check the input data is valid
     if data.ndim != 3:
@@ -327,8 +327,7 @@ def __paganin_filter_tomopy(
     dist: float = 50.0,
     energy: float = 53.0,
     alpha: float = 1e-3,
-) -> cp.ndarray:
-    from cupyx.scipy.fft import fft2, ifft2, fftshift
+) -> cp.ndarray:   
 
     # Check the input data is valid
     if tomo.ndim != 3:

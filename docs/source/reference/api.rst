@@ -8,7 +8,7 @@ This section contains the API reference and usage information for HttomolibGPU.
 
 HTTomolibGPU Modules
 ---------------------
-v.2.0
+v.2.1
 '''''
 
 .. toctree::

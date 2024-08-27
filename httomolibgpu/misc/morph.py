@@ -24,8 +24,11 @@ import numpy as np
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
-
 nvtx = cupywrapper.nvtx
+cupyx = cupywrapper.cupyx
+
+from cupyx.scipy.interpolate import interpn
+
 from typing import Literal
 
 __all__ = [
@@ -77,6 +80,9 @@ def __sino_360_to_180(
         raise ValueError("overlap must be less than data.shape[2]")
     if overlap < 0:
         raise ValueError("only positive overlaps are allowed.")
+    
+    if rotation not in ['left', 'right']:
+        raise ValueError('rotation parameter must be either "left" or "right"')
 
     n = dx // 2
 
@@ -90,7 +96,7 @@ def __sino_360_to_180(
             weights * data[:n, :, :overlap]
             + (weights * data[n : 2 * n, :, :overlap])[:, :, ::-1]
         )
-    elif rotation == "right":
+    if rotation == "right":
         weights = cp.linspace(1.0, 0, overlap, dtype=cp.float32)
         out[:, :, : dz - overlap] = data[:n, :, :-overlap]
         out[:, :, -dz + overlap :] = data[n : 2 * n, :, :-overlap][:, :, ::-1]
@@ -98,8 +104,6 @@ def __sino_360_to_180(
             weights * data[:n, :, -overlap:]
             + (weights * data[n : 2 * n, :, -overlap:])[:, :, ::-1]
         )
-    else:
-        raise ValueError('rotation parameter must be either "left" or "right"')
 
     return out
 
@@ -134,8 +138,7 @@ def data_resampler(
 @nvtx.annotate()
 def __data_resampler(
     data: cp.ndarray, newshape: list, axis: int = 1, interpolation: str = "linear"
-) -> cp.ndarray:
-    from cupyx.scipy.interpolate import interpn
+) -> cp.ndarray:    
 
     if data.ndim != 3:
         raise ValueError("only 3D data is supported")

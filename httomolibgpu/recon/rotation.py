@@ -24,8 +24,13 @@ import numpy as np
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
-
 nvtx = cupywrapper.nvtx
+
+from httomolibgpu.cuda_kernels import load_cuda_module
+from cupyx.scipy.ndimage import shift, gaussian_filter
+from skimage.registration import phase_cross_correlation
+from cupyx.scipy.fftpack import get_fft_plan
+from cupyx.scipy.fft import rfft2
 
 import math
 from typing import List, Literal, Optional, Tuple, Union
@@ -96,8 +101,7 @@ def __find_center_vo(
     step: float = 0.25,
     ratio: float = 0.5,
     drop: int = 20,
-) -> float:
-    from cupyx.scipy.ndimage import gaussian_filter
+) -> float:    
 
     if data.ndim == 2:
         data = cp.expand_dims(data, 1)
@@ -185,7 +189,6 @@ def _search_fine(sino, srad, step, init_cen, ratio, drop):
 
 @nvtx.annotate()
 def _create_mask(nrow, ncol, radius, drop):
-    from httomolibgpu.cuda_kernels import load_cuda_module
 
     du = 1.0 / ncol
     dv = (nrow - 1.0) / (nrow * 2.0 * np.pi)
@@ -258,11 +261,6 @@ def _calculate_chunks(
 
 @nvtx.annotate()
 def _calculate_metric(list_shift, sino1, sino2, sino3, mask, out):
-    from httomolibgpu.cuda_kernels import load_cuda_module
-    from cupyx.scipy.ndimage import shift
-    from cupyx.scipy.fftpack import get_fft_plan
-    from cupyx.scipy.fft import rfft2
-
     # this tries to simplify - if shift_col is integer, no need to spline interpolate
     assert list_shift.dtype == cp.float32, "shifts must be single precision floats"
     assert sino1.dtype == cp.float32, "sino1 must be float32"
@@ -351,8 +349,6 @@ def _calculate_metric(list_shift, sino1, sino2, sino3, mask, out):
 
 @nvtx.annotate()
 def _downsample(sino, level, axis):
-    from httomolibgpu.cuda_kernels import load_cuda_module
-
     assert sino.dtype == cp.float32, "single precision floating point input required"
     assert sino.flags["C_CONTIGUOUS"], "list_shift must be C-contiguous"
 
@@ -612,7 +608,6 @@ def _search_overlap(
         Initial position of the searching window where the position
         corresponds to the center of the window.
     """
-    from cupyx.scipy.ndimage import gaussian_filter
 
     if denoise is True:
         # note: the filtering makes the output contiguous
@@ -649,8 +644,6 @@ def _calc_metrics(mat1, mat2, win_width, side, use_overlap, norm):
     assert mat1.shape[0] == mat2.shape[0]
     assert mat1.flags.c_contiguous, "only contiguos arrays supported"
     assert mat2.flags.c_contiguous, "only contiguos arrays supported"
-
-    from httomolibgpu.cuda_kernels import load_cuda_module
 
     _calc_metrics_module = load_cuda_module(
         "calc_metrics",
@@ -766,9 +759,7 @@ def __find_center_pc(
     tol: float = 0.5,
     rotc_guess: Union[float, Optional[str]] = None,
 ) -> float:
-    from cupyx.scipy.ndimage import shift
-    from skimage.registration import phase_cross_correlation
-
+    
     imgshift = 0.0 if rotc_guess is None else rotc_guess - (proj1.shape[1] - 1.0) / 2.0
 
     proj1 = shift(proj1, [0, -imgshift], mode="constant", cval=0)
