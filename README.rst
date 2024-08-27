@@ -20,9 +20,7 @@ Install HTTomolibGPU as a pre-built conda Python package
 
    $ conda create --name httomolibgpu # create a fresh conda environment
    $ conda activate httomolibgpu # activate the environment
-   $ conda install -c httomo httomolibgpu -c rapidsai -c conda-forge # for linux users
-   $ conda install -c httomo httomolibgpu -c jplumail -c conda-forge # for windows users
-
+   $ conda install -c httomo httomolibgpu -c conda-forge # for linux users
 
 Setup the development environment:
 ==================================
@@ -39,5 +37,5 @@ Build HTTomolibGPU as a conda Python package
 
 .. code-block:: console
 
-   $ conda build conda/recipe/ -c conda-forge -c httomo -c rapidsai
+   $ conda build conda/recipe/ -c conda-forge -c httomo
 

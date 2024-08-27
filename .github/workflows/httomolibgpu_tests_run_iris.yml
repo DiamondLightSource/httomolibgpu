@@ -1,5 +1,4 @@
-name: httomolibgpu tests on Iris
-
+name: httomolibgpu tests
 on:
   push:
     branches:
@@ -9,7 +8,7 @@ on:
       - main
 
 jobs:
-  build-linux:
+  iris-gpu:
     runs-on: iris-gpu
     container:
       image: nvidia/cuda:11.6.2-devel-ubi8
@@ -40,20 +39,3 @@ jobs:
       - name: Run tests
         run: |
           pytest tests/
-
-      - name: Install docs dependencies
-        run: |
-          micromamba install -c conda-forge sphinx sphinx-book-theme jinja2 sphinx-panels sphinx-copybutton sphinxcontrib-bibtex nbsphinx pyyaml ghp-import
-          micromamba list
-
-      - name: Build api docs
-        run: |
-          sphinx-apidoc -feT -t=./docs/source/_templates -o ./docs/source/api ./httomolibgpu
-
-      - name: Build html
-        run: sphinx-build -a -E -b html ./docs/source/ ./docs/build/
-
-      - name: Run ghp-import
-        run: ghp-import -n -p -f ./docs/build
-        env:
-          GITHUB_TOKEN: ${{ github.token }}

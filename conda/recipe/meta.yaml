@@ -24,7 +24,6 @@ requirements:
     - python
     - numpy>= 1.20, <= 1.25
     - cupy=12.3.0
-    - cucim
     - astra-toolbox
     - nvtx
     - tomobar
