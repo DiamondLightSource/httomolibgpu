@@ -767,7 +767,7 @@ def __find_center_pc(
     rotc_guess: Union[float, Optional[str]] = None,
 ) -> float:
     from cupyx.scipy.ndimage import shift
-    from cucim.skimage.registration import phase_cross_correlation
+    from skimage.registration import phase_cross_correlation
 
     imgshift = 0.0 if rotc_guess is None else rotc_guess - (proj1.shape[1] - 1.0) / 2.0
 
@@ -777,9 +777,9 @@ def __find_center_pc(
     # create reflection of second projection
     proj2 = cp.fliplr(proj2)
 
-    # using cucim of rapids to do phase cross correlation between two images
+    # do phase cross correlation between two images
     shiftr = phase_cross_correlation(
-        reference_image=proj1, moving_image=proj2, upsample_factor=1.0 / tol
+        reference_image=proj1.get(), moving_image=proj2.get(), upsample_factor=1.0 / tol
     )
 
     # Compute center of rotation as the center of first image and the

@@ -1,32 +1,32 @@
-HTTomoLibGPU is dual licenced under the Apache V2 and GPL V3 licences both of 
-which appear bellow.  The following section from the apache website
-details the compatability of ApacheV2 with GPLV3 and explains the 
+HTTomoLibGPU is dual licenced under the Apache V2 and GPL V3 licences both of
+which appear below. The following section from the apache website
+details the compatibility of ApacheV2 with GPLV3 and explains the
 requirement for the dual licence.
 
 
       From http://www.apache.org/licenses/GPL-compatibility.html
 
-The Free Software Foundation considers the Apache License, Version 
+The Free Software Foundation considers the Apache License, Version
 2.0 to be a free software license, compatible with version 3 of the GPL.
-The Software Freedom Law Center provides practical advice for developers 
+The Software Freedom Law Center provides practical advice for developers
 about including permissively licensed source.
 
-Apache 2 software can therefore be included in GPLv3 projects, because 
-the GPLv3 license accepts our software into GPLv3 works. However, GPLv3 
-software cannot be included in Apache projects. The licenses are incompatible 
-in one direction only, and it is a result of ASF's licensing philosophy and 
+Apache 2 software can therefore be included in GPLv3 projects, because
+the GPLv3 license accepts our software into GPLv3 works. However, GPLv3
+software cannot be included in Apache projects. The licenses are incompatible
+in one direction only, and it is a result of ASF's licensing philosophy and
 the GPLv3 authors' interpretation of copyright law.
 
-This licensing incompatibility applies only when some Apache project software 
-becomes a derivative work of some GPLv3 software, because then the Apache 
-software would have to be distributed under GPLv3. This would be incompatible 
-with ASF's requirement that all Apache software must be distributed under the 
+This licensing incompatibility applies only when some Apache project software
+becomes a derivative work of some GPLv3 software, because then the Apache
+software would have to be distributed under GPLv3. This would be incompatible
+with ASF's requirement that all Apache software must be distributed under the
 Apache License 2.0.
 
-We avoid GPLv3 software because merely linking to it is considered by the GPLv3 
-authors to create a derivative work. We want to honor their license. Unless GPLv3 
-licensors relax this interpretation of their own license regarding linking, our 
-licensing philosophies are fundamentally incompatible. This is an identical issue 
+We avoid GPLv3 software because merely linking to it is considered by the GPLv3
+authors to create a derivative work. We want to honor their license. Unless GPLv3
+licensors relax this interpretation of their own license regarding linking, our
+licensing philosophies are fundamentally incompatible. This is an identical issue
 for both GPLv2 and GPLv3.
 
 
@@ -36,9 +36,9 @@ for both GPLv2 and GPLv3.
 HTTomoLibGPU makes use of some GPLv3 libraries in the following packages:
     ToMoBAR (depends on ASTRA-Toolbox)
 
-If your use of the code makes use of these imports, then the software is licenced under 
+If your use of the code makes use of these imports, then the software is licenced under
 GPLV3 as required by the licence.  However if you do not use or redistribute the plugins
-containing these imports, the software may be considered licenced under the Apache V2 
+containing these imports, the software may be considered licenced under the Apache V2
 licence, Specifically all of the core functionality of HTTomoLibGPU.
 
 Both licences now follow.

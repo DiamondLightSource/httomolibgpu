@@ -1,5 +1,4 @@
-name: httomolibgpu tests on Iris
-
+name: httomolibgpu tests
 on:
   push:
     branches:
@@ -9,7 +8,7 @@ on:
       - main
 
 jobs:
-  build-linux:
+  iris-gpu:
     runs-on: iris-gpu
     container:
       image: nvidia/cuda:11.6.2-devel-ubi8

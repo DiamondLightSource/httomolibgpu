@@ -7,20 +7,20 @@ from numpy.testing import assert_allclose
 from httomolibgpu.misc.morph import sino_360_to_180, data_resampler
 
 
-
 @pytest.mark.parametrize("rotation", ["left", "right"])
 def test_sino_360_to_180_realdata(ensure_clean_memory, sino3600, rotation):
     shape_new = (3601, 3, 2560)
     data3d = cp.zeros(shape_new, dtype=np.float32)
-    data3d[:,0,:] = sino3600
-    data3d[:,1,:] = sino3600
-    data3d[:,2,:] = sino3600
+    data3d[:, 0, :] = sino3600
+    data3d[:, 1, :] = sino3600
+    data3d[:, 2, :] = sino3600
 
     sino_360_to_180(data3d, overlap=900, rotation=rotation)
-    
+
     assert data3d.shape == shape_new
     assert data3d.dtype == np.float32
-    assert data3d.flags.c_contiguous    
+    assert data3d.flags.c_contiguous
+
 
 @pytest.mark.parametrize(
     "overlap, rotation",

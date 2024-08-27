@@ -1,4 +1,4 @@
-name: httomolibgpu nightly dev conda package build + upload
+name: httomolibgpu nightly dev
 
 on:
   schedule:
@@ -6,7 +6,7 @@ on:
     - cron: '0 0 * * *'
 
 jobs:
-  build-linux:
+  main-conda-build:
     runs-on: ubuntu-20.04
 
     defaults:
@@ -20,11 +20,11 @@ jobs:
           ref: "main"
           fetch-depth: 0
 
-      # setup Python 3.9
-      - name: Setup Python 3.9
-        uses: actions/setup-python@v2
+      # setup Python 3.10
+      - name: Setup Python 3.10
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.9
+          python-version: '3.10'
 
       - name: Decrypt a secret
         run: ./.scripts/decrypt_secret.sh
