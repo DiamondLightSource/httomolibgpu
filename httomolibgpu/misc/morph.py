@@ -124,7 +124,7 @@ def data_resampler(
     Returns:
         cp.ndarray: Up/Down-scaled 3D cupy array
     """
-    if cupywrapper.cupy_run:        
+    if cupywrapper.cupy_run:
         return __data_resampler(data, newshape, axis, interpolation)
     else:
         print("data_resampler won't be executed because CuPy is not installed")
@@ -136,7 +136,7 @@ def __data_resampler(
     data: cp.ndarray, newshape: list, axis: int = 1, interpolation: str = "linear"
 ) -> cp.ndarray:
     from cupyx.scipy.interpolate import interpn
-    
+
     if data.ndim != 3:
         raise ValueError("only 3D data is supported")
 

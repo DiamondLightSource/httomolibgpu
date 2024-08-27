@@ -20,6 +20,7 @@ dev_template = "{tag}"
 
 [project]
 name = "httomolibgpu"
+version = "2.1"
 description = "Commonly used tomography data processing methods at DLS."
 readme = "README.rst"
 license = {text = "BSD-3-Clause"}
