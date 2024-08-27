@@ -25,6 +25,9 @@ from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
 nvtx = cupywrapper.nvtx
+cupyx = cupywrapper.cupyx
+
+from cupyx.scipy.ndimage import map_coordinates
 
 from typing import Dict, List
 
@@ -72,7 +75,7 @@ def distortion_correction_proj_discorpy(
     Returns
     -------
     cp.ndarray
-        3D array. Distortion-corrected image(s).
+        3D array. Distortion-corrected array.
     """
     if cupywrapper.cupy_run:
         return __distortion_correction_proj_discorpy(
@@ -121,9 +124,7 @@ def __distortion_correction_proj_discorpy(
     -------
     cp.ndarray
         3D array. Distortion-corrected image(s).
-    """
-
-    from cupyx.scipy.ndimage import map_coordinates
+    """   
 
     # Check if it's a stack of 2D images, or only a single 2D image
     if len(data.shape) == 2:

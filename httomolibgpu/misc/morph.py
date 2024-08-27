@@ -80,6 +80,9 @@ def __sino_360_to_180(
         raise ValueError("overlap must be less than data.shape[2]")
     if overlap < 0:
         raise ValueError("only positive overlaps are allowed.")
+    
+    if rotation not in ['left', 'right']:
+        raise ValueError('rotation parameter must be either "left" or "right"')
 
     n = dx // 2
 
@@ -93,7 +96,7 @@ def __sino_360_to_180(
             weights * data[:n, :, :overlap]
             + (weights * data[n : 2 * n, :, :overlap])[:, :, ::-1]
         )
-    elif rotation == "right":
+    if rotation == "right":
         weights = cp.linspace(1.0, 0, overlap, dtype=cp.float32)
         out[:, :, : dz - overlap] = data[:n, :, :-overlap]
         out[:, :, -dz + overlap :] = data[n : 2 * n, :, :-overlap][:, :, ::-1]
@@ -101,8 +104,6 @@ def __sino_360_to_180(
             weights * data[:n, :, -overlap:]
             + (weights * data[n : 2 * n, :, -overlap:])[:, :, ::-1]
         )
-    else:
-        raise ValueError('rotation parameter must be either "left" or "right"')
 
     return out
 

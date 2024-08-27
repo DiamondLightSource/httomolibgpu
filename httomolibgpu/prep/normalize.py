@@ -24,8 +24,9 @@ import numpy as np
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
-
 nvtx = cupywrapper.nvtx
+
+from cupy import mean
 
 from numpy import float32
 from typing import Tuple
@@ -86,8 +87,7 @@ def __normalize(
     minus_log: bool = True,
     nonnegativity: bool = False,
     remove_nans: bool = True,
-) -> cp.ndarray:
-    from cupy import mean
+) -> cp.ndarray:    
 
     _check_valid_input(data, flats, darks)
 

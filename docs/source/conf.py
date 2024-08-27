@@ -22,6 +22,8 @@ MOCK_MODULES = [
     "nvtx",
     "cupy",
     "cupyx",
+    "tomobar.methodsDIR_CuPy",
+    "tomobar.methodsIR_CuPy",
     "PIL",
     "skimage",
     "scipy",
@@ -40,6 +42,15 @@ class CustomMock(mock.Mock):
 
 sys.modules["cupy"] = CustomMock()
 sys.modules["numpy"] = CustomMock()
+sys.modules["cupyx.scipy.interpolate"] = CustomMock()
+sys.modules["cupyx.scipy.ndimage"] = CustomMock()
+sys.modules["cupyx.scipy.fft"] = CustomMock()
+sys.modules["cupyx.scipy.fftpack"] = CustomMock()
+sys.modules["scipy.fftpack"] = CustomMock()
+sys.modules["tomobar.methodsDIR_CuPy"] = CustomMock()
+sys.modules["tomobar.methodsIR_CuPy "] = CustomMock()
+sys.modules["skimage.registration"] = CustomMock()
+
 
 # ------------------------------------------------------------------------------
 
