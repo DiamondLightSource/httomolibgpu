@@ -24,8 +24,11 @@ import numpy as np
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
-
 nvtx = cupywrapper.nvtx
+cupyx = cupywrapper.cupyx
+
+from cupyx.scipy.interpolate import interpn
+
 from typing import Literal
 
 __all__ = [
@@ -134,8 +137,7 @@ def data_resampler(
 @nvtx.annotate()
 def __data_resampler(
     data: cp.ndarray, newshape: list, axis: int = 1, interpolation: str = "linear"
-) -> cp.ndarray:
-    from cupyx.scipy.interpolate import interpn
+) -> cp.ndarray:    
 
     if data.ndim != 3:
         raise ValueError("only 3D data is supported")
