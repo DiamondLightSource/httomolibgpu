@@ -25,16 +25,16 @@ from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
 nvtx = cupywrapper.nvtx
-
+cupy_run = cupywrapper.cupy_run
 
 from unittest.mock import Mock
-try:
+if cupy_run:
     from httomolibgpu.cuda_kernels import load_cuda_module
     from cupyx.scipy.ndimage import shift, gaussian_filter
     from skimage.registration import phase_cross_correlation
     from cupyx.scipy.fftpack import get_fft_plan
     from cupyx.scipy.fft import rfft2    
-except ImportError as e:
+else:
     load_cuda_module = Mock()
     shift = Mock()
     gaussian_filter = Mock()

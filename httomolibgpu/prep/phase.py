@@ -25,12 +25,13 @@ from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
 nvtx = cupywrapper.nvtx
+cupy_run = cupywrapper.cupy_run
 
 from unittest.mock import Mock
-try:
+if cupy_run:
     from httomolibgpu.cuda_kernels import load_cuda_module
     from cupyx.scipy.fft import fft2, ifft2, fftshift
-except ImportError as e:
+else:
     load_cuda_module = Mock()
     fft2 = Mock()
     ifft2 = Mock()

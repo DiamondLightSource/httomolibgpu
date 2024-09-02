@@ -1,4 +1,3 @@
-cupy_run = False
 try:
     import cupy as cp
     import nvtx
@@ -15,5 +14,6 @@ except ImportError as e:
     )
     from unittest.mock import Mock
     import numpy as cp
+    cupy_run = False
 
     nvtx = Mock()

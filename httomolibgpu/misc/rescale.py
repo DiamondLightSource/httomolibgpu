@@ -23,8 +23,8 @@ import numpy as np
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
-
 nvtx = cupywrapper.nvtx
+
 from typing import Literal, Optional, Tuple, Union
 
 __all__ = [
