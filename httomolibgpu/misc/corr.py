@@ -28,7 +28,6 @@ from typing import Union
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
-nvtx = cupywrapper.nvtx
 cupy_run = cupywrapper.cupy_run
 
 from numpy import float32
@@ -46,7 +45,6 @@ __all__ = [
 ]
 
 
-@nvtx.annotate()
 def median_filter(
     data: cp.ndarray,
     kernel_size: int = 3,
