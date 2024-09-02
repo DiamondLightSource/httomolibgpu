@@ -24,9 +24,14 @@ import numpy as np
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
-nvtx = cupywrapper.nvtx
+cupy_run = cupywrapper.cupy_run
 
-from cupy import mean
+from unittest.mock import Mock
+
+if cupy_run:
+    from cupy import mean
+else:
+    mean = Mock()
 
 from numpy import float32
 from typing import Tuple
@@ -69,26 +74,6 @@ def normalize(
     cp.ndarray
         Normalised 3D tomographic data as a CuPy array.
     """
-    if cupywrapper.cupy_run:
-        return __normalize(
-            data, flats, darks, cutoff, minus_log, nonnegativity, remove_nans
-        )
-    else:
-        print("normalize won't be executed because CuPy is not installed")
-        return data
-
-
-@nvtx.annotate()
-def __normalize(
-    data: cp.ndarray,
-    flats: cp.ndarray,
-    darks: cp.ndarray,
-    cutoff: float = 10.0,
-    minus_log: bool = True,
-    nonnegativity: bool = False,
-    remove_nans: bool = True,
-) -> cp.ndarray:    
-
     _check_valid_input(data, flats, darks)
 
     dark0 = cp.empty(darks.shape[1:], dtype=float32)

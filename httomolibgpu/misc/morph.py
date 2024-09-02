@@ -24,10 +24,14 @@ import numpy as np
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
-nvtx = cupywrapper.nvtx
-cupyx = cupywrapper.cupyx
+cupy_run = cupywrapper.cupy_run
 
-from cupyx.scipy.interpolate import interpn
+from unittest.mock import Mock
+
+if cupy_run:
+    from cupyx.scipy.interpolate import interpn
+else:
+    interpn = Mock()
 
 from typing import Literal
 
@@ -59,17 +63,6 @@ def sino_360_to_180(
     cp.ndarray
         Output 3D data.
     """
-    if cupywrapper.cupy_run:
-        return __sino_360_to_180(data, overlap, rotation)
-    else:
-        print("sino_360_to_180 won't be executed because CuPy is not installed")
-        return data
-
-
-@nvtx.annotate()
-def __sino_360_to_180(
-    data: cp.ndarray, overlap: int = 0, rotation: Literal["left", "right"] = "left"
-) -> cp.ndarray:
     if data.ndim != 3:
         raise ValueError("only 3D data is supported")
 
@@ -80,8 +73,8 @@ def __sino_360_to_180(
         raise ValueError("overlap must be less than data.shape[2]")
     if overlap < 0:
         raise ValueError("only positive overlaps are allowed.")
-    
-    if rotation not in ['left', 'right']:
+
+    if rotation not in ["left", "right"]:
         raise ValueError('rotation parameter must be either "left" or "right"')
 
     n = dx // 2
@@ -128,18 +121,6 @@ def data_resampler(
     Returns:
         cp.ndarray: Up/Down-scaled 3D cupy array
     """
-    if cupywrapper.cupy_run:
-        return __data_resampler(data, newshape, axis, interpolation)
-    else:
-        print("data_resampler won't be executed because CuPy is not installed")
-        return data
-
-
-@nvtx.annotate()
-def __data_resampler(
-    data: cp.ndarray, newshape: list, axis: int = 1, interpolation: str = "linear"
-) -> cp.ndarray:    
-
     if data.ndim != 3:
         raise ValueError("only 3D data is supported")
 

@@ -28,10 +28,16 @@ from typing import Union
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
-nvtx = cupywrapper.nvtx
+cupy_run = cupywrapper.cupy_run
 
 from numpy import float32
-from httomolibgpu.cuda_kernels import load_cuda_module
+from unittest.mock import Mock
+
+if cupy_run:
+    from httomolibgpu.cuda_kernels import load_cuda_module
+else:
+    load_cuda_module = Mock()
+
 
 __all__ = [
     "median_filter",
@@ -67,19 +73,6 @@ def median_filter(
     ValueError
         If the input array is not three dimensional.
     """
-    if cupywrapper.cupy_run:
-        return __median_filter(data, kernel_size, dif)
-    else:
-        print("median_filter won't be executed because CuPy is not installed")
-        return data
-
-
-@nvtx.annotate()
-def __median_filter(
-    data: cp.ndarray,
-    kernel_size: int = 3,
-    dif: float = 0.0,
-) -> cp.ndarray:
     input_type = data.dtype
 
     if input_type not in ["float32", "uint16"]:
@@ -148,8 +141,4 @@ def remove_outlier(
     if dif <= 0.0:
         raise ValueError("Threshold value (dif) must be positive and nonzero.")
 
-    if cupywrapper.cupy_run:
-        return __median_filter(data, kernel_size, dif)
-    else:
-        print("remove_outlier won't be executed because CuPy is not installed")
-        return data
+    return median_filter(data, kernel_size, dif)

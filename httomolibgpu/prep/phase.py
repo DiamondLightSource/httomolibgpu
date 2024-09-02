@@ -24,10 +24,18 @@ import numpy as np
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
-nvtx = cupywrapper.nvtx
+cupy_run = cupywrapper.cupy_run
 
-from httomolibgpu.cuda_kernels import load_cuda_module
-from cupyx.scipy.fft import fft2, ifft2, fftshift
+from unittest.mock import Mock
+
+if cupy_run:
+    from httomolibgpu.cuda_kernels import load_cuda_module
+    from cupyx.scipy.fft import fft2, ifft2, fftshift
+else:
+    load_cuda_module = Mock()
+    fft2 = Mock()
+    ifft2 = Mock()
+    fftshift = Mock()
 
 from numpy import float32
 from typing import Union
@@ -90,36 +98,6 @@ def paganin_filter_savu(
     cp.ndarray
         The stack of filtered projections.
     """
-    if cupywrapper.cupy_run:
-        return __paganin_filter_savu(
-            data,
-            ratio,
-            energy,
-            distance,
-            resolution,
-            pad_y,
-            pad_x,
-            pad_method,
-            increment,
-        )
-    else:
-        print("__paganin_filter_savu won't be executed because CuPy is not installed")
-        return data
-
-
-@nvtx.annotate()
-def __paganin_filter_savu(
-    data: cp.ndarray,
-    ratio: float = 250.0,
-    energy: float = 53.0,
-    distance: float = 1.0,
-    resolution: float = 1.28,
-    pad_y: int = 100,
-    pad_x: int = 100,
-    pad_method: str = "edge",
-    increment: float = 0.0,
-) -> cp.ndarray:
-
     # Check the input data is valid
     if data.ndim != 3:
         raise ValueError(
@@ -313,22 +291,6 @@ def paganin_filter_tomopy(
     cp.ndarray
         The 3D array of Paganin phase-filtered projection images.
     """
-    if cupywrapper.cupy_run:
-        return __paganin_filter_tomopy(tomo, pixel_size, dist, energy, alpha)
-    else:
-        print("paganin_filter_tomopy won't be executed because CuPy is not installed")
-        return tomo
-
-
-@nvtx.annotate()
-def __paganin_filter_tomopy(
-    tomo: cp.ndarray,
-    pixel_size: float = 1e-4,
-    dist: float = 50.0,
-    energy: float = 53.0,
-    alpha: float = 1e-3,
-) -> cp.ndarray:   
-
     # Check the input data is valid
     if tomo.ndim != 3:
         raise ValueError(

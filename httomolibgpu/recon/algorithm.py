@@ -24,10 +24,16 @@ import numpy as np
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
-nvtx = cupywrapper.nvtx
+cupy_run = cupywrapper.cupy_run
 
-from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
-from tomobar.methodsIR_CuPy import RecToolsIRCuPy
+from unittest.mock import Mock
+
+if cupy_run:
+    from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
+    from tomobar.methodsIR_CuPy import RecToolsIRCuPy
+else:
+    RecToolsDIRCuPy = Mock()
+    RecToolsIRCuPy = Mock()
 
 from numpy import float32, complex64
 from typing import Optional, Type
@@ -83,31 +89,6 @@ def FBP(
     cp.ndarray
         The FBP reconstructed volume as a CuPy array.
     """
-    if cupywrapper.cupy_run:
-        return __FBP(
-            data,
-            angles,
-            center,
-            filter_freq_cutoff,
-            recon_size,
-            recon_mask_radius,
-            gpu_id,
-        )
-    else:
-        print("FBP won't be executed because CuPy is not installed")
-        return data
-
-
-@nvtx.annotate()
-def __FBP(
-    data: cp.ndarray,
-    angles: np.ndarray,
-    center: Optional[float] = None,
-    filter_freq_cutoff: Optional[float] = 1.1,
-    recon_size: Optional[int] = None,
-    recon_mask_radius: Optional[float] = None,
-    gpu_id: int = 0,
-) -> cp.ndarray:
     RecToolsCP = _instantiate_direct_recon_class(
         data, angles, center, recon_size, gpu_id
     )
@@ -156,26 +137,6 @@ def LPRec(
     cp.ndarray
         The Log-polar Fourier reconstructed volume as a CuPy array.
     """
-    if cupywrapper.cupy_run:
-        return __LPRec(
-            data,
-            angles,
-            center,
-            recon_size,
-            recon_mask_radius,
-        )
-    else:
-        print("LPRec won't be executed because CuPy is not installed")
-        return data
-
-
-def __LPRec(
-    data: cp.ndarray,
-    angles: np.ndarray,
-    center: Optional[float] = None,
-    recon_size: Optional[int] = None,
-    recon_mask_radius: Optional[float] = None,
-) -> cp.ndarray:
     RecToolsCP = _instantiate_direct_recon_class(data, angles, center, recon_size, 0)
 
     reconstruction = RecToolsCP.FOURIER_INV(
@@ -225,31 +186,6 @@ def SIRT(
     cp.ndarray
         The SIRT reconstructed volume as a CuPy array.
     """
-    if cupywrapper.cupy_run:
-        return __SIRT(
-            data,
-            angles,
-            center,
-            recon_size,
-            iterations,
-            nonnegativity,
-            gpu_id,
-        )
-    else:
-        print("SIRT won't be executed because CuPy is not installed")
-        return data
-
-
-@nvtx.annotate()
-def __SIRT(
-    data: cp.ndarray,
-    angles: np.ndarray,
-    center: Optional[float] = None,
-    recon_size: Optional[int] = None,
-    iterations: Optional[int] = 300,
-    nonnegativity: Optional[bool] = True,
-    gpu_id: int = 0,
-) -> cp.ndarray:
     RecToolsCP = _instantiate_iterative_recon_class(
         data, angles, center, recon_size, gpu_id, datafidelity="LS"
     )
@@ -305,31 +241,6 @@ def CGLS(
     cp.ndarray
         The CGLS reconstructed volume as a CuPy array.
     """
-    if cupywrapper.cupy_run:
-        return __CGLS(
-            data,
-            angles,
-            center,
-            recon_size,
-            iterations,
-            nonnegativity,
-            gpu_id,
-        )
-    else:
-        print("CGLS won't be executed because CuPy is not installed")
-        return data
-
-
-@nvtx.annotate()
-def __CGLS(
-    data: cp.ndarray,
-    angles: np.ndarray,
-    center: Optional[float] = None,
-    recon_size: Optional[int] = None,
-    iterations: Optional[int] = 20,
-    nonnegativity: Optional[bool] = True,
-    gpu_id: int = 0,
-) -> cp.ndarray:
     RecToolsCP = _instantiate_iterative_recon_class(
         data, angles, center, recon_size, gpu_id, datafidelity="LS"
     )

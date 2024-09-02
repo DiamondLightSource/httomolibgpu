@@ -1,8 +1,6 @@
-cupy_run = False
 try:
     import cupy as cp
     import nvtx
-    import cupyx
 
     try:
         cp.cuda.Device(0).compute_capability
@@ -17,5 +15,6 @@ except ImportError as e:
     from unittest.mock import Mock
     import numpy as cp
 
+    cupy_run = False
+
     nvtx = Mock()
-    cupyx = Mock()

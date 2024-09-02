@@ -24,10 +24,14 @@ import numpy as np
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
-nvtx = cupywrapper.nvtx
-cupyx = cupywrapper.cupyx
+cupy_run = cupywrapper.cupy_run
 
-from cupyx.scipy.ndimage import map_coordinates
+from unittest.mock import Mock
+
+if cupy_run:
+    from cupyx.scipy.ndimage import map_coordinates
+else:
+    map_coordinates = Mock()
 
 from typing import Dict, List
 
@@ -77,55 +81,6 @@ def distortion_correction_proj_discorpy(
     cp.ndarray
         3D array. Distortion-corrected array.
     """
-    if cupywrapper.cupy_run:
-        return __distortion_correction_proj_discorpy(
-            data, metadata_path, preview, order, mode
-        )
-    else:
-        print(
-            "distortion_correction_proj_discorpy won't be executed because CuPy is not installed"
-        )
-        return data
-
-
-@nvtx.annotate()
-def __distortion_correction_proj_discorpy(
-    data: cp.ndarray,
-    metadata_path: str,
-    preview: Dict[str, List[int]],
-    order: int = 1,
-    mode: str = "reflect",
-):
-    """Unwarp a stack of images using a backward model.
-
-    Parameters
-    ----------
-    data : cp.ndarray
-        3D array.
-
-    metadata_path : str
-        The path to the file containing the distortion coefficients for the
-        data.
-
-    preview : Dict[str, List[int]]
-        A dict containing three key-value pairs:
-        - a list containing the `start` value of each dimension
-        - a list containing the `stop` value of each dimension
-        - a list containing the `step` value of each dimension
-
-    order : int, optional.
-        The order of the spline interpolation.
-
-    mode : {'reflect', 'grid-mirror', 'constant', 'grid-constant', 'nearest',
-           'mirror', 'grid-wrap', 'wrap'}, optional
-        To determine how to handle image boundaries.
-
-    Returns
-    -------
-    cp.ndarray
-        3D array. Distortion-corrected image(s).
-    """   
-
     # Check if it's a stack of 2D images, or only a single 2D image
     if len(data.shape) == 2:
         data = cp.expand_dims(data, axis=0)
