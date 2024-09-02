@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/tomobar
+      url: https://pypi.org/p/httomolibgpu
     permissions:
       id-token: write
     steps:
