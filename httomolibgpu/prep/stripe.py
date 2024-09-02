@@ -24,12 +24,12 @@ import numpy as np
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
-nvtx = cupywrapper.nvtx
 cupy_run = cupywrapper.cupy_run
 
 from unittest.mock import Mock
+
 if cupy_run:
-    from cupyx.scipy.ndimage import median_filter, binary_dilation, uniform_filter1d    
+    from cupyx.scipy.ndimage import median_filter, binary_dilation, uniform_filter1d
 else:
     median_filter = Mock()
     binary_dilation = Mock()
@@ -73,21 +73,6 @@ def remove_stripe_based_sorting(
         Corrected 3D tomographic data as a CuPy or NumPy array.
 
     """
-    if cupywrapper.cupy_run:
-        return __remove_stripe_based_sorting(data, size, dim)
-    else:
-        print(
-            "remove_stripe_based_sorting won't be executed because CuPy is not installed"
-        )
-        return data
-
-
-@nvtx.annotate()
-def __remove_stripe_based_sorting(
-    data: Union[cp.ndarray, np.ndarray],
-    size: int = 11,
-    dim: int = 1,
-) -> Union[cp.ndarray, np.ndarray]:
     if size is None:
         if data.shape[2] > 2000:
             size = 21
@@ -100,7 +85,6 @@ def __remove_stripe_based_sorting(
     return data
 
 
-@nvtx.annotate()
 def _rs_sort(sinogram, size, dim):
     """
     Remove stripes using the sorting technique.
@@ -143,18 +127,6 @@ def remove_stripe_ti(
     ndarray
         3D array of de-striped projections.
     """
-    if cupywrapper.cupy_run:
-        return __remove_stripe_ti(data, beta)
-    else:
-        print("remove_stripe_ti won't be executed because CuPy is not installed")
-        return data
-
-
-@nvtx.annotate()
-def __remove_stripe_ti(
-    data: Union[cp.ndarray, np.ndarray],
-    beta: float = 0.1,
-) -> Union[cp.ndarray, np.ndarray]:
     # TODO: detector dimensions must be even otherwise error
     gamma = beta * ((1 - beta) / (1 + beta)) ** cp.abs(
         cp.fft.fftfreq(data.shape[-1]) * data.shape[-1]
@@ -222,21 +194,6 @@ def remove_all_stripe(
         Corrected 3D tomographic data as a CuPy or NumPy array.
 
     """
-    if cupywrapper.cupy_run:
-        return __remove_all_stripe(data, snr, la_size, sm_size, dim)
-    else:
-        print("remove_all_stripe won't be executed because CuPy is not installed")
-        return data
-
-
-@nvtx.annotate()
-def __remove_all_stripe(
-    data: cp.ndarray,
-    snr: float = 3.0,
-    la_size: int = 61,
-    sm_size: int = 21,
-    dim: int = 1,
-) -> cp.ndarray:
     matindex = _create_matindex(data.shape[2], data.shape[0])
     for m in range(data.shape[1]):
         sino = data[:, m, :]
@@ -247,7 +204,6 @@ def __remove_all_stripe(
     return data
 
 
-@nvtx.annotate()
 def _rs_sort2(sinogram, size, matindex, dim):
     """
     Remove stripes using the sorting technique.
@@ -276,7 +232,6 @@ def _rs_sort2(sinogram, size, matindex, dim):
     return cp.transpose(sino_corrected)
 
 
-@nvtx.annotate()
 def _mpolyfit(x, y):
     n = len(x)
     x_mean = cp.mean(x)
@@ -290,7 +245,6 @@ def _mpolyfit(x, y):
     return slope, intercept
 
 
-@nvtx.annotate()
 def _detect_stripe(listdata, snr):
     """
     Algorithm 4 in :cite:`Vo:18`. Used to locate stripes.
@@ -321,7 +275,6 @@ def _detect_stripe(listdata, snr):
     return listmask
 
 
-@nvtx.annotate()
 def _rs_large(sinogram, snr, size, matindex, drop_ratio=0.1, norm=True):
     """
     Remove large stripes.
@@ -369,7 +322,6 @@ def _rs_large(sinogram, snr, size, matindex, drop_ratio=0.1, norm=True):
     return sinogram
 
 
-@nvtx.annotate()
 def _rs_dead(sinogram, snr, size, matindex, norm=True):
     """
     Remove unresponsive and fluctuating stripes.
@@ -408,7 +360,6 @@ def _rs_dead(sinogram, snr, size, matindex, norm=True):
     return sinogram
 
 
-@nvtx.annotate()
 def _create_matindex(nrow, ncol):
     """
     Create a 2D array of indexes used for the sorting technique.

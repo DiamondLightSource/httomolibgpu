@@ -24,16 +24,16 @@ import numpy as np
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
-nvtx = cupywrapper.nvtx
 cupy_run = cupywrapper.cupy_run
 
 from unittest.mock import Mock
+
 if cupy_run:
     from httomolibgpu.cuda_kernels import load_cuda_module
     from cupyx.scipy.ndimage import shift, gaussian_filter
     from skimage.registration import phase_cross_correlation
     from cupyx.scipy.fftpack import get_fft_plan
-    from cupyx.scipy.fft import rfft2    
+    from cupyx.scipy.fft import rfft2
 else:
     load_cuda_module = Mock()
     shift = Mock()
@@ -93,26 +93,6 @@ def find_center_vo(
     float
         Rotation axis location.
     """
-    if cupywrapper.cupy_run:
-        return __find_center_vo(data, ind, smin, smax, srad, step, ratio, drop)
-    else:
-        print("find_center_vo won't be executed because CuPy is not installed")
-        return 0.0
-
-
-# %%%%%%%%%%%%%%%%%%%%%%%%%find_center_vo%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-@nvtx.annotate()
-def __find_center_vo(
-    data: cp.ndarray,
-    ind: Optional[int] = None,
-    smin: int = -50,
-    smax: int = 50,
-    srad: float = 6.0,
-    step: float = 0.25,
-    ratio: float = 0.5,
-    drop: int = 20,
-) -> float:    
-
     if data.ndim == 2:
         data = cp.expand_dims(data, 1)
         ind = 0
@@ -128,10 +108,8 @@ def __find_center_vo(
     else:
         _sino = data[:, ind, :]
 
-    with nvtx.annotate("gaussian_filter_1", color="green"):
-        _sino_cs = gaussian_filter(_sino, (3, 1), mode="reflect")
-    with nvtx.annotate("gaussian_filter_2", color="green"):
-        _sino_fs = gaussian_filter(_sino, (2, 2), mode="reflect")
+    _sino_cs = gaussian_filter(_sino, (3, 1), mode="reflect")
+    _sino_fs = gaussian_filter(_sino, (2, 2), mode="reflect")
 
     if _sino.shape[0] * _sino.shape[1] > 4e6:
         # data is large, so downsample it before performing search for
@@ -146,7 +124,6 @@ def __find_center_vo(
     return cp.asnumpy(fine_cen)
 
 
-@nvtx.annotate()
 def _search_coarse(sino, smin, smax, ratio, drop):
     (nrow, ncol) = sino.shape
     flip_sino = cp.ascontiguousarray(cp.fliplr(sino))
@@ -176,7 +153,6 @@ def _search_coarse(sino, smin, smax, ratio, drop):
     return cor
 
 
-@nvtx.annotate()
 def _search_fine(sino, srad, step, init_cen, ratio, drop):
     (nrow, ncol) = sino.shape
 
@@ -197,9 +173,7 @@ def _search_fine(sino, srad, step, init_cen, ratio, drop):
     return cor
 
 
-@nvtx.annotate()
 def _create_mask(nrow, ncol, radius, drop):
-
     du = 1.0 / ncol
     dv = (nrow - 1.0) / (nrow * 2.0 * np.pi)
     cen_row = int(math.ceil(nrow / 2.0) - 1)
@@ -269,7 +243,6 @@ def _calculate_chunks(
     return stop_idx
 
 
-@nvtx.annotate()
 def _calculate_metric(list_shift, sino1, sino2, sino3, mask, out):
     # this tries to simplify - if shift_col is integer, no need to spline interpolate
     assert list_shift.dtype == cp.float32, "shifts must be single precision floats"
@@ -357,7 +330,6 @@ def _calculate_metric(list_shift, sino1, sino2, sino3, mask, out):
         )
 
 
-@nvtx.annotate()
 def _downsample(sino, level, axis):
     assert sino.dtype == cp.float32, "single precision floating point input required"
     assert sino.flags["C_CONTIGUOUS"], "list_shift must be C-contiguous"
@@ -434,24 +406,6 @@ def find_center_360(
         Position of the window in the first image giving the best
         correlation metric.
     """
-
-    if cupywrapper.cupy_run:
-        return __find_center_360(data, ind, win_width, side, denoise, norm, use_overlap)
-    else:
-        print("find_center_360 won't be executed because CuPy is not installed")
-        return (0, 0, 0, 0)
-
-
-@nvtx.annotate()
-def __find_center_360(
-    data: cp.ndarray,
-    ind: Optional[int] = None,
-    win_width: int = 10,
-    side: Optional[Literal[0, 1]] = None,
-    denoise: bool = True,
-    norm: bool = False,
-    use_overlap: bool = False,
-) -> Tuple[float, float, Optional[Literal[0, 1]], float]:
     if data.ndim != 3:
         raise ValueError("A 3D array must be provided")
 
@@ -581,7 +535,6 @@ def _find_overlap(
     return overlap, side, overlap_position
 
 
-@nvtx.annotate()
 def _search_overlap(
     mat1, mat2, win_width, side, denoise=True, norm=False, use_overlap=False
 ):
@@ -621,9 +574,8 @@ def _search_overlap(
 
     if denoise is True:
         # note: the filtering makes the output contiguous
-        with nvtx.annotate("denoise_filter", color="green"):
-            mat1 = gaussian_filter(mat1, (2, 2), mode="reflect")
-            mat2 = gaussian_filter(mat2, (2, 2), mode="reflect")
+        mat1 = gaussian_filter(mat1, (2, 2), mode="reflect")
+        mat2 = gaussian_filter(mat2, (2, 2), mode="reflect")
     else:
         mat1 = cp.ascontiguousarray(mat1, dtype=cp.float32)
         mat2 = cp.ascontiguousarray(mat2, dtype=cp.float32)
@@ -647,7 +599,6 @@ def _search_overlap(
     return list_metric, offset
 
 
-@nvtx.annotate()
 def _calc_metrics(mat1, mat2, win_width, side, use_overlap, norm):
     assert mat1.dtype == cp.float32, "only float32 supported"
     assert mat2.dtype == cp.float32, "only float32 supported"
@@ -691,7 +642,6 @@ def _calc_metrics(mat1, mat2, win_width, side, use_overlap, norm):
     return list_metric
 
 
-@nvtx.annotate()
 def _calculate_curvature(list_metric):
     """
     Calculate the curvature of a fitted curve going through the minimum
@@ -755,21 +705,6 @@ def find_center_pc(
     Returns:
         float: Rotation axis location.
     """
-    if cupywrapper.cupy_run:
-        return __find_center_pc(proj1, proj2, tol, rotc_guess)
-    else:
-        print("find_center_pc won't be executed because CuPy is not installed")
-        return 0
-
-
-@nvtx.annotate()
-def __find_center_pc(
-    proj1: cp.ndarray,
-    proj2: cp.ndarray,
-    tol: float = 0.5,
-    rotc_guess: Union[float, Optional[str]] = None,
-) -> float:
-    
     imgshift = 0.0 if rotc_guess is None else rotc_guess - (proj1.shape[1] - 1.0) / 2.0
 
     proj1 = shift(proj1, [0, -imgshift], mode="constant", cval=0)
