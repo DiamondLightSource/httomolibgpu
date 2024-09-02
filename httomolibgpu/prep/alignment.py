@@ -25,9 +25,13 @@ from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
 nvtx = cupywrapper.nvtx
-cupyx = cupywrapper.cupyx
 
-from cupyx.scipy.ndimage import map_coordinates
+from unittest.mock import Mock
+
+try:
+    from cupyx.scipy.ndimage import map_coordinates
+except ImportError as e:
+    map_coordinates = Mock()
 
 from typing import Dict, List
 

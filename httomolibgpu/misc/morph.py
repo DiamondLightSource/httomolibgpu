@@ -25,9 +25,13 @@ from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
 nvtx = cupywrapper.nvtx
-cupyx = cupywrapper.cupyx
 
-from cupyx.scipy.interpolate import interpn
+from unittest.mock import Mock
+
+try:
+    from cupyx.scipy.interpolate import interpn
+except ImportError as e:
+    interpn = Mock()
 
 from typing import Literal
 

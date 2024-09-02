@@ -26,11 +26,21 @@ from httomolibgpu import cupywrapper
 cp = cupywrapper.cp
 nvtx = cupywrapper.nvtx
 
-from httomolibgpu.cuda_kernels import load_cuda_module
-from cupyx.scipy.ndimage import shift, gaussian_filter
-from skimage.registration import phase_cross_correlation
-from cupyx.scipy.fftpack import get_fft_plan
-from cupyx.scipy.fft import rfft2
+
+from unittest.mock import Mock
+try:
+    from httomolibgpu.cuda_kernels import load_cuda_module
+    from cupyx.scipy.ndimage import shift, gaussian_filter
+    from skimage.registration import phase_cross_correlation
+    from cupyx.scipy.fftpack import get_fft_plan
+    from cupyx.scipy.fft import rfft2    
+except ImportError as e:
+    load_cuda_module = Mock()
+    shift = Mock()
+    gaussian_filter = Mock()
+    phase_cross_correlation = Mock()
+    get_fft_plan = Mock()
+    rfft2 = Mock()
 
 import math
 from typing import List, Literal, Optional, Tuple, Union

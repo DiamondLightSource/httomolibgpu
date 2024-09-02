@@ -26,8 +26,13 @@ from httomolibgpu import cupywrapper
 cp = cupywrapper.cp
 nvtx = cupywrapper.nvtx
 
-from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
-from tomobar.methodsIR_CuPy import RecToolsIRCuPy
+from unittest.mock import Mock
+try:
+    from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
+    from tomobar.methodsIR_CuPy import RecToolsIRCuPy
+except ImportError as e:
+    RecToolsDIRCuPy = Mock()
+    RecToolsIRCuPy = Mock()
 
 from numpy import float32, complex64
 from typing import Optional, Type

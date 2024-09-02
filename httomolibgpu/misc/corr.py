@@ -31,7 +31,13 @@ cp = cupywrapper.cp
 nvtx = cupywrapper.nvtx
 
 from numpy import float32
-from httomolibgpu.cuda_kernels import load_cuda_module
+from unittest.mock import Mock
+
+try:
+    from httomolibgpu.cuda_kernels import load_cuda_module
+except ImportError as e:
+    load_cuda_module = Mock()
+
 
 __all__ = [
     "median_filter",

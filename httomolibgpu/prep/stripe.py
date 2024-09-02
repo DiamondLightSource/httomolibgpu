@@ -26,7 +26,13 @@ from httomolibgpu import cupywrapper
 cp = cupywrapper.cp
 nvtx = cupywrapper.nvtx
 
-from cupyx.scipy.ndimage import median_filter, binary_dilation, uniform_filter1d
+from unittest.mock import Mock
+try:
+    from cupyx.scipy.ndimage import median_filter, binary_dilation, uniform_filter1d    
+except ImportError as e:
+    median_filter = Mock()
+    binary_dilation = Mock()
+    uniform_filter1d = Mock()
 
 from typing import Union
 

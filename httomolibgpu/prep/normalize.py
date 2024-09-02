@@ -26,7 +26,12 @@ from httomolibgpu import cupywrapper
 cp = cupywrapper.cp
 nvtx = cupywrapper.nvtx
 
-from cupy import mean
+from unittest.mock import Mock
+
+try:
+    from cupy import mean
+except ImportError as e:
+    mean = Mock()
 
 from numpy import float32
 from typing import Tuple

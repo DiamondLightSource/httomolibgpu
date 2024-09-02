@@ -26,8 +26,15 @@ from httomolibgpu import cupywrapper
 cp = cupywrapper.cp
 nvtx = cupywrapper.nvtx
 
-from httomolibgpu.cuda_kernels import load_cuda_module
-from cupyx.scipy.fft import fft2, ifft2, fftshift
+from unittest.mock import Mock
+try:
+    from httomolibgpu.cuda_kernels import load_cuda_module
+    from cupyx.scipy.fft import fft2, ifft2, fftshift
+except ImportError as e:
+    load_cuda_module = Mock()
+    fft2 = Mock()
+    ifft2 = Mock()
+    fftshift = Mock()
 
 from numpy import float32
 from typing import Union
