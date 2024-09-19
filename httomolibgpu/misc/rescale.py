@@ -20,9 +20,11 @@
 # ---------------------------------------------------------------------------
 
 import numpy as np
+import copy
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
+cupy_run = cupywrapper.cupy_run
 
 from typing import Literal, Optional, Tuple, Union
 
@@ -45,7 +47,7 @@ def rescale_to_int(
     Parameters
     ----------
     data : cp.ndarray
-        Required input data array, on GPU
+        Input data as a numpy or cupy array (the function is cpu-gpu agnostic)
     perc_range_min: float, optional
         The lower cutoff point in the input data, in percent of the data range (defaults to 0).
         The lower bound is computed as min + perc_range_min/100*(max-min)
@@ -69,6 +71,7 @@ def rescale_to_int(
         The original data, clipped to the range specified with the perc_range_min and
         perc_range_max, and scaled to the full range of the output integer type
     """
+
     if bits == 8:
         output_dtype: Union[type[np.uint8], type[np.uint16], type[np.uint32]] = np.uint8
     elif bits == 16:
@@ -76,13 +79,18 @@ def rescale_to_int(
     else:
         output_dtype = np.uint32
 
+    if cupy_run:
+        xp = cp.get_array_module(data)
+    else:
+        import numpy as xp
+
     # get the min and max integer values of the output type
-    output_min = np.iinfo(output_dtype).min
-    output_max = np.iinfo(output_dtype).max
+    output_min = xp.iinfo(output_dtype).min
+    output_max = xp.iinfo(output_dtype).max
 
     if not isinstance(glob_stats, tuple):
-        min_value = float(cp.min(data))
-        max_value = float(cp.max(data))
+        min_value = float(xp.min(data))
+        max_value = float(xp.max(data))
     else:
         min_value = glob_stats[0]
         max_value = glob_stats[1]
@@ -96,17 +104,25 @@ def rescale_to_int(
     else:
         factor = 1.0
 
-    res = cp.empty(data.shape, dtype=output_dtype)
-    rescale_kernel = cp.ElementwiseKernel(
-        "T x, raw T input_min, raw T input_max, raw T factor",
-        "O out",
-        """
-        T x_clean = isnan(x) || isinf(x) ? T(0) : x;
-        T x_clipped = x_clean < input_min ? input_min : (x_clean > input_max ? input_max : x_clean);
-        T x_rebased = x_clipped - input_min;
-        out = O(x_rebased * factor);
-        """,
-        "rescale_to_int",
-    )
-    rescale_kernel(data, input_min, input_max, factor, res)
+    res = xp.empty(data.shape, dtype=output_dtype)
+    if xp.__name__ == "numpy":
+        data[np.isfinite(data) == False] = 0
+        res = np.copy(output_dtype(data))
+        res[data < input_min] = input_min
+        res[data > input_max] = input_max
+        res -= output_dtype(input_min)
+        res *= output_dtype(factor)
+    else:
+        rescale_kernel = cp.ElementwiseKernel(
+            "T x, raw T input_min, raw T input_max, raw T factor",
+            "O out",
+            """
+            T x_clean = isnan(x) || isinf(x) ? T(0) : x;
+            T x_clipped = x_clean < input_min ? input_min : (x_clean > input_max ? input_max : x_clean);
+            T x_rebased = x_clipped - input_min;
+            out = O(x_rebased * factor);
+            """,
+            "rescale_to_int",
+        )
+        rescale_kernel(data, input_min, input_max, factor, res)
     return res

@@ -8,6 +8,16 @@ from cupy.cuda import nvtx
 from httomolibgpu.misc.rescale import rescale_to_int
 
 
+def test_rescale_numpy_double():
+    data = np.ones((30, 50), dtype=np.float32)
+
+    res_dev = rescale_to_int(data, bits=8, glob_stats=(0, 2, 100, data.size))
+    assert res_dev.dtype == np.uint8
+
+    res = np.float32(res_dev)
+    np.testing.assert_array_almost_equal(res, 127.0)
+
+
 def test_rescale_no_change():
     data = np.random.randint(0, 255, size=(50, 50), dtype=np.uint8).astype(np.float32)
     data_dev = cp.asarray(data)
