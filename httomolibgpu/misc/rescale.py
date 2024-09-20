@@ -41,7 +41,7 @@ def rescale_to_int(
     glob_stats: Optional[Tuple[float, float, float, int]] = None,
 ):
     """
-    Rescales the data and converts it fit into the range of an unsigned integer type
+    Rescales the data given as float32 type and converts it into the range of an unsigned integer type
     with the given number of bits.
 
     Parameters
@@ -100,18 +100,21 @@ def rescale_to_int(
     input_max = (perc_range_max * (range_intensity) / 100) + min_value
 
     if (input_max - input_min) != 0.0:
-        factor = (output_max - output_min) / (input_max - input_min)
+        factor = xp.float32((output_max - output_min) / (input_max - input_min))
     else:
         factor = 1.0
 
     res = xp.empty(data.shape, dtype=output_dtype)
     if xp.__name__ == "numpy":
+        if input_max == pow(2, 32):
+            input_max -= 1
         data[np.isfinite(data) == False] = 0
-        res = np.copy(output_dtype(data))
-        res[data < input_min] = input_min
-        res[data > input_max] = input_max
-        res -= output_dtype(input_min)
-        res *= output_dtype(factor)
+        res = np.copy(data.astype(float))
+        res[data.astype(float) < input_min] = int(input_min)
+        res[data.astype(float) > input_max] = int(input_max)
+        res -= input_min
+        res *= factor
+        res = output_dtype(res)
     else:
         rescale_kernel = cp.ElementwiseKernel(
             "T x, raw T input_min, raw T input_max, raw T factor",
