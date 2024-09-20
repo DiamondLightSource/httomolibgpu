@@ -317,10 +317,11 @@ def paganin_filter_tomopy(
     phase_filter = fftshift(_paganin_filter_factor2(energy, dist, alpha, w2))
     phase_filter = phase_filter / phase_filter.max()  # normalisation
 
+    # Filter projections
+    fft_tomo *= phase_filter
+
     # Apply filter and take inverse FFT
-    ifft_filtered_tomo = (
-        ifft2(phase_filter * fft_tomo, axes=(-2, -1), overwrite_x=True)
-    ).real
+    ifft_filtered_tomo = ifft2(fft_tomo, axes=(-2, -1), overwrite_x=True).real
 
     # slicing indices for cropping
     slc_indices = (
