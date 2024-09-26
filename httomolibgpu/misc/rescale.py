@@ -33,19 +33,19 @@ __all__ = [
 
 
 def rescale_to_int(
-    data: cp.ndarray,
+    data: Union[np.ndarray, cp.ndarray],
     perc_range_min: float = 0.0,
     perc_range_max: float = 100.0,
     bits: Literal[8, 16, 32] = 8,
     glob_stats: Optional[Tuple[float, float, float, int]] = None,
-):
+) -> Union[np.ndarray, cp.ndarray]:
     """
     Rescales the data given as float32 type and converts it into the range of an unsigned integer type
     with the given number of bits.
 
     Parameters
     ----------
-    data : cp.ndarray
+    data : Union[np.ndarray, cp.ndarray]
         Input data as a numpy or cupy array (the function is cpu-gpu agnostic)
     perc_range_min: float, optional
         The lower cutoff point in the input data, in percent of the data range (defaults to 0).
@@ -66,7 +66,7 @@ def rescale_to_int(
 
     Returns
     -------
-    cp.ndarray
+    Union[np.ndarray, cp.ndarray]
         The original data, clipped to the range specified with the perc_range_min and
         perc_range_max, and scaled to the full range of the output integer type
     """
