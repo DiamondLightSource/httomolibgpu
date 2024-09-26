@@ -70,7 +70,6 @@ def rescale_to_int(
         The original data, clipped to the range specified with the perc_range_min and
         perc_range_max, and scaled to the full range of the output integer type
     """
-
     if bits == 8:
         output_dtype: Union[type[np.uint8], type[np.uint16], type[np.uint32]] = np.uint8
     elif bits == 16:
