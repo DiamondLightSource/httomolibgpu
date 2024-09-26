@@ -107,7 +107,7 @@ def rescale_to_int(
     if xp.__name__ == "numpy":
         if input_max == pow(2, 32):
             input_max -= 1
-        data[np.isfinite(data) == False] = 0
+        data[np.logical_not(np.isfinite(data))] = 0
         res = np.copy(data.astype(float))
         res[data.astype(float) < input_min] = int(input_min)
         res[data.astype(float) > input_max] = int(input_max)
