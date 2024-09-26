@@ -33,13 +33,13 @@ def test_rescale_no_change_no_stats(bits: Literal[8, 16, 32]):
     res_dev = rescale_to_int(data_dev, bits=bits)
     res_cpu = rescale_to_int(data, bits=bits)
 
-    res = cp.asnumpy(res_dev).astype(np.float32)
+    res_dev_float32 = cp.asnumpy(res_dev).astype(np.float32)
 
     assert res_dev.dtype.itemsize == bits // 8
-    np.testing.assert_array_equal(res, data)
+    np.testing.assert_array_equal(res_dev_float32, data)
     assert res_cpu.dtype.itemsize == bits // 8
-    res_cpu = np.float32(res_cpu)
-    np.testing.assert_array_equal(res, res_cpu)
+    res_cpu_float32 = np.float32(res_cpu)
+    np.testing.assert_array_equal(res_dev_float32, res_cpu_float32)
 
 
 def test_rescale_double():
