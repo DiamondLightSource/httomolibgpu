@@ -20,7 +20,6 @@
 # ---------------------------------------------------------------------------
 
 import numpy as np
-import copy
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
