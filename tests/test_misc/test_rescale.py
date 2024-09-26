@@ -116,7 +116,7 @@ def test_rescale_double_offset_min_percentage(bits: Literal[8, 16, 32]):
     assert res[0, 0] == 0.0
     assert res[0, 1] == max
 
-    res_cpu = np.float32(res_cpu)
+    res_cpu = res_cpu.astype(np.float32)
     np.testing.assert_array_almost_equal(res_cpu[1:, :], num)
     assert res_cpu[0, 0] == 0.0
     assert res_cpu[0, 1] == max
