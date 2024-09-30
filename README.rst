@@ -14,6 +14,12 @@ However, it has been specifically developed to work together with the `HTTomo <h
 its backend for data processing. HTTomo is a user interface (UI) written in Python for fast big tomographic data processing using
 MPI protocols.
 
+Install HTTomolibGPU as a PyPi package
+=========================================================
+.. code-block:: console
+
+   $ pip install httomolibgpu
+
 Install HTTomolibGPU as a pre-built conda Python package
 =========================================================
 .. code-block:: console
