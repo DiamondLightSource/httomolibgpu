@@ -101,12 +101,6 @@ def run_methods(path_to_data: str, output_folder: str) -> int:
     __save_res_to_image(darks, output_folder, methods_name="darks", slice_numb=10)
     __save_res_to_image(flats, output_folder, methods_name="flats", slice_numb=10)
 
-    #
-    # proj_ground_truth = cp.asarray(proj_ground_truth)
-    # phantom = cp.asarray(phantom)
-    # flats = cp.asarray(flats)
-    # darks = cp.asarray(darks)
-
     print("Executing methods from the HTTomolibGPU library\n")
 
     ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -124,7 +118,39 @@ def run_methods(path_to_data: str, output_folder: str) -> int:
     assert max_scale_data_normalized > 1.062
     assert min_scale_data_normalized < -0.04
     assert np.sum(data_normalized_np) > 41711
-    __save_res_to_image(data_normalized_np, output_folder, methods_name, slice_numb)
+    # __save_res_to_image(data_normalized_np, output_folder, methods_name, slice_numb)
+
+    ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    methods_name = "rescale_to_int"
+    print("___{}___".format(methods_name))
+    from httomolibgpu.misc.rescale import rescale_to_int
+
+    rescaled_data = rescale_to_int(
+        data_normalized, perc_range_min=0, perc_range_max=100, bits=8
+    )
+    rescaled_data_np = rescaled_data.get()
+    resut_to_save = Image.fromarray(
+        (rescaled_data_np[slice_numb, :, :] * 255).astype(np.uint8)
+    )
+    resut_to_save.save(output_folder + methods_name + "_proj_0_to_100.png")
+
+    rescaled_data = rescale_to_int(
+        data_normalized, perc_range_min=10, perc_range_max=90, bits=8
+    )
+    rescaled_data_np = rescaled_data.get()
+    resut_to_save = Image.fromarray(
+        (rescaled_data_np[slice_numb, :, :] * 255).astype(np.uint8)
+    )
+    resut_to_save.save(output_folder + methods_name + "_proj_10_to_90.png")
+
+    rescaled_data = rescale_to_int(
+        data_normalized, perc_range_min=30, perc_range_max=70, bits=8
+    )
+    rescaled_data_np = rescaled_data.get()
+    resut_to_save = Image.fromarray(
+        (rescaled_data_np[slice_numb, :, :] * 255).astype(np.uint8)
+    )
+    resut_to_save.save(output_folder + methods_name + "_proj_30_to_70.png")
 
     ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods_name = "remove_outlier"
@@ -148,7 +174,6 @@ def run_methods(path_to_data: str, output_folder: str) -> int:
     res_cp = remove_outlier(
         cp.asarray(proj_raw_mod, dtype=cp.float32),
         kernel_size=5,
-        axis=None,
         dif=2000,
     )
     res_np = res_cp.get()
@@ -179,7 +204,6 @@ def run_methods(path_to_data: str, output_folder: str) -> int:
     res_cp = median_filter(
         cp.asarray(data_normalized, dtype=cp.float32),
         kernel_size=5,
-        axis=None,
     )
     res_np = res_cp.get()
 

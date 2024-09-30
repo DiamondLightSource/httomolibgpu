@@ -17,4 +17,13 @@ Data correction module
    methods_list/outlier_removal
 
 
+.. _data_rescale_module:
+
+Data rescale module
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. toctree::
+   :glob:
+
+   methods_list/rescale_to_int
 
