@@ -23,7 +23,7 @@ clipping of the data and therefore the loss of the information.
 
 * :code:`bits` defines the number of bits in the resulting data. The input can be any data type and will be rescaled into unsigned integer of 8, 16 or 32 bit type.
 
-* :code:`perc_range_min` defines the lower cutoff point in the input data, in percent of the data range (defaults to 0). The lower bound is computed as :math:`\frac{\textrm{perc_range_min} * (\max-\min)}{100} + \min`.
+* :code:`perc_range_min` defines the lower cutoff point in the input data, in percent of the data range (defaults to 0). The lower bound is computed as :math:`\frac{\textrm{perc_range_min} * (\max-\min)}{100} + \min`. Note that :math:`\max` and :math:`\min` values will be automatically estimated from the input data, unless they are provided with the `glob_stats` optional parameter.
 
 * :code:`perc_range_max` defines the upper cutoff point in the input data, in percent of the data range (defaults to 100). The higher bound is computed as :math:`\frac{\textrm{perc_range_max} * (\max-\min)}{100} + \min`.
 

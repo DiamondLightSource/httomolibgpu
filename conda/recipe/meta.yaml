@@ -22,7 +22,7 @@ requirements:
     - setuptools-git-versioning
   run:
     - python
-    - numpy>= 1.20, <= 1.25
+    - numpy>= 1.20, <= 1.26
     - cupy=12.3.0
     - astra-toolbox
     - nvtx
