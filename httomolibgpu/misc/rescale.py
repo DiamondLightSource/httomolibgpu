@@ -18,6 +18,9 @@
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 1 March 2024
 # ---------------------------------------------------------------------------
+""" Module for data rescaling. For more detailed information see :ref:`data_rescale_module`.
+
+"""
 
 import numpy as np
 from httomolibgpu import cupywrapper
@@ -41,7 +44,7 @@ def rescale_to_int(
 ) -> Union[np.ndarray, cp.ndarray]:
     """
     Rescales the data given as float32 type and converts it into the range of an unsigned integer type
-    with the given number of bits.
+    with the given number of bits. For more detailed information and examples, see :ref:`method_rescale_to_int`.
 
     Parameters
     ----------
