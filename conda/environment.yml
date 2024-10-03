@@ -3,21 +3,21 @@ channels:
   - conda-forge
   - httomo
 dependencies:
-  - conda-forge::cupy=12.3.0
-  - conda-forge::numpy
-  - conda-forge::nvtx
-  - conda-forge::scipy
-  - conda-forge::python
-  - conda-forge::pytest
-  - conda-forge::pytest-xdist
-  - conda-forge::pytest-cov
-  - conda-forge::flake8
-  - conda-forge::pyproject-flake8
-  - conda-forge::pydocstyle
-  - conda-forge::imageio
-  - conda-forge::toml
-  - conda-forge::ipython
-  - conda-forge::h5py
-  - conda-forge::astra-toolbox
+  - cupy=12.3.0
+  - numpy
+  - nvtx
+  - scipy
+  - python
+  - pytest
+  - pytest-xdist
+  - pytest-cov
+  - flake8
+  - pyproject-flake8
+  - pydocstyle
+  - imageio
+  - toml
+  - ipython
+  - h5py
+  - astra-toolbox
   - httomo::tomobar
-  - conda-forge::scikit-image
+  - scikit-image
