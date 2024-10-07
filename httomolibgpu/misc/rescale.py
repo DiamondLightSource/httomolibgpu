@@ -81,7 +81,7 @@ def rescale_to_int(
         output_dtype = np.uint32
 
     if cupy_run:
-        import cupy as xp
+        xp = cp.get_array_module(data)
     else:
         import numpy as xp
 
