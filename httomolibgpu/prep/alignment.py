@@ -33,7 +33,7 @@ if cupy_run:
 else:
     map_coordinates = Mock()
 
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 __all__ = [
     "distortion_correction_proj_discorpy",
@@ -48,8 +48,8 @@ __all__ = [
 def distortion_correction_proj_discorpy(
     data: cp.ndarray,
     metadata_path: str,
-    shift: Tuple[int, int] = (0, 0),
-    step: Tuple[int, int] = (1, 1),
+    shift: List[Union[int, int]] = [0, 0],
+    step: List[Union[int, int]] = [1, 1],
     order: int = 1,
     mode: str = "reflect",
 ):
@@ -64,10 +64,10 @@ def distortion_correction_proj_discorpy(
         The path to the file containing the distortion coefficients for the
         data.
 
-    shift: tuple, optional
+    shift: List, optional
          Centers of distortion in x (from the left of the image) and y directions (from the top of the image).
 
-    step: tuple, optional
+    step: List, optional
          Steps in x and y directions respectively. They need to be not larger than one.
 
     order : int, optional.
@@ -97,8 +97,8 @@ def distortion_correction_proj_discorpy(
     if det_y_step > 1 or det_x_step > 1:
         msg = (
             "\n***********************************************\n"
-            "!!! ERROR !!! -> Method doesn't work with the step in"
-            " the preview larger than 1 \n"
+            "!!! ERROR !!! -> Method doesn't work with the step parameter"
+            " larger than 1 \n"
             "***********************************************\n"
         )
         raise ValueError(msg)
