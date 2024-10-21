@@ -33,7 +33,7 @@ if cupy_run:
 else:
     map_coordinates = Mock()
 
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 __all__ = [
     "distortion_correction_proj_discorpy",
@@ -48,9 +48,10 @@ __all__ = [
 def distortion_correction_proj_discorpy(
     data: cp.ndarray,
     metadata_path: str,
-    preview: Dict[str, List[int]],
-    order: int = 1,
-    mode: str = "reflect",
+    shift_xy: List[int] = [0, 0],
+    step_xy: List[int] = [1, 1],
+    order: int = 3,
+    mode: str = "constant",
 ):
     """Unwarp a stack of images using a backward model. See :cite:`vo2015radial`.
 
@@ -63,18 +64,18 @@ def distortion_correction_proj_discorpy(
         The path to the file containing the distortion coefficients for the
         data.
 
-    preview : Dict[str, List[int]]
-        A dict containing three key-value pairs:
-        - a list containing the `start` value of each dimension
-        - a list containing the `stop` value of each dimension
-        - a list containing the `step` value of each dimension
+    shift_xy: List[int]
+         Centers of distortion in x (from the left of the image) and y directions (from the top of the image).
 
-    order : int, optional.
-        The order of the spline interpolation.
+    step_xy: List[int]
+         Steps in x and y directions respectively. They need to be not larger than one.
 
-    mode : {'reflect', 'grid-mirror', 'constant', 'grid-constant', 'nearest',
-           'mirror', 'grid-wrap', 'wrap'}, optional
-        To determine how to handle image boundaries.
+    order : int, optional
+        The order of the spline interpolation, default is 3. Must be in the range 0-5.
+
+    mode : str, optional
+        Points outside the boundaries of the input are filled according to the given mode
+        ('constant', 'nearest', 'mirror', 'reflect', 'wrap', 'grid-mirror', 'grid-wrap', 'grid-constant' or 'opencv').
 
     Returns
     -------
@@ -90,26 +91,25 @@ def distortion_correction_proj_discorpy(
 
     # Use preview information to offset the x and y coords of the center of
     # distortion
-    shift = preview["starts"]
-    step = preview["steps"]
-    x_dim = 1
-    y_dim = 0
-    step_check = max([step[i] for i in [x_dim, y_dim]]) > 1
-    if step_check:
+    det_x_step = step_xy[0]
+    det_y_step = step_xy[1]
+
+    if det_y_step > 1 or det_x_step > 1:
         msg = (
             "\n***********************************************\n"
-            "!!! ERROR !!! -> Method doesn't work with the step in"
-            " the preview larger than 1 \n"
+            "!!! ERROR !!! -> Method doesn't work with the step parameter"
+            " larger than 1 \n"
             "***********************************************\n"
         )
         raise ValueError(msg)
 
-    x_offset = shift[x_dim]
-    y_offset = shift[y_dim]
-    xcenter = xcenter - x_offset
-    ycenter = ycenter - y_offset
+    det_x_shift = shift_xy[0]
+    det_y_shift = shift_xy[1]
 
-    height, width = data.shape[y_dim + 1], data.shape[x_dim + 1]
+    xcenter = xcenter - det_x_shift
+    ycenter = ycenter - det_y_shift
+
+    height, width = data.shape[1], data.shape[2]
     xu_list = cp.arange(width) - xcenter
     yu_list = cp.arange(height) - ycenter
     xu_mat, yu_mat = cp.meshgrid(xu_list, yu_list)

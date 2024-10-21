@@ -40,8 +40,11 @@ def test_correct_distortion(
     im_host = imread(path)
     im = cp.asarray(im_host)
 
-    preview = {"starts": [0, 0], "stops": [im.shape[0], im.shape[1]], "steps": [1, 1]}
-    corrected_data = implementation(im, distortion_coeffs_path, preview).get()
+    shift_xy = [0, 0]
+    step_xy = [1, 1]
+    corrected_data = implementation(
+        im, distortion_coeffs_path, shift_xy, step_xy, order=1, mode="reflect"
+    ).get()
 
     assert_allclose(np.mean(corrected_data), mean_value)
     assert np.max(corrected_data) == max_value
