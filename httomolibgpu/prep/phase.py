@@ -391,6 +391,7 @@ def _pad_projections_to_second_power(
 
     Returns
     -------
+    Tuple consisting of:
     ndarray: padded 3d projection data
     tuple: a tuple with padding dimensions
     """
