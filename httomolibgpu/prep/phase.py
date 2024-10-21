@@ -38,7 +38,7 @@ else:
     fftshift = Mock()
 
 from numpy import float32
-from typing import Union
+from typing import Tuple
 import math
 
 __all__ = [
@@ -377,7 +377,9 @@ def _calculate_pad_size(datashape: tuple) -> list:
     return pad_list
 
 
-def _pad_projections_to_second_power(tomo: cp.ndarray) -> Union[cp.ndarray, tuple]:
+def _pad_projections_to_second_power(
+    tomo: cp.ndarray,
+) -> Tuple[cp.ndarray, Tuple[int, int]]:
     """
     Performs padding of each projection to the next power of 2.
     If the shape is not even we also care of that before padding.
