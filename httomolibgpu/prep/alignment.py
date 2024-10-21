@@ -33,7 +33,7 @@ if cupy_run:
 else:
     map_coordinates = Mock()
 
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple
 
 __all__ = [
     "distortion_correction_proj_discorpy",
@@ -48,10 +48,10 @@ __all__ = [
 def distortion_correction_proj_discorpy(
     data: cp.ndarray,
     metadata_path: str,
-    shift: List[Union[int, int]] = [0, 0],
-    step: List[Union[int, int]] = [1, 1],
-    order: int = 1,
-    mode: str = "reflect",
+    shift_xy: List[int] = [0, 0],
+    step_xy: List[int] = [1, 1],
+    order: int = 3,
+    mode: str = "constant",
 ):
     """Unwarp a stack of images using a backward model. See :cite:`vo2015radial`.
 
@@ -64,18 +64,18 @@ def distortion_correction_proj_discorpy(
         The path to the file containing the distortion coefficients for the
         data.
 
-    shift: List, optional
+    shift_xy: List[int]
          Centers of distortion in x (from the left of the image) and y directions (from the top of the image).
 
-    step: List, optional
+    step_xy: List[int]
          Steps in x and y directions respectively. They need to be not larger than one.
 
-    order : int, optional.
-        The order of the spline interpolation.
+    order : int, optional
+        The order of the spline interpolation, default is 3. Must be in the range 0-5.
 
-    mode : {'reflect', 'grid-mirror', 'constant', 'grid-constant', 'nearest',
-           'mirror', 'grid-wrap', 'wrap'}, optional
-        To determine how to handle image boundaries.
+    mode : str, optional
+        Points outside the boundaries of the input are filled according to the given mode
+        ('constant', 'nearest', 'mirror', 'reflect', 'wrap', 'grid-mirror', 'grid-wrap', 'grid-constant' or 'opencv').
 
     Returns
     -------
@@ -91,8 +91,8 @@ def distortion_correction_proj_discorpy(
 
     # Use preview information to offset the x and y coords of the center of
     # distortion
-    det_x_step = step[0]
-    det_y_step = step[1]
+    det_x_step = step_xy[0]
+    det_y_step = step_xy[1]
 
     if det_y_step > 1 or det_x_step > 1:
         msg = (
@@ -103,8 +103,8 @@ def distortion_correction_proj_discorpy(
         )
         raise ValueError(msg)
 
-    det_x_shift = shift[0]
-    det_y_shift = shift[1]
+    det_x_shift = shift_xy[0]
+    det_y_shift = shift_xy[1]
 
     xcenter = xcenter - det_x_shift
     ycenter = ycenter - det_y_shift
