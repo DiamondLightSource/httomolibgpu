@@ -41,7 +41,8 @@ dependencies = [
     "numpy",
     "scipy",
     "pillow",
-    "scikit-image"
+    "scikit-image",
+    "tomobar"
 ]
 
 [project.optional-dependencies]
