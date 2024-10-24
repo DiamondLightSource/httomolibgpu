@@ -38,7 +38,7 @@ else:
     fftshift = Mock()
 
 from numpy import float32
-from typing import Union
+from typing import Tuple
 import math
 
 __all__ = [
@@ -348,25 +348,17 @@ def _shift_bit_length(x: int) -> int:
     return 1 << (x - 1).bit_length()
 
 
-def _pad_projections_to_second_power(tomo: cp.ndarray) -> Union[cp.ndarray, tuple]:
+def _calculate_pad_size(datashape: tuple) -> list:
+    """Calculating the padding size
+
+    Args:
+        datashape (tuple): the shape of the 3D data
+
+    Returns:
+        list: the padded dimensions
     """
-    Performs padding of each projection to the next power of 2.
-    If the shape is not even we also care of that before padding.
-
-    Parameters
-    ----------
-    tomo : cp.ndarray
-        3d projection data
-
-    Returns
-    -------
-    ndarray: padded 3d projection data
-    tuple: a tuple with padding dimensions
-    """
-    full_shape_tomo = cp.shape(tomo)
-
-    pad_tup = []
-    for index, element in enumerate(full_shape_tomo):
+    pad_list = []
+    for index, element in enumerate(datashape):
         if index == 0:
             pad_width = (0, 0)  # do not pad the slicing dim
         else:
@@ -380,11 +372,36 @@ def _pad_projections_to_second_power(tomo: cp.ndarray) -> Union[cp.ndarray, tupl
                 right_pad = diff - left_pad
                 pad_width = (left_pad, right_pad)
 
-        pad_tup.append(pad_width)
+        pad_list.append(pad_width)
 
-    padded_tomo = cp.pad(tomo, tuple(pad_tup), "edge")
+    return pad_list
 
-    return padded_tomo, pad_tup
+
+def _pad_projections_to_second_power(
+    tomo: cp.ndarray,
+) -> Tuple[cp.ndarray, Tuple[int, int]]:
+    """
+    Performs padding of each projection to the next power of 2.
+    If the shape is not even we also care of that before padding.
+
+    Parameters
+    ----------
+    tomo : cp.ndarray
+        3d projection data
+
+    Returns
+    -------
+    Tuple consisting of:
+    ndarray: padded 3d projection data
+    tuple: a tuple with padding dimensions
+    """
+    full_shape_tomo = cp.shape(tomo)
+
+    pad_list = _calculate_pad_size(full_shape_tomo)
+
+    padded_tomo = cp.pad(tomo, tuple(pad_list), "edge")
+
+    return padded_tomo, tuple(pad_list)
 
 
 def _paganin_filter_factor2(energy, dist, alpha, w2):
