@@ -29,11 +29,12 @@ cupy_run = cupywrapper.cupy_run
 from unittest.mock import Mock
 
 if cupy_run:
-    from cupyx.scipy.ndimage import median_filter, binary_dilation, uniform_filter1d
+    from cupyx.scipy.ndimage import median_filter, binary_dilation, raven_filter, uniform_filter1d
 else:
     median_filter = Mock()
     binary_dilation = Mock()
     uniform_filter1d = Mock()
+    raven_filter = Mock()
 
 from typing import Union
 
@@ -359,6 +360,28 @@ def _rs_dead(sinogram, snr, size, matindex, norm=True):
         sinogram = _rs_large(sinogram, snr, size, matindex)
     return sinogram
 
+def _raven_filter(sinogram, snr, size, matindex, vvalue=10, uvalue=10, nvalue=10 ):
+    """
+    Raven filter
+    """
+    padding = 2
+    (nrow, ncol) = sinogram.shape
+    width1 =  nrow + 2 * padding #sino_shape[1] + 2 * self.pad
+    height1 = ncol + 2 * padding #sino_shape[0] + 2 * self.pad
+
+    # Create filter
+    centerx = np.ceil(width1 / 2.0) - 1.0
+    centery = np.int16(np.ceil(height1 / 2.0) - 1)
+    row1 = centery - vvalue
+    row2 = centery + vvalue + 1
+    listx = np.arange(width1) - centerx
+    filtershape = 1.0 / (1.0 + np.power(listx / uvalue, 2 * nvalue))
+    filtershapepad2d = np.zeros((self.row2 - self.row1, filtershape.size))
+    filtershapepad2d[:] = np.float64(filtershape)
+    filtercomplex = filtershapepad2d + filtershapepad2d * 1j
+
+
+    return sinogram
 
 def _create_matindex(nrow, ncol):
     """
