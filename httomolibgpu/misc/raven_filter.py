@@ -35,8 +35,13 @@ from unittest.mock import Mock
 
 if cupy_run:
     from httomolibgpu.cuda_kernels import load_cuda_module
+    from cupyx.scipy.fft import fft2, ifft2, fftshift, ifftshift
 else:
     load_cuda_module = Mock()
+    fft2 = Mock()
+    ifft2 = Mock()
+    fftshift = Mock()
+    ifftshift = Mock()
 
 
 __all__ = [
@@ -44,10 +49,12 @@ __all__ = [
 ]
 
 
-def raven_filter(
+def raven_filter_savu(
     data: cp.ndarray,
     kernel_size: int = 3,
-    dif: float = 0.0,
+    pad_y: int = 100,
+    pad_x: int = 100,
+    pad_method: str = "edge",
 ) -> cp.ndarray:
     """
     Applies raven filter to a 3D CuPy array. For more detailed information, see :ref:`method_raven_filter`.
@@ -58,14 +65,20 @@ def raven_filter(
         Input CuPy 3D array either float32 or uint16 data type.
     kernel_size : int, optional
         The size of the filter's kernel (a diameter).
-    dif : float, optional
-        Expected difference value between outlier value and the
-        median value of the array, leave equal to 0 for classical median.
+
+    pad_y : int, optional
+        Pad the top and bottom of projections.
+
+    pad_x : int, optional
+        Pad the left and right of projections.
+
+    pad_method : str, optional
+        Numpy pad method to use.
 
     Returns
     -------
     ndarray
-        Median filtered 3D CuPy array either float32 or uint16 data type.
+        Raven filtered 3D CuPy array either float32 or uint16 data type.
 
     Raises
     ------
@@ -86,11 +99,25 @@ def raven_filter(
     if kernel_size not in [3, 5, 7, 9, 11, 13]:
         raise ValueError("Please select a correct kernel size: 3, 5, 7, 9, 11, 13")
 
-    dz, dy, dx = data.shape
-    output = cp.copy(data, order="C")
 
-    # 3d median or dezinger
-    kernel_args = "median_general_kernel3d<{0}, {1}>".format(
+    dz_orig, dy_orig, dx_orig = data.shape
+
+    padded_data, pad_tup = cp.pad(data, fftpad, "edge")
+    dz, dy, dx = padded_data.shape
+
+    # 3D FFT of data
+    padded_data = cp.pad(data, ((0, 0), (pad_y, pad_y), (pad_x, pad_x)), mode=pad_method)
+    fft_data = fft2(padded_data, axes=(-2, -1), overwrite_x=True)
+    fft_data_shifted = fftshift(fft_data)
+
+    # Setup various values for the filter
+    _, height, width = data.shape
+
+    height1 = height + 2 * pad_y
+    width1 = width + 2 * pad_x
+
+    # raven
+    kernel_args = "raven_general_kernel3d<{0}, {1}>".format(
         "float" if input_type == "float32" else "unsigned short", kernel_size
     )
     block_x = 128
@@ -100,11 +127,15 @@ def raven_filter(
     grid_y = dy
     grid_z = dz
     grid_dims = (grid_x, grid_y, grid_z)
-    params = (data, output, cp.float32(dif), dz, dy, dx)
+    params = (fft_data_shifted, dz, dy, dx)
 
-    median_module = load_cuda_module("raven_filter", name_expressions=[kernel_args])
-    median_filt = median_module.get_function(kernel_args)
+    raven_module = load_cuda_module("raven_kernel", name_expressions=[kernel_args])
+    raven_filt = raven_module.get_function(kernel_args)
 
-    median_filt(grid_dims, block_dims, params)
+    raven_filt(grid_dims, block_dims, params)
 
-    return output
+    fft_data = fftshift(fft_data_shifted)
+
+    data = ifft2(fft_data, axes=(-2, -1), overwrite_x=True, norm="forward")
+
+    return data
