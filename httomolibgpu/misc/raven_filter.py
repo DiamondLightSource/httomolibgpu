@@ -49,12 +49,14 @@ __all__ = [
 ]
 
 
-def raven_filter_savu(
+def raven_filter(
     data: cp.ndarray,
-    kernel_size: int = 3,
-    pad_y: int = 100,
-    pad_x: int = 100,
+    pad_y: int = 20,
+    pad_x: int = 20,
     pad_method: str = "edge",
+    uvalue: int = 20,
+    nvalue: int = 4,
+    vvalue: int = 2,
 ) -> cp.ndarray:
     """
     Applies raven filter to a 3D CuPy array. For more detailed information, see :ref:`method_raven_filter`.
@@ -63,8 +65,6 @@ def raven_filter_savu(
     ----------
     data : cp.ndarray
         Input CuPy 3D array either float32 or uint16 data type.
-    kernel_size : int, optional
-        The size of the filter's kernel (a diameter).
 
     pad_y : int, optional
         Pad the top and bottom of projections.
@@ -75,10 +75,19 @@ def raven_filter_savu(
     pad_method : str, optional
         Numpy pad method to use.
 
+    uvalue : int, optional
+        The shape of filter.
+
+    nvalue : int, optional
+        The shape of filter.
+
+    vvalue : int, optional
+        The number of rows to be applied the filter
+
     Returns
     -------
     ndarray
-        Raven filtered 3D CuPy array either float32 or uint16 data type.
+        Raven filtered 3D CuPy array in float32 data type.
 
     Raises
     ------
@@ -87,55 +96,40 @@ def raven_filter_savu(
     """
     input_type = data.dtype
 
-    if input_type not in ["float32", "uint16"]:
-        raise ValueError("The input data should be either float32 or uint16 data type")
+    if input_type not in ["float32"]:
+        raise ValueError("The input data should be float32")
 
-    if data.ndim == 3:
-        if 0 in data.shape:
-            raise ValueError("The length of one of dimensions is equal to zero")
-    else:
-        raise ValueError("The input array must be a 3D array")
+    # if data.ndim != 3:
+    #     raise ValueError("only 3D data is supported")
 
-    if kernel_size not in [3, 5, 7, 9, 11, 13]:
-        raise ValueError("Please select a correct kernel size: 3, 5, 7, 9, 11, 13")
+    # Padding of the data
+    padded_data = cp.pad(data, ((pad_y, pad_y), (pad_x, pad_x)), mode=pad_method)
 
-
-    dz_orig, dy_orig, dx_orig = data.shape
-
-    padded_data, pad_tup = cp.pad(data, fftpad, "edge")
-    dz, dy, dx = padded_data.shape
-
-    # 3D FFT of data
-    padded_data = cp.pad(data, ((0, 0), (pad_y, pad_y), (pad_x, pad_x)), mode=pad_method)
+    # FFT and shift of data
     fft_data = fft2(padded_data, axes=(-2, -1), overwrite_x=True)
     fft_data_shifted = fftshift(fft_data)
 
     # Setup various values for the filter
-    _, height, width = data.shape
+    height, width = data.shape
 
     height1 = height + 2 * pad_y
     width1 = width + 2 * pad_x
 
-    # raven
-    kernel_args = "raven_general_kernel3d<{0}, {1}>".format(
-        "float" if input_type == "float32" else "unsigned short", kernel_size
-    )
-    block_x = 128
     # setting grid/block parameters
+    block_x = 128
     block_dims = (block_x, 1, 1)
-    grid_x = (dx + block_x - 1) // block_x
-    grid_y = dy
-    grid_z = dz
-    grid_dims = (grid_x, grid_y, grid_z)
-    params = (fft_data_shifted, dz, dy, dx)
+    grid_x = (width1 + block_x - 1) // block_x
+    grid_y = height1
+    grid_dims = (grid_x, grid_y, 1)
+    params = (fft_data_shifted, fft_data, width1, height1, uvalue, nvalue, vvalue)
 
-    raven_module = load_cuda_module("raven_kernel", name_expressions=[kernel_args])
-    raven_filt = raven_module.get_function(kernel_args)
-
+    raven_module = load_cuda_module("raven_filter")
+    raven_filt = raven_module.get_function("raven_filter")
+    
     raven_filt(grid_dims, block_dims, params)
-
-    fft_data = fftshift(fft_data_shifted)
-
-    data = ifft2(fft_data, axes=(-2, -1), overwrite_x=True, norm="forward")
+    
+    # raven_fil already doing ifftshifting
+    # fft_data = ifftshift(fft_data_shifted)
+    data = ifft2(fft_data, axes=(-2, -1), overwrite_x=True)
 
     return data

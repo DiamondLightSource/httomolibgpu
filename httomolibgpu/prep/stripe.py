@@ -29,7 +29,10 @@ cupy_run = cupywrapper.cupy_run
 from unittest.mock import Mock
 
 if cupy_run:
-    from cupyx.scipy.ndimage import median_filter, binary_dilation, raven_filter, uniform_filter1d
+    from cupyx.scipy.ndimage import median_filter, binary_dilation, uniform_filter1d
+    from httomolibgpu.misc.raven_filter import (
+        raven_filter,
+    )
 else:
     median_filter = Mock()
     binary_dilation = Mock()
