@@ -23,20 +23,20 @@ sino_shape = sinogram.shape
 
 print("The shape of the sinogram is {}".format(cp.shape(sinogram)))
 
+# Parameters
+v0 = 2
+n = 4
+u0 = 20
+
 # Make a numpy copy
 sinogram_padded = np.pad(sinogram.get(), 20, "edge")
 
 # GPU filter
-sinogram_gpu_filter = raven_filter(sinogram)
+sinogram_gpu_filter = raven_filter(sinogram, u0, n, v0)
 
 # Size
 width1 = sino_shape[1] + 2 * 20
 height1 = sino_shape[0] + 2 * 20
-
-# Parameters
-v0 = 2
-u0 = 20
-n = 2
 
 # Generate filter function
 centerx = np.ceil(width1 / 2.0) - 1.0
@@ -44,10 +44,22 @@ centery = np.int16(np.ceil(height1 / 2.0) - 1)
 row1 = centery - v0
 row2 = centery + v0 + 1
 listx = np.arange(width1) - centerx
+
+print(np.arange(width1))
+print(listx)
+print(listx / u0)
+
 filtershape = 1.0 / (1.0 + np.power(listx / u0, 2 * n))
 filtershapepad2d = np.zeros((row2 - row1, filtershape.size))
 filtershapepad2d[:] = np.float64(filtershape)
 filtercomplex = filtershapepad2d + filtershapepad2d * 1j
+
+print("Centery: ", centery, "Row1: ", row1, "Row2: ", row2)
+
+# plt.figure()
+# plt.imshow(filtercomplex.real)
+# plt.title("Uncorrected image")
+# plt.show()
 
 # Generate filter objects
 a = pyfftw.empty_aligned((height1, width1), dtype='complex128', n=16)

@@ -51,12 +51,12 @@ __all__ = [
 
 def raven_filter(
     data: cp.ndarray,
-    pad_y: int = 20,
-    pad_x: int = 20,
-    pad_method: str = "edge",
     uvalue: int = 20,
     nvalue: int = 4,
     vvalue: int = 2,
+    pad_y: int = 20,
+    pad_x: int = 20,
+    pad_method: str = "edge",
 ) -> cp.ndarray:
     """
     Applies raven filter to a 3D CuPy array. For more detailed information, see :ref:`method_raven_filter`.
