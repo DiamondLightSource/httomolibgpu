@@ -128,7 +128,7 @@ def raven_filter(
     
     raven_filt(grid_dims, block_dims, params)
     
-    # raven_fil already doing ifftshifting
+    # raven_filt already doing ifftshifting
     # fft_data = ifftshift(fft_data_shifted)
     data = ifft2(fft_data, axes=(-2, -1), overwrite_x=True)
 

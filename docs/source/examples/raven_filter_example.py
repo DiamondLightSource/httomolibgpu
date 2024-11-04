@@ -44,22 +44,10 @@ centery = np.int16(np.ceil(height1 / 2.0) - 1)
 row1 = centery - v0
 row2 = centery + v0 + 1
 listx = np.arange(width1) - centerx
-
-print(np.arange(width1))
-print(listx)
-print(listx / u0)
-
 filtershape = 1.0 / (1.0 + np.power(listx / u0, 2 * n))
 filtershapepad2d = np.zeros((row2 - row1, filtershape.size))
 filtershapepad2d[:] = np.float64(filtershape)
 filtercomplex = filtershapepad2d + filtershapepad2d * 1j
-
-print("Centery: ", centery, "Row1: ", row1, "Row2: ", row2)
-
-# plt.figure()
-# plt.imshow(filtercomplex.real)
-# plt.title("Uncorrected image")
-# plt.show()
 
 # Generate filter objects
 a = pyfftw.empty_aligned((height1, width1), dtype='complex128', n=16)
@@ -73,16 +61,18 @@ sino = fft.fftshift(fft_object(sinogram_padded))
 sino[row1:row2] = sino[row1:row2] * filtercomplex
 sino = ifft_object(fft.ifftshift(sino))
 
-plt.figure()
-
 #subplot(r,c) provide the no. of rows and columns
 f, axarr = plt.subplots(2,2) 
 
 # use the created array to output your multiple images. In this case I have stacked 4 images vertically
 axarr[0, 0].imshow(sinogram_padded)
+axarr[0, 0].set_title('Original sinogram')
 axarr[0, 1].imshow(sinogram_padded - sinogram_gpu_filter.get().real)
+axarr[0, 1].set_title('Difference of original and GPU filtered')
 axarr[1, 0].imshow(sinogram_padded - sino.real)
+axarr[1, 0].set_title('Difference of original and CPU filtered')
 axarr[1, 1].imshow(sinogram_gpu_filter.get().real - sino.real)
+axarr[1, 1].set_title('Difference of GPU and CPU filtered')
 
 plt.show()
 
