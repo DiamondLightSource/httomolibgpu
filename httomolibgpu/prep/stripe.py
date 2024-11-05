@@ -30,14 +30,15 @@ from unittest.mock import Mock
 
 if cupy_run:
     from cupyx.scipy.ndimage import median_filter, binary_dilation, uniform_filter1d
-    from httomolibgpu.misc.raven_filter import (
-        raven_filter,
-    )
+    from cupyx.scipy.fft import fft2, ifft2, fftshift
+    from httomolibgpu.cuda_kernels import load_cuda_module
 else:
     median_filter = Mock()
     binary_dilation = Mock()
     uniform_filter1d = Mock()
-    raven_filter = Mock()
+    fft2 = Mock()
+    ifft2 = Mock()
+    fftshift = Mock()
 
 from typing import Union
 
@@ -363,26 +364,48 @@ def _rs_dead(sinogram, snr, size, matindex, norm=True):
         sinogram = _rs_large(sinogram, snr, size, matindex)
     return sinogram
 
-def _raven_filter(sinogram, snr, size, matindex, vvalue=10, uvalue=10, nvalue=10 ):
+def raven_filter(
+        sinogram,
+        uvalue: int = 20,
+        nvalue: int = 4,
+        vvalue: int = 2,
+        pad_y: int = 20,
+        pad_x: int = 20,
+        pad_method: str = "edge"):
     """
     Raven filter
     """
-    padding = 2
-    (nrow, ncol) = sinogram.shape
-    width1 =  nrow + 2 * padding #sino_shape[1] + 2 * self.pad
-    height1 = ncol + 2 * padding #sino_shape[0] + 2 * self.pad
 
-    # Create filter
-    centerx = np.ceil(width1 / 2.0) - 1.0
-    centery = np.int16(np.ceil(height1 / 2.0) - 1)
-    row1 = centery - vvalue
-    row2 = centery + vvalue + 1
-    listx = np.arange(width1) - centerx
-    filtershape = 1.0 / (1.0 + np.power(listx / uvalue, 2 * nvalue))
-    filtershapepad2d = np.zeros((self.row2 - self.row1, filtershape.size))
-    filtershapepad2d[:] = np.float64(filtershape)
-    filtercomplex = filtershapepad2d + filtershapepad2d * 1j
+    # Padding of the data
+    padded_data = cp.pad(sinogram, ((0, 0), (pad_y, pad_y), (pad_x, pad_x)), mode=pad_method)
+    # padded_data = cp.pad(sinogram, ((pad_y, pad_y), (pad_x, pad_x)), mode=pad_method)
 
+    # FFT and shift of data
+    fft_data = fft2(padded_data, axes=(-2, -1), overwrite_x=True)
+    fft_data_shifted = fftshift(fft_data)
+
+    # Setup various values for the filter
+    _, height, width = sinogram.shape
+
+    height1 = height + 2 * pad_y
+    width1 = width + 2 * pad_x
+
+    # setting grid/block parameters
+    block_x = 128
+    block_dims = (block_x, 1, 1)
+    grid_x = (width1 + block_x - 1) // block_x
+    grid_y = height1
+    grid_dims = (grid_x, grid_y, 1)
+    params = (fft_data_shifted, fft_data, width1, height1, uvalue, nvalue, vvalue)
+
+    raven_module = load_cuda_module("raven_filter")
+    raven_filt = raven_module.get_function("raven_filter")
+    
+    raven_filt(grid_dims, block_dims, params)
+    
+    # raven_filt already doing ifftshifting
+    # fft_data = ifftshift(fft_data_shifted)
+    sinogram = ifft2(fft_data, axes=(-2, -1), overwrite_x=True)
 
     return sinogram
 

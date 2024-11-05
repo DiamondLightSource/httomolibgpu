@@ -8,6 +8,8 @@ import httomolibgpu
 from httomolibgpu.misc.raven_filter import raven_filter
 
 import matplotlib.pyplot as plt
+import time
+
 
 # Load the sinogram data
 path_lib = os.path.dirname(httomolibgpu.__file__)
@@ -31,8 +33,12 @@ u0 = 20
 # Make a numpy copy
 sinogram_padded = np.pad(sinogram.get(), 20, "edge")
 
+start_time = time.time()
 # GPU filter
 sinogram_gpu_filter = raven_filter(sinogram, u0, n, v0)
+print("--- %s seconds ---" % (time.time() - start_time))
+
+start_time = time.time()
 
 # Size
 width1 = sino_shape[1] + 2 * 20
@@ -60,6 +66,8 @@ ifft_object = pyfftw.FFTW(c, d, axes=(0, 1), direction='FFTW_BACKWARD')
 sino = fft.fftshift(fft_object(sinogram_padded))
 sino[row1:row2] = sino[row1:row2] * filtercomplex
 sino = ifft_object(fft.ifftshift(sino))
+
+print("--- %s seconds ---" % (time.time() - start_time))
 
 #subplot(r,c) provide the no. of rows and columns
 f, axarr = plt.subplots(2,2) 

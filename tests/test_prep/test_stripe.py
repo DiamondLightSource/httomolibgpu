@@ -3,11 +3,14 @@ import cupy as cp
 from cupy.cuda import nvtx
 import numpy as np
 import pytest
+import pyfftw
+import pyfftw.interfaces.numpy_fft as fft
 from httomolibgpu.prep.normalize import normalize
 from httomolibgpu.prep.stripe import (
     remove_stripe_based_sorting,
     remove_stripe_ti,
     remove_all_stripe,
+    raven_filter,
 )
 from numpy.testing import assert_allclose
 
@@ -51,7 +54,6 @@ def test_remove_stripe_ti_on_data(data, flats, darks):
 #         np.median(corrected_data), np.median(corrected_host_data), rtol=1e-6
 #     )
 
-
 def test_stripe_removal_sorting_cupy(data, flats, darks):
     # --- testing the CuPy port of TomoPy's implementation ---#
     data = normalize(data, flats, darks, cutoff=10, minus_log=True)
@@ -65,7 +67,6 @@ def test_stripe_removal_sorting_cupy(data, flats, darks):
     # make sure the output is float32
     assert corrected_data.dtype == np.float32
     assert corrected_data.flags.c_contiguous
-
 
 @pytest.mark.perf
 def test_stripe_removal_sorting_cupy_performance(ensure_clean_memory):
@@ -116,6 +117,29 @@ def test_remove_stripe_ti_performance(ensure_clean_memory):
 
     assert "performance in ms" == duration_ms
 
+@pytest.mark.perf
+def test_raven_filter_performance(ensure_clean_memory):
+    data_host = (
+        np.random.random_sample(size=(1801, 5, 2560)).astype(np.float32) * 2.0 + 0.001
+    )
+    data = cp.asarray(data_host, dtype=np.float32)
+
+    # do a cold run first
+    raven_filter(cp.copy(data))
+
+    dev = cp.cuda.Device()
+    dev.synchronize()
+
+    start = time.perf_counter_ns()
+    nvtx.RangePush("Core")
+    for _ in range(10):
+        # have to take copy, as data is modified in-place
+        raven_filter(cp.copy(data))
+    nvtx.RangePop()
+    dev.synchronize()
+    duration_ms = float(time.perf_counter_ns() - start) * 1e-6 / 10
+
+    assert "performance in ms" == duration_ms
 
 def test_remove_all_stripe_on_data(data, flats, darks):
     # --- testing the CuPy implementation from TomoCupy ---#
