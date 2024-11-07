@@ -1,21 +1,24 @@
 #include <cupy/complex.cuh>
 
 extern "C" __global__ void 
-raven_filter(complex<float> *input, complex<float> *output, int width1, int height1, int u0, int n, int v0) {
+raven_filter(
+  complex<float> *input,
+  complex<float> *output,
+  int width, int images, int height, 
+  int u0, int n, int v0) {
 
-  int centerx = width1 / 2;
-  int centery = height1 / 2;
+  const int px = threadIdx.x + blockIdx.x * blockDim.x;
+  const int py = threadIdx.y + blockIdx.y * blockDim.y;
+  const int pz = threadIdx.z + blockIdx.z * blockDim.z;
 
-  int px = threadIdx.x + blockIdx.x * blockDim.x;
-  int py = threadIdx.y + blockIdx.y * blockDim.y;
-
-  if (px >= width1)
+  if (px >= width || py >= images || pz >= height)
     return;
-  if (py >= height1)
-    return;
 
-  complex<float> value = input[py * width1 + px];
-  if( py >= (centery - v0) && py < (centery + v0 + 1) ) {
+  int centerx = width / 2;
+  int centerz = height / 2;
+
+  complex<float> value = input[pz * width * images + py * width + px];
+  if( pz >= (centerz - v0) && pz < (centerz + v0 + 1) ) {
     
     // +1 needed to match with CPU implementation
     float base = float(px - centerx + 1) / u0;
@@ -28,10 +31,10 @@ raven_filter(complex<float> *input, complex<float> *output, int width1, int heig
   }
 
   // ifftshifting positions
-  int xshift = (width1 + 1) / 2;
-  int yshift = (height1 + 1) / 2;
-  int outX = (px + xshift) % width1;
-  int outY = (py + yshift) % height1;
+  int xshift = (width + 1) / 2;
+  int zshift = (height + 1) / 2;
+  int outX = (px + xshift) % width;
+  int outZ = (pz + zshift) % height;
 
-  output[outY * width1 + outX] = value;
+  output[outZ * width * images + py * width + outX] = value;
 }
