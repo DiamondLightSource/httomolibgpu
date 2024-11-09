@@ -375,8 +375,46 @@ def raven_filter(
         pad_x: int = 20,
         pad_method: str = "edge"):
     """
-    Raven filter
+    Applies raven filter to a 3D CuPy array. For more detailed information, see :ref:`method_raven_filter`.
+
+    Parameters
+    ----------
+    data : cp.ndarray
+        Input CuPy 3D array either float32 or uint16 data type.
+
+    pad_y : int, optional
+        Pad the top and bottom of projections.
+
+    pad_x : int, optional
+        Pad the left and right of projections.
+
+    pad_method : str, optional
+        Numpy pad method to use.
+
+    uvalue : int, optional
+        The shape of filter.
+
+    nvalue : int, optional
+        The shape of filter.
+
+    vvalue : int, optional
+        The number of rows to be applied the filter
+
+    Returns
+    -------
+    ndarray
+        Raven filtered 3D CuPy array in float32 data type.
+
+    Raises
+    ------
+    ValueError
+        If the input array is not three dimensional.
     """
+
+    input_type = sinogram.dtype
+
+    if input_type not in ["float32", "float64"]:
+        raise ValueError("The input data should be either float32 or float64 data type")
 
     # Padding of the sinogram
     sinogram = cp.pad(sinogram, ((pad_y, pad_y), (0, 0), (pad_x, pad_x)), mode=pad_method)
@@ -388,6 +426,11 @@ def raven_filter(
     # Setup various values for the filter
     height, images, width = sinogram.shape
 
+    # Set the input type of the kernel
+    kernel_args = "raven_filter<{0}>".format(
+        "float" if input_type == "float32" else "double"
+    )
+
     # setting grid/block parameters
     block_x = 128
     block_dims = (block_x, 1, 1)
@@ -397,8 +440,8 @@ def raven_filter(
     grid_dims = (grid_x, grid_y, grid_z)
     params = (fft_data_shifted, fft_data, width, images, height, uvalue, nvalue, vvalue)
 
-    raven_module = load_cuda_module("raven_filter")
-    raven_filt = raven_module.get_function("raven_filter")
+    raven_module = load_cuda_module("raven_filter", name_expressions=[kernel_args])
+    raven_filt = raven_module.get_function(kernel_args)
     
     raven_filt(grid_dims, block_dims, params)
     

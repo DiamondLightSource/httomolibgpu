@@ -23,7 +23,7 @@ sinogram = cp.asarray(sinogram)
 
 sino_shape = sinogram.shape
 
-sinogram_stack = cp.stack([sinogram] * 20, axis=1)
+sinogram_stack = cp.stack([sinogram] * 5, axis=1)
 
 print("The shape of the sinogram stack is {}".format(cp.shape(sinogram_stack)))
 
