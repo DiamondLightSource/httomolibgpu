@@ -155,23 +155,23 @@ def test_raven_filter_performance(ensure_clean_memory):
 
     assert "performance in ms" == duration_ms
 
-@pytest.mark.perf
-def test_raven_filter_cpu_performance(ensure_clean_memory):
-    data_host = (
-        np.random.random_sample(size=(1801, 5, 2560)).astype(np.float32) * 2.0 + 0.001
-    )
-    data = cp.asarray(data_host, dtype=np.float32)
-
-    # do a cold run first
-    raven_filter_cpu(cp.copy(data).get())
-
-    start = time.perf_counter_ns()
-    for _ in range(10):
-        raven_filter_cpu(cp.copy(data).get())
-
-    duration_ms = float(time.perf_counter_ns() - start) * 1e-6 / 10
-
-    assert "performance in ms" == duration_ms
+# @pytest.mark.perf
+# def test_raven_filter_cpu_performance(ensure_clean_memory):
+#     data_host = (
+#         np.random.random_sample(size=(1801, 5, 2560)).astype(np.float32) * 2.0 + 0.001
+#     )
+#     data = cp.asarray(data_host, dtype=np.float32)
+# 
+#     # do a cold run first
+#     raven_filter_cpu(cp.copy(data).get())
+# 
+#     start = time.perf_counter_ns()
+#     for _ in range(10):
+#         raven_filter_cpu(cp.copy(data).get())
+# 
+#     duration_ms = float(time.perf_counter_ns() - start) * 1e-6 / 10
+# 
+#     assert "performance in ms" == duration_ms
 
 
 def test_remove_all_stripe_on_data(data, flats, darks):

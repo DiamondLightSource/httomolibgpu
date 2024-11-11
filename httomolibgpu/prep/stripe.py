@@ -413,8 +413,8 @@ def raven_filter(
 
     input_type = sinogram.dtype
 
-    if input_type not in ["float32", "float64"]:
-        raise ValueError("The input data should be either float32 or float64 data type")
+    if input_type not in ["float32"]:
+        raise ValueError("The input data should be float32 data type")
 
     # Padding of the sinogram
     sinogram = cp.pad(sinogram, ((pad_y, pad_y), (0, 0), (pad_x, pad_x)), mode=pad_method)
@@ -423,12 +423,15 @@ def raven_filter(
     fft_data = fft2(sinogram, axes=(0, 2), overwrite_x=True)
     fft_data_shifted = fftshift(fft_data, axes=(0, 2))
 
+    # Calculation type
+    calc_type = fft_data_shifted.dtype
+
     # Setup various values for the filter
     height, images, width = sinogram.shape
 
     # Set the input type of the kernel
     kernel_args = "raven_filter<{0}>".format(
-        "float" if input_type == "float32" else "double"
+        "float" if calc_type == "complex64" else "double"
     )
 
     # setting grid/block parameters
