@@ -411,9 +411,7 @@ def raven_filter(
         If the input array is not three dimensional.
     """
 
-    input_type = sinogram.dtype
-
-    if input_type not in ["float32"]:
+    if sinogram.dtype != cp.float32:
         raise ValueError("The input data should be float32 data type")
 
     # Padding of the sinogram
