@@ -2,7 +2,7 @@ import numpy as np
 import pyfftw
 import pyfftw.interfaces.numpy_fft as fft
 
-def raven_filter_cpu(
+def raven_filter_numpy(
         sinogram,
         uvalue: int = 20,
         nvalue: int = 4,
