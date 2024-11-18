@@ -18,7 +18,7 @@
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 01 November 2022
 # ---------------------------------------------------------------------------
-"""Modules for stripes removal"""
+"""Module for stripes removal"""
 
 import numpy as np
 from httomolibgpu import cupywrapper

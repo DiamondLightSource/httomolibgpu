@@ -1,4 +1,4 @@
-.. method_raven_filter:
+.. _method_raven_filter:
 
 Raven filter
 ^^^^^^^^^^^^^
