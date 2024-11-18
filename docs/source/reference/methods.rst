@@ -16,6 +16,15 @@ Data correction module
    methods_list/median_filter
    methods_list/outlier_removal
 
+.. _stripes_removal_module:
+
+Stripes removal module
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. toctree::
+   :glob:
+
+   methods_list/raven_filter
 
 .. _data_rescale_module:
 

@@ -18,7 +18,7 @@
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 01 November 2022
 # ---------------------------------------------------------------------------
-"""Modules for stripes removal"""
+"""Module for stripes removal"""
 
 import numpy as np
 from httomolibgpu import cupywrapper
@@ -30,10 +30,16 @@ from unittest.mock import Mock
 
 if cupy_run:
     from cupyx.scipy.ndimage import median_filter, binary_dilation, uniform_filter1d
+    from cupyx.scipy.fft import fft2, ifft2, fftshift
+    from httomolibgpu.cuda_kernels import load_cuda_module
 else:
     median_filter = Mock()
     binary_dilation = Mock()
     uniform_filter1d = Mock()
+    fft2 = Mock()
+    ifft2 = Mock()
+    fftshift = Mock()
+
 
 from typing import Union
 
@@ -41,6 +47,7 @@ __all__ = [
     "remove_stripe_based_sorting",
     "remove_stripe_ti",
     "remove_all_stripe",
+    "raven_filter",
 ]
 
 
@@ -358,6 +365,96 @@ def _rs_dead(sinogram, snr, size, matindex, norm=True):
     if norm is True:
         sinogram = _rs_large(sinogram, snr, size, matindex)
     return sinogram
+
+
+def raven_filter(
+    data: cp.ndarray,
+    pad_y: int = 20,
+    pad_x: int = 20,
+    pad_method: str = "edge",
+    uvalue: int = 20,
+    nvalue: int = 4,
+    vvalue: int = 2,
+) -> cp.ndarray:
+    """
+    Applies FFT-based Raven filter :cite:`raven1998numerical` to a 3D CuPy array. For more detailed information, see :ref:`method_raven_filter`.
+
+    Parameters
+    ----------
+    data : cp.ndarray
+        Input CuPy 3D array either float32 or uint16 data type.
+
+    pad_y : int, optional
+        Pad the top and bottom of projections.
+
+    pad_x : int, optional
+        Pad the left and right of projections.
+
+    pad_method : str, optional
+        Numpy pad method to use.
+
+    uvalue : int, optional
+        The shape of filter.
+
+    nvalue : int, optional
+        The shape of filter.
+
+    vvalue : int, optional
+        The number of rows to be applied the filter
+
+    Returns
+    -------
+    cp.ndarray
+        Raven filtered 3D CuPy array in float32 data type.
+
+    Raises
+    ------
+    ValueError
+        If the input array is not three dimensional.
+    """
+
+    if data.dtype != cp.float32:
+        raise ValueError("The input data should be float32 data type")
+
+    # Padding of the sinogram
+    data = cp.pad(data, ((pad_y, pad_y), (0, 0), (pad_x, pad_x)), mode=pad_method)
+
+    # FFT and shift of sinogram
+    fft_data = fft2(data, axes=(0, 2), overwrite_x=True)
+    fft_data_shifted = fftshift(fft_data, axes=(0, 2))
+
+    # Calculation type
+    calc_type = fft_data_shifted.dtype
+
+    # Setup various values for the filter
+    height, images, width = data.shape
+
+    # Set the input type of the kernel
+    kernel_args = "raven_filter<{0}>".format(
+        "float" if calc_type == "complex64" else "double"
+    )
+
+    # setting grid/block parameters
+    block_x = 128
+    block_dims = (block_x, 1, 1)
+    grid_x = (width + block_x - 1) // block_x
+    grid_y = images
+    grid_z = height
+    grid_dims = (grid_x, grid_y, grid_z)
+    params = (fft_data_shifted, fft_data, width, images, height, uvalue, nvalue, vvalue)
+
+    raven_module = load_cuda_module("raven_filter", name_expressions=[kernel_args])
+    raven_filt = raven_module.get_function(kernel_args)
+
+    raven_filt(grid_dims, block_dims, params)
+
+    # raven_filt already doing ifftshifting
+    data = ifft2(fft_data, axes=(0, 2), overwrite_x=True)
+
+    # Removing padding
+    data = data[pad_y : height - pad_y, :, pad_x : width - pad_x].real
+
+    return data
 
 
 def _create_matindex(nrow, ncol):
