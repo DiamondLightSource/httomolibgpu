@@ -30,7 +30,7 @@ from unittest.mock import Mock
 
 if cupy_run:
     from cupyx.scipy.ndimage import median_filter, binary_dilation, uniform_filter1d
-    from cupyx.scipy.fft import fft2, ifft2, fftshift, ifftshift
+    from cupyx.scipy.fft import fft2, ifft2, fftshift
     from httomolibgpu.cuda_kernels import load_cuda_module
 else:
     median_filter = Mock()
@@ -39,7 +39,7 @@ else:
     fft2 = Mock()
     ifft2 = Mock()
     fftshift = Mock()
-    ifftshift = Mock()
+
 
 from typing import Union
 
@@ -366,16 +366,18 @@ def _rs_dead(sinogram, snr, size, matindex, norm=True):
         sinogram = _rs_large(sinogram, snr, size, matindex)
     return sinogram
 
+
 def raven_filter(
-        sinogram,
-        uvalue: int = 20,
-        nvalue: int = 4,
-        vvalue: int = 2,
-        pad_y: int = 20,
-        pad_x: int = 20,
-        pad_method: str = "edge"):
+    data: cp.ndarray,
+    pad_y: int = 20,
+    pad_x: int = 20,
+    pad_method: str = "edge",
+    uvalue: int = 20,
+    nvalue: int = 4,
+    vvalue: int = 2,
+) -> cp.ndarray:
     """
-    Applies raven filter to a 3D CuPy array. For more detailed information, see :ref:`method_raven_filter`.
+    Applies FFT-based Raven filter :cite:`raven1998numerical` to a 3D CuPy array. For more detailed information, see :ref:`method_raven_filter`.
 
     Parameters
     ----------
@@ -402,7 +404,7 @@ def raven_filter(
 
     Returns
     -------
-    ndarray
+    cp.ndarray
         Raven filtered 3D CuPy array in float32 data type.
 
     Raises
@@ -411,21 +413,21 @@ def raven_filter(
         If the input array is not three dimensional.
     """
 
-    if sinogram.dtype != cp.float32:
+    if data.dtype != cp.float32:
         raise ValueError("The input data should be float32 data type")
 
     # Padding of the sinogram
-    sinogram = cp.pad(sinogram, ((pad_y, pad_y), (0, 0), (pad_x, pad_x)), mode=pad_method)
+    data = cp.pad(data, ((pad_y, pad_y), (0, 0), (pad_x, pad_x)), mode=pad_method)
 
     # FFT and shift of sinogram
-    fft_data = fft2(sinogram, axes=(0, 2), overwrite_x=True)
+    fft_data = fft2(data, axes=(0, 2), overwrite_x=True)
     fft_data_shifted = fftshift(fft_data, axes=(0, 2))
 
     # Calculation type
     calc_type = fft_data_shifted.dtype
 
     # Setup various values for the filter
-    height, images, width = sinogram.shape
+    height, images, width = data.shape
 
     # Set the input type of the kernel
     kernel_args = "raven_filter<{0}>".format(
@@ -443,17 +445,17 @@ def raven_filter(
 
     raven_module = load_cuda_module("raven_filter", name_expressions=[kernel_args])
     raven_filt = raven_module.get_function(kernel_args)
-    
+
     raven_filt(grid_dims, block_dims, params)
-    
+
     # raven_filt already doing ifftshifting
-    # fft_data = ifftshift(fft_data_shifted, axes=(0, 2))
-    sinogram = ifft2(fft_data, axes=(0, 2), overwrite_x=True)
+    data = ifft2(fft_data, axes=(0, 2), overwrite_x=True)
 
     # Removing padding
-    sinogram = sinogram[pad_y:height-pad_y, :, pad_x:width-pad_x].real
+    data = data[pad_y : height - pad_y, :, pad_x : width - pad_x].real
 
-    return sinogram
+    return data
+
 
 def _create_matindex(nrow, ncol):
     """

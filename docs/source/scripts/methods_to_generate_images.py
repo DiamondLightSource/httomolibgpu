@@ -227,6 +227,66 @@ def run_methods(path_to_data: str, output_folder: str) -> int:
 
     return 0
 
+    ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    methods_name = "raven_filter"
+    print("___{}___".format(methods_name))
+    from tomophantom.artefacts import artefacts_mix
+    from httomolibgpu.prep.stripe import (
+        raven_filter,
+    )
+
+    _stripes_ = {
+        "stripes_percentage": 1.2,
+        "stripes_maxthickness": 3.0,
+        "stripes_intensity": 0.3,
+        "stripes_type": "full",
+        "stripes_variability": 0.005,
+    }
+    data_normalized_np_artefacts = artefacts_mix(
+        np.swapaxes(data_normalized_np, 0, 1), **_stripes_
+    )
+    data_normalized_np_artefacts = np.swapaxes(data_normalized_np_artefacts, 0, 1)
+
+    data_after_raven_gpu = raven_filter(
+        cp.asarray(data_normalized_np_artefacts, dtype=cp.float32),
+        uvalue=20,
+        nvalue=4,
+        vvalue=2,
+    ).get()
+    slice_numb = 64
+
+    max_scale_data_normalized_s = np.max(data_normalized_np_artefacts)
+    min_scale_data_normalized_s = np.min(data_normalized_np_artefacts)
+
+    __save_res_to_image(
+        data_normalized_np_artefacts,
+        output_folder,
+        "data_stripes_added",
+        slice_numb,
+        max_scale=max_scale_data_normalized_s,
+        min_scale=min_scale_data_normalized_s,
+    )
+
+    __save_res_to_image(
+        data_after_raven_gpu,
+        output_folder,
+        methods_name,
+        slice_numb,
+        max_scale=max_scale_data_normalized_s,
+        min_scale=min_scale_data_normalized_s,
+    )
+    __save_res_to_image(
+        np.abs(data_after_raven_gpu - data_normalized_np_artefacts),
+        output_folder,
+        methods_name=methods_name + "_res",
+        slice_numb=slice_numb,
+        max_scale=0.1,
+        min_scale=0,
+    )
+    del data_normalized_np_artefacts
+
+    return 0
+
 
 def get_args():
     parser = argparse.ArgumentParser(
