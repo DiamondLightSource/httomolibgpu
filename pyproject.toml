@@ -57,7 +57,8 @@ dev = [
   "toml",
   "imageio",
   "h5py",
-  "pre-commit"
+  "pre-commit",
+  "pyfftw"
 ]
 
 
