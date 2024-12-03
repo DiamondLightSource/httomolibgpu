@@ -394,13 +394,13 @@ def raven_filter(
         Numpy pad method to use.
 
     uvalue : int, optional
-        The shape of filter.
+        Cut-off frequency. To control the strength of filter, e.g., strong=10, moderate=20, weak=50.
 
     nvalue : int, optional
         The shape of filter.
 
     vvalue : int, optional
-        The number of rows to be applied the filter
+        Number of image-rows around the zero-frequency to be applied the filter.
 
     Returns
     -------
@@ -447,6 +447,7 @@ def raven_filter(
     raven_filt = raven_module.get_function(kernel_args)
 
     raven_filt(grid_dims, block_dims, params)
+    del fft_data_shifted
 
     # raven_filt already doing ifftshifting
     data = ifft2(fft_data, axes=(0, 2), overwrite_x=True)
