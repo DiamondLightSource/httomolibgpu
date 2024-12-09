@@ -28,18 +28,23 @@ cupy_run = cupywrapper.cupy_run
 
 from unittest.mock import Mock
 
+from httomolibgpu.misc.morph import data_resampler
+
 if cupy_run:
     from httomolibgpu.cuda_kernels import load_cuda_module
     from cupyx.scipy.ndimage import shift, gaussian_filter
     from skimage.registration import phase_cross_correlation
     from cupyx.scipy.fftpack import get_fft_plan
-    from cupyx.scipy.fft import rfft2
+    from cupyx.scipy.fft import fft, rfft2, fft2, fftshift
 else:
     load_cuda_module = Mock()
     shift = Mock()
     gaussian_filter = Mock()
     phase_cross_correlation = Mock()
     get_fft_plan = Mock()
+    fft2 = Mock()
+    fftshift = Mock()
+    fft = Mock()
     rfft2 = Mock()
 
 import math
@@ -55,23 +60,29 @@ __all__ = [
 def find_center_vo(
     data: cp.ndarray,
     ind: Optional[int] = None,
-    smin: int = -50,
-    smax: int = 50,
+    average_radius: int = 5,
+    cor_initialisation_value: Optional[float] = None,
+    smin: int = -100,
+    smax: int = 100,
     srad: float = 6.0,
     step: float = 0.25,
     ratio: float = 0.5,
     drop: int = 20,
 ) -> float:
     """
-    Find rotation axis location (aka CoR) using Nghia Vo's method. See the paper
+    Find rotation axis location (aka centre of rotation) using Nghia Vo's method. See the paper
     :cite:`vo2014reliable`.
 
     Parameters
     ----------
     data : cp.ndarray
-        3D tomographic data or a 2D sinogram as a CuPy array.
+        3D [angles, detY, detX] tomographic data or a 2D [angles, detX] sinogram as a CuPy array.
     ind : int, optional
-        Index of the slice to be used to estimate the CoR.
+        Index of the slice to be used to estimate the CoR. If None is given, then the central sinogram will be extracted from the data array with a possible averaging, see .
+    average_radius : int, optional
+        Averaging multiple sinograms around the sinogram defined by ind parameter to improve the signal-to-noise ratio. It is sensible to have this parameter to be less than 10.
+    cor_initialisation_value : float, optional
+        The initial approximation for the centre of rotation. If the value is None, use the horizontal centre of the projection/sinogram image.
     smin : int, optional
         Coarse search radius. Reference to the horizontal center of
         the sinogram.
@@ -91,36 +102,76 @@ def find_center_vo(
     Returns
     -------
     float
-        Rotation axis location.
+        Rotation axis location with a subpixel precision.
     """
+    # if 2d sinogram is given it is extended into a 3D array along the vertical dimension
     if data.ndim == 2:
         data = cp.expand_dims(data, 1)
         ind = 0
 
-    height = data.shape[1]
+    angles_tot, detY_size, detX_size = data.shape
 
     if ind is None:
-        ind = height // 2
-        if height > 10:
-            _sino = cp.mean(data[:, ind - 5 : ind + 5, :], axis=1)
+        ind = detY_size // 2  # middle slice index
+        # averaging the data here to improve SNR
+        if 2 * average_radius >= detY_size:
+            # reduce the averaging radius
+            average_radius = ind
+        if ind > 0:
+            _sino = cp.mean(
+                data[:, ind - average_radius : ind + average_radius, :], axis=1
+            )
         else:
             _sino = data[:, ind, :]
     else:
         _sino = data[:, ind, :]
 
+    if cor_initialisation_value is None:
+        cor_initialisation_value = (detX_size - 1.0) / 2.0
+
+    # downsampling ratios
+    dsp_angle = 1
+    dsp_detX = 1
+    if detX_size > 2000:
+        dsp_detX = 4
+    if angles_tot > 2000:
+        dsp_angle = 2
+
+    start_cor = np.int16(np.floor(1.0 * (cor_initialisation_value + smin) / dsp_detX))
+    stop_cor = np.int16(np.ceil(1.0 * (cor_initialisation_value + smax) / dsp_detX))
+    fine_srange = max(srad, dsp_detX)
+    off_set = 0.5 * dsp_detX if dsp_detX > 1 else 0.0
+
+    # initiate denoising
     _sino_cs = gaussian_filter(_sino, (3, 1), mode="reflect")
     _sino_fs = gaussian_filter(_sino, (2, 2), mode="reflect")
 
-    if _sino.shape[0] * _sino.shape[1] > 4e6:
-        # data is large, so downsample it before performing search for
-        # centre of rotation
-        _sino_coarse = _downsample(_sino_cs, 2, 1)
-        init_cen = _search_coarse(_sino_coarse, smin / 4.0, smax / 4.0, ratio, drop)
-        fine_cen = _search_fine(_sino_fs, srad, step, init_cen * 4.0, ratio, drop)
-    else:
-        init_cen = _search_coarse(_sino_cs, smin, smax, ratio, drop)
-        fine_cen = _search_fine(_sino_fs, srad, step, init_cen, ratio, drop)
+    # Downsampling here by averaging along a chosen dimension
+    # NOTE: the gpu implementation of _downsample is erroneuos, needs to be re-written
+    # if dsp_angle > 1:
+    #     _sino_cs = _downsample(_sino_cs, level=dsp_angle, axis=0)
+    # if dsp_detX > 1:
+    #     _sino_cs = _downsample(_sino_cs, level=dsp_detX, axis=1)
 
+    if dsp_angle > 1 or dsp_detX > 1:
+        # NOTE: this can downsample the data but it is not what is implemented in the original code, so result is slightly different
+        # dsp_angle_size = _sino_cs.shape[0] // dsp_angle
+        # dsp_detX_size = _sino_cs.shape[1] // dsp_detX
+        # _sino_cs = data_resampler(
+        #     _sino_cs, [dsp_angle_size, dsp_detX_size], axis=1, interpolation="linear"
+        # )
+        _sino_cs_numpy = _downsample_numpy(
+            _sino_cs.get(), dsp_angle, dsp_detX
+        )  # this is the original CPU implementation
+        _sino_cs = cp.asarray(_sino_cs_numpy, dtype=cp.float32)
+
+    # NOTE: this is correct when we do not run any CUDA kernels, hence the performance is suboptimal
+    init_cen = _search_coarse(_sino_cs, start_cor, stop_cor, ratio, drop)
+
+    # NOTE: a different to the expected result, not investigated why
+    fine_cen = _search_fine(
+        _sino_fs, fine_srange, step, float(init_cen) * dsp_detX + off_set, ratio, drop
+    )
     return cp.asnumpy(fine_cen)
 
 
@@ -128,19 +179,44 @@ def _search_coarse(sino, smin, smax, ratio, drop):
     (nrow, ncol) = sino.shape
     flip_sino = cp.ascontiguousarray(cp.fliplr(sino))
     comp_sino = cp.ascontiguousarray(cp.flipud(sino))
-    mask = _create_mask(2 * nrow, ncol, 0.5 * ratio * ncol, drop)
 
+    # # NOTE: gpu code here, half a mask created to avoid sinofram concatenitation and save memory?
+    # mask = _create_mask(2 * nrow, ncol, 0.5 * ratio * ncol, drop)
+    # # NOTE: old GPU code for the sizes with half data
+    # cen_fliplr = (ncol - 1.0) / 2.0
+    # smin_clip_val = max(min(smin + cen_fliplr, ncol - 1), 0)
+    # smin = smin_clip_val - cen_fliplr
+    # smax_clip_val = max(min(smax + cen_fliplr, ncol - 1), 0)
+    # smax = smax_clip_val - cen_fliplr
+    # start_cor = ncol // 2 + smin
+    # stop_cor = ncol // 2 + smax
+    # list_cor = cp.arange(start_cor, stop_cor + 0.5, 0.5, dtype=cp.float32)
+    # list_shift = 2.0 * (list_cor - cen_fliplr)
+    # list_metric = cp.empty(list_shift.shape, dtype=cp.float32)
+
+    mask = _create_mask_numpy(2 * nrow, ncol, 0.5 * ratio * ncol, drop)
+    mask = cp.asarray(mask, dtype=cp.float32)
     cen_fliplr = (ncol - 1.0) / 2.0
-    smin_clip_val = max(min(smin + cen_fliplr, ncol - 1), 0)
-    smin = smin_clip_val - cen_fliplr
-    smax_clip_val = max(min(smax + cen_fliplr, ncol - 1), 0)
-    smax = smax_clip_val - cen_fliplr
-    start_cor = ncol // 2 + smin
-    stop_cor = ncol // 2 + smax
-    list_cor = cp.arange(start_cor, stop_cor + 0.5, 0.5, dtype=cp.float32)
+    start_cor, stop_cor = np.sort((smin, smax))
+    start_cor = np.int16(np.clip(start_cor, 0, ncol - 1))
+    stop_cor = np.int16(np.clip(stop_cor, 0, ncol - 1))
+    list_cor = cp.arange(start_cor, stop_cor + 1.0, dtype=cp.float32)
     list_shift = 2.0 * (list_cor - cen_fliplr)
     list_metric = cp.empty(list_shift.shape, dtype=cp.float32)
-    _calculate_metric(list_shift, sino, flip_sino, comp_sino, mask, list_metric)
+
+    # NOTE: this gives a different result to the CPU code, also works with half data and half mask
+    # _calculate_metric(list_shift, sino, flip_sino, comp_sino, mask, list_metric)
+
+    # This essentially repeats the CPU code... probably not optimal but correct
+    sino_sino = cp.vstack((sino, flip_sino))
+    for i, shift in enumerate(list_shift):
+        _sino = sino_sino[nrow:]
+        _sino[...] = cp.roll(flip_sino, int(shift), axis=1)
+        if shift >= 0:
+            _sino[:, :shift] = comp_sino[:, :shift]
+        else:
+            _sino[:, shift:] = comp_sino[:, shift:]
+        list_metric[i] = cp.mean(cp.abs(fftshift(fft2(sino_sino))) * mask)
 
     minpos = cp.argmin(list_metric)
     if minpos == 0:
@@ -171,6 +247,22 @@ def _search_fine(sino, srad, step, init_cen, ratio, drop):
     _calculate_metric(list_shift, sino, flip_sino, comp_sino, mask, out=list_metric)
     cor = list_cor[cp.argmin(list_metric)]
     return cor
+
+
+def _create_mask_numpy(nrow, ncol, radius, drop):
+    du = 1.0 / ncol
+    dv = (nrow - 1.0) / (nrow * 2.0 * np.pi)
+    cen_row = np.int16(np.ceil(nrow / 2.0) - 1)
+    cen_col = np.int16(np.ceil(ncol / 2.0) - 1)
+    drop = min(drop, np.int16(np.ceil(0.05 * nrow)))
+    mask = np.zeros((nrow, ncol), dtype="float32")
+    for i in range(nrow):
+        pos = np.int16(np.round(((i - cen_row) * dv / radius) / du))
+        (pos1, pos2) = np.clip(np.sort((-pos + cen_col, pos + cen_col)), 0, ncol - 1)
+        mask[i, pos1 : pos2 + 1] = 1.0
+    mask[cen_row - drop : cen_row + drop + 1, :] = 0.0
+    mask[:, cen_col - 1 : cen_col + 2] = 0.0
+    return mask
 
 
 def _create_mask(nrow, ncol, radius, drop):
@@ -330,15 +422,46 @@ def _calculate_metric(list_shift, sino1, sino2, sino3, mask, out):
         )
 
 
+def _downsample_numpy(image, dsp_fact0, dsp_fact1):
+    """Downsample an image by averaging.
+
+    Parameters
+    ----------
+        image : 2D array.
+        dsp_fact0 : downsampling factor along axis 0.
+        dsp_fact1 : downsampling factor along axis 1.
+
+    Returns
+    ---------
+        image_dsp : Downsampled image.
+    """
+    (height, width) = image.shape
+    dsp_fact0 = np.clip(np.int16(dsp_fact0), 1, height // 2)
+    dsp_fact1 = np.clip(np.int16(dsp_fact1), 1, width // 2)
+    height_dsp = height // dsp_fact0
+    width_dsp = width // dsp_fact1
+    if dsp_fact0 == 1 and dsp_fact1 == 1:
+        image_dsp = image
+    else:
+        image_dsp = image[0 : dsp_fact0 * height_dsp, 0 : dsp_fact1 * width_dsp]
+        image_dsp = (
+            image_dsp.reshape(height_dsp, dsp_fact0, width_dsp, dsp_fact1)
+            .mean(-1)
+            .mean(1)
+        )
+    return image_dsp
+
+
 def _downsample(sino, level, axis):
     assert sino.dtype == cp.float32, "single precision floating point input required"
     assert sino.flags["C_CONTIGUOUS"], "list_shift must be C-contiguous"
 
     dx, dz = sino.shape
     # Determine the new size, dim, of the downsampled dimension
-    dim = int(sino.shape[axis] / math.pow(2, level))
+    # dim_new_size = int(sino.shape[axis] / math.pow(2, level))
+    dim_new_size = int(sino.shape[axis] / level)
     shape = [dx, dz]
-    shape[axis] = dim
+    shape[axis] = dim_new_size
     downsampled_data = cp.empty(shape, dtype="float32")
 
     block_x = 8
