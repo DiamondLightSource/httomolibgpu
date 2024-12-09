@@ -28,8 +28,6 @@ cupy_run = cupywrapper.cupy_run
 
 from unittest.mock import Mock
 
-from httomolibgpu.misc.morph import data_resampler
-
 if cupy_run:
     from httomolibgpu.cuda_kernels import load_cuda_module
     from cupyx.scipy.ndimage import shift, gaussian_filter
@@ -146,29 +144,21 @@ def find_center_vo(
     _sino_cs = gaussian_filter(_sino, (3, 1), mode="reflect")
     _sino_fs = gaussian_filter(_sino, (2, 2), mode="reflect")
 
-    # Downsampling here by averaging along a chosen dimension
-    # NOTE: the gpu implementation of _downsample is erroneuos, needs to be re-written
-    # if dsp_angle > 1:
-    #     _sino_cs = _downsample(_sino_cs, level=dsp_angle, axis=0)
-    # if dsp_detX > 1:
-    #     _sino_cs = _downsample(_sino_cs, level=dsp_detX, axis=1)
-
+    # Downsampling by averaging along a chosen dimension
     if dsp_angle > 1 or dsp_detX > 1:
-        # NOTE: this can downsample the data but it is not what is implemented in the original code, so result is slightly different
-        # dsp_angle_size = _sino_cs.shape[0] // dsp_angle
-        # dsp_detX_size = _sino_cs.shape[1] // dsp_detX
-        # _sino_cs = data_resampler(
-        #     _sino_cs, [dsp_angle_size, dsp_detX_size], axis=1, interpolation="linear"
-        # )
-        _sino_cs_numpy = _downsample_numpy(
-            _sino_cs.get(), dsp_angle, dsp_detX
-        )  # this is the original CPU implementation
-        _sino_cs = cp.asarray(_sino_cs_numpy, dtype=cp.float32)
+        _sino_cs = _downsample(_sino_cs, dsp_angle, dsp_detX)
 
-    # NOTE: this is correct when we do not run any CUDA kernels, hence the performance is suboptimal
+    # NOTE: the gpu implementation of _downsample kernel bellow is erroneuos (different results with each run), needs to be re-written
+    # if dsp_angle > 1:
+    #     _sino_cs = _downsample_kernel(_sino_cs, level=dsp_angle, axis=0)
+    # if dsp_detX > 1:
+    #     _sino_cs = _downsample_kernel(_sino_cs, level=dsp_detX, axis=1)
+
+    # NOTE: this is correct implementation that avoids running any CUDA kernels. The performance is suboptimal
     init_cen = _search_coarse(_sino_cs, start_cor, stop_cor, ratio, drop)
 
-    # NOTE: a different to the expected result, not investigated why
+    # NOTE: similar to the coarse module above, this is currently a correct function
+    # but it is NOT using CUDA kernels written. Therefore some kernels re-writing is needed.
     fine_cen = _search_fine(
         _sino_fs, fine_srange, step, float(init_cen) * dsp_detX + off_set, ratio, drop
     )
@@ -204,7 +194,7 @@ def _search_coarse(sino, smin, smax, ratio, drop):
     list_shift = 2.0 * (list_cor - cen_fliplr)
     list_metric = cp.empty(list_shift.shape, dtype=cp.float32)
 
-    # NOTE: this gives a different result to the CPU code, also works with half data and half mask
+    # NOTE: this gives a different result to the CPU code, also works with a half data and a half mask
     # _calculate_metric(list_shift, sino, flip_sino, comp_sino, mask, list_metric)
 
     # This essentially repeats the CPU code... probably not optimal but correct
@@ -234,17 +224,32 @@ def _search_fine(sino, srad, step, init_cen, ratio, drop):
 
     flip_sino = cp.ascontiguousarray(cp.fliplr(sino))
     comp_sino = cp.ascontiguousarray(cp.flipud(sino))
-    mask = _create_mask(2 * nrow, ncol, 0.5 * ratio * ncol, drop)
+    mask = _create_mask_numpy(2 * nrow, ncol, 0.5 * ratio * ncol, drop)
+    mask = cp.asarray(mask, dtype=cp.float32)
 
     cen_fliplr = (ncol - 1.0) / 2.0
-    srad = max(min(abs(float(srad)), ncol / 4.0), 1.0)
-    step = max(min(abs(step), srad), 0.1)
-    init_cen = max(min(init_cen, ncol - srad - 1), srad)
-    list_cor = init_cen + cp.arange(-srad, srad + step, step, dtype=np.float32)
+    # NOTE: those are different to new implementation
+    # srad = max(min(abs(float(srad)), ncol / 4.0), 1.0)
+    # step = max(min(abs(step), srad), 0.1)
+    srad = np.clip(np.abs(srad), 1, ncol // 10 - 1)
+    step = np.clip(np.abs(step), 0.1, 1.1)
+    init_cen = np.clip(init_cen, srad, ncol - srad - 1)
+    list_cor = init_cen + cp.arange(-srad, srad + step, step, dtype=cp.float32)
     list_shift = 2.0 * (list_cor - cen_fliplr)
     list_metric = cp.empty(list_shift.shape, dtype="float32")
 
-    _calculate_metric(list_shift, sino, flip_sino, comp_sino, mask, out=list_metric)
+    for i, shift_l in enumerate(list_shift):
+        sino_shift = shift(flip_sino, (0, shift_l), order=3, prefilter=True)
+        if shift_l >= 0:
+            shift_int = int(cp.ceil(shift_l))
+            sino_shift[:, :shift_int] = comp_sino[:, :shift_int]
+        else:
+            shift_int = int(cp.floor(shift_l))
+            sino_shift[:, shift_int:] = comp_sino[:, shift_int:]
+        mat1 = cp.vstack((sino, sino_shift))
+        list_metric[i] = cp.mean(cp.abs(fftshift(fft2(mat1))) * mask)
+
+    # _calculate_metric(list_shift, sino, flip_sino, comp_sino, mask, out=list_metric)
     cor = list_cor[cp.argmin(list_metric)]
     return cor
 
@@ -422,7 +427,7 @@ def _calculate_metric(list_shift, sino1, sino2, sino3, mask, out):
         )
 
 
-def _downsample_numpy(image, dsp_fact0, dsp_fact1):
+def _downsample(image, dsp_fact0, dsp_fact1):
     """Downsample an image by averaging.
 
     Parameters
@@ -436,8 +441,8 @@ def _downsample_numpy(image, dsp_fact0, dsp_fact1):
         image_dsp : Downsampled image.
     """
     (height, width) = image.shape
-    dsp_fact0 = np.clip(np.int16(dsp_fact0), 1, height // 2)
-    dsp_fact1 = np.clip(np.int16(dsp_fact1), 1, width // 2)
+    dsp_fact0 = cp.clip(cp.int16(dsp_fact0), 1, height // 2)
+    dsp_fact1 = cp.clip(cp.int16(dsp_fact1), 1, width // 2)
     height_dsp = height // dsp_fact0
     width_dsp = width // dsp_fact1
     if dsp_fact0 == 1 and dsp_fact1 == 1:
@@ -452,7 +457,7 @@ def _downsample_numpy(image, dsp_fact0, dsp_fact1):
     return image_dsp
 
 
-def _downsample(sino, level, axis):
+def _downsample_kernel(sino, level, axis):
     assert sino.dtype == cp.float32, "single precision floating point input required"
     assert sino.flags["C_CONTIGUOUS"], "list_shift must be C-contiguous"
 
