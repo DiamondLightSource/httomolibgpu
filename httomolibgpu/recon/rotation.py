@@ -33,7 +33,7 @@ if cupy_run:
     from cupyx.scipy.ndimage import shift, gaussian_filter
     from skimage.registration import phase_cross_correlation
     from cupyx.scipy.fftpack import get_fft_plan
-    from cupyx.scipy.fft import fft, rfft2, fft2, fftshift
+    from cupyx.scipy.fft import rfft2, fft2, fftshift
 else:
     load_cuda_module = Mock()
     shift = Mock()
@@ -58,7 +58,7 @@ __all__ = [
 def find_center_vo(
     data: cp.ndarray,
     ind: Optional[int] = None,
-    average_radius: int = 5,
+    average_radius: Optional[int] = 0,
     cor_initialisation_value: Optional[float] = None,
     smin: int = -100,
     smax: int = 100,
@@ -68,7 +68,7 @@ def find_center_vo(
     drop: int = 20,
 ) -> float:
     """
-    Find rotation axis location (aka centre of rotation) using Nghia Vo's method. See the paper
+    Find the rotation axis location (aka the centre of rotation) using Nghia Vo's method. See the paper
     :cite:`vo2014reliable`.
 
     Parameters
@@ -78,7 +78,7 @@ def find_center_vo(
     ind : int, optional
         Index of the slice to be used to estimate the CoR. If None is given, then the central sinogram will be extracted from the data array with a possible averaging, see .
     average_radius : int, optional
-        Averaging multiple sinograms around the sinogram defined by ind parameter to improve the signal-to-noise ratio. It is sensible to have this parameter to be less than 10.
+        Averaging multiple sinograms around the ind-indexed sinogram to improve the signal-to-noise ratio. It is recommended to keep this parameter smaller than 10.
     cor_initialisation_value : float, optional
         The initial approximation for the centre of rotation. If the value is None, use the horizontal centre of the projection/sinogram image.
     smin : int, optional
@@ -162,7 +162,11 @@ def find_center_vo(
     fine_cen = _search_fine(
         _sino_fs, fine_srange, step, float(init_cen) * dsp_detX + off_set, ratio, drop
     )
-    return cp.asnumpy(fine_cen)
+    cen_np = np.float32(cp.asnumpy(fine_cen))
+    if cen_np == 0.0:
+        return cor_initialisation_value
+    else:
+        return cen_np
 
 
 def _search_coarse(sino, smin, smax, ratio, drop):
