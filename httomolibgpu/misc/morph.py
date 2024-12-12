@@ -121,8 +121,12 @@ def data_resampler(
     Returns:
         cp.ndarray: Up/Down-scaled 3D cupy array
     """
-    if data.ndim != 3:
-        raise ValueError("only 3D data is supported")
+    expanded = False
+    # if 2d data is given it is extended into a 3D array along the vertical dimension
+    if data.ndim == 2:
+        expanded = True
+        data = cp.expand_dims(data, 1)
+        axis = 1
 
     N, M, Z = cp.shape(data)
 
@@ -214,4 +218,6 @@ def data_resampler(
                 res, [newshape[0], newshape[1]], order="C"
             )
 
+    if expanded:
+        scaled_data = cp.squeeze(scaled_data, axis=axis)
     return scaled_data

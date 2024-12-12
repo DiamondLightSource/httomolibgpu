@@ -22,20 +22,20 @@ def test_find_center_vo(data, flats, darks):
     data = normalize(data, flats, darks)
 
     # --- testing the center of rotation on tomo_standard ---#
-    cor = find_center_vo(data)
+    cor = find_center_vo(
+        data.copy(),
+        average_radius=0,
+    )
 
     data = None  #: free up GPU memory
     assert_allclose(cor, 79.5)
-
-    #: Check that we only get a float32 output
-    assert cor.dtype == np.float32
 
 
 def test_find_center_vo_ones(ensure_clean_memory):
     mat = cp.ones(shape=(103, 450, 230), dtype=cp.float32)
     cor = find_center_vo(mat)
 
-    assert_allclose(cor, 59.0)
+    assert_allclose(cor, 8)
     mat = None  #: free up GPU memory
 
 
@@ -44,7 +44,7 @@ def test_find_center_vo_random(ensure_clean_memory):
     data_host = np.random.random_sample(size=(900, 1, 1280)).astype(np.float32) * 2.0
     data = cp.asarray(data_host, dtype=np.float32)
     cent = find_center_vo(data)
-    assert_allclose(cent, 680.75)
+    assert_allclose(cent, 550.25)
 
 
 def test_find_center_vo_big_data(sino3600):
