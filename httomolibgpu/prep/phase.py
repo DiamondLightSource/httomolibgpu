@@ -128,7 +128,6 @@ def paganin_filter_savu(
     # Note: this takes considerable time on GPU...
     data = cp.pad(data, ((0, 0), (pad_y, pad_y), (pad_x, pad_x)), mode=pad_method)
 
-    # Define array to hold result, which will not have the padding applied to it
     precond_kernel_float = cp.ElementwiseKernel(
         "T data",
         "T out",

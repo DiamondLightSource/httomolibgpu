@@ -37,7 +37,8 @@ classifiers = [
 requires-python = ">=3.10"
 dynamic = ["version"]
 dependencies = [
-    "cupy",
+    "cupy==12.3.0",
+    "nvtx",
     "numpy",
     "scipy",
     "pillow",
