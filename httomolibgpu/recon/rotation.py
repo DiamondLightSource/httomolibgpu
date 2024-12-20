@@ -821,21 +821,29 @@ def find_center_pc(
     tol: float = 0.5,
     rotc_guess: Union[float, Optional[str]] = None,
 ) -> float:
-    """Find rotation axis location by finding the offset between the first
+    """
+    Find rotation axis location by finding the offset between the first
     projection and a mirrored projection 180 degrees apart using
     phase correlation in Fourier space.
     The `phase_cross_correlation` function uses cross-correlation in Fourier
     space, optionally employing an upsampled matrix-multiplication DFT to
     achieve arbitrary subpixel precision. See :cite:`guizar2008efficient`.
 
-    Args:
-        proj1 (cp.ndarray): Projection from the 0th degree angle.
-        proj2 (cp.ndarray): Projection from the 180th degree angle.
-        tol (float, optional): Subpixel accuracy. Defaults to 0.5.
-        rotc_guess (float, optional): Initial guess value for the rotation center. Defaults to None.
-
-    Returns:
-        float: Rotation axis location.
+    Parameters
+    ----------
+    proj1 : cp.ndarray
+        Projection from the 0th degree angle.
+    proj2 : cp.ndarray
+        Projection from the 180th degree angle.
+    tol : float, optional
+        Subpixel accuracy. Defaults to 0.5.
+    rotc_guess : float, optional
+        Initial guess value for the rotation center. Defaults to None.
+        
+    Returns
+    ----------
+    float
+        Rotation axis location.
     """
     imgshift = 0.0 if rotc_guess is None else rotc_guess - (proj1.shape[1] - 1.0) / 2.0
 

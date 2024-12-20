@@ -104,21 +104,29 @@ def sino_360_to_180(
 def data_resampler(
     data: cp.ndarray, newshape: list, axis: int = 1, interpolation: str = "linear"
 ) -> cp.ndarray:
-    """Down/Up-resampler of the input data implemented through interpn function.
-       Please note that the method will leave the specified axis
-       dimension unchanged, e.g. (128,128,128) -> (128,256,256) for axis = 0 and
-       newshape = [256,256].
+    """
+    Down/Up-resampler of the input data implemented through interpn function.
+    Please note that the method will leave the specified axis
+    dimension unchanged, e.g. (128,128,128) -> (128,256,256) for axis = 0 and
+    newshape = [256,256].
 
-    Args:
-        data (cp.ndarray): 3d cupy array.
-        newshape (list): 2d list that defines the 2D slice shape of new shape data.
-        axis (int, optional): Axis along which the scaling is applied. Defaults to 1.
-        interpolation (str, optional): Selection of interpolation method. Defaults to 'linear'.
+    Parameters
+    ----------
+    data : cp.ndarray 
+        3d cupy array.
+    newshape : list
+        2d list that defines the 2D slice shape of new shape data.
+    axis : int, optional
+        Axis along which the scaling is applied. Defaults to 1.
+    interpolation : str, optional
+        Selection of interpolation method. Defaults to 'linear'.
 
-    Raises:
+    Raises
+    ----------
         ValueError: When data is not 3D
 
-    Returns:
+    Returns
+    ----------
         cp.ndarray: Up/Down-scaled 3D cupy array
     """
     expanded = False
