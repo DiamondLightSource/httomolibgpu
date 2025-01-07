@@ -126,7 +126,7 @@ def data_resampler(
         ValueError: When data is not 3D
 
     Returns
-    ----------
+    -------
         cp.ndarray: Up/Down-scaled 3D cupy array
     """
     expanded = False
