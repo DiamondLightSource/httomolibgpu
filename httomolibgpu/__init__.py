@@ -1,4 +1,5 @@
 from httomolibgpu.misc.corr import median_filter, remove_outlier
+from httomolibgpu.misc.denoise import total_variation_ROF, total_variation_PD
 from httomolibgpu.misc.morph import sino_360_to_180, data_resampler
 from httomolibgpu.misc.rescale import rescale_to_int
 from httomolibgpu.prep.alignment import distortion_correction_proj_discorpy

@@ -29,6 +29,7 @@ MOCK_MODULES = [
     "scipy",
     "scipy.fft",
     "scipy.ndimage",
+    "ccpi.filters.regularisersCuPy",
 ]
 
 for mod_name in MOCK_MODULES:
@@ -40,6 +41,7 @@ class CustomMock(mock.Mock):
         return "<cp.ndarray>"
 
 
+sys.modules["ccpi.filters.regularisersCuPy"] = CustomMock()
 sys.modules["cupy"] = CustomMock()
 sys.modules["numpy"] = CustomMock()
 sys.modules["cupyx.scipy.interpolate"] = CustomMock()
@@ -55,6 +57,7 @@ sys.modules["skimage.registration"] = CustomMock()
 # ------------------------------------------------------------------------------
 
 project = "HTTomolibgpu"
+author = "Imaging Team"
 copyright = f"{date.today().year}, Diamond Light Source"
 
 # Specify a base language to help assistive technology
@@ -78,16 +81,16 @@ extensions = [
     # Add links to highlighted source code
     "sphinx.ext.viewcode",
     # Allows a grid layout and dropdown boxes
-    "sphinx_panels",
+    "sphinx_design",
     # copy to clipboard button
     "sphinx_copybutton",
-    #'IPython.sphinxext.ipython_console_highlighting',
-    "sphinx.ext.githubpages",
-    # Generate .nojekyll file for git pages build
+    # use jupyter notebooks
     "sphinxcontrib.bibtex",
     # required for bibtex reference generation
     "nbsphinx",
-    # required for jupyter notebook
+    #'IPython.sphinxext.ipython_console_highlighting',
+    "sphinx.ext.githubpages",
+    # Generate .nojekyll file for git pages build
 ]
 
 bibtex_bibfiles = ["bibliography/references.bib"]

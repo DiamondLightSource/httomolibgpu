@@ -21,6 +21,8 @@
     reference/api
     bibliography/biblio
 
+.. _examples:
+
 .. toctree::
     :caption: Examples
     :titlesonly:

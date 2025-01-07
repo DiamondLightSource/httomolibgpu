@@ -8,6 +8,7 @@ Submodules
    :maxdepth: 4
 
    httomolibgpu.misc.corr
+   httomolibgpu.misc.denoise
    httomolibgpu.misc.morph
    httomolibgpu.misc.rescale
 

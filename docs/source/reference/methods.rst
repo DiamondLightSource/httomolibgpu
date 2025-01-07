@@ -16,6 +16,18 @@ Data correction module
    methods_list/median_filter
    methods_list/outlier_removal
 
+
+.. _data_denoising_module:
+
+Data denoising module
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. toctree::
+   :glob:
+
+   methods_list/total_variation_ROF
+   methods_list/total_variation_PD
+
 .. _stripes_removal_module:
 
 Stripes removal module

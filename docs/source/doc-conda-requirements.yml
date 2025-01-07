@@ -1,15 +1,16 @@
 name: httomolibgpu
 channels:
   - conda-forge
-  - defaults
 dependencies:
-  - python=3.10
+  - python>=3.10
   - sphinx
   - sphinx-book-theme
+  - nbsphinx
+  - pandoc
   - jinja2
-  - sphinx-panels
+  - sphinx-design
   - sphinx-copybutton
   - sphinxcontrib-bibtex
-  - nbsphinx
   - pyyaml
+  - ipython
   - ghp-import

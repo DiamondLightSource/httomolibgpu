@@ -19,5 +19,6 @@ dependencies:
   - ipython
   - h5py
   - astra-toolbox
-  - httomo::tomobar
+  - tomobar
+  - ccpi-regulariser
   - scikit-image

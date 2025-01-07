@@ -24,7 +24,7 @@ jobs:
           with:
             python-version: "3.10"
 
-        - name: httomolib
+        - name: httomolibgpu
           uses: conda-incubator/setup-miniconda@v2
           with:
             auto-update-conda: false
@@ -40,5 +40,5 @@ jobs:
         - name: Run ghp-import
           run: ghp-import -n -p -f ./docs/build
           env:
-            GITHUB_TOKEN: ${{ github.token }}            
-          
+            GITHUB_TOKEN: ${{ github.token }}
+

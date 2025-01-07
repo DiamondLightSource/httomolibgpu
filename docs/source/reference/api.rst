@@ -13,6 +13,7 @@ HTTomolibGPU Modules
    :glob:
 
    ../api/httomolibgpu.misc.corr
+   ../api/httomolibgpu.misc.denoise
    ../api/httomolibgpu.misc.morph
    ../api/httomolibgpu.misc.rescale
    ../api/httomolibgpu.prep.alignment
