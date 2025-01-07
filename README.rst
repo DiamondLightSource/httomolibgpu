@@ -9,8 +9,8 @@ Some of the methods also have been optimised to ensure higher computational effi
 The purpose of HTTomolibGPU
 ===========================
 
-**HTTomolibGPU** can be used as a stand-alone library, see :ref:`examples`.
-However, it has been specifically developed to work together with the `HTTomo <https://diamondlightsource.github.io/httomo/>`_ package as
+Although **HTTomolibGPU** can be used as a stand-alone library, it has been specifically developed to work together with the 
+`HTTomo <https://diamondlightsource.github.io/httomo/>`_ package as
 its backend for data processing. HTTomo is a user interface (UI) written in Python for fast big tomographic data processing using
 MPI protocols or as well serially.
 
