@@ -22,6 +22,12 @@ Data correction module
 Data denoising module
 ^^^^^^^^^^^^^^^^^^^^^^
 
+.. toctree::
+   :glob:
+
+   methods_list/total_variation_ROF
+   methods_list/total_variation_PD
+
 .. _stripes_removal_module:
 
 Stripes removal module

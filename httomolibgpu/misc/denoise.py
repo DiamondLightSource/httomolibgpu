@@ -32,7 +32,6 @@ cupy_run = cupywrapper.cupy_run
 from numpy import float32
 from unittest.mock import Mock
 
-
 from ccpi.filters.regularisersCuPy import ROF_TV, PD_TV
 
 __all__ = [
@@ -49,9 +48,10 @@ def total_variation_ROF(
     gpu_id: Optional[int] = 0,
 ) -> cp.ndarray:
     """
-    Total Variation using Rudin-Osher-Fatemi (ROF) explicit iteration scheme to perform edge-preserving image denoising.
+    Total Variation using Rudin-Osher-Fatemi (ROF) :cite:`rudin1992nonlinear` explicit iteration scheme to perform edge-preserving image denoising.
     This is a gradient-based algorithm for a smoothed TV term which requires a small time marching parameter and a significant number of iterations.
-        
+    See more in :ref:`method_total_variation_ROF`.
+
 
     Parameters
     ----------
@@ -75,38 +75,40 @@ def total_variation_ROF(
     ------
     ValueError
         If the input array is not float32 data type.
-    """    
+    """
 
-    return ROF_TV(data, regularisation_parameter, iterations, time_marching_parameter, gpu_id)
+    return ROF_TV(
+        data, regularisation_parameter, iterations, time_marching_parameter, gpu_id
+    )
 
 
 def total_variation_PD(
     data: cp.ndarray,
     regularisation_parameter: Optional[float] = 1e-05,
     iterations: Optional[int] = 1000,
-    methodTV: Optional[int] = 0,
-    nonneg: Optional[int] = 0,
+    isotropic: Optional[bool] = True,
+    nonnegativity: Optional[bool] = False,
     lipschitz_const: Optional[float] = 8.0,
     gpu_id: Optional[int] = 0,
 ) -> cp.ndarray:
     """
-    Primal Dual algorithm for non-smooth convex Total Variation functional.         
+    Primal Dual algorithm for non-smooth convex Total Variation functional :cite:`chan1999nonlinear`. See more in :ref:`method_total_variation_PD`.
 
     Parameters
     ----------
     data : cp.ndarray
         Input CuPy 3D array of float32 data type.
-    regularisation_parameter : float, optional
+    regularisation_parameter : float
         Regularisation parameter to control the level of smoothing. Defaults to 1e-05.
-    iterations : int, optional
+    iterations : int
         The number of iterations. Defaults to 1000.
-    methodTV : int, optional
-        Choose between isotropic (0) or anisotropic (1) case for the TV norm. Defaults to isotropic (0).
-    nonneg  : int, optional
-        Enable non-negativity in updates by selecting 1. Defaults to 0.
-    lipschitz_const : float, optional
+    isotropic : bool
+        Choose between isotropic or anisotropic TV norm. Defaults to isotropic.
+    nonnegativity  : bool
+        Enable non-negativity in iterations. Defaults to False.
+    lipschitz_const : float
         Lipschitz constant to control convergence. Defaults to 8.
-    gpu_id : int, optional
+    gpu_id : int
         GPU device index to perform processing on. Defaults to 0.
 
     Returns
@@ -118,6 +120,22 @@ def total_variation_PD(
     ------
     ValueError
         If the input array is not float32 data type.
-    """    
+    """
 
-    return PD_TV(data, regularisation_parameter, iterations, methodTV, nonneg, lipschitz_const, gpu_id)
+    methodTV = 0
+    if not isotropic:
+        methodTV = 1
+
+    nonneg = 0
+    if nonnegativity:
+        nonneg = 1
+
+    return PD_TV(
+        data,
+        regularisation_parameter,
+        iterations,
+        methodTV,
+        nonneg,
+        lipschitz_const,
+        gpu_id,
+    )
