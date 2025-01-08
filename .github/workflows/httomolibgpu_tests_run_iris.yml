@@ -34,7 +34,8 @@ jobs:
       - name: Download test data from Zenodo
         run: |
           # Install required tools
-          yum install -y curl jq
+          dnf install -y epel-release
+          dnf install -y curl jq
 
           # Create a directory to store test data
           mkdir -p tests/large_data_archive
