@@ -31,6 +31,43 @@ jobs:
           post-cleanup: 'all'
           init-shell: bash
 
+      - name: Download test data from Zenodo
+        run: |
+          # Install required tools
+          yum install -y curl jq
+
+          # Create a directory to store test data
+          mkdir -p tests/large_data_archive
+          cd tests/large_data_archive
+
+          # Download and process all files from Zenodo
+          echo "Fetching files from Zenodo record 14338424..."
+          curl -s "https://zenodo.org/api/records/14338424" | \
+          jq -r '.files.entries[] | [.key, .links.content, .checksum] | @tsv' | \
+          while IFS=$'\t' read -r filename url checksum; do
+            echo "Downloading ${filename}..."
+            curl -L -o "${filename}" "${url}"
+            
+            # Extract MD5 from checksum string (removes 'md5:' prefix)
+            expected_md5=${checksum#md5:}
+            actual_md5=$(md5sum "${filename}" | cut -d' ' -f1)
+            
+            if [ "${actual_md5}" = "${expected_md5}" ]; then
+              echo "✓ Verified ${filename}"
+            else
+              echo "✗ Checksum verification failed for ${filename}"
+              echo "Expected: ${expected_md5}"
+              echo "Got: ${actual_md5}"
+              exit 1
+            fi
+          done
+
+          # Show downloaded files
+          echo -e "\nDownloaded files:"
+          ls -lh
+
+          cd ../..
+
       - name: Install httomolibgpu
         run: |
           pip install .[dev]
