@@ -45,6 +45,10 @@ jobs:
           pip install .[dev]
           micromamba list
 
-      - name: Run tests
+      - name: Run unit tests on small data
         run: |
           pytest tests/
+
+      - name: Run Zenodo tests
+        run: |
+          pytest zenodo-tests/
