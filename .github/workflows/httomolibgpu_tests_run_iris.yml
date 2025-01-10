@@ -40,10 +40,10 @@ jobs:
         run: |
           chmod +x ./.scripts/download_zenodo.py
 
-          ./.scripts/download_zenodo.py tests/large_data_archive
+          ./.scripts/download_zenodo.py zenodo-tests/large_data_archive
 
           echo -e "\nDownloaded files:"
-          ls -lh tests/large_data_archive
+          ls -lh zenodo-tests/large_data_archive
 
       - name: Install httomolibgpu
         run: |
