@@ -1,9 +1,6 @@
-name: httomolibgpu tests
+name: Main Branch Tests
 on:
   push:
-    branches:
-      - main
-  pull_request:
     branches:
       - main
 
@@ -21,8 +18,7 @@ jobs:
         shell: bash -l {0}
 
     steps:
-      - name: Checkout repository code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up CUDA environment
         run: |
@@ -36,19 +32,16 @@ jobs:
           post-cleanup: 'all'
           init-shell: bash
 
+      - name: Download test data from Zenodo
+        run: |
+          chmod +x ./.scripts/download_zenodo.py
+          ./.scripts/download_zenodo.py zenodo-tests/large_data_archive
+
       - name: Install httomolibgpu
         run: |
           pip install .[dev]
           micromamba list
 
-      - name: Run unit tests on small data
+      - name: Run all tests (including Zenodo)
         run: |
-          pytest tests/
-
-      # Optional: Run Zenodo tests only if PR has a label
-      - name: Download and run Zenodo tests
-        if: contains(github.event.pull_request.labels.*.name, 'run-zenodo-tests')
-        run: |
-          chmod +x ./.scripts/download_zenodo.py
-          ./.scripts/download_zenodo.py zenodo-tests/large_data_archive
-          pytest zenodo-tests/
+          pytest tests/ zenodo-tests/
