@@ -6,11 +6,11 @@ from httomolibgpu.prep.normalize import normalize
 from httomolibgpu.recon.rotation import find_center_vo
 
 
-def test_center_vo_i12LFOV(i12LFOV_data, ensure_clean_memory):
-    projdata = i12LFOV_data[0]
-    flats = i12LFOV_data[2]
-    darks = i12LFOV_data[3]
-    del i12LFOV_data
+def test_center_vo_i12_dataset2(i12_dataset2, ensure_clean_memory):
+    projdata = i12_dataset2[0]
+    flats = i12_dataset2[2]
+    darks = i12_dataset2[3]
+    del i12_dataset2
 
     data_normalised = normalize(projdata, flats, darks, minus_log=False)
     del flats, darks, projdata
@@ -22,11 +22,11 @@ def test_center_vo_i12LFOV(i12LFOV_data, ensure_clean_memory):
     assert cor.dtype == np.float32
 
 
-def test_center_vo_average_i12LFOV(i12LFOV_data, ensure_clean_memory):
-    projdata = i12LFOV_data[0]
-    flats = i12LFOV_data[2]
-    darks = i12LFOV_data[3]
-    del i12LFOV_data
+def test_center_vo_average_i12_dataset2(i12_dataset2, ensure_clean_memory):
+    projdata = i12_dataset2[0]
+    flats = i12_dataset2[2]
+    darks = i12_dataset2[3]
+    del i12_dataset2
 
     data_normalised = normalize(projdata, flats, darks, minus_log=False)
     del flats, darks, projdata
@@ -37,11 +37,11 @@ def test_center_vo_average_i12LFOV(i12LFOV_data, ensure_clean_memory):
     assert cor.dtype == np.float32
 
 
-def test_center_vo_i12_sandstone(i12sandstone_data, ensure_clean_memory):
-    projdata = i12sandstone_data[0]
-    flats = i12sandstone_data[2]
-    darks = i12sandstone_data[3]
-    del i12sandstone_data
+def test_center_vo_i12_dataset1(i12_dataset1, ensure_clean_memory):
+    projdata = i12_dataset1[0]
+    flats = i12_dataset1[2]
+    darks = i12_dataset1[3]
+    del i12_dataset1
 
     data_normalised = normalize(projdata, flats, darks, minus_log=True)
     del flats, darks, projdata
@@ -53,11 +53,11 @@ def test_center_vo_i12_sandstone(i12sandstone_data, ensure_clean_memory):
     assert cor.dtype == np.float32
 
 
-def test_center_vo_i12_geantsim(geantsim_data, ensure_clean_memory):
-    projdata = geantsim_data[0]
-    flats = geantsim_data[2]
-    darks = geantsim_data[3]
-    del geantsim_data
+def test_center_vo_geant4_dataset1(geant4_dataset1, ensure_clean_memory):
+    projdata = geant4_dataset1[0]
+    flats = geant4_dataset1[2]
+    darks = geant4_dataset1[3]
+    del geant4_dataset1
 
     data_normalised = normalize(projdata, flats, darks, minus_log=True)
     del flats, darks, projdata

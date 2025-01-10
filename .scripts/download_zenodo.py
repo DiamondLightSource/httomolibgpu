@@ -19,28 +19,30 @@ def calculate_md5(filename):
 
 def download_zenodo_files(output_dir: Path):
     """
-    Download all files from Zenodo record 14338424 and verify their checksums.
-    
+    Download all files from Zenodo record 14627503 and verify their checksums.
+
     Args:
         output_dir: Directory where files should be downloaded
     """
     try:
-        print("Fetching files from Zenodo record 14338424...")
-        with urllib.request.urlopen("https://zenodo.org/api/records/14338424") as response:
+        print("Fetching files from Zenodo record 14627503...")
+        with urllib.request.urlopen(
+            "https://zenodo.org/api/records/14627503"
+        ) as response:
             data = json.loads(response.read())
-        
+
         # Create output directory if it doesn't exist
         output_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Now 'files' is a list, not a dictionary
         for file_info in data["files"]:
             filename = file_info["key"]  # The 'key' is the filename
             output_file = output_dir / filename
             print(f"Downloading {filename}...")
             url = file_info["links"]["self"]  # The link to download the file
-            
+
             expected_md5 = file_info["checksum"].split(":")[1]  # Extract MD5 hash
-            
+
             # Download the file
             urllib.request.urlretrieve(url, output_file)
 
@@ -53,9 +55,9 @@ def download_zenodo_files(output_dir: Path):
                 print(f"Expected: {expected_md5}")
                 print(f"Got: {actual_md5}")
                 sys.exit(1)
-                
+
         print("\nAll files downloaded and verified successfully!")
-        
+
     except Exception as e:
         print(f"Error: {str(e)}", file=sys.stderr)
         sys.exit(1)
@@ -65,6 +67,6 @@ if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: download_zenodo.py <output_directory>")
         sys.exit(1)
-        
+
     output_dir = Path(sys.argv[1])
     download_zenodo_files(output_dir)
