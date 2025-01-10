@@ -1,0 +1,47 @@
+name: Main Branch Tests
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  iris-gpu:
+    runs-on: iris-gpu
+    container:
+      image: nvidia/cuda:12.6.3-devel-ubi8
+      env:
+        NVIDIA_VISIBLE_DEVICES: ${{ env.NVIDIA_VISIBLE_DEVICES }}
+      options: --gpus all --runtime=nvidia
+
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up CUDA environment
+        run: |
+          echo "LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+
+      - name: Create conda environment
+        uses: mamba-org/setup-micromamba@v1
+        with:
+          environment-file: conda/environment.yml
+          environment-name: httomo
+          post-cleanup: 'all'
+          init-shell: bash
+
+      - name: Download test data from Zenodo
+        run: |
+          chmod +x ./.scripts/download_zenodo.py
+          ./.scripts/download_zenodo.py zenodo-tests/large_data_archive
+
+      - name: Install httomolibgpu
+        run: |
+          pip install .[dev]
+          micromamba list
+
+      - name: Run all tests (including Zenodo)
+        run: |
+          pytest tests/ zenodo-tests/
