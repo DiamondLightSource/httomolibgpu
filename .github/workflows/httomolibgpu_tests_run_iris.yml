@@ -36,15 +36,6 @@ jobs:
           post-cleanup: 'all'
           init-shell: bash
 
-      - name: Download test data from Zenodo
-        run: |
-          chmod +x ./.scripts/download_zenodo.py
-
-          ./.scripts/download_zenodo.py zenodo-tests/large_data_archive
-
-          echo -e "\nDownloaded files:"
-          ls -lh zenodo-tests/large_data_archive
-
       - name: Install httomolibgpu
         run: |
           pip install .[dev]
@@ -54,6 +45,10 @@ jobs:
         run: |
           pytest tests/
 
-      - name: Run Zenodo tests
+      # Optional: Run Zenodo tests only if PR has a label
+      - name: Download and run Zenodo tests
+        if: contains(github.event.pull_request.labels.*.name, 'run-zenodo-tests')
         run: |
+          chmod +x ./.scripts/download_zenodo.py
+          ./.scripts/download_zenodo.py zenodo-tests/large_data_archive
           pytest zenodo-tests/
