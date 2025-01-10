@@ -21,10 +21,6 @@ jobs:
       - name: Checkout repository code
         uses: actions/checkout@v4
 
-      - name: Set up CUDA environment
-        run: |
-          echo "LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH" >> $GITHUB_ENV
-
       - name: Create conda environment
         uses: mamba-org/setup-micromamba@v1
         with:
