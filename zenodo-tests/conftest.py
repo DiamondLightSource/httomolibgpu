@@ -12,49 +12,50 @@ def test_data_path():
 
 
 @pytest.fixture(scope="session")
-def data_i12LFOV_file(test_data_path):
-    in_file = os.path.join(test_data_path, "i12LFOV.npz")
+def i12_dataset1_file(test_data_path):
+    in_file = os.path.join(test_data_path, "i12_dataset1.npz")
     return np.load(in_file)
 
-
-@pytest.fixture(scope="session")
-def data_i12_sandstone_file(test_data_path):
-    in_file = os.path.join(test_data_path, "i12_sandstone_50sinoslices.npz")
-    return np.load(in_file)
-
-
-@pytest.fixture(scope="session")
-def data_geant4sim_file(test_data_path):
-    in_file = os.path.join(test_data_path, "geant4_640_540_proj360.npz")
-    return np.load(in_file)
 
 @pytest.fixture
-def i12LFOV_data(data_i12LFOV_file):
+def i12_dataset1(i12_dataset1_file):
     return (
-        cp.asarray(data_i12LFOV_file["projdata"]),
-        data_i12LFOV_file["angles"],
-        cp.asarray(data_i12LFOV_file["flats"]),
-        cp.asarray(data_i12LFOV_file["darks"]),
+        cp.asarray(i12_dataset1_file["projdata"]),
+        i12_dataset1_file["angles"],
+        cp.asarray(i12_dataset1_file["flats"]),
+        cp.asarray(i12_dataset1_file["darks"]),
     )
 
 
+@pytest.fixture(scope="session")
+def i12_dataset2_file(test_data_path):
+    in_file = os.path.join(test_data_path, "i12_dataset2.npz")
+    return np.load(in_file)
+
+
 @pytest.fixture
-def i12sandstone_data(data_i12_sandstone_file):
+def i12_dataset2(i12_dataset2_file):
     return (
-        cp.asarray(data_i12_sandstone_file["projdata"]),
-        data_i12_sandstone_file["angles"],
-        cp.asarray(data_i12_sandstone_file["flats"]),
-        cp.asarray(data_i12_sandstone_file["darks"]),
+        cp.asarray(i12_dataset2_file["projdata"]),
+        i12_dataset2_file["angles"],
+        cp.asarray(i12_dataset2_file["flats"]),
+        cp.asarray(i12_dataset2_file["darks"]),
     )
 
 
+@pytest.fixture(scope="session")
+def geant4_dataset1_file(test_data_path):
+    in_file = os.path.join(test_data_path, "geant4_dataset1.npz")
+    return np.load(in_file)
+
+
 @pytest.fixture
-def geantsim_data(data_geant4sim_file):
+def geant4_dataset1(geant4_dataset1_file):
     return (
-        cp.asarray(data_geant4sim_file["projdata"]),
-        data_geant4sim_file["angles"],
-        cp.asarray(data_geant4sim_file["flats"]),
-        cp.asarray(data_geant4sim_file["darks"]),
+        cp.asarray(geant4_dataset1_file["projdata"]),
+        geant4_dataset1_file["angles"],
+        cp.asarray(geant4_dataset1_file["flats"]),
+        cp.asarray(geant4_dataset1_file["darks"]),
     )
 
 
