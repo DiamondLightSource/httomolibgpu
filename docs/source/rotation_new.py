@@ -33,16 +33,13 @@ if cupy_run:
     from cupyx.scipy.ndimage import shift, gaussian_filter
     from skimage.registration import phase_cross_correlation
     from cupyx.scipy.fftpack import get_fft_plan
-    from cupyx.scipy.fft import rfft2, fft2, fftshift
+    from cupyx.scipy.fft import rfft2
 else:
     load_cuda_module = Mock()
     shift = Mock()
     gaussian_filter = Mock()
     phase_cross_correlation = Mock()
     get_fft_plan = Mock()
-    fft2 = Mock()
-    fftshift = Mock()
-    fft = Mock()
     rfft2 = Mock()
 
 import math
@@ -58,29 +55,23 @@ __all__ = [
 def find_center_vo(
     data: cp.ndarray,
     ind: Optional[int] = None,
-    average_radius: Optional[int] = 0,
-    cor_initialisation_value: Optional[float] = None,
-    smin: int = -100,
-    smax: int = 100,
+    smin: int = -50,
+    smax: int = 50,
     srad: float = 6.0,
     step: float = 0.25,
     ratio: float = 0.5,
     drop: int = 20,
-) -> np.float32:
+) -> float:
     """
-    Find the rotation axis location (aka the centre of rotation) using Nghia Vo's method. See the paper
+    Find rotation axis location (aka CoR) using Nghia Vo's method. See the paper
     :cite:`vo2014reliable`.
 
     Parameters
     ----------
     data : cp.ndarray
-        3D [angles, detY, detX] tomographic data or a 2D [angles, detX] sinogram as a CuPy array.
+        3D tomographic data or a 2D sinogram as a CuPy array.
     ind : int, optional
-        Index of the slice to be used to estimate the CoR. If None is given, then the central sinogram will be extracted from the data array with a possible averaging, see .
-    average_radius : int, optional
-        Averaging multiple sinograms around the ind-indexed sinogram to improve the signal-to-noise ratio. It is recommended to keep this parameter smaller than 10.
-    cor_initialisation_value : float, optional
-        The initial approximation for the centre of rotation. If the value is None, use the horizontal centre of the projection/sinogram image.
+        Index of the slice to be used to estimate the CoR.
     smin : int, optional
         Coarse search radius. Reference to the horizontal center of
         the sinogram.
@@ -99,93 +90,57 @@ def find_center_vo(
 
     Returns
     -------
-    float32
-        Rotation axis location with a subpixel precision.
+    float
+        Rotation axis location.
     """
-    # if 2d sinogram is given it is extended into a 3D array along the vertical dimension
     if data.ndim == 2:
         data = cp.expand_dims(data, 1)
         ind = 0
 
-    angles_tot, detY_size, detX_size = data.shape
+    height = data.shape[1]
 
     if ind is None:
-        ind = detY_size // 2  # middle slice index
-        # averaging the data here to improve SNR
-        if 2 * average_radius >= detY_size:
-            # reduce the averaging radius
-            average_radius = ind
-        if ind > 0:
-            _sino = cp.mean(
-                data[:, ind - average_radius : ind + average_radius, :], axis=1
-            )
+        ind = height // 2
+        if height > 10:
+            _sino = cp.mean(data[:, ind - 5 : ind + 5, :], axis=1)
         else:
             _sino = data[:, ind, :]
     else:
         _sino = data[:, ind, :]
 
-    if cor_initialisation_value is None:
-        cor_initialisation_value = (detX_size - 1.0) / 2.0
-
-    # downsampling ratios
-    dsp_angle = 1
-    dsp_detX = 1
-    if detX_size > 2000:
-        dsp_detX = 4
-    if angles_tot > 2000:
-        dsp_angle = 2
-
-    start_cor = np.int16(np.floor(1.0 * (cor_initialisation_value + smin) / dsp_detX))
-    stop_cor = np.int16(np.ceil(1.0 * (cor_initialisation_value + smax) / dsp_detX))
-    fine_srange = max(srad, dsp_detX)
-    off_set = 0.5 * dsp_detX if dsp_detX > 1 else 0.0
-
-    # initiate denoising
     _sino_cs = gaussian_filter(_sino, (3, 1), mode="reflect")
     _sino_fs = gaussian_filter(_sino, (2, 2), mode="reflect")
 
-    # Downsampling by averaging along a chosen dimension
-    if dsp_angle > 1 or dsp_detX > 1:
-        _sino_cs = _downsample(_sino_cs, dsp_angle, dsp_detX)
-
-    # NOTE: this is correct implementation that avoids running any CUDA kernels. The performance is suboptimal
-    init_cen = _search_coarse(_sino_cs, start_cor, stop_cor, ratio, drop)
-
-    # NOTE: similar to the coarse module above, this is currently a correct function
-    # but it is NOT using CUDA kernels written. Therefore some kernels re-writing is needed.
-    fine_cen = _search_fine(
-        _sino_fs, fine_srange, step, float(init_cen) * dsp_detX + off_set, ratio, drop
-    )
-    cen_np = np.float32(cp.asnumpy(fine_cen))
-    if cen_np == 0.0:
-        return np.float32(cor_initialisation_value)
+    if _sino.shape[0] * _sino.shape[1] > 4e6:
+        # data is large, so downsample it before performing search for
+        # centre of rotation
+        _sino_coarse = _downsample(_sino_cs, 2, 1)
+        init_cen = _search_coarse(_sino_coarse, smin / 4.0, smax / 4.0, ratio, drop)
+        fine_cen = _search_fine(_sino_fs, srad, step, init_cen * 4.0, ratio, drop)
     else:
-        return cen_np
+        init_cen = _search_coarse(_sino_cs, smin, smax, ratio, drop)
+        fine_cen = _search_fine(_sino_fs, srad, step, init_cen, ratio, drop)
+
+    return cp.asnumpy(fine_cen)
 
 
 def _search_coarse(sino, smin, smax, ratio, drop):
     (nrow, ncol) = sino.shape
     flip_sino = cp.ascontiguousarray(cp.fliplr(sino))
     comp_sino = cp.ascontiguousarray(cp.flipud(sino))
-
     mask = _create_mask(2 * nrow, ncol, 0.5 * ratio * ncol, drop)
+
     cen_fliplr = (ncol - 1.0) / 2.0
-    start_cor, stop_cor = np.sort((smin, smax))
-    start_cor = np.int16(np.clip(start_cor, 0, ncol - 1))
-    stop_cor = np.int16(np.clip(stop_cor, 0, ncol - 1))
-    list_cor = cp.arange(start_cor, stop_cor + 1.0, dtype=cp.float32)
+    smin_clip_val = max(min(smin + cen_fliplr, ncol - 1), 0)
+    smin = smin_clip_val - cen_fliplr
+    smax_clip_val = max(min(smax + cen_fliplr, ncol - 1), 0)
+    smax = smax_clip_val - cen_fliplr
+    start_cor = ncol // 2 + smin
+    stop_cor = ncol // 2 + smax
+    list_cor = cp.arange(start_cor, stop_cor + 0.5, 0.5, dtype=cp.float32)
     list_shift = 2.0 * (list_cor - cen_fliplr)
     list_metric = cp.empty(list_shift.shape, dtype=cp.float32)
-
-    sino_sino = cp.vstack((sino, flip_sino))
-    for i, shift in enumerate(list_shift):
-        _sino = sino_sino[nrow:]
-        _sino[...] = cp.roll(flip_sino, int(shift), axis=1)
-        if shift >= 0:
-            _sino[:, :shift] = comp_sino[:, :shift]
-        else:
-            _sino[:, shift:] = comp_sino[:, shift:]
-        list_metric[i] = cp.mean(cp.abs(fftshift(fft2(sino_sino))) * mask)
+    _calculate_metric(list_shift, sino, flip_sino, comp_sino, mask, list_metric)
 
     minpos = cp.argmin(list_metric)
     if minpos == 0:
@@ -206,10 +161,10 @@ def _search_fine(sino, srad, step, init_cen, ratio, drop):
     mask = _create_mask(2 * nrow, ncol, 0.5 * ratio * ncol, drop)
 
     cen_fliplr = (ncol - 1.0) / 2.0
-    srad = np.clip(np.abs(srad), 1, ncol // 10 - 1)
-    step = np.clip(np.abs(step), 0.1, 1.1)
-    init_cen = np.clip(init_cen, srad, ncol - srad - 1)
-    list_cor = init_cen + cp.arange(-srad, srad + step, step, dtype=cp.float32)
+    srad = max(min(abs(float(srad)), ncol / 4.0), 1.0)
+    step = max(min(abs(step), srad), 0.1)
+    init_cen = max(min(init_cen, ncol - srad - 1), srad)
+    list_cor = init_cen + cp.arange(-srad, srad + step, step, dtype=np.float32)
     list_shift = 2.0 * (list_cor - cen_fliplr)
     list_metric = cp.empty(list_shift.shape, dtype="float32")
 
@@ -218,23 +173,7 @@ def _search_fine(sino, srad, step, init_cen, ratio, drop):
     return cor
 
 
-def _create_mask_numpy(nrow, ncol, radius, drop):
-    du = 1.0 / ncol
-    dv = (nrow - 1.0) / (nrow * 2.0 * np.pi)
-    cen_row = np.int16(np.ceil(nrow / 2.0) - 1)
-    cen_col = np.int16(np.ceil(ncol / 2.0) - 1)
-    drop = min(drop, np.int16(np.ceil(0.05 * nrow)))
-    mask = np.zeros((nrow, ncol), dtype="float32")
-    for i in range(nrow):
-        pos = np.int16(np.round(((i - cen_row) * dv / radius) / du))
-        (pos1, pos2) = np.clip(np.sort((-pos + cen_col, pos + cen_col)), 0, ncol - 1)
-        mask[i, pos1 : pos2 + 1] = 1.0
-    mask[cen_row - drop : cen_row + drop + 1, :] = 0.0
-    mask[:, cen_col - 1 : cen_col + 2] = 0.0
-    return mask
-
-
-def _create_mask_half(nrow, ncol, radius, drop):
+def _create_mask(nrow, ncol, radius, drop):
     du = 1.0 / ncol
     dv = (nrow - 1.0) / (nrow * 2.0 * np.pi)
     cen_row = int(math.ceil(nrow / 2.0) - 1)
@@ -265,37 +204,6 @@ def _create_mask_half(nrow, ncol, radius, drop):
     return mask
 
 
-def _create_mask(nrow, ncol, radius, drop):
-    du = 1.0 / ncol
-    dv = (nrow - 1.0) / (nrow * 2.0 * np.pi)
-    cen_row = int(math.ceil(nrow / 2.0) - 1)
-    cen_col = int(math.ceil(ncol / 2.0) - 1)
-    drop = min([drop, int(math.ceil(0.05 * nrow))])
-
-    block_x = 128
-    block_y = 1
-    block_dims = (block_x, block_y)
-    grid_x = (ncol + block_x - 1) // block_x
-    grid_y = nrow
-    grid_dims = (grid_x, grid_y)
-    mask = cp.empty((nrow, ncol), dtype="float32")
-    params = (
-        ncol,
-        nrow,
-        cen_col,
-        cen_row,
-        cp.float32(du),
-        cp.float32(dv),
-        cp.float32(radius),
-        cp.float32(drop),
-        mask,
-    )
-    module = load_cuda_module("generate_mask")
-    kernel = module.get_function("generate_mask_full")
-    kernel(grid_dims, block_dims, params)
-    return mask
-
-
 def round_up(x: float) -> int:
     if x >= 0.0:
         return int(math.ceil(x))
@@ -321,9 +229,7 @@ def _calculate_chunks(
 
     available_memory -= shift_size
     freq_domain_size = (
-        # shift_size  # it needs only half (RFFT), but complex64, so it's the same
-        shift_size
-        * 2  # it needs full (FFT), with complex64, so it's double
+        shift_size  # it needs only half (RFFT), but complex64, so it's the same
     )
     fft_plan_size = freq_domain_size
     size_per_shift = 2 * (fft_plan_size + freq_domain_size + shift_size)
@@ -337,30 +243,28 @@ def _calculate_chunks(
     return stop_idx
 
 
-def _calculate_metric(list_shift, sino, flip_sino, comp_sino, mask, out):
+def _calculate_metric(list_shift, sino1, sino2, sino3, mask, out):
     # this tries to simplify - if shift_col is integer, no need to spline interpolate
     assert list_shift.dtype == cp.float32, "shifts must be single precision floats"
-    assert sino.dtype == cp.float32, "sino must be float32"
-    assert flip_sino.dtype == cp.float32, "flip_sino must be float32"
-    assert comp_sino.dtype == cp.float32, "comp_sino must be float32"
-    assert out.dtype == cp.float32, "out must be float32"
-    assert flip_sino.flags["C_CONTIGUOUS"], "flip_sino must be C-contiguous"
-    assert comp_sino.flags["C_CONTIGUOUS"], "comp_sino must be C-contiguous"
+    assert sino1.dtype == cp.float32, "sino1 must be float32"
+    assert sino2.dtype == cp.float32, "sino1 must be float32"
+    assert sino3.dtype == cp.float32, "sino1 must be float32"
+    assert out.dtype == cp.float32, "sino1 must be float32"
+    assert sino2.flags["C_CONTIGUOUS"], "sino2 must be C-contiguous"
+    assert sino3.flags["C_CONTIGUOUS"], "sino3 must be C-contiguous"
     assert list_shift.flags["C_CONTIGUOUS"], "list_shift must be C-contiguous"
     nshifts = list_shift.shape[0]
-    na1 = sino.shape[0]
-    na2 = flip_sino.shape[0]
+    na1 = sino1.shape[0]
+    na2 = sino2.shape[0]
 
     module = load_cuda_module("center_360_shifts")
     shift_whole_shifts = module.get_function("shift_whole_shifts")
     # note: we don't have to calculate the mean here, as we're only looking for minimum metric.
     # The sum is enough.
     masked_sum_abs_kernel = cp.ReductionKernel(
-        in_params="complex64 x, float32 mask",  # input, complex + mask
-        # in_params="complex64 x, uint16 mask",  # input, complex + mask
+        in_params="complex64 x, uint16 mask",  # input, complex + mask
         out_params="float32 out",  # output, real
-        map_expr="abs(x) * mask",
-        # map_expr="mask ? abs(x) : 0.0f",
+        map_expr="mask ? abs(x) : 0.0f",
         reduce_expr="a + b",
         post_map_expr="out = a",
         identity="0.0f",
@@ -371,14 +275,13 @@ def _calculate_metric(list_shift, sino, flip_sino, comp_sino, mask, out):
     # determine how many shifts we can fit in the available memory
     # and iterate in chunks
     chunks = _calculate_chunks(
-        nshifts, (na1 + na2) * flip_sino.shape[1] * cp.float32().nbytes
+        nshifts, (na1 + na2) * sino2.shape[1] * cp.float32().nbytes
     )
 
-    mat = cp.empty((chunks[0], na1 + na2, flip_sino.shape[1]), dtype=cp.float32)
-    mat[:, :na1, :] = sino
-
+    mat = cp.empty((chunks[0], na1 + na2, sino2.shape[1]), dtype=cp.float32)
+    mat[:, :na1, :] = sino1
     # explicitly create FFT plan here, so it's not cached and clearly re-used
-    plan = get_fft_plan(mat, mat.shape[-2:], axes=(1, 2), value_type="C2C")
+    plan = get_fft_plan(mat, mat.shape[-2:], axes=(1, 2), value_type="R2C")
 
     for i, stop_idx in enumerate(chunks):
         if i > 0:
@@ -390,18 +293,18 @@ def _calculate_metric(list_shift, sino, flip_sino, comp_sino, mask, out):
         size = stop_idx - start_idx
 
         # first, handle the integer shifts without spline in a raw kernel,
-        # and shift in the comp_sino one accordingly
+        # and shift in the sino3 one accordingly
         bx = 128
-        gx = (comp_sino.shape[1] + bx - 1) // bx
+        gx = (sino3.shape[1] + bx - 1) // bx
         shift_whole_shifts(
             grid=(gx, na2, size),  ####
             block=(bx, 1, 1),
             args=(
-                flip_sino,
-                comp_sino,
+                sino2,
+                sino3,
                 list_shift[start_idx:stop_idx],
                 mat[:, na1:, :],
-                comp_sino.shape[1],
+                sino3.shape[1],
                 na1 + na2,
             ),
         )
@@ -411,7 +314,7 @@ def _calculate_metric(list_shift, sino, flip_sino, comp_sino, mask, out):
         for i in range(list_shift_host.shape[0]):
             shift_col = float(list_shift_host[i])
             if not shift_col.is_integer():
-                shifted = shift(flip_sino, (0, shift_col), order=3, prefilter=True)
+                shifted = shift(sino2, (0, shift_col), order=3, prefilter=True)
                 shift_int = round_up(shift_col)
                 if shift_int >= 0:
                     mat[i, na1:, shift_int:] = shifted[:, shift_int:]
@@ -421,42 +324,38 @@ def _calculate_metric(list_shift, sino, flip_sino, comp_sino, mask, out):
         # stack and transform
         # (we do the full sized mat FFT, even though the last chunk may be smaller, to
         # make sure we can re-use the same FFT plan as before)
-        # mat_freq = fft2(mat, axes=(1, 2), norm=None, plan=plan)
-        mat_freq = fftshift(fft2(mat, axes=(1, 2), norm=None, plan=plan), axes=(1, 2))
-
+        mat_freq = rfft2(mat, axes=(1, 2), norm=None, plan=plan)
         masked_sum_abs_kernel(
             mat_freq[:size, :, :], mask, out=out[start_idx:stop_idx], axis=(1, 2)
         )
 
 
-def _downsample(image, dsp_fact0, dsp_fact1):
-    """Downsample an image by averaging.
+def _downsample(sino, level, axis):
+    assert sino.dtype == cp.float32, "single precision floating point input required"
+    assert sino.flags["C_CONTIGUOUS"], "list_shift must be C-contiguous"
 
-    Parameters
-    ----------
-        image : 2D array.
-        dsp_fact0 : downsampling factor along axis 0.
-        dsp_fact1 : downsampling factor along axis 1.
+    dx, dz = sino.shape
+    # Determine the new size, dim, of the downsampled dimension
+    dim = int(sino.shape[axis] / math.pow(2, level))
+    shape = [dx, dz]
+    shape[axis] = dim
+    downsampled_data = cp.empty(shape, dtype="float32")
 
-    Returns
-    ---------
-        image_dsp : Downsampled image.
-    """
-    (height, width) = image.shape
-    dsp_fact0 = cp.clip(cp.int16(dsp_fact0), 1, height // 2)
-    dsp_fact1 = cp.clip(cp.int16(dsp_fact1), 1, width // 2)
-    height_dsp = height // dsp_fact0
-    width_dsp = width // dsp_fact1
-    if dsp_fact0 == 1 and dsp_fact1 == 1:
-        image_dsp = image
-    else:
-        image_dsp = image[0 : dsp_fact0 * height_dsp, 0 : dsp_fact1 * width_dsp]
-        image_dsp = (
-            image_dsp.reshape(height_dsp, dsp_fact0, width_dsp, dsp_fact1)
-            .mean(-1)
-            .mean(1)
-        )
-    return image_dsp
+    block_x = 8
+    block_y = 8
+    block_dims = (block_x, block_y)
+    grid_x = (sino.shape[1] + block_x - 1) // block_x
+    grid_y = (sino.shape[0] + block_y - 1) // block_y
+    grid_dims = (grid_x, grid_y)
+    # 8x8 thread-block, which means 16 "lots" of columns to downsample per
+    # thread-block; 4 bytes per float, so allocate 16*6 = 64 bytes of shared
+    # memeory per thread-block
+    shared_mem_bytes = 64
+    params = (sino, dx, dz, level, downsampled_data)
+    module = load_cuda_module("downsample_sino")
+    kernel = module.get_function("downsample_sino")
+    kernel(grid_dims, block_dims, params, shared_mem=shared_mem_bytes)
+    return downsampled_data
 
 
 ##%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -790,29 +689,21 @@ def find_center_pc(
     tol: float = 0.5,
     rotc_guess: Union[float, Optional[str]] = None,
 ) -> float:
-    """
-    Find rotation axis location by finding the offset between the first
+    """Find rotation axis location by finding the offset between the first
     projection and a mirrored projection 180 degrees apart using
     phase correlation in Fourier space.
     The `phase_cross_correlation` function uses cross-correlation in Fourier
     space, optionally employing an upsampled matrix-multiplication DFT to
     achieve arbitrary subpixel precision. See :cite:`guizar2008efficient`.
 
-    Parameters
-    ----------
-    proj1 : cp.ndarray
-        Projection from the 0th degree angle.
-    proj2 : cp.ndarray
-        Projection from the 180th degree angle.
-    tol : float, optional
-        Subpixel accuracy. Defaults to 0.5.
-    rotc_guess : float, optional
-        Initial guess value for the rotation center. Defaults to None.
+    Args:
+        proj1 (cp.ndarray): Projection from the 0th degree angle.
+        proj2 (cp.ndarray): Projection from the 180th degree angle.
+        tol (float, optional): Subpixel accuracy. Defaults to 0.5.
+        rotc_guess (float, optional): Initial guess value for the rotation center. Defaults to None.
 
-    Returns
-    ----------
-    float
-        Rotation axis location.
+    Returns:
+        float: Rotation axis location.
     """
     imgshift = 0.0 if rotc_guess is None else rotc_guess - (proj1.shape[1] - 1.0) / 2.0
 
