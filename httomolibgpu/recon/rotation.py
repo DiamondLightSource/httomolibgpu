@@ -33,7 +33,7 @@ if cupy_run:
     from cupyx.scipy.ndimage import shift, gaussian_filter
     from skimage.registration import phase_cross_correlation
     from cupyx.scipy.fftpack import get_fft_plan
-    from cupyx.scipy.fft import rfft2, fft2, fftshift
+    from cupyx.scipy.fft import fft2, fftshift
 else:
     load_cuda_module = Mock()
     shift = Mock()
@@ -58,7 +58,7 @@ __all__ = [
 def find_center_vo(
     data: cp.ndarray,
     ind: Optional[int] = None,
-    average_radius: Optional[int] = 0,
+    average_radius: int = 0,
     cor_initialisation_value: Optional[float] = None,
     smin: int = -100,
     smax: int = 100,
@@ -77,24 +77,24 @@ def find_center_vo(
         3D [angles, detY, detX] tomographic data or a 2D [angles, detX] sinogram as a CuPy array.
     ind : int, optional
         Index of the slice to be used to estimate the CoR. If None is given, then the central sinogram will be extracted from the data array with a possible averaging, see .
-    average_radius : int, optional
+    average_radius : int
         Averaging multiple sinograms around the ind-indexed sinogram to improve the signal-to-noise ratio. It is recommended to keep this parameter smaller than 10.
     cor_initialisation_value : float, optional
         The initial approximation for the centre of rotation. If the value is None, use the horizontal centre of the projection/sinogram image.
-    smin : int, optional
+    smin : int
         Coarse search radius. Reference to the horizontal center of
         the sinogram.
-    smax : int, optional
+    smax : int
         Coarse search radius. Reference to the horizontal center of
         the sinogram.
-    srad : float, optional
+    srad : float
         Fine search radius.
-    step : float, optional
+    step : float
         Step of fine searching.
-    ratio : float, optional
+    ratio : float
         The ratio between the FOV of the camera and the size of object.
         It's used to generate the mask.
-    drop : int, optional
+    drop : int
         Drop lines around vertical center of the mask.
 
     Returns
@@ -148,11 +148,8 @@ def find_center_vo(
     if dsp_angle > 1 or dsp_detX > 1:
         _sino_cs = _downsample(_sino_cs, dsp_angle, dsp_detX)
 
-    # NOTE: this is correct implementation that avoids running any CUDA kernels. The performance is suboptimal
     init_cen = _search_coarse(_sino_cs, start_cor, stop_cor, ratio, drop)
 
-    # NOTE: similar to the coarse module above, this is currently a correct function
-    # but it is NOT using CUDA kernels written. Therefore some kernels re-writing is needed.
     fine_cen = _search_fine(
         _sino_fs, fine_srange, step, float(init_cen) * dsp_detX + off_set, ratio, drop
     )
@@ -218,53 +215,6 @@ def _search_fine(sino, srad, step, init_cen, ratio, drop):
     return cor
 
 
-def _create_mask_numpy(nrow, ncol, radius, drop):
-    du = 1.0 / ncol
-    dv = (nrow - 1.0) / (nrow * 2.0 * np.pi)
-    cen_row = np.int16(np.ceil(nrow / 2.0) - 1)
-    cen_col = np.int16(np.ceil(ncol / 2.0) - 1)
-    drop = min(drop, np.int16(np.ceil(0.05 * nrow)))
-    mask = np.zeros((nrow, ncol), dtype="float32")
-    for i in range(nrow):
-        pos = np.int16(np.round(((i - cen_row) * dv / radius) / du))
-        (pos1, pos2) = np.clip(np.sort((-pos + cen_col, pos + cen_col)), 0, ncol - 1)
-        mask[i, pos1 : pos2 + 1] = 1.0
-    mask[cen_row - drop : cen_row + drop + 1, :] = 0.0
-    mask[:, cen_col - 1 : cen_col + 2] = 0.0
-    return mask
-
-
-def _create_mask_half(nrow, ncol, radius, drop):
-    du = 1.0 / ncol
-    dv = (nrow - 1.0) / (nrow * 2.0 * np.pi)
-    cen_row = int(math.ceil(nrow / 2.0) - 1)
-    cen_col = int(math.ceil(ncol / 2.0) - 1)
-    drop = min([drop, int(math.ceil(0.05 * nrow))])
-
-    block_x = 128
-    block_y = 1
-    block_dims = (block_x, block_y)
-    grid_x = (ncol // 2 + 1 + block_x - 1) // block_x
-    grid_y = nrow
-    grid_dims = (grid_x, grid_y)
-    mask = cp.empty((nrow, ncol // 2 + 1), dtype="uint16")
-    params = (
-        ncol,
-        nrow,
-        cen_col,
-        cen_row,
-        cp.float32(du),
-        cp.float32(dv),
-        cp.float32(radius),
-        cp.float32(drop),
-        mask,
-    )
-    module = load_cuda_module("generate_mask")
-    kernel = module.get_function("generate_mask")
-    kernel(grid_dims, block_dims, params)
-    return mask
-
-
 def _create_mask(nrow, ncol, radius, drop):
     du = 1.0 / ncol
     dv = (nrow - 1.0) / (nrow * 2.0 * np.pi)
@@ -321,12 +271,10 @@ def _calculate_chunks(
 
     available_memory -= shift_size
     freq_domain_size = (
-        # shift_size  # it needs only half (RFFT), but complex64, so it's the same
-        shift_size
-        * 2  # it needs full (FFT), with complex64, so it's double
+        shift_size * 2  # it needs full (FFT), with complex64, so it's double
     )
     fft_plan_size = freq_domain_size
-    size_per_shift = 2 * (fft_plan_size + freq_domain_size + shift_size)
+    size_per_shift = 2.5 * (fft_plan_size + freq_domain_size + shift_size)
     nshift_max = available_memory // size_per_shift
     assert nshift_max > 0, "Not enough memory to process"
     num_chunks = int(np.ceil(nshifts / nshift_max))
@@ -357,10 +305,8 @@ def _calculate_metric(list_shift, sino, flip_sino, comp_sino, mask, out):
     # The sum is enough.
     masked_sum_abs_kernel = cp.ReductionKernel(
         in_params="complex64 x, float32 mask",  # input, complex + mask
-        # in_params="complex64 x, uint16 mask",  # input, complex + mask
         out_params="float32 out",  # output, real
         map_expr="abs(x) * mask",
-        # map_expr="mask ? abs(x) : 0.0f",
         reduce_expr="a + b",
         post_map_expr="out = a",
         identity="0.0f",
@@ -421,7 +367,6 @@ def _calculate_metric(list_shift, sino, flip_sino, comp_sino, mask, out):
         # stack and transform
         # (we do the full sized mat FFT, even though the last chunk may be smaller, to
         # make sure we can re-use the same FFT plan as before)
-        # mat_freq = fft2(mat, axes=(1, 2), norm=None, plan=plan)
         mat_freq = fftshift(fft2(mat, axes=(1, 2), norm=None, plan=plan), axes=(1, 2))
 
         masked_sum_abs_kernel(
@@ -789,7 +734,7 @@ def find_center_pc(
     proj2: cp.ndarray,
     tol: float = 0.5,
     rotc_guess: Union[float, Optional[str]] = None,
-) -> float:
+) -> np.float32:
     """
     Find rotation axis location by finding the offset between the first
     projection and a mirrored projection 180 degrees apart using
@@ -811,7 +756,7 @@ def find_center_pc(
 
     Returns
     ----------
-    float
+    np.float32
         Rotation axis location.
     """
     imgshift = 0.0 if rotc_guess is None else rotc_guess - (proj1.shape[1] - 1.0) / 2.0
@@ -831,7 +776,7 @@ def find_center_pc(
     # registered translation with the second image
     center = (proj1.shape[1] + shiftr[0][1] - 1.0) / 2.0
 
-    return center + imgshift
+    return np.float32(center + imgshift)
 
 
 ##%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
