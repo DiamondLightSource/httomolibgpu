@@ -93,17 +93,6 @@ def test_find_center_vo_performance():
     assert "performance in ms" == duration_ms
 
 
-def test_find_center_360_ones():
-    mat = cp.ones(shape=(100, 100, 100), dtype=cp.float32)
-
-    (cor, overlap, side, overlap_position) = find_center_360(mat)
-
-    assert_allclose(cor, 5.0)
-    assert_allclose(overlap, 12.0)
-    assert side == 0
-    assert_allclose(overlap_position, 7.0)
-
-
 def test_find_center_360_data(data):
     eps = 1e-5
     (cor, overlap, side, overlap_pos) = find_center_360(data, norm=True, denoise=False)

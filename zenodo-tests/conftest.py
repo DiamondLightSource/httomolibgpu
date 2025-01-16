@@ -3,9 +3,6 @@ import cupy as cp
 import numpy as np
 import pytest
 
-CUR_DIR = os.path.abspath(os.path.dirname(__file__))
-
-
 def pytest_addoption(parser):
     parser.addoption(
         "--performance",
@@ -33,6 +30,9 @@ def pytest_collection_modifyitems(config, items):
             if "perf" in item.keywords:
                 item.add_marker(skip_perf)
 
+
+#CUR_DIR = os.path.abspath(os.path.dirname(__file__))
+CUR_DIR = "/dls/science/users/kjy41806/zenodo-tests/"
 
 @pytest.fixture(scope="session")
 def test_data_path():
