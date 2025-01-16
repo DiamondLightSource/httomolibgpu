@@ -1,4 +1,4 @@
-name: httomolibgpu quick tests
+name: httomolibgpu zenodo tests
 on:
   pull_request:
     branches:
@@ -34,6 +34,10 @@ jobs:
           pip install .[dev]
           micromamba list
 
-      - name: Run unit tests on small data
+      # Optional: Run Zenodo tests only if PR has a label
+      - name: Download and run Zenodo tests
+        if: contains(github.event.pull_request.labels.*.name, 'run-zenodo-tests')
         run: |
-          pytest tests/
+          chmod +x ./.scripts/download_zenodo.py
+          ./.scripts/download_zenodo.py zenodo-tests/large_data_archive
+          pytest zenodo-tests/

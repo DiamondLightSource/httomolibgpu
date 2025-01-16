@@ -54,15 +54,15 @@ def FBP(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
-    filter_freq_cutoff: Optional[float] = 1.1,
+    filter_freq_cutoff: Optional[float] = 0.35,
     recon_size: Optional[int] = None,
-    recon_mask_radius: Optional[float] = None,
+    recon_mask_radius: Optional[float] = 0.95,
     gpu_id: int = 0,
 ) -> cp.ndarray:
     """
     Perform Filtered Backprojection (FBP) reconstruction using ASTRA toolbox :cite:`van2016fast` and
     ToMoBAR :cite:`kazantsev2020tomographic` wrappers.
-    This is a 3D recon from a CuPy array directly and a custom built filter.
+    This is a 3D recon from the CuPy array directly and using a custom built SINC filter for filtration in Fourier space.
 
     Parameters
     ----------
@@ -72,16 +72,16 @@ def FBP(
         An array of angles given in radians.
     center : float, optional
         The center of rotation (CoR).
-    filter_freq_cutoff : float, optional
-        Cutoff frequency parameter for the sinc filter, the lowest values produce more crispy but noisy reconstruction.
+    filter_freq_cutoff : float
+        Cutoff frequency parameter for the SINC filter, the lower values produce better contrast but noisy reconstruction.
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
-    recon_mask_radius: float, optional
+    recon_mask_radius: float
         The radius of the circular mask that applies to the reconstructed slice in order to crop
-        out some undesirable artifacts. The values outside the diameter will be set to zero.
-        None by default, to see the effect of the mask try setting the value in the range [0.7-1.0].
-    gpu_id : int, optional
+        out some undesirable artifacts. The values outside the given diameter will be set to zero.
+        It is recommended to keep the value in the range [0.7-1.0].
+    gpu_id : int
         A GPU device index to perform operation on.
 
     Returns
@@ -109,7 +109,7 @@ def LPRec(
     angles: np.ndarray,
     center: Optional[float] = None,
     recon_size: Optional[int] = None,
-    recon_mask_radius: Optional[float] = None,
+    recon_mask_radius: Optional[float] = 0.95,
 ) -> cp.ndarray:
     """
     Fourier direct inversion in 3D on unequally spaced (also called as Log-Polar) grids using
@@ -127,10 +127,10 @@ def LPRec(
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
-    recon_mask_radius: float, optional
+    recon_mask_radius: float
         The radius of the circular mask that applies to the reconstructed slice in order to crop
-        out some undesirable artifacts. The values outside the diameter will be set to zero.
-        None by default, to see the effect of the mask try setting the value in the range [0.7-1.0].
+        out some undesirable artifacts. The values outside the given diameter will be set to zero.
+        It is recommended to keep the value in the range [0.7-1.0].
 
     Returns
     -------
