@@ -32,7 +32,12 @@ cupy_run = cupywrapper.cupy_run
 from numpy import float32
 from unittest.mock import Mock
 
-from ccpi.filters.regularisersCuPy import ROF_TV, PD_TV
+if cupy_run:
+    from ccpi.filters.regularisersCuPy import ROF_TV, PD_TV
+else:
+    ROF_TV = Mock()
+    PD_TV = Mock()
+
 
 __all__ = [
     "total_variation_ROF",
