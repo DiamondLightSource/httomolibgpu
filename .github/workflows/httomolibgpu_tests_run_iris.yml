@@ -22,18 +22,28 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create conda environment
-        uses: mamba-org/setup-micromamba@v1
+        uses: mamba-org/setup-micromamba@v2
         with:
           environment-file: conda/environment.yml
           environment-name: httomo
           post-cleanup: 'all'
           init-shell: bash
 
-      - name: Install httomolibgpu
+      - name: Install httomolibgpu & coverage tools
         run: |
           pip install .[dev]
+          pip install coverage
           micromamba list
 
-      - name: Run unit tests on small data
+      - name: Run tests with coverage
         run: |
-          pytest tests/
+          pytest --cov=./ tests/ --cov-report=xml:/home/runner/coverage.xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: /home/runner/coverage.xml
+          fail_ci_if_error: true
+          name: httomolibgpu-codecov
+          verbose: true
