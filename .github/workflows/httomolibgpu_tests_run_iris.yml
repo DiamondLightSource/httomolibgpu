@@ -40,10 +40,8 @@ jobs:
           pytest --cov=./ tests/ --cov-report=xml:/home/runner/coverage.xml
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: /home/runner/coverage.xml
-          fail_ci_if_error: true
-          name: httomolibgpu-codecov
-          verbose: true
+        run: |
+          pip install codecov-cli
+          codecovcli -v upload-coverage --fail-on-error --file /home/runner/coverage.xml --name httomolibgpu-codecov
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
