@@ -8,7 +8,7 @@ jobs:
   iris-gpu:
     runs-on: iris-gpu
     container:
-      image: nvidia/cuda:12.6.3-devel-ubi8
+      image: ghcr.io/diamondlightsource/httomolibgpu:dockerfile
       env:
         NVIDIA_VISIBLE_DEVICES: ${{ env.NVIDIA_VISIBLE_DEVICES }}
       options: --gpus all --runtime=nvidia
@@ -22,18 +22,26 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create conda environment
-        uses: mamba-org/setup-micromamba@v1
+        uses: mamba-org/setup-micromamba@v2
         with:
           environment-file: conda/environment.yml
           environment-name: httomo
           post-cleanup: 'all'
           init-shell: bash
 
-      - name: Install httomolibgpu
+      - name: Install httomolibgpu & coverage tools
         run: |
           pip install .[dev]
+          pip install coverage
           micromamba list
 
-      - name: Run unit tests on small data
+      - name: Run tests with coverage
         run: |
-          pytest tests/
+          pytest --cov=./ tests/ --cov-report=xml:/home/runner/coverage.xml
+
+      - name: Upload coverage to Codecov
+        run: |
+          pip install codecov-cli
+          codecovcli -v upload-coverage --fail-on-error --file /home/runner/coverage.xml --name httomolibgpu-codecov
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
