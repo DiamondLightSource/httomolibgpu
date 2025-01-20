@@ -64,6 +64,7 @@ def test_reconstruct_FBP_3(data, flats, darks, ensure_clean_memory):
     assert_allclose(
         np.mean(recon_data, axis=(0, 2)).sum(), -0.03229, rtol=1e-06, atol=1e-5
     )
+    assert isinstance(recon_data, np.ndarray)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (210, 128, 210)
 
