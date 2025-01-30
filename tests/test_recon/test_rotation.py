@@ -35,7 +35,7 @@ def test_find_center_vo_ones(ensure_clean_memory):
     mat = cp.ones(shape=(103, 450, 230), dtype=cp.float32)
     cor = find_center_vo(mat)
 
-    assert_allclose(cor, 8)
+    assert_allclose(cor, 58)
     mat = None  #: free up GPU memory
 
 
@@ -44,7 +44,7 @@ def test_find_center_vo_random(ensure_clean_memory):
     data_host = np.random.random_sample(size=(900, 1, 1280)).astype(np.float32) * 2.0
     data = cp.asarray(data_host, dtype=np.float32)
     cent = find_center_vo(data)
-    assert_allclose(cent, 550.25)
+    assert_allclose(cent, 680.5)
 
 
 def test_find_center_vo_calculate_chunks():

@@ -60,10 +60,10 @@ def find_center_vo(
     ind: Optional[int] = None,
     average_radius: int = 0,
     cor_initialisation_value: Optional[float] = None,
-    smin: int = -100,
-    smax: int = 100,
+    smin: int = -50,
+    smax: int = 50,
     srad: float = 6.0,
-    step: float = 0.25,
+    step: float = 0.5,
     ratio: float = 0.5,
     drop: int = 20,
 ) -> np.float32:
@@ -117,7 +117,7 @@ def find_center_vo(
             average_radius = ind
         if ind > 0:
             _sino = cp.mean(
-                data[:, ind - average_radius : ind + average_radius, :], axis=1
+                data[:, ind - average_radius : ind + average_radius + 1, :], axis=1
             )
         else:
             _sino = data[:, ind, :]

@@ -44,7 +44,6 @@ dependencies = [
     "pillow",
     "scikit-image",
     "tomobar",
-    "ccpi-regularisation-cupy"
 ]
 
 [project.optional-dependencies]
