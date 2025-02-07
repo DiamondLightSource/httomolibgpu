@@ -6,11 +6,12 @@ import time
 
 from httomolibgpu.prep.normalize import normalize
 from httomolibgpu.recon.rotation import find_center_vo, find_center_pc, find_center_360
+from conftest import force_clean_gpu_memory
 
 
 # ----------------------------------------------------------#
 # i12_dataset1 tests
-def test_center_vo_i12_dataset1(i12_dataset1, ensure_clean_memory):
+def test_center_vo_i12_dataset1(i12_dataset1):
     projdata = i12_dataset1[0]
     flats = i12_dataset1[2]
     darks = i12_dataset1[3]
@@ -18,7 +19,7 @@ def test_center_vo_i12_dataset1(i12_dataset1, ensure_clean_memory):
 
     data_normalised = normalize(projdata, flats, darks, minus_log=True)
     del flats, darks, projdata
-    ensure_clean_memory
+    force_clean_gpu_memory()
 
     mid_slice = data_normalised.shape[1] // 2
     cor = find_center_vo(
