@@ -72,8 +72,6 @@ addopts = [
    "-vv",
    "-ra",
    "-q",
-   "--benchmark-sort=mean",
-   "--benchmark-columns=mean",
    "--tb=native",
    "--cov-report=term",
    "--cov-report=xml:cov.xml",

@@ -2,6 +2,8 @@ import os
 import cupy as cp
 import numpy as np
 import pytest
+import gc
+
 
 def pytest_addoption(parser):
     parser.addoption(
@@ -31,8 +33,8 @@ def pytest_collection_modifyitems(config, items):
                 item.add_marker(skip_perf)
 
 
-#CUR_DIR = os.path.abspath(os.path.dirname(__file__))
-CUR_DIR = "/dls/science/users/kjy41806/zenodo-tests/"
+CUR_DIR = os.path.abspath(os.path.dirname(__file__))
+
 
 @pytest.fixture(scope="session")
 def test_data_path():
@@ -120,6 +122,22 @@ def i13_dataset2(i13_dataset2_file):
 
 
 @pytest.fixture(scope="session")
+def i13_dataset3_file(test_data_path):
+    in_file = os.path.join(test_data_path, "i13_dataset3.npz")
+    return np.load(in_file)
+
+
+@pytest.fixture
+def i13_dataset3(i13_dataset3_file):
+    return (
+        cp.asarray(i13_dataset3_file["projdata"]),
+        i13_dataset3_file["angles"],
+        cp.asarray(i13_dataset3_file["flats"]),
+        cp.asarray(i13_dataset3_file["darks"]),
+    )
+
+
+@pytest.fixture(scope="session")
 def k11_dataset1_file(test_data_path):
     in_file = os.path.join(test_data_path, "k11_dataset1.npz")
     return np.load(in_file)
@@ -153,8 +171,15 @@ def geant4_dataset1(geant4_dataset1_file):
 
 @pytest.fixture
 def ensure_clean_memory():
+    gc.collect()
     cp.get_default_memory_pool().free_all_blocks()
     cp.get_default_pinned_memory_pool().free_all_blocks()
     yield None
+    cp.get_default_memory_pool().free_all_blocks()
+    cp.get_default_pinned_memory_pool().free_all_blocks()
+
+
+def force_clean_gpu_memory():
+    gc.collect()
     cp.get_default_memory_pool().free_all_blocks()
     cp.get_default_pinned_memory_pool().free_all_blocks()
