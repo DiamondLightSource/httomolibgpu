@@ -190,6 +190,8 @@ def test_remove_all_stripe_on_data(data, flats, darks):
     )
     assert_allclose(np.median(data_after_stripe_removal), 0.015338, rtol=1e-04)
     assert_allclose(np.max(data_after_stripe_removal), 2.298123, rtol=1e-05)
+    assert_allclose(np.median(data_after_stripe_removal, axis=(1, 2)).sum(), 2.788046, rtol=1e-6)
+    assert_allclose(np.median(data_after_stripe_removal, axis=(0, 1)).sum(), 28.661312, rtol=1e-6)
 
     data = None  #: free up GPU memory
     # make sure the output is float32
