@@ -218,17 +218,11 @@ def _rs_sort2(sinogram, size, matindex, dim):
     sinogram = cp.transpose(sinogram)
     matcomb = cp.asarray(cp.dstack((matindex, sinogram)))
 
-    # matsort = cp.asarray([row[row[:, 1].argsort()] for row in matcomb])
     ids = cp.argsort(matcomb[:, :, 1], axis=1)
     matsort = matcomb.copy()
     matsort[:, :, 0] = cp.take_along_axis(matsort[:, :, 0], ids, axis=1)
     matsort[:, :, 1] = cp.take_along_axis(matsort[:, :, 1], ids, axis=1)
-    if dim == 1:
-        matsort[:, :, 1] = median_filter(matsort[:, :, 1], (size, 1))
-    else:
-        matsort[:, :, 1] = median_filter(matsort[:, :, 1], (size, size))
-
-    # matsortback = cp.asarray([row[row[:, 0].argsort()] for row in matsort])
+    matsort[:, :, 1] = median_filter(matsort[:, :, 1], (size, 1) if dim == 1 else (size, size))
 
     ids = cp.argsort(matsort[:, :, 0], axis=1)
     matsortback = matsort.copy()
@@ -261,8 +255,6 @@ def _detect_stripe(listdata, snr):
     listsorted = cp.sort(listdata)[::-1]
     xlist = cp.arange(0, numdata, 1.0)
     ndrop = cp.int16(0.25 * numdata)
-    # (_slope, _intercept) = cp.polyfit(xlist[ndrop:-ndrop - 1],
-    #   listsorted[ndrop:-ndrop - 1], 1)
     (_slope, _intercept) = _mpolyfit(
         xlist[ndrop : -ndrop - 1], listsorted[ndrop : -ndrop - 1]
     )
@@ -293,11 +285,6 @@ def _rs_large(sinogram, snr, size, matindex, drop_ratio=0.1, norm=True):
     sinosmooth = median_filter(sinosort, (1, size))
     list1 = cp.mean(sinosort[ndrop : nrow - ndrop], axis=0)
     list2 = cp.mean(sinosmooth[ndrop : nrow - ndrop], axis=0)
-    # listfact = cp.divide(list1,
-    #                      list2,
-    #                      out=cp.ones_like(list1),
-    #                      where=list2 != 0)
-
     listfact = list1 / list2
 
     # Locate stripes
@@ -310,14 +297,12 @@ def _rs_large(sinogram, snr, size, matindex, drop_ratio=0.1, norm=True):
     sinogram1 = cp.transpose(sinogram)
     matcombine = cp.asarray(cp.dstack((matindex, sinogram1)))
 
-    # matsort = cp.asarray([row[row[:, 1].argsort()] for row in matcombine])
     ids = cp.argsort(matcombine[:, :, 1], axis=1)
     matsort = matcombine.copy()
     matsort[:, :, 0] = cp.take_along_axis(matsort[:, :, 0], ids, axis=1)
     matsort[:, :, 1] = cp.take_along_axis(matsort[:, :, 1], ids, axis=1)
 
     matsort[:, :, 1] = cp.transpose(sinosmooth)
-    # matsortback = cp.asarray([row[row[:, 0].argsort()] for row in matsort])
     ids = cp.argsort(matsort[:, :, 0], axis=1)
     matsortback = matsort.copy()
     matsortback[:, :, 0] = cp.take_along_axis(matsortback[:, :, 0], ids, axis=1)
@@ -335,7 +320,6 @@ def _rs_dead(sinogram, snr, size, matindex, norm=True):
     """
     sinogram = cp.copy(sinogram)  # Make it mutable
     (nrow, _) = sinogram.shape
-    # sinosmooth = cp.apply_along_axis(uniform_filter1d, 0, sinogram, 10)
     sinosmooth = uniform_filter1d(sinogram, 10, axis=0)
 
     listdiff = cp.sum(cp.abs(sinogram - sinosmooth), axis=0)
