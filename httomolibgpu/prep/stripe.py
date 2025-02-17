@@ -215,8 +215,13 @@ def _rs_sort2(sinogram, size, matindex, dim):
     """
     Remove stripes using the sorting technique.
     """
-    sinogram = cp.transpose(sinogram)
-    matcomb = cp.asarray(cp.dstack((matindex, sinogram)))
+    # Ensure contiguous memory for efficiency
+    sinogram = cp.ascontiguousarray(sinogram.T)
+
+    # Preallocate memory instead of using dstack()
+    matcomb = cp.empty((sinogram.shape[0], sinogram.shape[1], 2), dtype=cp.float32)
+    matcomb[:, :, 0] = matindex
+    matcomb[:, :, 1] = sinogram
 
     ids = cp.argsort(matcomb[:, :, 1], axis=1)
     matsort = matcomb.copy()
