@@ -320,9 +320,7 @@ def _rs_large(sinogram, snr, size, matindex, drop_ratio=0.1, norm=True):
 
 
 def _rs_dead(sinogram, snr, size, matindex, norm=True):
-    """
-    Remove unresponsive and fluctuating stripes.
-    """
+    """remove unresponsive and fluctuating stripes"""
     sinogram = cp.copy(sinogram)  # Make it mutable
     (nrow, _) = sinogram.shape
     sinosmooth = uniform_filter1d(sinogram, 10, axis=0)
@@ -333,22 +331,23 @@ def _rs_dead(sinogram, snr, size, matindex, norm=True):
     listfact = listdiff / listdiffbck
 
     listmask = _detect_stripe(listfact, snr)
+    del listfact
     listmask = binary_dilation(listmask, iterations=1).astype(listmask.dtype)
     listmask[0:2] = 0.0
     listmask[-2:] = 0.0
+
     listx = cp.where(listmask < 1.0)[0]
-    listy = cp.arange(nrow)
-    matz = sinogram[:, listx]
-
     listxmiss = cp.where(listmask > 0.0)[0]
+    del listmask
 
-    # finter = interpolate.interp2d(listx.get(), listy.get(), matz.get(), kind='linear')
     if len(listxmiss) > 0:
-        # sinogram_c[:, listxmiss.get()] = finter(listxmiss.get(), listy.get())
         ids = cp.searchsorted(listx, listxmiss)
-        sinogram[:, listxmiss] = matz[:, ids - 1] + (listxmiss - listx[ids - 1]) * (
-            matz[:, ids] - matz[:, ids - 1]
-        ) / (listx[ids] - listx[ids - 1])
+        weights = (listxmiss - listx[ids - 1]) / (listx[ids] - listx[ids - 1])
+        # direct interpolation without making an extra copy
+        sinogram[:, listxmiss] = (
+            sinogram[:, listx[ids - 1]] +
+            weights * (sinogram[:, listx[ids]] - sinogram[:, listx[ids - 1]])
+        )
 
     # Remove residual stripes
     if norm is True:
