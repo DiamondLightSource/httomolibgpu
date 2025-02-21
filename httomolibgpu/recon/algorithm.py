@@ -54,9 +54,10 @@ def FBP(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
-    filter_freq_cutoff: Optional[float] = 0.35,
+    filter_freq_cutoff: float = 0.35,
     recon_size: Optional[int] = None,
-    recon_mask_radius: Optional[float] = 0.95,
+    recon_mask_radius: float = 0.95,
+    neglog: bool = False,
     gpu_id: int = 0,
 ) -> cp.ndarray:
     """
@@ -81,6 +82,9 @@ def FBP(
         The radius of the circular mask that applies to the reconstructed slice in order to crop
         out some undesirable artifacts. The values outside the given diameter will be set to zero.
         It is recommended to keep the value in the range [0.7-1.0].
+    neglog: bool
+        Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Defaults to False, 
+        assuming that the negative log is taken either in normalisation procedure on with Paganin filter application. 
     gpu_id : int
         A GPU device index to perform operation on.
 
@@ -94,7 +98,7 @@ def FBP(
     )
 
     reconstruction = RecToolsCP.FBP(
-        data,
+        _take_neg_log(data) if neglog else data,
         cutoff_freq=filter_freq_cutoff,
         recon_mask_radius=recon_mask_radius,
         data_axes_labels_order=input_data_axis_labels,
@@ -110,6 +114,7 @@ def LPRec(
     center: Optional[float] = None,
     recon_size: Optional[int] = None,
     recon_mask_radius: Optional[float] = 0.95,
+    neglog: bool = False,
 ) -> cp.ndarray:
     """
     Fourier direct inversion in 3D on unequally spaced (also called as Log-Polar) grids using
@@ -131,6 +136,9 @@ def LPRec(
         The radius of the circular mask that applies to the reconstructed slice in order to crop
         out some undesirable artifacts. The values outside the given diameter will be set to zero.
         It is recommended to keep the value in the range [0.7-1.0].
+    neglog: bool
+        Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Defaults to False, 
+        assuming that the negative log is taken either in normalisation procedure on with Paganin filter application.         
 
     Returns
     -------
@@ -140,7 +148,7 @@ def LPRec(
     RecToolsCP = _instantiate_direct_recon_class(data, angles, center, recon_size, 0)
 
     reconstruction = RecToolsCP.FOURIER_INV(
-        data,
+        _take_neg_log(data) if neglog else data,
         recon_mask_radius=recon_mask_radius,
         data_axes_labels_order=input_data_axis_labels,
     )
@@ -156,12 +164,14 @@ def SIRT(
     recon_size: Optional[int] = None,
     iterations: Optional[int] = 300,
     nonnegativity: Optional[bool] = True,
+    neglog: bool = False,
     gpu_id: int = 0,
 ) -> cp.ndarray:
     """
     Perform Simultaneous Iterative Recostruction Technique (SIRT) using ASTRA toolbox :cite:`van2016fast` and
     ToMoBAR :cite:`kazantsev2020tomographic` wrappers.
-    This is 3D recon directly from a CuPy array while using ASTRA GPUlink capability.
+    This is 3D recon directly from a CuPy array while using ASTRA GPUlink capability to avoid host-device
+    transactions for projection and backprojection.
 
     Parameters
     ----------
@@ -178,6 +188,9 @@ def SIRT(
         The number of SIRT iterations.
     nonnegativity : bool, optional
         Impose nonnegativity constraint on reconstructed image.
+    neglog: bool
+        Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Defaults to False, 
+        assuming that the negative log is taken either in normalisation procedure on with Paganin filter application.              
     gpu_id : int, optional
         A GPU device index to perform operation on.
 
@@ -187,11 +200,16 @@ def SIRT(
         The SIRT reconstructed volume as a CuPy array.
     """
     RecToolsCP = _instantiate_iterative_recon_class(
-        data, angles, center, recon_size, gpu_id, datafidelity="LS"
+        data,
+        angles,
+        center,
+        recon_size,
+        gpu_id,
+        datafidelity="LS",
     )
 
     _data_ = {
-        "projection_norm_data": data,
+        "projection_norm_data": _take_neg_log(data) if neglog else data,
         "data_axes_labels_order": input_data_axis_labels,
     }  # data dictionary
     _algorithm_ = {
@@ -211,12 +229,14 @@ def CGLS(
     recon_size: Optional[int] = None,
     iterations: Optional[int] = 20,
     nonnegativity: Optional[bool] = True,
+    neglog: bool = False,
     gpu_id: int = 0,
 ) -> cp.ndarray:
     """
-    Perform Congugate Gradient Least Squares (CGLS) using ASTRA toolbox :cite:`van2016fast` and
+    Perform Conjugate Gradient Least Squares (CGLS) using ASTRA toolbox :cite:`van2016fast` and
     ToMoBAR :cite:`kazantsev2020tomographic` wrappers.
-    This is 3D recon directly from a CuPy array while using ASTRA GPUlink capability.
+    This is 3D recon directly from a CuPy array while using ASTRA GPUlink capability to avoid host-device
+    transactions for projection and backprojection.
 
     Parameters
     ----------
@@ -233,6 +253,9 @@ def CGLS(
         The number of CGLS iterations.
     nonnegativity : bool, optional
         Impose nonnegativity constraint on reconstructed image.
+    neglog: bool
+        Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Defaults to False, 
+        assuming that the negative log is taken either in normalisation procedure on with Paganin filter application.              
     gpu_id : int, optional
         A GPU device index to perform operation on.
 
@@ -246,14 +269,13 @@ def CGLS(
     )
 
     _data_ = {
-        "projection_norm_data": data,
+        "projection_norm_data": _take_neg_log(data) if neglog else data,
         "data_axes_labels_order": input_data_axis_labels,
     }  # data dictionary
     _algorithm_ = {"iterations": iterations, "nonnegativity": nonnegativity}
     reconstruction = RecToolsCP.CGLS(_data_, _algorithm_)
     cp._default_memory_pool.free_all_blocks()
     return cp.require(cp.swapaxes(reconstruction, 0, 1), requirements="C")
-
 
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 def _instantiate_direct_recon_class(
@@ -329,3 +351,11 @@ def _instantiate_iterative_recon_class(
         device_projector=gpu_id,
     )
     return RecToolsCP
+
+def _take_neg_log(data: cp.ndarray) -> cp.ndarray:
+    """Taking negative log"""
+    data[data<=0] = 1
+    data = -cp.log(data)
+    data[cp.isnan(data)] = 6.0
+    data[cp.isinf(data)] = 0
+    return data
