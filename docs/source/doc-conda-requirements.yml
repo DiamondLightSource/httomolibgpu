@@ -3,7 +3,7 @@ channels:
   - conda-forge
 dependencies:
   - python>=3.10
-  - sphinx
+  - sphinx>=8.0,<8.2.0
   - sphinx-book-theme
   - nbsphinx
   - pandoc

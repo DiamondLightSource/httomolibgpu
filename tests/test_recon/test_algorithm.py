@@ -31,6 +31,25 @@ def test_reconstruct_FBP_1(data, flats, darks, ensure_clean_memory):
     assert recon_data.shape == (160, 128, 160)
 
 
+def test_reconstruct_FBP_1_neglog(data, flats, darks, ensure_clean_memory):
+    recon_data = FBP(
+        normalize_cupy(data, flats, darks, cutoff=10, minus_log=False),
+        np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
+        79.5,
+        filter_freq_cutoff=1.1,
+        recon_mask_radius=None,
+        neglog=True,
+    )
+    assert recon_data.flags.c_contiguous
+    recon_data = recon_data.get()
+    assert_allclose(np.mean(recon_data), 0.000798, rtol=1e-07, atol=1e-6)
+    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.102106, rtol=1e-05)
+    assert_allclose(np.std(recon_data), 0.006293, rtol=1e-07, atol=1e-6)
+    assert_allclose(np.median(recon_data), -0.000555, rtol=1e-07, atol=1e-6)
+    assert recon_data.dtype == np.float32
+    assert recon_data.shape == (160, 128, 160)
+
+
 def test_reconstruct_FBP_2(data, flats, darks, ensure_clean_memory):
     recon_data = FBP(
         normalize_cupy(data, flats, darks, cutoff=20.5, minus_log=False),
