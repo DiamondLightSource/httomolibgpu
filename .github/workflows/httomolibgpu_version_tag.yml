@@ -27,14 +27,20 @@ jobs:
         with:
           python-version: '3.11'
 
-      # install dependencies with conda
-      - name: Install dependencies with conda
+      # setup conda
+      - name: Setup conda
         uses: mamba-org/setup-micromamba@v2
         with:
           environment-name: httomolibgpu
           environment-file: ./conda/environment.yml
           post-cleanup: 'all'
           init-shell: bash
+
+      # install dependencies with conda
+      - name: Install dependencies with conda
+        run: |
+          micromamba install -c conda-forge conda-build anaconda-client
+          micromamba list
 
       # install httomolibgpu
       - name: Install httomolibgpu
