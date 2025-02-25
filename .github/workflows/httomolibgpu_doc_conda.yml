@@ -25,11 +25,12 @@ jobs:
             python-version: "3.10"
 
         - name: httomolibgpu
-          uses: conda-incubator/setup-miniconda@v2
+          uses: mamba-org/setup-micromamba@v2
           with:
-            auto-update-conda: false
-            activate-environment: httomolibgpu
+            environment-name: httomolibgpu
             environment-file: ./docs/source/doc-conda-requirements.yml
+            post-cleanup: 'all'
+            init-shell: bash
 
         - name: Build api docs
           run: sphinx-apidoc -feT -t=./docs/source/_templates -o ./docs/source/api ./httomolibgpu

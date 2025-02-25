@@ -29,10 +29,18 @@ jobs:
 
       # install dependencies with conda
       - name: Install dependencies with conda
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-name: httomolibgpu
+          environment-file: ./conda/environment.yml
+          post-cleanup: 'all'
+          init-shell: bash
+
+      # install httomolibgpu
+      - name: Install httomolibgpu
         run: |
-          $CONDA/bin/conda env create --name httomolibgpu --file conda/environment.yml
-          $CONDA/bin/conda run -n httomolibgpu pip install -e .
-          $CONDA/bin/conda list
+          pip install -e .
+          micromamba list
 
       - name: Decrypt a secret
         run: ./.scripts/decrypt_secret.sh
