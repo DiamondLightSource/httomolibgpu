@@ -205,37 +205,10 @@ def remove_all_stripe(
     for m in range(data.shape[1]):
         sino = data[:, m, :]
         sino = _rs_dead(sino, snr, la_size, matindex)
-        sino = _rs_sort2(sino, sm_size, matindex, dim)
+        sino = _rs_sort(sino, sm_size, dim)
         sino = cp.nan_to_num(sino)
         data[:, m, :] = sino
     return data
-
-
-def _rs_sort2(sinogram, size, matindex, dim):
-    """
-    Remove stripes using the sorting technique.
-    """
-    # Ensure contiguous memory for efficiency
-    sinogram = cp.ascontiguousarray(sinogram.T)
-
-    # Preallocate memory instead of using dstack()
-    matcomb = cp.empty((sinogram.shape[0], sinogram.shape[1], 2), dtype=cp.float32)
-    matcomb[:, :, 0] = matindex
-    matcomb[:, :, 1] = sinogram
-
-    ids = cp.argsort(matcomb[:, :, 1], axis=1)
-    matsort = matcomb.copy()
-    matsort[:, :, 0] = cp.take_along_axis(matsort[:, :, 0], ids, axis=1)
-    matsort[:, :, 1] = cp.take_along_axis(matsort[:, :, 1], ids, axis=1)
-    matsort[:, :, 1] = median_filter(matsort[:, :, 1], (size, 1) if dim == 1 else (size, size))
-
-    ids = cp.argsort(matsort[:, :, 0], axis=1)
-    matsortback = matsort.copy()
-    matsortback[:, :, 0] = cp.take_along_axis(matsortback[:, :, 0], ids, axis=1)
-    matsortback[:, :, 1] = cp.take_along_axis(matsortback[:, :, 1], ids, axis=1)
-
-    sino_corrected = matsortback[:, :, 1]
-    return cp.transpose(sino_corrected)
 
 
 def _mpolyfit(x, y):
