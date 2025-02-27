@@ -14,6 +14,7 @@ from httomolibgpu.prep.stripe import (
 from numpy.testing import assert_allclose
 from .stripe_cpu_reference import raven_filter_numpy
 
+
 def test_remove_stripe_ti_on_data(data, flats, darks):
     # --- testing the CuPy implementation from TomoCupy ---#
     data = normalize(data, flats, darks, cutoff=10, minus_log=True)
@@ -53,6 +54,7 @@ def test_remove_stripe_ti_on_data(data, flats, darks):
 #         np.median(corrected_data), np.median(corrected_host_data), rtol=1e-6
 #     )
 
+
 def test_stripe_removal_sorting_cupy(data, flats, darks):
     # --- testing the CuPy port of TomoPy's implementation ---#
     data = normalize(data, flats, darks, cutoff=10, minus_log=True)
@@ -66,6 +68,7 @@ def test_stripe_removal_sorting_cupy(data, flats, darks):
     # make sure the output is float32
     assert corrected_data.dtype == np.float32
     assert corrected_data.flags.c_contiguous
+
 
 def test_stripe_raven_cupy(data, flats, darks):
     # --- testing the CuPy port of TomoPy's implementation ---#
@@ -82,13 +85,16 @@ def test_stripe_raven_cupy(data, flats, darks):
     assert data_after_raven_gpu.dtype == np.float32
     assert data_after_raven_gpu.shape == data_after_raven_cpu.shape
 
+
 @pytest.mark.parametrize("uvalue", [20, 50, 100])
 @pytest.mark.parametrize("nvalue", [2, 4, 6])
 @pytest.mark.parametrize("vvalue", [2, 4])
 @pytest.mark.parametrize("pad_x", [0, 10, 20])
 @pytest.mark.parametrize("pad_y", [0, 10, 20])
 @cp.testing.numpy_cupy_allclose(rtol=0, atol=3e-01)
-def test_stripe_raven_parameters_cupy(ensure_clean_memory, xp, uvalue, nvalue, vvalue, pad_x, pad_y):
+def test_stripe_raven_parameters_cupy(
+    ensure_clean_memory, xp, uvalue, nvalue, vvalue, pad_x, pad_y
+):
     # because it's random, we explicitly seed and use numpy only, to match the data
     np.random.seed(12345)
     data = np.random.random_sample(size=(256, 5, 512)).astype(np.float32) * 2.0 + 0.001
@@ -97,13 +103,14 @@ def test_stripe_raven_parameters_cupy(ensure_clean_memory, xp, uvalue, nvalue, v
     if xp.__name__ == "numpy":
         results = raven_filter_numpy(
             data, uvalue=uvalue, nvalue=nvalue, vvalue=vvalue, pad_x=pad_x, pad_y=pad_y
-        ).astype(np.float32) 
+        ).astype(np.float32)
     else:
         results = raven_filter(
             data, uvalue=uvalue, nvalue=nvalue, vvalue=vvalue, pad_x=pad_x, pad_y=pad_y
         ).get()
 
     return xp.asarray(results)
+
 
 @pytest.mark.perf
 def test_stripe_removal_sorting_cupy_performance(ensure_clean_memory):
@@ -154,6 +161,7 @@ def test_remove_stripe_ti_performance(ensure_clean_memory):
 
     assert "performance in ms" == duration_ms
 
+
 @pytest.mark.perf
 def test_raven_filter_performance(ensure_clean_memory):
     data_host = (
@@ -178,6 +186,7 @@ def test_raven_filter_performance(ensure_clean_memory):
 
     assert "performance in ms" == duration_ms
 
+
 def test_remove_all_stripe_on_data(data, flats, darks):
     # --- testing the CuPy implementation from TomoCupy ---#
     data = normalize(data, flats, darks, cutoff=10, minus_log=True)
@@ -190,8 +199,12 @@ def test_remove_all_stripe_on_data(data, flats, darks):
     )
     assert_allclose(np.median(data_after_stripe_removal), 0.015338, rtol=1e-04)
     assert_allclose(np.max(data_after_stripe_removal), 2.298123, rtol=1e-05)
-    assert_allclose(np.median(data_after_stripe_removal, axis=(1, 2)).sum(), 2.788046, rtol=1e-6)
-    assert_allclose(np.median(data_after_stripe_removal, axis=(0, 1)).sum(), 28.661312, rtol=1e-6)
+    assert_allclose(
+        np.median(data_after_stripe_removal, axis=(1, 2)).sum(), 2.788046, rtol=1e-6
+    )
+    assert_allclose(
+        np.median(data_after_stripe_removal, axis=(0, 1)).sum(), 28.661312, rtol=1e-6
+    )
 
     data = None  #: free up GPU memory
     # make sure the output is float32

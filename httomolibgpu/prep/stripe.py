@@ -317,9 +317,8 @@ def _rs_dead(sinogram, snr, size, matindex, norm=True):
         ids = cp.searchsorted(listx, listxmiss)
         weights = (listxmiss - listx[ids - 1]) / (listx[ids] - listx[ids - 1])
         # direct interpolation without making an extra copy
-        sinogram[:, listxmiss] = (
-            sinogram[:, listx[ids - 1]] +
-            weights * (sinogram[:, listx[ids]] - sinogram[:, listx[ids - 1]])
+        sinogram[:, listxmiss] = sinogram[:, listx[ids - 1]] + weights * (
+            sinogram[:, listx[ids]] - sinogram[:, listx[ids - 1]]
         )
 
     # Remove residual stripes
@@ -416,7 +415,7 @@ def raven_filter(
     # Removing padding
     data = data[pad_y : height - pad_y, :, pad_x : width - pad_x].real
 
-    return data
+    return cp.require(data, requirements="C")
 
 
 def _create_matindex(nrow, ncol):

@@ -83,8 +83,8 @@ def FBP(
         out some undesirable artifacts. The values outside the given diameter will be set to zero.
         It is recommended to keep the value in the range [0.7-1.0].
     neglog: bool
-        Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Defaults to False, 
-        assuming that the negative log is taken either in normalisation procedure on with Paganin filter application. 
+        Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Defaults to False,
+        assuming that the negative log is taken either in normalisation procedure on with Paganin filter application.
     gpu_id : int
         A GPU device index to perform operation on.
 
@@ -137,8 +137,8 @@ def LPRec(
         out some undesirable artifacts. The values outside the given diameter will be set to zero.
         It is recommended to keep the value in the range [0.7-1.0].
     neglog: bool
-        Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Defaults to False, 
-        assuming that the negative log is taken either in normalisation procedure on with Paganin filter application.         
+        Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Defaults to False,
+        assuming that the negative log is taken either in normalisation procedure on with Paganin filter application.
 
     Returns
     -------
@@ -189,8 +189,8 @@ def SIRT(
     nonnegativity : bool, optional
         Impose nonnegativity constraint on reconstructed image.
     neglog: bool
-        Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Defaults to False, 
-        assuming that the negative log is taken either in normalisation procedure on with Paganin filter application.              
+        Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Defaults to False,
+        assuming that the negative log is taken either in normalisation procedure on with Paganin filter application.
     gpu_id : int, optional
         A GPU device index to perform operation on.
 
@@ -254,8 +254,8 @@ def CGLS(
     nonnegativity : bool, optional
         Impose nonnegativity constraint on reconstructed image.
     neglog: bool
-        Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Defaults to False, 
-        assuming that the negative log is taken either in normalisation procedure on with Paganin filter application.              
+        Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Defaults to False,
+        assuming that the negative log is taken either in normalisation procedure on with Paganin filter application.
     gpu_id : int, optional
         A GPU device index to perform operation on.
 
@@ -276,6 +276,7 @@ def CGLS(
     reconstruction = RecToolsCP.CGLS(_data_, _algorithm_)
     cp._default_memory_pool.free_all_blocks()
     return cp.require(cp.swapaxes(reconstruction, 0, 1), requirements="C")
+
 
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 def _instantiate_direct_recon_class(
@@ -352,9 +353,10 @@ def _instantiate_iterative_recon_class(
     )
     return RecToolsCP
 
+
 def _take_neg_log(data: cp.ndarray) -> cp.ndarray:
     """Taking negative log"""
-    data[data<=0] = 1
+    data[data <= 0] = 1
     data = -cp.log(data)
     data[cp.isnan(data)] = 6.0
     data[cp.isinf(data)] = 0

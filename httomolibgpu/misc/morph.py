@@ -112,7 +112,7 @@ def data_resampler(
 
     Parameters
     ----------
-    data : cp.ndarray 
+    data : cp.ndarray
         3d cupy array.
     newshape : list
         2d list that defines the 2D slice shape of new shape data.

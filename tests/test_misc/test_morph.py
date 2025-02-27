@@ -6,6 +6,7 @@ import pytest
 from numpy.testing import assert_allclose
 from httomolibgpu.misc.morph import sino_360_to_180, data_resampler
 
+
 @pytest.mark.parametrize(
     "overlap, rotation",
     [
