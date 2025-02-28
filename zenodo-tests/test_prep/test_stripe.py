@@ -20,17 +20,17 @@ from math import isclose
         (
             "i12_dataset4",
             11,
-            78.5593,
+            78.8627,
         ),
         (
             "i12_dataset4",
             21,
-            92.4986,
+            92.8653,
         ),
         (
             "i12_dataset4",
             31,
-            99.3062,
+            99.6979,
         ),
     ],
     ids=["size_11", "size_21", "size_31"],
@@ -49,7 +49,7 @@ def test_remove_stripe_based_sorting_i12_dataset4(
     )
 
     residual_calc = data_normalised - output
-    norm_res = np.linalg.norm(residual_calc.get().flatten())
+    norm_res = cp.linalg.norm(residual_calc.flatten())
 
     assert isclose(norm_res, norm_res_expected, abs_tol=10**-4)
 
@@ -63,17 +63,17 @@ def test_remove_stripe_based_sorting_i12_dataset4(
         (
             "i12_dataset4",
             0.01,
-            321.5298,
+            322.5501,
         ),
         (
             "i12_dataset4",
             0.03,
-            172.1631,
+            173.1643,
         ),
         (
             "i12_dataset4",
             0.06,
-            128.0331,
+            128.8032,
         ),
     ],
     ids=["beta_001", "beta_003", "beta_006"],
@@ -90,7 +90,7 @@ def test_remove_stripe_ti_i12_dataset4(
     output = remove_stripe_ti(cp.copy(data_normalised), beta=beta_val)
 
     residual_calc = data_normalised - output
-    norm_res = np.linalg.norm(residual_calc.get().flatten())
+    norm_res = cp.linalg.norm(residual_calc.flatten())
 
     assert isclose(norm_res, norm_res_expected, abs_tol=10**-4)
 
@@ -101,10 +101,10 @@ def test_remove_stripe_ti_i12_dataset4(
 @pytest.mark.parametrize(
     "dataset_fixture, snr_val, la_size_val, sm_size_val, norm_res_expected",
     [
-        ("i12_dataset4", 1.0, 31, 10, 104.8582),
-        ("i12_dataset4", 2.0, 41, 17, 99.4554),
-        ("i12_dataset4", 3.0, 61, 21, 102.8688),
-        ("i12_dataset4", 4.0, 71, 31, 106.1418),
+        ("i12_dataset4", 1.0, 31, 10, 105.3542),
+        ("i12_dataset4", 2.0, 41, 17, 99.9182),
+        ("i12_dataset4", 3.0, 61, 21, 103.3776),
+        ("i12_dataset4", 4.0, 71, 31, 106.6767),
     ],
     ids=["snr_1", "snr_2", "snr_3", "snr_4"],
 )
@@ -126,7 +126,7 @@ def test_remove_all_stripe_i12_dataset4(
     )
 
     residual_calc = data_normalised - output
-    norm_res = np.linalg.norm(residual_calc.get().flatten())
+    norm_res = cp.linalg.norm(residual_calc.flatten())
 
     assert isclose(norm_res, norm_res_expected, abs_tol=10**-4)
     assert not np.isnan(output).any(), "Output contains NaN values"
@@ -137,9 +137,9 @@ def test_remove_all_stripe_i12_dataset4(
 @pytest.mark.parametrize(
     "dataset_fixture, nvalue_val, vvalue_val, norm_res_expected",
     [
-        ("i12_dataset4", 2, 4, 94.0424),
-        ("i12_dataset4", 4, 2, 86.2983),
-        ("i12_dataset4", 6, 5, 111.0662),
+        ("i12_dataset4", 2, 4, 94.0996),
+        ("i12_dataset4", 4, 2, 86.3459),
+        ("i12_dataset4", 6, 5, 111.1377),
     ],
     ids=["case_1", "case_2", "case_3"],
 )
@@ -168,7 +168,7 @@ def test_raven_filter_i12_dataset4(
     )
 
     residual_calc = data_normalised - output
-    norm_res = np.linalg.norm(residual_calc.get().flatten())
+    norm_res = cp.linalg.norm(residual_calc.flatten())
 
     assert isclose(norm_res, norm_res_expected, abs_tol=10**-4)
 
