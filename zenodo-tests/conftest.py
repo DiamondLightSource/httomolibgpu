@@ -90,6 +90,22 @@ def i12_dataset3(i12_dataset3_file):
 
 
 @pytest.fixture(scope="session")
+def i12_dataset4_file(test_data_path):
+    in_file = os.path.join(test_data_path, "i12_dataset4.npz")
+    return np.load(in_file)
+
+
+@pytest.fixture
+def i12_dataset4(i12_dataset4_file):
+    return (
+        cp.asarray(i12_dataset4_file["projdata"]),
+        i12_dataset4_file["angles"],
+        cp.asarray(i12_dataset4_file["flats"]),
+        cp.asarray(i12_dataset4_file["darks"]),
+    )
+
+
+@pytest.fixture(scope="session")
 def i13_dataset1_file(test_data_path):
     in_file = os.path.join(test_data_path, "i13_dataset1.npz")
     return np.load(in_file)
