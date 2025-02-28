@@ -120,7 +120,6 @@ def run_methods(path_to_data: str, output_folder: str) -> int:
     assert np.sum(data_normalized_np) > 41711
     # __save_res_to_image(data_normalized_np, output_folder, methods_name, slice_numb)
 
-    ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods_name = "rescale_to_int"
     print("___{}___".format(methods_name))
     from httomolibgpu.misc.rescale import rescale_to_int
@@ -225,9 +224,6 @@ def run_methods(path_to_data: str, output_folder: str) -> int:
     )
     del res_cp, res_np
 
-    return 0
-
-    ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods_name = "raven_filter"
     print("___{}___".format(methods_name))
     from tomophantom.artefacts import artefacts_mix
@@ -236,8 +232,8 @@ def run_methods(path_to_data: str, output_folder: str) -> int:
     )
 
     _stripes_ = {
-        "stripes_percentage": 1.2,
-        "stripes_maxthickness": 3.0,
+        "stripes_percentage": 2.0,
+        "stripes_maxthickness": 3,
         "stripes_intensity": 0.3,
         "stripes_type": "full",
         "stripes_variability": 0.005,
@@ -250,13 +246,13 @@ def run_methods(path_to_data: str, output_folder: str) -> int:
     data_after_raven_gpu = raven_filter(
         cp.asarray(data_normalized_np_artefacts, dtype=cp.float32),
         uvalue=20,
-        nvalue=4,
+        nvalue=2,
         vvalue=2,
     ).get()
     slice_numb = 64
 
     max_scale_data_normalized_s = np.max(data_normalized_np_artefacts)
-    min_scale_data_normalized_s = np.min(data_normalized_np_artefacts)
+    min_scale_data_normalized_s = -0.01
 
     __save_res_to_image(
         data_normalized_np_artefacts,
@@ -283,8 +279,97 @@ def run_methods(path_to_data: str, output_folder: str) -> int:
         max_scale=0.1,
         min_scale=0,
     )
-    del data_normalized_np_artefacts
+    del data_after_raven_gpu
 
+    methods_name = "remove_stripe_based_sorting"
+    print("___{}___".format(methods_name))
+    from httomolibgpu.prep.stripe import (
+        remove_stripe_based_sorting,
+    )
+
+    data_after_stripe_based_sorting = remove_stripe_based_sorting(
+        cp.asarray(data_normalized_np_artefacts, dtype=cp.float32), size=21, dim=1
+    )
+
+    __save_res_to_image(
+        data_after_stripe_based_sorting.get(),
+        output_folder,
+        methods_name,
+        slice_numb,
+        max_scale=max_scale_data_normalized_s,
+        min_scale=min_scale_data_normalized_s,
+    )
+    __save_res_to_image(
+        np.abs(data_after_stripe_based_sorting.get() - data_normalized_np_artefacts),
+        output_folder,
+        methods_name=methods_name + "_res",
+        slice_numb=slice_numb,
+        max_scale=0.1,
+        min_scale=0,
+    )
+    del data_after_stripe_based_sorting
+
+    methods_name = "remove_stripe_ti"
+    print("___{}___".format(methods_name))
+    from httomolibgpu.prep.stripe import (
+        remove_stripe_ti,
+    )
+
+    data_after_remove_stripe_ti = remove_stripe_ti(
+        cp.asarray(data_normalized_np_artefacts, dtype=cp.float32), beta=0.03
+    )
+
+    __save_res_to_image(
+        data_after_remove_stripe_ti.get(),
+        output_folder,
+        methods_name,
+        slice_numb,
+        max_scale=max_scale_data_normalized_s,
+        min_scale=min_scale_data_normalized_s,
+    )
+    __save_res_to_image(
+        np.abs(data_after_remove_stripe_ti.get() - data_normalized_np_artefacts),
+        output_folder,
+        methods_name=methods_name + "_res",
+        slice_numb=slice_numb,
+        max_scale=0.1,
+        min_scale=0,
+    )
+    del data_after_remove_stripe_ti
+
+    methods_name = "remove_all_stripe"
+    print("___{}___".format(methods_name))
+    from httomolibgpu.prep.stripe import (
+        remove_all_stripe,
+    )
+
+    data_after_remove_all_stripe = remove_all_stripe(
+        cp.asarray(data_normalized_np_artefacts, dtype=cp.float32),
+        snr=3.0,
+        la_size=61,
+        sm_size=21,
+        dim=1,
+    )
+
+    __save_res_to_image(
+        data_after_remove_all_stripe.get(),
+        output_folder,
+        methods_name,
+        slice_numb,
+        max_scale=max_scale_data_normalized_s,
+        min_scale=min_scale_data_normalized_s,
+    )
+    __save_res_to_image(
+        np.abs(data_after_remove_all_stripe.get() - data_normalized_np_artefacts),
+        output_folder,
+        methods_name=methods_name + "_res",
+        slice_numb=slice_numb,
+        max_scale=0.1,
+        min_scale=0,
+    )
+    del data_after_remove_all_stripe
+
+    del data_normalized_np_artefacts
     return 0
 
 

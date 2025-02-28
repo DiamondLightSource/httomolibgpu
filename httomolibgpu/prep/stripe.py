@@ -58,7 +58,7 @@ def remove_stripe_based_sorting(
 ) -> Union[cp.ndarray, np.ndarray]:
     """
     Remove full and partial stripe artifacts from sinogram using Nghia Vo's
-    approach, see :cite:`vo2018superior`. This algorithm works particularly
+    approach, see :ref:`method_remove_stripe_based_sorting` and :cite:`vo2018superior`. This algorithm works particularly
     well for removing partial stripes.
 
     Steps of the algorithm: 1. Sort each column of the sinogram by its grayscale values.
@@ -119,7 +119,7 @@ def remove_stripe_ti(
 ) -> Union[cp.ndarray, np.ndarray]:
     """
     Removes stripes with the method of V. Titarenko (TomoCuPy implementation).
-    See :cite:`titarenko2010analytical`.
+    See :ref:`method_remove_stripe_ti` and :cite:`titarenko2010analytical`.
 
     Parameters
     ----------
@@ -179,7 +179,7 @@ def remove_all_stripe(
 ) -> cp.ndarray:
     """
     Remove all types of stripe artifacts from sinogram using Nghia Vo's
-    approach, see :cite:`vo2018superior` (combination of algorithm 3,4,5, and 6).
+    approach, see :ref:`method_remove_all_stripe` and :cite:`vo2018superior` (combination of algorithm 3,4,5, and 6).
 
     Parameters
     ----------
