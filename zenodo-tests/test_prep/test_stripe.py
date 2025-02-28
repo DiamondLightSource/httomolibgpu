@@ -129,7 +129,7 @@ def test_remove_all_stripe_i12_dataset4(
     norm_res = np.linalg.norm(residual_calc.get().flatten())
 
     assert isclose(norm_res, norm_res_expected, abs_tol=10**-4)
-
+    assert not np.isnan(output).any(), "Output contains NaN values"
     assert output.dtype == np.float32
     assert output.flags.c_contiguous
 
