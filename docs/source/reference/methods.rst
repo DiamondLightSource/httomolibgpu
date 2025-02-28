@@ -10,6 +10,9 @@ Here we present a list of methods that exist in the HTTomolibGPU library with mo
 Data correction module
 ^^^^^^^^^^^^^^^^^^^^^^
 
+Modules from `Data correction` can be used as pre-processing (e.g. apply :ref:`method_outlier_removal` to raw projection data) or in some
+cases as post-processing (e.g. apply :ref:`method_median_filter` to the result of the reconstruction) tools.
+
 .. toctree::
    :glob:
 
@@ -22,6 +25,8 @@ Data correction module
 Data denoising module
 ^^^^^^^^^^^^^^^^^^^^^^
 
+Modules from `Data denoising` can be used as post-processing tools. For instance, denoising procedures can be applied to the results of the reconstruction.
+
 .. toctree::
    :glob:
 
@@ -33,15 +38,23 @@ Data denoising module
 Stripes removal module
 ^^^^^^^^^^^^^^^^^^^^^^
 
+Modules from `Stripes removal` normally used as pre-processing tools. Stripes removal is equivalent to removing ring artefacts in the reconstructed images.
+
+
 .. toctree::
    :glob:
 
+   methods_list/remove_stripe_based_sorting
+   methods_list/remove_all_stripe
+   methods_list/remove_stripe_ti
    methods_list/raven_filter
 
 .. _data_rescale_module:
 
 Data rescale module
-^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^
+
+Modules from `Data rescale` is usually needed when the data needs to be rescaled to be saved in different bit-type as images.
 
 .. toctree::
    :glob:

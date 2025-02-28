@@ -1,4 +1,4 @@
-name: httomolibgpu
+name: httomolibgpu-docs
 channels:
   - conda-forge
 dependencies:
