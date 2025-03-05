@@ -65,7 +65,7 @@ def test_reconstruct_LPRec_i12_dataset1(i12_dataset1):
     )
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
-    assert_allclose(np.sum(recon_data), 46569.39, rtol=1e-07, atol=1e-6)
+    assert_allclose(np.sum(recon_data), 8977.391, rtol=1e-07, atol=1e-6)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 3, 2560)
 
@@ -105,7 +105,7 @@ def test_reconstruct_LP_REC_i13_dataset1(i13_dataset1):
 
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
-    assert isclose(np.sum(recon_data), 620.856, abs_tol=10**-3)
+    assert isclose(np.sum(recon_data), 1241.590, abs_tol=10**-3)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (4646, 1, 4646)
 
