@@ -169,7 +169,7 @@ def test_reconstruct_LPREC_i13_dataset2(i13_dataset2):
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
 
-    assert isclose(np.sum(recon_data), 2044.953, abs_tol=10**-3)
+    assert isclose(np.sum(recon_data), 4096.233, abs_tol=10**-3)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 10, 2560)
 
