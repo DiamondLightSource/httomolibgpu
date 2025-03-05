@@ -43,6 +43,33 @@ def test_reconstruct_FBP_i12_dataset1(i12_dataset1):
     assert recon_data.shape == (2560, 50, 2560)
 
 
+def test_reconstruct_LPRec_i12_dataset1(i12_dataset1):
+    force_clean_gpu_memory()
+    projdata = i12_dataset1[0]
+    angles = i12_dataset1[1]
+    flats = i12_dataset1[2]
+    darks = i12_dataset1[3]
+    del i12_dataset1
+
+    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    data_normalised_cut = data_normalised[:,5:8,:]
+    del flats, darks, projdata, data_normalised
+    force_clean_gpu_memory()
+
+    recon_data = LPRec(
+        data_normalised_cut,
+        np.deg2rad(angles),
+        center=1253.75,
+        filter_type='shepp',
+        cutoff_freq = 1.0,
+    )
+    assert recon_data.flags.c_contiguous
+    recon_data = recon_data.get()
+    assert_allclose(np.sum(recon_data), 46569.39, rtol=1e-07, atol=1e-6)
+    assert recon_data.dtype == np.float32
+    assert recon_data.shape == (2560, 3, 2560)
+
+
 def test_reconstruct_LP_REC_i13_dataset1(i13_dataset1):
     force_clean_gpu_memory()
     projdata = i13_dataset1[0]

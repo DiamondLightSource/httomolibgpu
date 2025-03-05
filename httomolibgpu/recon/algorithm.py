@@ -112,6 +112,8 @@ def LPRec(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
+    filter_type: str = 'shepp',
+    cutoff_freq: float = 1.0,
     recon_size: Optional[int] = None,
     recon_mask_radius: Optional[float] = 0.95,
     neglog: bool = False,
@@ -129,6 +131,10 @@ def LPRec(
         An array of angles given in radians.
     center : float, optional
         The center of rotation (CoR).
+    filter_type : str
+        Filter type, the accepted strings are: none, ramp, shepp, cosine, cosine2, hamming, hann, parzen.
+    cutoff_freq : float
+        Cutoff frequency parameter for a filter. The higher values increase resolution and but also noise.
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
@@ -151,6 +157,8 @@ def LPRec(
         _take_neg_log(data) if neglog else data,
         recon_mask_radius=recon_mask_radius,
         data_axes_labels_order=input_data_axis_labels,
+        filter_type = filter_type,
+        cutoff_freq = cutoff_freq,
     )
     cp._default_memory_pool.free_all_blocks()
     return cp.require(cp.swapaxes(reconstruction, 0, 1), requirements="C")
