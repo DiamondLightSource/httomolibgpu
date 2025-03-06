@@ -156,10 +156,6 @@ def test_remove_all_stripe_synth_tomophantom1_dataset(
         sm_size=sm_size_val,
         dim=1,
     )
-    np.savez(
-        "/home/algol/Documents/DEV/httomolibgpu/zenodo-tests/large_data_archive/stripe_res2.npz",
-        data=output.get(),
-    )
 
     residual_calc = dataset[0] - output
     norm_res = cp.linalg.norm(residual_calc.flatten())
