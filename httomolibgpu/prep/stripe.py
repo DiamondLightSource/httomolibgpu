@@ -314,10 +314,11 @@ def _rs_dead(sinogram, snr, size, norm=True):
     if len(listxmiss) > 0:
         ids = cp.searchsorted(listx, listxmiss)
         weights = (listxmiss - listx[ids - 1]) / (listx[ids] - listx[ids - 1])
-        # direct interpolation without making an extra copy
-        sinogram[:, listxmiss] = sinogram[:, listx[ids - 1]] + weights * (
-            sinogram[:, listx[ids]] - sinogram[:, listx[ids - 1]]
-        )
+        left_vals = cp.take(sinogram, listx[ids - 1], axis=1)
+        right_vals = cp.take(sinogram, listx[ids], axis=1)
+        diff = right_vals - left_vals
+        diff *= weights
+        sinogram[:, listxmiss] = left_vals + diff
 
     # Remove residual stripes
     if norm is True:
