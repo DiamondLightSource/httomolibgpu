@@ -414,12 +414,3 @@ def raven_filter(
     data = data[pad_y : height - pad_y, :, pad_x : width - pad_x].real
 
     return cp.require(data, requirements="C")
-
-
-def _create_matindex(nrow, ncol):
-    """
-    Create a 2D array of indexes used for the sorting technique.
-    """
-    listindex = cp.arange(0.0, ncol, 1.0)
-    matindex = cp.tile(listindex, (nrow, 1))
-    return matindex.astype(np.float32)
