@@ -23,8 +23,10 @@ jobs:
       - name: Create conda environment
         uses: mamba-org/setup-micromamba@v1
         with:
-          environment-file: conda/environment.yml
           environment-name: httomo
+          create-args: >-
+            cupy==12.3.0
+            ccpi::ccpi-regulariser
           post-cleanup: 'all'
           init-shell: bash
 
