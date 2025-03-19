@@ -14,19 +14,18 @@ Although **HTTomolibGPU** can be used as a stand-alone library, it has been spec
 its backend for data processing. HTTomo is a user interface (UI) written in Python for fast big tomographic data processing using
 MPI protocols or as well serially.
 
-Install HTTomolibGPU as a PyPi package
-=========================================================
-.. code-block:: console
+Installation
+============
 
-   $ pip install httomolibgpu
+HTTomolibGPU is available on PyPI, but currently can only be installed into a conda environment
+(due to a dependency being available only through conda).
 
-Install HTTomolibGPU as a pre-built conda Python package
-=========================================================
 .. code-block:: console
 
    $ conda create --name httomolibgpu # create a fresh conda environment
    $ conda activate httomolibgpu # activate the environment
-   $ conda install -c httomo httomolibgpu -c conda-forge # for linux users
+   $ conda install -c ccpi -c conda-forge ccpi-regulariser cupy==12.3.0 # for linux users
+   $ pip install httomolibgpu
 
 Setup the development environment:
 ==================================
@@ -34,14 +33,6 @@ Setup the development environment:
 .. code-block:: console
 
    $ git clone git@github.com:DiamondLightSource/httomolibgpu.git # clone the repo
-   $ conda env create --name httomolibgpu --file conda/environment.yml # install dependencies
+   $ conda env create --name httomolibgpu -c ccpi -c conda-forge ccpi-regulariser cupy==12.3.0 # install dependencies
    $ conda activate httomolibgpu # activate the environment
-   $ pip install -e .[dev] # editable/development mode
-
-Build HTTomolibGPU as a conda Python package
-============================================
-
-.. code-block:: console
-
-   $ conda build conda/recipe/ -c conda-forge -c httomo
-
+   $ pip install -e ./httomolibgpu[dev] # editable/development mode
