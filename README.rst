@@ -17,14 +17,24 @@ MPI protocols or as well serially.
 Installation
 ============
 
-HTTomolibGPU is available on PyPI, but currently can only be installed into a conda environment
-(due to a dependency being available only through conda).
+HTTomolibGPU is available on PyPI, so it can be installed into either a virtual environment or
+a conda environment.
 
+Virtual environment
+~~~~~~~~~~~~~~~~~~~
+.. code-block:: console
+
+   $ python -m venv httomolibgpu
+   $ source httomolibgpu/bin/activate
+   $ pip install httomolibgpu
+
+Conda environment
+~~~~~~~~~~~~~~~~~
 .. code-block:: console
 
    $ conda create --name httomolibgpu # create a fresh conda environment
    $ conda activate httomolibgpu # activate the environment
-   $ conda install -c ccpi -c conda-forge ccpi-regulariser cupy==12.3.0 # for linux users
+   $ conda install -c conda-forge cupy==12.3.0 # for linux users
    $ pip install httomolibgpu
 
 Setup the development environment:
@@ -33,6 +43,6 @@ Setup the development environment:
 .. code-block:: console
 
    $ git clone git@github.com:DiamondLightSource/httomolibgpu.git # clone the repo
-   $ conda env create --name httomolibgpu -c ccpi -c conda-forge ccpi-regulariser cupy==12.3.0 # install dependencies
+   $ conda env create --name httomolibgpu -c conda-forge cupy==12.3.0 # install dependencies
    $ conda activate httomolibgpu # activate the environment
    $ pip install -e ./httomolibgpu[dev] # editable/development mode
