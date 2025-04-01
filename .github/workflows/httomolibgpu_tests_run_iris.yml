@@ -30,7 +30,6 @@ jobs:
           environment-name: httomo
           create-args: >-
             cupy==12.3.0
-            ccpi::ccpi-regulariser
           post-cleanup: 'all'
           init-shell: bash
 
