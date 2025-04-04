@@ -201,12 +201,23 @@ def remove_all_stripe(
         Corrected 3D tomographic data as a CuPy or NumPy array.
 
     """
-    for m in range(data.shape[1]):
-        data[:, m, :] = _rs_dead(data[:, m, :], snr, la_size)
-        data[:, m, :] = _rs_sort(data[:, m, :], sm_size, dim)
-        data[:, m, :]  = cp.nan_to_num(data[:, m, :])
+    streams = [cp.cuda.Stream() for _ in range(4)]
+    output = data.copy()
+    def process_slice(m, stream):
+        with stream:
+            output[:, m, :] = _rs_dead(output[:, m, :], snr, la_size)
+            output[:, m, :] = _rs_sort(output[:, m, :], sm_size, dim)
+            output[:, m, :] = cp.nan_to_num(output[:, m, :])
 
-    return data
+    # Distribute slices across streams
+    for i in range(data.shape[1]):
+        stream = streams[i % 4]
+        process_slice(i, stream)
+
+    for stream in streams:
+        stream.synchronize()
+
+    return output
 
 
 def _mpolyfit(x, y):
