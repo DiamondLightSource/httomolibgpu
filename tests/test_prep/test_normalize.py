@@ -35,6 +35,26 @@ def test_normalize(data, flats, darks, ensure_clean_memory):
     assert data_normalize.flags.c_contiguous
 
 
+def test_normalize_scale(data, flats, darks, ensure_clean_memory):
+    # --- testing normalize  ---#
+    data_normalize = normalize(
+        cp.copy(data),
+        flats,
+        darks,
+        flats_multiplier=10.0,
+        darks_multiplier=10.0,
+        minus_log=True,
+    ).get()
+
+    assert data_normalize.dtype == np.float32
+
+    assert_allclose(np.mean(data_normalize), 2.5918312, rtol=1e-06)
+    assert_allclose(np.mean(data_normalize, axis=(1, 2)).sum(), 466.5298, rtol=1e-06)
+    assert_allclose(np.median(data_normalize), 2.3198225, rtol=1e-06)
+    assert_allclose(np.std(data_normalize), 0.5243825, rtol=1e-06)
+    assert data_normalize.flags.c_contiguous
+
+
 @pytest.mark.perf
 def test_normalize_performance(ensure_clean_memory):
     # Note: low/high and size values taken from sample2_medium.yaml real run
