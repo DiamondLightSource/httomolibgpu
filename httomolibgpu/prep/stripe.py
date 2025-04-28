@@ -112,6 +112,61 @@ def _rs_sort(sinogram, size, dim):
 
     return cp.transpose(sino_corrected)
 
+def _rs_sort_3D(sinogram, size, dim):
+    """
+    Remove stripes using the sorting technique.
+    """
+
+    # print(sinogram.shape)
+    slice_number = sinogram.shape[1]
+
+    sinogram = cp.transpose(sinogram)
+
+    # print(sinogram.shape)
+
+    # device = cp.cuda.Device()
+    # streams = []
+    # stream_count = 8
+
+    # for i in range(stream_count):
+    #     streams.append(cp.cuda.stream.Stream(non_blocking=True))
+
+    # sino_corrected = cp.empty(sinogram.shape)
+
+    # for stream_index in range(stream_count):
+    #     stream = streams[stream_index]
+    #     with stream:
+    #         #: Sort each column of the sinogram by its grayscale values
+    #         #: Keep track of the sorting indices so we can reverse it below
+    #         sortvals = cp.argsort(sinogram[:,stream_index,:], axis=1)
+    #         sortvals_reverse = cp.argsort(sortvals, axis=1)
+    #         sino_sort = cp.take_along_axis(sinogram[:,stream_index,:], sortvals, axis=1)
+
+    #         #: Now apply the median filter on the sorted image along each row
+    #         sino_sort = median_filter(sino_sort, (size, 1) if dim == 1 else (size, size))
+
+    #         #: step 3: re-sort the smoothed image columns to the original rows
+    #         sino_corrected[:,stream_index,:] = cp.take_along_axis(sino_sort, sortvals_reverse, axis=1)
+
+    #: Sort each column of the sinogram by its grayscale values
+    #: Keep track of the sorting indices so we can reverse it below
+    sortvals = cp.argsort(sinogram, axis=2)
+    #print(sortvals.shape)
+    sortvals_reverse = cp.argsort(sortvals, axis=2)
+    #print(sortvals_reverse.shape)
+    sino_sort = cp.take_along_axis(sinogram, sortvals, axis=2)
+    #print(sino_sort.shape)
+
+    #: Now apply the median filter on the sorted image along each row
+    for i in range(slice_number):
+        sino_sort[:,i,:] = median_filter(sino_sort[:,i,:], (size, 1) if dim == 1 else (size, size))
+
+    #: step 3: re-sort the smoothed image columns to the original rows
+    sino_corrected = cp.take_along_axis(sino_sort, sortvals_reverse, axis=2)
+
+
+    return cp.transpose(sino_corrected)
+
 
 def remove_stripe_ti(
     data: Union[cp.ndarray, np.ndarray],
@@ -144,7 +199,6 @@ def remove_stripe_ti(
     v = cp.fft.irfft(cp.fft.rfft(v) * cp.fft.rfft(gamma)).astype(data.dtype)
     data[:] += v
     return data
-
 
 ######## Optimized version for Vo-all ring removal in tomopy########
 # This function is taken from TomoCuPy package
@@ -201,23 +255,25 @@ def remove_all_stripe(
         Corrected 3D tomographic data as a CuPy or NumPy array.
 
     """
-    streams = [cp.cuda.Stream() for _ in range(4)]
-    output = data.copy()
-    def process_slice(m, stream):
-        with stream:
-            output[:, m, :] = _rs_dead(output[:, m, :], snr, la_size)
-            output[:, m, :] = _rs_sort(output[:, m, :], sm_size, dim)
-            output[:, m, :] = cp.nan_to_num(output[:, m, :])
 
-    # Distribute slices across streams
-    for i in range(data.shape[1]):
-        stream = streams[i % 4]
-        process_slice(i, stream)
+    device = cp.cuda.Device()
+    streams = []
+    stream_count = 8
 
-    for stream in streams:
-        stream.synchronize()
+    for i in range(stream_count):
+        streams.append(cp.cuda.stream.Stream(non_blocking=True))
 
-    return output
+    for m in range(0, data.shape[1], stream_count):
+        threads = []
+        for stream_index in range(stream_count):
+            stream = streams[stream_index]
+            with stream:
+                data[:, m + stream_index, :] = _rs_dead(data[:, m + stream_index, :], snr, la_size)
+                data[:, m + stream_index, :] = _rs_sort(data[:, m + stream_index, :], sm_size, dim)
+                data[:, m + stream_index, :] = cp.nan_to_num(data[:, m + stream_index, :])
+        device.synchronize()
+
+    return data
 
 
 def _mpolyfit(x, y):
