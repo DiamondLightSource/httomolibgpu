@@ -2,10 +2,10 @@ import cupy as cp
 import numpy as np
 from httomolibgpu.prep.normalize import normalize as normalize_cupy
 from httomolibgpu.recon.algorithm import (
-    FBP,
-    LPRec,
-    SIRT,
-    CGLS,
+    FBP3d_tomobar,
+    LPRec3d_tomobar,
+    SIRT3d_tomobar,
+    CGLS3d_tomobar,
 )
 from numpy.testing import assert_allclose
 import time
@@ -13,8 +13,8 @@ import pytest
 from cupy.cuda import nvtx
 
 
-def test_reconstruct_FBP_1(data, flats, darks, ensure_clean_memory):
-    recon_data = FBP(
+def test_reconstruct_FBP3d_tomobar_1(data, flats, darks, ensure_clean_memory):
+    recon_data = FBP3d_tomobar(
         normalize_cupy(data, flats, darks, cutoff=10, minus_log=True),
         np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
         79.5,
@@ -31,8 +31,8 @@ def test_reconstruct_FBP_1(data, flats, darks, ensure_clean_memory):
     assert recon_data.shape == (160, 128, 160)
 
 
-def test_reconstruct_FBP_1_neglog(data, flats, darks, ensure_clean_memory):
-    recon_data = FBP(
+def test_reconstruct_FBP3d_tomobar_1_neglog(data, flats, darks, ensure_clean_memory):
+    recon_data = FBP3d_tomobar(
         normalize_cupy(data, flats, darks, cutoff=10, minus_log=False),
         np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
         79.5,
@@ -50,8 +50,8 @@ def test_reconstruct_FBP_1_neglog(data, flats, darks, ensure_clean_memory):
     assert recon_data.shape == (160, 128, 160)
 
 
-def test_reconstruct_FBP_2(data, flats, darks, ensure_clean_memory):
-    recon_data = FBP(
+def test_reconstruct_FBP3d_tomobar_2(data, flats, darks, ensure_clean_memory):
+    recon_data = FBP3d_tomobar(
         normalize_cupy(data, flats, darks, cutoff=20.5, minus_log=False),
         np.linspace(5.0 * np.pi / 360.0, 180.0 * np.pi / 360.0, data.shape[0]),
         15.5,
@@ -68,8 +68,8 @@ def test_reconstruct_FBP_2(data, flats, darks, ensure_clean_memory):
     assert recon_data.dtype == np.float32
 
 
-def test_reconstruct_FBP_3(data, flats, darks, ensure_clean_memory):
-    recon_data = FBP(
+def test_reconstruct_FBP3d_tomobar_3(data, flats, darks, ensure_clean_memory):
+    recon_data = FBP3d_tomobar(
         normalize_cupy(data, flats, darks, cutoff=20.5, minus_log=False),
         np.linspace(5.0 * np.pi / 360.0, 180.0 * np.pi / 360.0, data.shape[0]),
         79,  # center
@@ -87,8 +87,8 @@ def test_reconstruct_FBP_3(data, flats, darks, ensure_clean_memory):
     assert recon_data.shape == (210, 128, 210)
 
 
-def test_reconstruct_LPREC_1(data, flats, darks, ensure_clean_memory):
-    recon_data = LPRec(
+def test_reconstruct_LPRec3d_tomobar_1(data, flats, darks, ensure_clean_memory):
+    recon_data = LPRec3d_tomobar(
         data=normalize_cupy(data, flats, darks, cutoff=10, minus_log=True),
         angles=np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
         center=79.5,
@@ -104,9 +104,9 @@ def test_reconstruct_LPREC_1(data, flats, darks, ensure_clean_memory):
     assert recon_data.shape == (130, 128, 130)
 
 
-def test_reconstruct_SIRT(data, flats, darks, ensure_clean_memory):
+def test_reconstruct_SIRT3d_tomobar(data, flats, darks, ensure_clean_memory):
     objrecon_size = data.shape[2]
-    recon_data = SIRT(
+    recon_data = SIRT3d_tomobar(
         normalize_cupy(data, flats, darks, cutoff=10, minus_log=True),
         np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
         79.5,
@@ -121,9 +121,9 @@ def test_reconstruct_SIRT(data, flats, darks, ensure_clean_memory):
     assert recon_data.dtype == np.float32
 
 
-def test_reconstruct_CGLS(data, flats, darks, ensure_clean_memory):
+def test_reconstruct_CGLS3d_tomobar(data, flats, darks, ensure_clean_memory):
     objrecon_size = data.shape[2]
-    recon_data = CGLS(
+    recon_data = CGLS3d_tomobar(
         normalize_cupy(data, flats, darks, cutoff=10, minus_log=True),
         np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
         79.5,
@@ -139,7 +139,7 @@ def test_reconstruct_CGLS(data, flats, darks, ensure_clean_memory):
 
 
 @pytest.mark.perf
-def test_FBP_performance(ensure_clean_memory):
+def test_FBP3d_tomobar_performance(ensure_clean_memory):
     dev = cp.cuda.Device()
     data_host = np.random.random_sample(size=(1801, 5, 2560)).astype(np.float32) * 2.0
     data = cp.asarray(data_host, dtype=np.float32)
@@ -148,13 +148,13 @@ def test_FBP_performance(ensure_clean_memory):
     filter_freq_cutoff = 1.1
 
     # cold run first
-    FBP(data, angles, cor, filter_freq_cutoff)
+    FBP3d_tomobar(data, angles, cor, filter_freq_cutoff)
     dev.synchronize()
 
     start = time.perf_counter_ns()
     nvtx.RangePush("Core")
     for _ in range(10):
-        FBP(data, angles, cor)
+        FBP3d_tomobar(data, angles, cor)
     nvtx.RangePop()
     dev.synchronize()
     duration_ms = float(time.perf_counter_ns() - start) * 1e-6 / 10

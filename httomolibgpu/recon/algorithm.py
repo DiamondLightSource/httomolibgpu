@@ -40,17 +40,17 @@ from typing import Optional, Type
 
 
 __all__ = [
-    "FBP",
-    "LPRec",
-    "SIRT",
-    "CGLS",
+    "FBP3d_tomobar",
+    "LPRec3d_tomobar",
+    "SIRT3d_tomobar",
+    "CGLS3d_tomobar",
 ]
 
 input_data_axis_labels = ["angles", "detY", "detX"]  # set the labels of the input data
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% FBP reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-def FBP(
+def FBP3d_tomobar(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
@@ -91,7 +91,7 @@ def FBP(
     Returns
     -------
     cp.ndarray
-        The FBP reconstructed volume as a CuPy array.
+        FBP reconstructed volume as a CuPy array.
     """
     RecToolsCP = _instantiate_direct_recon_class(
         data, angles, center, recon_size, gpu_id
@@ -108,7 +108,7 @@ def FBP(
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% LPRec  %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-def LPRec(
+def LPRec3d_tomobar(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
@@ -157,7 +157,7 @@ def LPRec(
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% SIRT reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-def SIRT(
+def SIRT3d_tomobar(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
@@ -222,7 +222,7 @@ def SIRT(
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% CGLS reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-def CGLS(
+def CGLS3d_tomobar(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
