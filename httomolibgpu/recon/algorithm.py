@@ -56,7 +56,7 @@ def FBP3d_tomobar(
     center: Optional[float] = None,
     filter_freq_cutoff: float = 0.35,
     recon_size: Optional[int] = None,
-    recon_mask_radius: float = 0.95,
+    recon_mask_radius: Optional[float] = 0.95,
     neglog: bool = False,
     gpu_id: int = 0,
 ) -> cp.ndarray:
@@ -78,7 +78,7 @@ def FBP3d_tomobar(
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
-    recon_mask_radius: float
+    recon_mask_radius: float, optional
         The radius of the circular mask that applies to the reconstructed slice in order to crop
         out some undesirable artifacts. The values outside the given diameter will be set to zero.
         It is recommended to keep the value in the range [0.7-1.0].
@@ -132,7 +132,7 @@ def LPRec3d_tomobar(
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
-    recon_mask_radius: float
+    recon_mask_radius: float, optional
         The radius of the circular mask that applies to the reconstructed slice in order to crop
         out some undesirable artifacts. The values outside the given diameter will be set to zero.
         It is recommended to keep the value in the range [0.7-1.0].
