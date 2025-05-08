@@ -7,6 +7,7 @@ from math import isclose
 
 from httomolibgpu.prep.normalize import normalize
 from httomolibgpu.recon.algorithm import (
+    FBP2d_astra,
     FBP,
     LPRec,
 )
@@ -16,6 +17,33 @@ import time
 import pytest
 from cupy.cuda import nvtx
 from conftest import force_clean_gpu_memory
+
+
+def test_reconstruct_FBP2d_astra_i12_dataset1(i12_dataset1):
+    force_clean_gpu_memory()
+    projdata = i12_dataset1[0]
+    angles = i12_dataset1[1]
+    flats = i12_dataset1[2]
+    darks = i12_dataset1[3]
+    del i12_dataset1
+
+    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    del flats, darks, projdata
+    force_clean_gpu_memory()
+
+    recon_data = FBP2d_astra(
+        cp.asnumpy(data_normalised),
+        np.deg2rad(angles),
+        center=1253.75,
+        filter_type="shepp-logan",
+        filter_parameter=None,
+        filter_d=2.0,
+        recon_mask_radius=0.9,
+    )
+    assert recon_data.flags.c_contiguous
+    assert_allclose(np.sum(recon_data), 84673.68, rtol=1e-07, atol=1e-6)
+    assert recon_data.dtype == np.float32
+    assert recon_data.shape == (2560, 50, 2560)
 
 
 def test_reconstruct_FBP_i12_dataset1(i12_dataset1):

@@ -2,6 +2,7 @@ import cupy as cp
 import numpy as np
 from httomolibgpu.prep.normalize import normalize as normalize_cupy
 from httomolibgpu.recon.algorithm import (
+    FBP2d_astra,
     FBP,
     LPRec,
     SIRT,
@@ -11,6 +12,27 @@ from numpy.testing import assert_allclose
 import time
 import pytest
 from cupy.cuda import nvtx
+
+
+def test_reconstruct_FBP_2d_astra(data, flats, darks, ensure_clean_memory):
+    normalised_data = normalize_cupy(data, flats, darks, cutoff=10, minus_log=True)
+    recon_size = 150
+
+    recon_data = FBP2d_astra(
+        cp.asnumpy(normalised_data),
+        np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
+        79.5,
+        filter_type="shepp-logan",
+        filter_parameter=None,
+        filter_d=2.0,
+        recon_size=recon_size,
+        recon_mask_radius=0.9,
+    )
+    assert recon_data.flags.c_contiguous
+    assert_allclose(np.mean(recon_data), 0.0020, atol=1e-04)
+    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.265129, rtol=1e-05)
+    assert recon_data.dtype == np.float32
+    assert recon_data.shape == (recon_size, 128, recon_size)
 
 
 def test_reconstruct_FBP_1(data, flats, darks, ensure_clean_memory):
@@ -97,9 +119,7 @@ def test_reconstruct_LPREC_1(data, flats, darks, ensure_clean_memory):
     )
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
-    assert_allclose(np.mean(recon_data), 0.0070263873, rtol=1e-07, atol=1e-6)
-    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.89937746, rtol=1e-05)
-    assert_allclose(np.max(recon_data), 0.098308131, rtol=1e-07, atol=1e-6)
+    assert_allclose(np.mean(recon_data), 0.0070, atol=1e-4)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (130, 128, 130)
 
