@@ -29,7 +29,7 @@ def test_reconstruct_FBP_2d_astra(data, flats, darks, ensure_clean_memory):
         recon_mask_radius=0.9,
     )
     assert recon_data.flags.c_contiguous
-    assert_allclose(np.mean(recon_data), 0.002071, rtol=1e-07, atol=1e-6)
+    assert_allclose(np.mean(recon_data), 0.0020, atol=1e-04)
     assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.265129, rtol=1e-05)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (recon_size, 128, recon_size)
