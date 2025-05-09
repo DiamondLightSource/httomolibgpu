@@ -119,12 +119,14 @@ def FBP2d_astra(
 
     # loop over detY slices
     for slice_index in range(0, detY_size):
-        reconstruction[:, slice_index, :] = RecTools.FBP(
-            data[:, slice_index, :],
-            filter_type=filter_type,
-            filter_parameter=filter_parameter,
-            filter_d=filter_d,
-            recon_mask_radius=recon_mask_radius,
+        reconstruction[:, slice_index, :] = np.flipud(
+            RecTools.FBP(
+                data[:, slice_index, :],
+                filter_type=filter_type,
+                filter_parameter=filter_parameter,
+                filter_d=filter_d,
+                recon_mask_radius=recon_mask_radius,
+            )
         )
     return reconstruction
 

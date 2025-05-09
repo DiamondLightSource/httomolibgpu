@@ -41,7 +41,7 @@ def test_reconstruct_FBP2d_astra_i12_dataset1(i12_dataset1):
         recon_mask_radius=0.9,
     )
     assert recon_data.flags.c_contiguous
-    assert_allclose(np.sum(recon_data), 84673.68, rtol=1e-07, atol=1e-6)
+    assert_allclose(np.sum(recon_data), 84672.84, atol=1e-2)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 50, 2560)
 
