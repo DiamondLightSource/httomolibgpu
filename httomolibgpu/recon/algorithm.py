@@ -28,12 +28,12 @@ cupy_run = cupywrapper.cupy_run
 
 from unittest.mock import Mock
 
-from tomobar.methodsDIR import RecToolsDIR
-
 if cupy_run:
+    from tomobar.methodsDIR import RecToolsDIR
     from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
     from tomobar.methodsIR_CuPy import RecToolsIRCuPy
 else:
+    RecToolsDIR = Mock()
     RecToolsDIRCuPy = Mock()
     RecToolsIRCuPy = Mock()
 
