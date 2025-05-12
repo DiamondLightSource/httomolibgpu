@@ -43,10 +43,10 @@ from typing import Optional, Type
 
 __all__ = [
     "FBP2d_astra",
-    "FBP",
-    "SIRT",
-    "CGLS",
-    "LPRec",
+    "FBP3d_tomobar",
+    "LPRec3d_tomobar",
+    "SIRT3d_tomobar",
+    "CGLS3d_tomobar",
 ]
 
 input_data_axis_labels = ["angles", "detY", "detX"]  # set the labels of the input data
@@ -132,13 +132,13 @@ def FBP2d_astra(
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% FBP reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-def FBP(
+def FBP3d_tomobar(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
     filter_freq_cutoff: float = 0.35,
     recon_size: Optional[int] = None,
-    recon_mask_radius: float = 0.95,
+    recon_mask_radius: Optional[float] = 0.95,
     neglog: bool = False,
     gpu_id: int = 0,
 ) -> cp.ndarray:
@@ -160,7 +160,7 @@ def FBP(
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
-    recon_mask_radius: float
+    recon_mask_radius: float, optional
         The radius of the circular mask that applies to the reconstructed slice in order to crop
         out some undesirable artifacts. The values outside the given diameter will be set to zero.
         It is recommended to keep the value in the range [0.7-1.0].
@@ -173,7 +173,7 @@ def FBP(
     Returns
     -------
     cp.ndarray
-        The FBP reconstructed volume as a CuPy array.
+        FBP reconstructed volume as a CuPy array.
     """
     RecToolsCP = _instantiate_direct_recon_class(
         data, angles, center, recon_size, gpu_id
@@ -190,7 +190,7 @@ def FBP(
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% LPRec  %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-def LPRec(
+def LPRec3d_tomobar(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
@@ -214,7 +214,7 @@ def LPRec(
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
-    recon_mask_radius: float
+    recon_mask_radius: float, optional
         The radius of the circular mask that applies to the reconstructed slice in order to crop
         out some undesirable artifacts. The values outside the given diameter will be set to zero.
         It is recommended to keep the value in the range [0.7-1.0].
@@ -239,7 +239,7 @@ def LPRec(
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% SIRT reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-def SIRT(
+def SIRT3d_tomobar(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
@@ -304,7 +304,7 @@ def SIRT(
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% CGLS reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-def CGLS(
+def CGLS3d_tomobar(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,

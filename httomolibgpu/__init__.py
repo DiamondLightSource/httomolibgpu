@@ -11,5 +11,12 @@ from httomolibgpu.prep.stripe import (
     remove_all_stripe,
 )
 
-from httomolibgpu.recon.algorithm import FBP2d_astra, FBP, LPRec, SIRT, CGLS
+from httomolibgpu.recon.algorithm import (
+    FBP2d_astra,
+    FBP3d_tomobar,
+    LPRec3d_tomobar,
+    SIRT3d_tomobar,
+    CGLS3d_tomobar,
+)
+
 from httomolibgpu.recon.rotation import find_center_vo, find_center_360, find_center_pc
