@@ -29,9 +29,11 @@ cupy_run = cupywrapper.cupy_run
 from unittest.mock import Mock
 
 if cupy_run:
+    from tomobar.methodsDIR import RecToolsDIR
     from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
     from tomobar.methodsIR_CuPy import RecToolsIRCuPy
 else:
+    RecToolsDIR = Mock()
     RecToolsDIRCuPy = Mock()
     RecToolsIRCuPy = Mock()
 
@@ -40,41 +42,49 @@ from typing import Optional, Type
 
 
 __all__ = [
-    "FBP",
-    "LPRec",
-    "SIRT",
-    "CGLS",
+    "FBP2d_astra",
+    "FBP3d_tomobar",
+    "LPRec3d_tomobar",
+    "SIRT3d_tomobar",
+    "CGLS3d_tomobar",
 ]
 
 input_data_axis_labels = ["angles", "detY", "detX"]  # set the labels of the input data
 
 
-## %%%%%%%%%%%%%%%%%%%%%%% FBP reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-def FBP(
-    data: cp.ndarray,
+## %%%%%%%%%%%%%%%%%%%%%%% FBP2d_astra reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+def FBP2d_astra(
+    data: np.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
-    filter_freq_cutoff: float = 0.35,
+    filter_type: str = "ram-lak",
+    filter_parameter: Optional[float] = None,
+    filter_d: Optional[float] = None,
     recon_size: Optional[int] = None,
     recon_mask_radius: float = 0.95,
     neglog: bool = False,
     gpu_id: int = 0,
-) -> cp.ndarray:
+) -> np.ndarray:
     """
-    Perform Filtered Backprojection (FBP) reconstruction using ASTRA toolbox :cite:`van2016fast` and
+    Perform Filtered Backprojection (FBP) reconstruction slice-by-slice (2d) using ASTRA toolbox :cite:`van2016fast` and
     ToMoBAR :cite:`kazantsev2020tomographic` wrappers.
-    This is a 3D recon from the CuPy array directly and using a custom built SINC filter for filtration in Fourier space.
+    This is a 2D recon using ASTRA's API for the FBP method, see for more parameters ASTRA's documentation here:
+    https://astra-toolbox.com/docs/algs/FBP_CUDA.html.
 
-    Parameters
+    Parameters`
     ----------
-    data : cp.ndarray
-        Projection data as a CuPy array.
+    data : np.ndarray
+        Projection data as a 3d numpy array.
     angles : np.ndarray
         An array of angles given in radians.
     center : float, optional
         The center of rotation (CoR).
-    filter_freq_cutoff : float
-        Cutoff frequency parameter for the SINC filter, the lower values produce better contrast but noisy reconstruction.
+    filter_type: str
+        Type of projection filter, see ASTRA's API for all available options for filters.
+    filter_parameter: float, optional
+        Parameter value for the 'tukey', 'gaussian', 'blackman' and 'kaiser' filter types.
+    filter_d: float, optional
+        D parameter value for 'shepp-logan', 'cosine', 'hamming' and 'hann' filter types.
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
@@ -90,8 +100,80 @@ def FBP(
 
     Returns
     -------
+    np.ndarray
+        The FBP reconstructed volume as a numpy array.
+    """
+    data_shape = np.shape(data)
+    if recon_size is None:
+        recon_size = data_shape[2]
+
+    RecTools = _instantiate_direct_recon2d_class(
+        data, angles, center, recon_size, gpu_id
+    )
+
+    detY_size = data_shape[1]
+    reconstruction = np.empty(
+        (recon_size, detY_size, recon_size), dtype=np.float32(), order="C"
+    )
+    _take_neg_log_np(data) if neglog else data
+
+    # loop over detY slices
+    for slice_index in range(0, detY_size):
+        reconstruction[:, slice_index, :] = np.flipud(
+            RecTools.FBP(
+                data[:, slice_index, :],
+                filter_type=filter_type,
+                filter_parameter=filter_parameter,
+                filter_d=filter_d,
+                recon_mask_radius=recon_mask_radius,
+            )
+        )
+    return reconstruction
+
+
+## %%%%%%%%%%%%%%%%%%%%%%% FBP reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+def FBP3d_tomobar(
+    data: cp.ndarray,
+    angles: np.ndarray,
+    center: Optional[float] = None,
+    filter_freq_cutoff: float = 0.35,
+    recon_size: Optional[int] = None,
+    recon_mask_radius: Optional[float] = 0.95,
+    neglog: bool = False,
+    gpu_id: int = 0,
+) -> cp.ndarray:
+    """
+    Perform Filtered Backprojection (FBP) reconstruction using ASTRA toolbox :cite:`van2016fast` and
+    ToMoBAR :cite:`kazantsev2020tomographic` wrappers.
+    This is a 3D recon from the CuPy array directly and using a custom built SINC filter for filtration in Fourier space.
+
+    Parameters
+    ----------
+    data : cp.ndarray
+        Projection data as a 3d CuPy array.
+    angles : np.ndarray
+        An array of angles given in radians.
+    center : float, optional
+        The center of rotation (CoR).
+    filter_freq_cutoff : float
+        Cutoff frequency parameter for the SINC filter, the lower values produce better contrast but noisy reconstruction.
+    recon_size : int, optional
+        The [recon_size, recon_size] shape of the reconstructed slice in pixels.
+        By default (None), the reconstructed size will be the dimension of the horizontal detector.
+    recon_mask_radius: float, optional
+        The radius of the circular mask that applies to the reconstructed slice in order to crop
+        out some undesirable artifacts. The values outside the given diameter will be set to zero.
+        It is recommended to keep the value in the range [0.7-1.0].
+    neglog: bool
+        Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Defaults to False,
+        assuming that the negative log is taken either in normalisation procedure on with Paganin filter application.
+    gpu_id : int
+        A GPU device index to perform operation on.
+
+    Returns
+    -------
     cp.ndarray
-        The FBP reconstructed volume as a CuPy array.
+        FBP reconstructed volume as a CuPy array.
     """
     RecToolsCP = _instantiate_direct_recon_class(
         data, angles, center, recon_size, gpu_id
@@ -108,7 +190,7 @@ def FBP(
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% LPRec  %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-def LPRec(
+def LPRec3d_tomobar(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
@@ -126,7 +208,7 @@ def LPRec(
     Parameters
     ----------
     data : cp.ndarray
-        Projection data as a CuPy array.
+        Projection data as a 3d CuPy array.
     angles : np.ndarray
         An array of angles given in radians.
     center : float, optional
@@ -138,7 +220,7 @@ def LPRec(
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
-    recon_mask_radius: float
+    recon_mask_radius: float, optional
         The radius of the circular mask that applies to the reconstructed slice in order to crop
         out some undesirable artifacts. The values outside the given diameter will be set to zero.
         It is recommended to keep the value in the range [0.7-1.0].
@@ -165,7 +247,7 @@ def LPRec(
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% SIRT reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-def SIRT(
+def SIRT3d_tomobar(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
@@ -230,7 +312,7 @@ def SIRT(
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% CGLS reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
-def CGLS(
+def CGLS3d_tomobar(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
@@ -323,6 +405,43 @@ def _instantiate_direct_recon_class(
     return RecToolsCP
 
 
+## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+def _instantiate_direct_recon2d_class(
+    data: np.ndarray,
+    angles: np.ndarray,
+    center: Optional[float] = None,
+    recon_size: Optional[int] = None,
+    gpu_id: int = 0,
+) -> Type:
+    """instantiate ToMoBAR's direct recon class for 2d reconstruction
+
+    Args:
+        data (cp.ndarray): data array
+        angles (np.ndarray): angles
+        center (Optional[float], optional): center of recon. Defaults to None.
+        recon_size (Optional[int], optional): recon_size. Defaults to None.
+        gpu_id (int, optional): gpu ID. Defaults to 0.
+
+    Returns:
+        Type[RecToolsDIR]: an instance of the direct recon class
+    """
+    if center is None:
+        center = data.shape[2] // 2  # making a crude guess
+    if recon_size is None:
+        recon_size = data.shape[2]
+    RecTools = RecToolsDIR(
+        DetectorsDimH=data.shape[2],  # Horizontal detector dimension
+        DetectorsDimV=None,  # 2d case
+        CenterRotOffset=data.shape[2] / 2
+        - center
+        - 0.5,  # Center of Rotation scalar or a vector
+        AnglesVec=-angles,  # A vector of projection angles in radians
+        ObjSize=recon_size,  # Reconstructed object dimensions (scalar)
+        device_projector=gpu_id,
+    )
+    return RecTools
+
+
 def _instantiate_iterative_recon_class(
     data: cp.ndarray,
     angles: np.ndarray,
@@ -368,4 +487,13 @@ def _take_neg_log(data: cp.ndarray) -> cp.ndarray:
     data = -cp.log(data)
     data[cp.isnan(data)] = 6.0
     data[cp.isinf(data)] = 0
+    return data
+
+
+def _take_neg_log_np(data: np.ndarray) -> np.ndarray:
+    """Taking negative log"""
+    data[data <= 0] = 1
+    data = -np.log(data)
+    data[np.isnan(data)] = 6.0
+    data[np.isinf(data)] = 0
     return data

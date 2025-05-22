@@ -43,6 +43,8 @@ def normalize(
     data: cp.ndarray,
     flats: cp.ndarray,
     darks: cp.ndarray,
+    flats_multiplier: float = 1.0,
+    darks_multiplier: float = 1.0,
     cutoff: float = 10.0,
     minus_log: bool = True,
     nonnegativity: bool = False,
@@ -60,13 +62,17 @@ def normalize(
         3D flat field data as a CuPy array.
     darks : cp.ndarray
         3D dark field data as a CuPy array.
-    cutoff : float, optional
+    flats_multiplier: float
+        A multiplier to apply to flats, can work as an intensity compensation constant.
+    darks_multiplier: float
+        A multiplier to apply to darks, can work as an intensity compensation constant.
+    cutoff : float
         Permitted maximum value for the normalised data.
-    minus_log : bool, optional
+    minus_log : bool
         Apply negative log to the normalised data.
-    nonnegativity : bool, optional
+    nonnegativity : bool
         Remove negative values in the normalised data.
-    remove_nans : bool, optional
+    remove_nans : bool
         Remove NaN and Inf values in the normalised data.
 
     Returns
@@ -81,6 +87,9 @@ def normalize(
     out = cp.empty(data.shape, dtype=float32)
     mean(darks, axis=0, dtype=float32, out=dark0)
     mean(flats, axis=0, dtype=float32, out=flat0)
+
+    dark0 *= darks_multiplier
+    flat0 *= flats_multiplier
 
     kernel_name = "normalisation"
     kernel = r"""

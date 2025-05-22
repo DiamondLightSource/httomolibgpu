@@ -7,8 +7,9 @@ from math import isclose
 
 from httomolibgpu.prep.normalize import normalize
 from httomolibgpu.recon.algorithm import (
-    FBP,
-    LPRec,
+    FBP2d_astra,
+    FBP3d_tomobar,
+    LPRec3d_tomobar,
 )
 from httomolibgpu.misc.morph import sino_360_to_180
 from numpy.testing import assert_allclose
@@ -17,8 +18,7 @@ import pytest
 from cupy.cuda import nvtx
 from conftest import force_clean_gpu_memory
 
-
-def test_reconstruct_FBP_i12_dataset1(i12_dataset1):
+def test_reconstruct_FBP2d_astra_i12_dataset1(i12_dataset1):
     force_clean_gpu_memory()
     projdata = i12_dataset1[0]
     angles = i12_dataset1[1]
@@ -30,7 +30,34 @@ def test_reconstruct_FBP_i12_dataset1(i12_dataset1):
     del flats, darks, projdata
     force_clean_gpu_memory()
 
-    recon_data = FBP(
+    recon_data = FBP2d_astra(
+        cp.asnumpy(data_normalised),
+        np.deg2rad(angles),
+        center=1253.75,
+        filter_type="shepp-logan",
+        filter_parameter=None,
+        filter_d=2.0,
+        recon_mask_radius=0.9,
+    )
+    assert recon_data.flags.c_contiguous
+    assert_allclose(np.sum(recon_data), 84672.84, atol=1e-2)
+    assert recon_data.dtype == np.float32
+    assert recon_data.shape == (2560, 50, 2560)
+    
+
+def test_reconstruct_FBP3d_tomobar_i12_dataset1(i12_dataset1):
+    force_clean_gpu_memory()
+    projdata = i12_dataset1[0]
+    angles = i12_dataset1[1]
+    flats = i12_dataset1[2]
+    darks = i12_dataset1[3]
+    del i12_dataset1
+
+    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    del flats, darks, projdata
+    force_clean_gpu_memory()
+
+    recon_data = FBP3d_tomobar(
         data_normalised,
         np.deg2rad(angles),
         center=1253.75,
@@ -88,7 +115,16 @@ def test_reconstruct_LP_REC_i13_dataset1(i13_dataset1):
     del data_normalised
     force_clean_gpu_memory()
 
-    recon_data = LPRec(
+    # GPU archetictures older than 5.3 wont accept the data larger than
+    # (4096, 4096, 4096), while the newer ones can accept (16384 x 16384 x 16384)
+
+    # recon_data = FBP3d_tomobar(
+    #     stiched_data_180degrees,
+    #     np.deg2rad(angles[0:3000]),
+    #     center=2322,
+    #     filter_freq_cutoff=0.35,
+    # )
+    recon_data = LPRec3d_tomobar(
         data=stiched_data_180degrees,
         angles=np.deg2rad(angles[0:3000]),
         center=2322.08,
@@ -104,7 +140,7 @@ def test_reconstruct_LP_REC_i13_dataset1(i13_dataset1):
 
 
 @pytest.mark.perf
-def test_FBP_performance_i13_dataset2(i13_dataset2):
+def test_FBP3d_tomobar_performance_i13_dataset2(i13_dataset2):
     force_clean_gpu_memory()
     dev = cp.cuda.Device()
     projdata = i13_dataset2[0]
@@ -118,7 +154,7 @@ def test_FBP_performance_i13_dataset2(i13_dataset2):
     force_clean_gpu_memory()
 
     # cold run first
-    FBP(
+    FBP3d_tomobar(
         data_normalised,
         np.deg2rad(angles),
         center=1253.75,
@@ -129,7 +165,7 @@ def test_FBP_performance_i13_dataset2(i13_dataset2):
     start = time.perf_counter_ns()
     nvtx.RangePush("Core")
     for _ in range(10):
-        FBP(
+        FBP3d_tomobar(
             data_normalised,
             np.deg2rad(angles),
             center=1286.25,
@@ -142,7 +178,7 @@ def test_FBP_performance_i13_dataset2(i13_dataset2):
     assert "performance in ms" == duration_ms
 
 
-def test_reconstruct_LPREC_i13_dataset2(i13_dataset2):
+def test_reconstruct_LPRec3d_tomobar_i13_dataset2(i13_dataset2):
     force_clean_gpu_memory()
     projdata = i13_dataset2[0]
     angles = i13_dataset2[1]
@@ -154,7 +190,7 @@ def test_reconstruct_LPREC_i13_dataset2(i13_dataset2):
     del flats, darks, projdata
     force_clean_gpu_memory()
 
-    recon_data = LPRec(
+    recon_data = LPRec3d_tomobar(
         data=data_normalised,
         angles=np.deg2rad(angles),
         center=1286.25,
@@ -170,7 +206,7 @@ def test_reconstruct_LPREC_i13_dataset2(i13_dataset2):
 
 
 @pytest.mark.perf
-def test_LPREC_performance_i13_dataset2(i13_dataset2):
+def test_LPRec3d_tomobar_performance_i13_dataset2(i13_dataset2):
     dev = cp.cuda.Device()
     projdata = i13_dataset2[0]
     angles = i13_dataset2[1]
@@ -183,7 +219,7 @@ def test_LPREC_performance_i13_dataset2(i13_dataset2):
     force_clean_gpu_memory()
 
     # cold run first
-    LPRec(
+    LPRec3d_tomobar(
         data=data_normalised,
         angles=np.deg2rad(angles),
         center=1286.25,
@@ -193,7 +229,7 @@ def test_LPREC_performance_i13_dataset2(i13_dataset2):
     start = time.perf_counter_ns()
     nvtx.RangePush("Core")
     for _ in range(10):
-        LPRec(
+        LPRec3d_tomobar(
             data=data_normalised,
             angles=np.deg2rad(angles),
             center=1286.25,
@@ -205,7 +241,7 @@ def test_LPREC_performance_i13_dataset2(i13_dataset2):
     assert "performance in ms" == duration_ms
 
 
-def test_reconstruct_FBP_i13_dataset3(i13_dataset3):
+def test_reconstruct_FBP3d_tomobar_i13_dataset3(i13_dataset3):
     force_clean_gpu_memory()
     projdata = i13_dataset3[0]
     angles = i13_dataset3[1]
@@ -225,7 +261,7 @@ def test_reconstruct_FBP_i13_dataset3(i13_dataset3):
     # GPU archetictures older than 5.3 wont accept the data larger than
     # (4096, 4096, 4096), while the newer ones can accept (16384 x 16384 x 16384)
 
-    recon_data = FBP(
+    recon_data = FBP3d_tomobar(
         stiched_data_180degrees,
         np.deg2rad(angles[0:3000]),
         center=2341,
