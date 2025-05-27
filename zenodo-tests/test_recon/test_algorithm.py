@@ -83,7 +83,7 @@ def test_reconstruct_LPRec_i12_dataset1(i12_dataset1):
     del flats, darks, projdata, data_normalised
     force_clean_gpu_memory()
 
-    recon_data = LPRec(
+    recon_data = LPRec3d_tomobar(
         data_normalised_cut,
         np.deg2rad(angles),
         center=1253.75,
