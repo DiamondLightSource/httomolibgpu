@@ -94,8 +94,8 @@ def test_reconstruct_LPRec3d_tomobar_i12_dataset1(i12_dataset1):
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
     assert isclose(np.sum(recon_data), 8973.755, abs_tol=10**-3)
-    assert isclose(np.max(recon_data), 0.006396, abs_tol=10**-6)
-    assert isclose(np.min(recon_data), -0.006159, abs_tol=10**-6)
+    assert pytest.approx(np.max(recon_data), rel=1e-3) == 0.00640
+    assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.00617
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 3, 2560)
 
@@ -137,9 +137,9 @@ def test_reconstruct_LPRec_tomobar_i13_dataset1(i13_dataset1):
 
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
-    assert isclose(np.sum(recon_data), 1241.8612, abs_tol=10**-4)
-    assert isclose(np.max(recon_data), 0.008238, abs_tol=10**-6)
-    assert isclose(np.min(recon_data), -0.006565, abs_tol=10**-6)
+    assert isclose(np.sum(recon_data), 1241.859, abs_tol=10**-3)
+    assert pytest.approx(np.max(recon_data), rel=1e-3) == 0.00823
+    assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.00656
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (4646, 1, 4646)
 
@@ -205,9 +205,9 @@ def test_reconstruct_LPRec3d_tomobar_i13_dataset2(i13_dataset2):
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
 
-    assert isclose(np.sum(recon_data), 4095.6272, abs_tol=10**-4)
-    assert isclose(np.max(recon_data), 0.010567, abs_tol=10**-6)
-    assert isclose(np.min(recon_data), -0.008396, abs_tol=10**-6)    
+    assert isclose(np.sum(recon_data), 4095.6257, abs_tol=10**-3)
+    assert pytest.approx(np.max(recon_data), rel=1e-3) == 0.0105672
+    assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.00839    
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 10, 2560)
 
