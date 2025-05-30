@@ -722,9 +722,6 @@ def _calculate_curvature(list_metric):
     afact1 = series1.convert().coef[-1]
 
     list2 = cp.asnumpy(list_metric[min_pos - 1 : min_pos + 2])
-    list2[np.isnan(list2)] = list2[~np.isnan(list2)].mean()
-    list2[np.isinf(list2)] = list2[~np.isinf(list2)].mean()
-
     if not all(map(np.isfinite, list2)):
         raise ValueError(
             "The list of metrics (list2) contains nan's or infs. Check your input data"
