@@ -18,9 +18,7 @@
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 1 March 2024
 # ---------------------------------------------------------------------------
-""" Module for data rescaling. For more detailed information see :ref:`data_rescale_module`.
-
-"""
+"""Module for data rescaling. For more detailed information see :ref:`data_rescale_module`."""
 
 import numpy as np
 from httomolibgpu import cupywrapper
@@ -29,6 +27,8 @@ cp = cupywrapper.cp
 cupy_run = cupywrapper.cupy_run
 
 from typing import Literal, Optional, Tuple, Union
+
+from httomolibgpu.misc.supp_func import _naninfs_check, _zeros_check
 
 __all__ = [
     "rescale_to_int",
@@ -80,6 +80,20 @@ def rescale_to_int(
     else:
         output_dtype = np.uint32
 
+    verbosity_enabled = True  # printing the data-related warnings
+    method_name = "rescale_to_int"
+
+    data = _naninfs_check(
+        data, correction=True, verbosity=verbosity_enabled, method_name=method_name
+    )
+
+    _zeros_check(
+        data,
+        verbosity=verbosity_enabled,
+        percentage_threshold=50,
+        method_name=method_name,
+    )
+
     if cupy_run:
         xp = cp.get_array_module(data)
     else:
@@ -109,7 +123,6 @@ def rescale_to_int(
     if xp.__name__ == "numpy":
         if input_max == pow(2, 32):
             input_max -= 1
-        data[np.logical_not(np.isfinite(data))] = 0
         res = np.copy(data.astype(float))
         res[data.astype(float) < input_min] = int(input_min)
         res[data.astype(float) > input_max] = int(input_max)

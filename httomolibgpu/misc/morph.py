@@ -35,6 +35,8 @@ else:
 
 from typing import Literal
 
+from httomolibgpu.misc.supp_func import _naninfs_check, _zeros_check
+
 __all__ = [
     "sino_360_to_180",
     "data_resampler",
@@ -65,6 +67,20 @@ def sino_360_to_180(
     """
     if data.ndim != 3:
         raise ValueError("only 3D data is supported")
+
+    verbosity_enabled = True  # printing the data-related warnings
+    method_name = "sino_360_to_180"
+
+    data = _naninfs_check(
+        data, correction=True, verbosity=verbosity_enabled, method_name=method_name
+    )
+
+    _zeros_check(
+        data,
+        verbosity=verbosity_enabled,
+        percentage_threshold=50,
+        method_name=method_name,
+    )
 
     dx, dy, dz = data.shape
 
@@ -135,6 +151,20 @@ def data_resampler(
         expanded = True
         data = cp.expand_dims(data, 1)
         axis = 1
+
+    verbosity_enabled = True  # printing the data-related warnings
+    method_name = "data_resampler"
+
+    data = _naninfs_check(
+        data, correction=True, verbosity=verbosity_enabled, method_name=method_name
+    )
+
+    _zeros_check(
+        data,
+        verbosity=verbosity_enabled,
+        percentage_threshold=50,
+        method_name=method_name,
+    )
 
     N, M, Z = cp.shape(data)
 

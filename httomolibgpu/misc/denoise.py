@@ -18,8 +18,7 @@
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 18/December/2024
 # ---------------------------------------------------------------------------
-""" Module for data denoising. For more detailed information see :ref:`data_denoising_module`.
-"""
+"""Module for data denoising. For more detailed information see :ref:`data_denoising_module`."""
 
 import numpy as np
 from typing import Union, Optional
@@ -31,6 +30,8 @@ cupy_run = cupywrapper.cupy_run
 
 from numpy import float32
 from unittest.mock import Mock
+
+from httomolibgpu.misc.supp_func import _naninfs_check, _zeros_check
 
 if cupy_run:
     from ccpi.filters.regularisersCuPy import ROF_TV, PD_TV
@@ -81,6 +82,19 @@ def total_variation_ROF(
     ValueError
         If the input array is not float32 data type.
     """
+    verbosity_enabled = True  # printing the data-related warnings
+    method_name = "total_variation_ROF"
+
+    data = _naninfs_check(
+        data, correction=True, verbosity=verbosity_enabled, method_name=method_name
+    )
+
+    _zeros_check(
+        data,
+        verbosity=verbosity_enabled,
+        percentage_threshold=50,
+        method_name=method_name,
+    )
 
     return ROF_TV(
         data, regularisation_parameter, iterations, time_marching_parameter, gpu_id
@@ -126,6 +140,19 @@ def total_variation_PD(
     ValueError
         If the input array is not float32 data type.
     """
+    verbosity_enabled = True  # printing the data-related warnings
+    method_name = "total_variation_PD"
+
+    data = _naninfs_check(
+        data, correction=True, verbosity=verbosity_enabled, method_name=method_name
+    )
+
+    _zeros_check(
+        data,
+        verbosity=verbosity_enabled,
+        percentage_threshold=50,
+        method_name=method_name,
+    )
 
     methodTV = 0
     if not isotropic:
