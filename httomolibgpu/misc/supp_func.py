@@ -39,7 +39,7 @@ def _naninfs_check(
     Parameters
     ----------
     data : cp.ndarray
-        Input CuPy array either float32 or uint16 data type.
+        Input CuPy or Numpy array either float32 or uint16 data type.
     correction : bool
         If correction is enabled then Inf's and NaN's will be replaced by zeros.
     verbosity : bool
@@ -50,7 +50,7 @@ def _naninfs_check(
     Returns
     -------
     ndarray
-        Corrected (or not) CuPy array.
+        Uncorrected or corrected (nans and infs converted to zeros) input array.
     """
     if cupy_run:
         xp = cp.get_array_module(data)
@@ -82,7 +82,7 @@ def _zeros_check(
     Parameters
     ----------
     data : cp.ndarray
-        Input CuPy array either float32 or uint16 data type.
+        Input CuPy or Numpy array either float32 or uint16 data type.
     verbosity : bool
         If enabled, then the printing of the warning happens when data contains infs or nans
     percentage_threshold: float:
@@ -111,3 +111,41 @@ def _zeros_check(
             )
 
     return warning_zeros
+
+
+def data_checker(
+    data: cp.ndarray,
+    verbosity: bool = True,
+    method_name: Optional[str] = None,
+) -> bool:
+    """
+    Function that performs the variety of checks on input data, in some cases also correct the data and prints warnings.
+    Currently it checks for: the presence of infs and nans in data; the number of zero elements. 
+
+    Parameters
+    ----------
+    data : xp.ndarray
+        Input CuPy or Numpy array either float32 or uint16 data type.
+    verbosity : bool
+        If enabled, then the printing of the warning happens when data contains infs or nans
+    method_name : str, optional.
+        Method's name for which input data is tested.
+
+    Returns
+    -------
+    cp.ndarray
+        Returns corrected or not data array
+    """
+
+    data = _naninfs_check(
+        data, correction=True, verbosity=verbosity, method_name=method_name
+    )
+
+    _zeros_check(
+        data,
+        verbosity=verbosity,
+        percentage_threshold=50,
+        method_name=method_name,
+    )
+
+    return data
