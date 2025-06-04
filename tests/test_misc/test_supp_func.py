@@ -167,7 +167,7 @@ def test_data_checker_numpy():
     assert _data_output.shape == (10, 10, 10)
 
 def test_data_checker():
-    _data_input = cp.ones(shape=(10, 10, 10), dtype=cp.float32)*100
+    _data_input = cp.ones(shape=(10, 10, 10)).astype(cp.float32) * 100.0    
     _data_input[1, 1, 1] = -cp.inf
     _data_input[1, 1, 2] = cp.inf
     _data_input[1, 1, 3] = cp.nan

@@ -34,25 +34,13 @@ def test_remove_stripe_ti_on_data(data, flats, darks):
     assert data_after_stripe_removal.dtype == np.float32
 
 
-# def test_remove_stripe_ti_on_flats(host_flats):
-#     #: testing that numpy uint16 arrays can be passed
-#     corrected_data = remove_stripe_ti(np.copy(host_flats))
-#     assert_allclose(np.mean(corrected_data), 976.558447, rtol=1e-7)
-#     assert_allclose(np.mean(corrected_data, axis=(1, 2)).sum(), 19531.168945, rtol=1e-7)
-#     assert_allclose(np.median(corrected_data), 976.0, rtol=1e-7)
-
-
-# def test_remove_stripe_ti_numpy_vs_cupy_on_random_data():
-#     host_data = np.random.random_sample(size=(181, 5, 256)).astype(np.float32) * 2.0
-#     corrected_host_data = remove_stripe_ti(np.copy(host_data))
-#     corrected_data = remove_stripe_ti(
-#         cp.copy(cp.asarray(host_data, dtype=cp.float32))
-#     ).get()
-
-#     assert_allclose(np.sum(corrected_data), np.sum(corrected_host_data), rtol=1e-6)
-#     assert_allclose(
-#         np.median(corrected_data), np.median(corrected_host_data), rtol=1e-6
-#     )
+# @pytest.mark.parametrize("angles", [180, 181])
+# @pytest.mark.parametrize("det_x", [11, 18])
+# @pytest.mark.parametrize("det_y", [5, 7])
+# def test_remove_stripe_ti_dims_change(angles, det_y, det_x):
+#     data = cp.random.random_sample(size=(angles, det_y, det_x)).astype(cp.float32) * 2.0
+#     corrected_data = remove_stripe_ti(data.copy())
+#     assert corrected_data.shape == (angles, det_y, det_x)
 
 
 def test_stripe_removal_sorting_cupy(data, flats, darks):

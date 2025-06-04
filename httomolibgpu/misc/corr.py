@@ -36,7 +36,7 @@ if cupy_run:
 else:
     load_cuda_module = Mock()
 
-from httomolibgpu.misc.supp_func import _naninfs_check, _zeros_check
+from httomolibgpu.misc.supp_func import data_checker
 
 __all__ = [
     "median_filter",
@@ -82,19 +82,7 @@ def median_filter(
     else:
         raise ValueError("The input array must be a 3D array")
 
-    verbosity_enabled = True  # printing the data-related warnings
-    method_name = "median_filter"
-
-    data = _naninfs_check(
-        data, correction=True, verbosity=verbosity_enabled, method_name=method_name
-    )
-
-    _zeros_check(
-        data,
-        verbosity=verbosity_enabled,
-        percentage_threshold=50,
-        method_name=method_name,
-    )
+    data = data_checker(data, verbosity=True, method_name="median_filter_or_remove_outlier")
 
     if kernel_size not in [3, 5, 7, 9, 11, 13]:
         raise ValueError("Please select a correct kernel size: 3, 5, 7, 9, 11, 13")

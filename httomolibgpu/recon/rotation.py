@@ -48,6 +48,8 @@ else:
 import math
 from typing import List, Literal, Optional, Tuple, Union
 
+from httomolibgpu.misc.supp_func import data_checker
+
 __all__ = [
     "find_center_vo",
     "find_center_360",
@@ -107,7 +109,9 @@ def find_center_vo(
         data = cp.expand_dims(data, 1)
         ind = 0
 
-    angles_tot, detY_size, detX_size = data.shape
+    data = data_checker(data, verbosity=True, method_name="find_center_vo")
+
+    angles_tot, detY_size, detX_size = data.shape    
 
     if ind is None:
         ind = detY_size // 2  # middle slice index
@@ -454,6 +458,8 @@ def find_center_360(
     """
     if data.ndim != 3:
         raise ValueError("A 3D array must be provided")
+    
+    data = data_checker(data, verbosity=True, method_name="find_center_360")    
 
     # this method works with a 360-degree sinogram.
     if ind is None:
@@ -759,6 +765,10 @@ def find_center_pc(
     np.float32
         Rotation axis location.
     """
+
+    proj1 = data_checker(proj1, verbosity=True, method_name="find_center_pc")   
+    proj2 = data_checker(proj2, verbosity=True, method_name="find_center_pc")   
+
     imgshift = 0.0 if rotc_guess is None else rotc_guess - (proj1.shape[1] - 1.0) / 2.0
 
     proj1 = shift(proj1, [0, -imgshift], mode="constant", cval=0)
@@ -777,6 +787,4 @@ def find_center_pc(
     center = (proj1.shape[1] + shiftr[0][1] - 1.0) / 2.0
 
     return np.float32(center + imgshift)
-
-
 ##%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

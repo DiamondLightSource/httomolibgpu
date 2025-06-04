@@ -28,7 +28,7 @@ cupy_run = cupywrapper.cupy_run
 
 from typing import Literal, Optional, Tuple, Union
 
-from httomolibgpu.misc.supp_func import _naninfs_check, _zeros_check
+from httomolibgpu.misc.supp_func import data_checker
 
 __all__ = [
     "rescale_to_int",
@@ -80,19 +80,7 @@ def rescale_to_int(
     else:
         output_dtype = np.uint32
 
-    verbosity_enabled = True  # printing the data-related warnings
-    method_name = "rescale_to_int"
-
-    data = _naninfs_check(
-        data, correction=True, verbosity=verbosity_enabled, method_name=method_name
-    )
-
-    _zeros_check(
-        data,
-        verbosity=verbosity_enabled,
-        percentage_threshold=50,
-        method_name=method_name,
-    )
+    data = data_checker(data, verbosity=True, method_name="rescale_to_int")
 
     if cupy_run:
         xp = cp.get_array_module(data)
