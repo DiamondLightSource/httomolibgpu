@@ -34,7 +34,7 @@ def _naninfs_check(
     method_name: Optional[str] = None,
 ) -> cp.ndarray:
     """
-    Function finds NaN's, +-Inf's in the input data and then prints the warning and correct the data
+    This function finds NaN's, +-Inf's in the input data and then prints the warnings and correct the data if correction is enabled.
 
     Parameters
     ----------
@@ -77,7 +77,7 @@ def _zeros_check(
     method_name: Optional[str] = None,
 ) -> bool:
     """
-    Function finds NaN's, +-Inf's in the input data and then prints the warning and correct the data
+    This function finds all zeros present in the data. If the amount of zeros is larger than percentage_threshold it prints the warning. 
 
     Parameters
     ----------
