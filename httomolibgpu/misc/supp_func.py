@@ -102,7 +102,10 @@ def _zeros_check(
 
     warning_zeros = False
     zero_elements_total = int(xp.count_nonzero(data == 0))
-    nonzero_elements_total = len(data.flatten())
+
+    nonzero_elements_total = 1    
+    for tot_elements_mult in data.shape:
+        nonzero_elements_total *= tot_elements_mult
     if (zero_elements_total / nonzero_elements_total) * 100 >= percentage_threshold:
         warning_zeros = True
         if verbosity:
