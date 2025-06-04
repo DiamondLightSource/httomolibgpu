@@ -21,6 +21,7 @@
 """Modules for finding the axis of rotation for 180 and 360 degrees scans"""
 
 import numpy as np
+from numpy.polynomial import Polynomial
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
@@ -718,9 +719,23 @@ def _calculate_curvature(list_metric):
 
     # work mostly on CPU here - we have very small arrays here
     list1 = cp.asnumpy(list_metric[min_pos - radi : min_pos + radi + 1])
-    afact1 = np.polyfit(np.arange(0, 2 * radi + 1), list1, 2)[0]
+    if not all(map(np.isfinite, list1)):
+        raise ValueError(
+            "The list of metrics (list1) contains nan's or infs. Check your input data"
+        )
+
+    series1 = Polynomial.fit(np.arange(0, 2 * radi + 1), list1, deg=2)
+    afact1 = series1.convert().coef[-1]
+
     list2 = cp.asnumpy(list_metric[min_pos - 1 : min_pos + 2])
-    (afact2, bfact2, _) = np.polyfit(np.arange(min_pos - 1, min_pos + 2), list2, 2)
+    if not all(map(np.isfinite, list2)):
+        raise ValueError(
+            "The list of metrics (list2) contains nan's or infs. Check your input data"
+        )
+
+    series2 = Polynomial.fit(np.arange(min_pos - 1, min_pos + 2), list2, deg=2)
+    afact2 = series2.convert().coef[-1]
+    bfact2 = series2.convert().coef[-1 - 1]
 
     curvature = np.abs(afact1)
     if afact2 != 0.0:
