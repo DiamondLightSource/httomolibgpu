@@ -112,6 +112,17 @@ def test_find_center_360_1D_raises(data):
         find_center_360(cp.ones(10))
 
 
+def test_find_center_360_NaN_infs_raises(data, flats, darks):
+    #: find_center_360 raises if the data with NaNs or Infs given
+    data = data.astype(cp.float32)
+    data[:] = cp.inf
+    with pytest.raises(ValueError):
+        find_center_360(data)
+    data[:] = cp.nan
+    with pytest.raises(ValueError):
+        find_center_360(data)
+
+
 @pytest.mark.parametrize("norm", [False, True], ids=["no_normalise", "normalise"])
 @pytest.mark.parametrize("overlap", [False, True], ids=["no_overlap", "overlap"])
 @pytest.mark.parametrize("denoise", [False, True], ids=["no_denoise", "denoise"])
