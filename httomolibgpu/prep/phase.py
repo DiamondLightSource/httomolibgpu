@@ -300,7 +300,7 @@ def paganin_filter_tomopy(
             f"Invalid number of dimensions in data: {tomo.ndim},"
             " please provide a stack of 2D projections."
         )
-    
+
     tomo = data_checker(tomo, verbosity=True, method_name="paganin_filter_tomopy")
 
     dz_orig, dy_orig, dx_orig = tomo.shape

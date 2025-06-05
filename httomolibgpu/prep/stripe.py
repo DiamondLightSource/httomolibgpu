@@ -144,7 +144,7 @@ def remove_stripe_ti(
     _, _, dx_orig = data.shape
     if (dx_orig % 2) != 0:
         # the horizontal detector size is odd, data needs to be padded/cropped, for now raising the error
-        raise ValueError("The horizontal detector size must be even")    
+        raise ValueError("The horizontal detector size must be even")
 
     gamma = beta * ((1 - beta) / (1 + beta)) ** cp.abs(
         cp.fft.fftfreq(data.shape[-1]) * data.shape[-1]
@@ -387,7 +387,7 @@ def raven_filter(
     """
     if data.dtype != cp.float32:
         raise ValueError("The input data should be float32 data type")
-    
+
     data = data_checker(data, verbosity=True, method_name="raven_filter")
 
     # Padding of the sinogram

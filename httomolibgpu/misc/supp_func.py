@@ -77,14 +77,14 @@ def _zeros_check(
     method_name: Optional[str] = None,
 ) -> bool:
     """
-    This function finds all zeros present in the data. If the amount of zeros is larger than percentage_threshold it prints the warning. 
+    This function finds all zeros present in the data. If the amount of zeros is larger than percentage_threshold it prints the warning.
 
     Parameters
     ----------
     data : cp.ndarray
-        Input CuPy or Numpy array either float32 or uint16 data type.
+        Input CuPy or Numpy array.
     verbosity : bool
-        If enabled, then the printing of the warning happens when data contains infs or nans
+        If enabled, then the printing of the warning happens when data contains infs or nans.
     percentage_threshold: float:
         If the number of zeros in input data is more than the percentage of all data points, then print the data warning
     method_name : str, optional.
@@ -103,7 +103,7 @@ def _zeros_check(
     warning_zeros = False
     zero_elements_total = int(xp.count_nonzero(data == 0))
 
-    nonzero_elements_total = 1    
+    nonzero_elements_total = 1
     for tot_elements_mult in data.shape:
         nonzero_elements_total *= tot_elements_mult
     if (zero_elements_total / nonzero_elements_total) * 100 >= percentage_threshold:
@@ -123,21 +123,21 @@ def data_checker(
 ) -> bool:
     """
     Function that performs the variety of checks on input data, in some cases also correct the data and prints warnings.
-    Currently it checks for: the presence of infs and nans in data; the number of zero elements. 
+    Currently it checks for: the presence of infs and nans in data; the number of zero elements.
 
     Parameters
     ----------
     data : xp.ndarray
-        Input CuPy or Numpy array either float32 or uint16 data type.
+        Input CuPy or Numpy array.
     verbosity : bool
-        If enabled, then the printing of the warning happens when data contains infs or nans
+        If enabled, then the printing of the warning happens when data contains infs or nans.
     method_name : str, optional.
         Method's name for which input data is tested.
 
     Returns
     -------
     cp.ndarray
-        Returns corrected or not data array
+        Returns corrected or not data array.
     """
 
     data = _naninfs_check(

@@ -18,6 +18,7 @@ import pytest
 from cupy.cuda import nvtx
 from conftest import force_clean_gpu_memory
 
+
 def test_reconstruct_FBP2d_astra_i12_dataset1(i12_dataset1):
     force_clean_gpu_memory()
     projdata = i12_dataset1[0]
@@ -43,7 +44,7 @@ def test_reconstruct_FBP2d_astra_i12_dataset1(i12_dataset1):
     assert_allclose(np.sum(recon_data), 84672.84, atol=1e-2)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 50, 2560)
-    
+
 
 def test_reconstruct_FBP3d_tomobar_i12_dataset1(i12_dataset1):
     force_clean_gpu_memory()

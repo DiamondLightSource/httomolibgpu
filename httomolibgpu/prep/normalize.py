@@ -145,7 +145,7 @@ def _check_valid_input_normalise(data, flats, darks) -> None:
         flats = flats[cp.newaxis, :, :]
     if darks.ndim == 2:
         darks = darks[cp.newaxis, :, :]
-    
-    data_checker(data,verbosity=True,method_name="normalize_data")
-    data_checker(flats,verbosity=True,method_name="normalize_flats")
-    data_checker(darks,verbosity=True,method_name="normalize_darks")
+
+    data_checker(data, verbosity=True, method_name="normalize_data")
+    data_checker(flats, verbosity=True, method_name="normalize_flats")
+    data_checker(darks, verbosity=True, method_name="normalize_darks")

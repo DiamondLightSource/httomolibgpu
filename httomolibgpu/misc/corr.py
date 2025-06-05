@@ -82,7 +82,9 @@ def median_filter(
     else:
         raise ValueError("The input array must be a 3D array")
 
-    data = data_checker(data, verbosity=True, method_name="median_filter_or_remove_outlier")
+    data = data_checker(
+        data, verbosity=True, method_name="median_filter_or_remove_outlier"
+    )
 
     if kernel_size not in [3, 5, 7, 9, 11, 13]:
         raise ValueError("Please select a correct kernel size: 3, 5, 7, 9, 11, 13")

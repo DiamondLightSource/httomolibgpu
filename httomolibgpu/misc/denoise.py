@@ -82,7 +82,7 @@ def total_variation_ROF(
         If the input array is not float32 data type.
     """
 
-    data = data_checker(data,verbosity=True,method_name="total_variation_ROF")
+    data = data_checker(data, verbosity=True, method_name="total_variation_ROF")
 
     return ROF_TV(
         data, regularisation_parameter, iterations, time_marching_parameter, gpu_id
@@ -129,7 +129,7 @@ def total_variation_PD(
         If the input array is not float32 data type.
     """
 
-    data_checker(data,verbosity=True,method_name="total_variation_PD")
+    data_checker(data, verbosity=True, method_name="total_variation_PD")
 
     methodTV = 0
     if not isotropic:
