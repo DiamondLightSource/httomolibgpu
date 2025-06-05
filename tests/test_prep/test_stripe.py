@@ -34,15 +34,6 @@ def test_remove_stripe_ti_on_data(data, flats, darks):
     assert data_after_stripe_removal.dtype == np.float32
 
 
-# @pytest.mark.parametrize("angles", [180, 181])
-# @pytest.mark.parametrize("det_x", [11, 18])
-# @pytest.mark.parametrize("det_y", [5, 7])
-# def test_remove_stripe_ti_dims_change(angles, det_y, det_x):
-#     data = cp.random.random_sample(size=(angles, det_y, det_x)).astype(cp.float32) * 2.0
-#     corrected_data = remove_stripe_ti(data.copy())
-#     assert corrected_data.shape == (angles, det_y, det_x)
-
-
 def test_stripe_removal_sorting_cupy(data, flats, darks):
     # --- testing the CuPy port of TomoPy's implementation ---#
     data = normalize(data, flats, darks, cutoff=10, minus_log=True)
