@@ -167,7 +167,7 @@ def data_checker(
     Parameters
     ----------
     data : xp.ndarray
-        Input CuPy or Numpy array.
+        Input CuPy or Numpy array either float32 or uint16 data type.
     verbosity : bool
         If enabled, then the printing of the warning happens when data contains infs or nans.
     method_name : str, optional.
