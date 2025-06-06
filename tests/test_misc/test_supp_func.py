@@ -10,7 +10,7 @@ from numpy.testing import assert_equal
 
 
 def test_naninfs_check1():
-    _data_input = cp.ones(shape=(10, 10, 10)) * 100
+    _data_input = cp.ones(shape=(10, 10, 10)).astype(cp.float32) * 100
     _data_output = _naninfs_check(_data_input.copy())
 
     assert_equal(
@@ -22,7 +22,7 @@ def test_naninfs_check1():
 
 
 def test_naninfs_check1_numpy():
-    _data_input = np.ones(shape=(10, 10, 10)) * 100
+    _data_input = np.ones(shape=(10, 10, 10)).astype(np.float32) * 100
     _data_output = _naninfs_check(_data_input.copy())
 
     assert_equal(
@@ -89,6 +89,14 @@ def test_naninfs_check3():
 
 def test_naninfs_check3_numpy():
     _data_input = np.ones(shape=(10, 10, 10), dtype=np.uint16) * 100
+    _data_output = _naninfs_check(_data_input.copy())
+
+    assert _data_output.dtype == _data_input.dtype
+    assert _data_output.shape == (10, 10, 10)
+
+
+def test_naninfs_check4():
+    _data_input = cp.ones(shape=(10, 10, 10)).astype(cp.uint8) * 100
     _data_output = _naninfs_check(_data_input.copy())
 
     assert _data_output.dtype == _data_input.dtype

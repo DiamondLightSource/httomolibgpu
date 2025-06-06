@@ -26,10 +26,18 @@ from typing import Optional
 cp = cupywrapper.cp
 cupy_run = cupywrapper.cupy_run
 
+import numpy as np
+
+from unittest.mock import Mock
+
+if cupy_run:
+    from httomolibgpu.cuda_kernels import load_cuda_module
+else:
+    load_cuda_module = Mock()
+
 
 def _naninfs_check(
     data: cp.ndarray,
-    correction: bool = True,
     verbosity: bool = True,
     method_name: Optional[str] = None,
 ) -> cp.ndarray:
@@ -40,8 +48,6 @@ def _naninfs_check(
     ----------
     data : cp.ndarray
         Input CuPy or Numpy array either float32 or uint16 data type.
-    correction : bool
-        If correction is enabled then Inf's and NaN's will be replaced by zeros.
     verbosity : bool
         If enabled, then the printing of the warning happens when data contains infs or nans
     method_name : str, optional.
@@ -52,21 +58,53 @@ def _naninfs_check(
     ndarray
         Uncorrected or corrected (nans and infs converted to zeros) input array.
     """
+    present_nans_infs_b = False
+
     if cupy_run:
         xp = cp.get_array_module(data)
     else:
         import numpy as xp
 
-    if not xp.all(xp.isfinite(data)):
+    if xp.__name__ == "cupy":
+        input_type = data.dtype
+        if len(data.shape) == 2:
+            dy, dx = data.shape
+            dz = 1
+        else:
+            dz, dy, dx = data.shape
+
+        present_nans_infs = cp.zeros(shape=(1)).astype(cp.uint8)
+
+        block_x = 128
+        # setting grid/block parameters
+        block_dims = (block_x, 1, 1)
+        grid_x = (dx + block_x - 1) // block_x
+        grid_y = dy
+        grid_z = dz
+        grid_dims = (grid_x, grid_y, grid_z)
+        params = (data, dz, dy, dx, present_nans_infs)
+
+        kernel_args = "remove_nan_inf<{0}>".format(
+            "float" if input_type == "float32" else "unsigned short"
+        )
+
+        module = load_cuda_module("remove_nan_inf", name_expressions=[kernel_args])
+        remove_nan_inf_kernel = module.get_function(kernel_args)
+        remove_nan_inf_kernel(grid_dims, block_dims, params)
+
+        if present_nans_infs[0].get() == 1:
+            present_nans_infs_b = True
+    else:
+        if not np.all(np.isfinite(data)):
+            present_nans_infs_b = True
+            np.nan_to_num(data, copy=False, nan=0.0, posinf=0.0, neginf=0.0)
+
+    if present_nans_infs_b:
         if verbosity:
             print(
-                f"Warning!!! Input data to method: {method_name} contains Inf's or/and NaN's."
+                f"Warning!!! Input data to method: {method_name} contains Inf's or/and NaN's. This will be corrected but it sometimes recommended to check the validity of input to the method."
             )
-        if correction:
-            print(
-                "Inf's or/and NaN's will be corrected to finite integers (zeros). It is advisable to check the correctness of the input."
-            )
-            xp.nan_to_num(data, copy=False, nan=0.0, posinf=0.0, neginf=0.0)
+
     return data
 
 
@@ -100,12 +138,13 @@ def _zeros_check(
     else:
         import numpy as xp
 
-    warning_zeros = False
-    zero_elements_total = int(xp.count_nonzero(data == 0))
-
     nonzero_elements_total = 1
     for tot_elements_mult in data.shape:
         nonzero_elements_total *= tot_elements_mult
+
+    warning_zeros = False
+    zero_elements_total = nonzero_elements_total - int(xp.count_nonzero(data))
+
     if (zero_elements_total / nonzero_elements_total) * 100 >= percentage_threshold:
         warning_zeros = True
         if verbosity:
@@ -140,9 +179,7 @@ def data_checker(
         Returns corrected or not data array.
     """
 
-    data = _naninfs_check(
-        data, correction=True, verbosity=verbosity, method_name=method_name
-    )
+    data = _naninfs_check(data, verbosity=verbosity, method_name=method_name)
 
     _zeros_check(
         data,
