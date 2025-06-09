@@ -88,9 +88,9 @@ def distortion_correction_proj_discorpy(
     if len(data.shape) == 2:
         data = cp.expand_dims(data, axis=0)
 
-    # data = data_checker(
-    #     data, verbosity=True, method_name="distortion_correction_proj_discorpy"
-    # )
+    data = data_checker(
+        data, verbosity=True, method_name="distortion_correction_proj_discorpy"
+    )
 
     # Get info from metadata txt file
     xcenter, ycenter, list_fact = _load_metadata_txt(metadata_path)

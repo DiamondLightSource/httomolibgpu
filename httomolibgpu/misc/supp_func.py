@@ -102,7 +102,7 @@ def _naninfs_check(
     if present_nans_infs_b:
         if verbosity:
             print(
-                f"Warning!!! Input data to method: {method_name} contains Inf's or/and NaN's. This will be corrected but it sometimes recommended to check the validity of input to the method."
+                f"Warning!!! Input data to method: {method_name} contains Inf's or/and NaN's. This will be corrected but it is recommended to check the validity of input to the method."
             )
 
     return data
