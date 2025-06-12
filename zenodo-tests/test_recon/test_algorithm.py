@@ -1,3 +1,4 @@
+
 import cupy as cp
 import numpy as np
 import pytest
@@ -71,7 +72,36 @@ def test_reconstruct_FBP3d_tomobar_i12_dataset1(i12_dataset1):
     assert recon_data.shape == (2560, 50, 2560)
 
 
-def test_reconstruct_LP_REC_i13_dataset1(i13_dataset1):
+def test_reconstruct_LPRec3d_tomobar_i12_dataset1(i12_dataset1):
+    force_clean_gpu_memory()
+    projdata = i12_dataset1[0]
+    angles = i12_dataset1[1]
+    flats = i12_dataset1[2]
+    darks = i12_dataset1[3]
+    del i12_dataset1
+
+    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    data_normalised_cut = data_normalised[:, 5:8, :]
+    del flats, darks, projdata, data_normalised
+    force_clean_gpu_memory()
+
+    recon_data = LPRec3d_tomobar(
+        data_normalised_cut,
+        np.deg2rad(angles),
+        center=1253.75,
+        filter_type="shepp",
+        filter_freq_cutoff=1.0,
+    )
+    assert recon_data.flags.c_contiguous
+    recon_data = recon_data.get()
+    assert isclose(np.sum(recon_data), 8973.755, abs_tol=10**-3)
+    assert pytest.approx(np.max(recon_data), rel=1e-3) == 0.00640
+    assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.00617
+    assert recon_data.dtype == np.float32
+    assert recon_data.shape == (2560, 3, 2560)
+
+
+def test_reconstruct_LPRec_tomobar_i13_dataset1(i13_dataset1):
     force_clean_gpu_memory()
     projdata = i13_dataset1[0]
     angles = i13_dataset1[1]
@@ -102,11 +132,15 @@ def test_reconstruct_LP_REC_i13_dataset1(i13_dataset1):
         data=stiched_data_180degrees,
         angles=np.deg2rad(angles[0:3000]),
         center=2322.08,
+        filter_type="shepp",
+        filter_freq_cutoff=1.0,
     )
 
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
-    assert isclose(np.sum(recon_data), 620.856, abs_tol=10**-3)
+    assert isclose(np.sum(recon_data), 1241.859, abs_tol=10**-3)
+    assert pytest.approx(np.max(recon_data), rel=1e-3) == 0.00823
+    assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.00656
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (4646, 1, 4646)
 
@@ -166,11 +200,15 @@ def test_reconstruct_LPRec3d_tomobar_i13_dataset2(i13_dataset2):
         data=data_normalised,
         angles=np.deg2rad(angles),
         center=1286.25,
+        filter_type="shepp",
+        filter_freq_cutoff=1.0,
     )
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
 
-    assert isclose(np.sum(recon_data), 2044.953, abs_tol=10**-3)
+    assert isclose(np.sum(recon_data), 4095.6257, abs_tol=10**-3)
+    assert pytest.approx(np.max(recon_data), rel=1e-3) == 0.0105672
+    assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.00839    
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 10, 2560)
 
