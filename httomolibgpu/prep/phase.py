@@ -41,6 +41,8 @@ from numpy import float32
 from typing import Tuple
 import math
 
+from httomolibgpu.misc.supp_func import data_checker
+
 __all__ = [
     "paganin_filter_savu",
     "paganin_filter_tomopy",
@@ -104,6 +106,8 @@ def paganin_filter_savu(
             f"Invalid number of dimensions in data: {data.ndim},"
             " please provide a stack of 2D projections."
         )
+
+    data = data_checker(data, verbosity=True, method_name="paganin_filter_savu")
 
     # Setup various values for the filter
     _, height, width = data.shape
@@ -296,6 +300,8 @@ def paganin_filter_tomopy(
             f"Invalid number of dimensions in data: {tomo.ndim},"
             " please provide a stack of 2D projections."
         )
+
+    tomo = data_checker(tomo, verbosity=True, method_name="paganin_filter_tomopy")
 
     dz_orig, dy_orig, dx_orig = tomo.shape
 

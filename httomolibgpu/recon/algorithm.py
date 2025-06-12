@@ -40,6 +40,8 @@ else:
 from numpy import float32, complex64
 from typing import Optional, Type
 
+from httomolibgpu.misc.supp_func import data_checker
+
 
 __all__ = [
     "FBP2d_astra",
@@ -103,6 +105,8 @@ def FBP2d_astra(
     np.ndarray
         The FBP reconstructed volume as a numpy array.
     """
+    data = data_checker(data, verbosity=True, method_name="FBP2d_astra")
+
     data_shape = np.shape(data)
     if recon_size is None:
         recon_size = data_shape[2]
@@ -175,6 +179,8 @@ def FBP3d_tomobar(
     cp.ndarray
         FBP reconstructed volume as a CuPy array.
     """
+    data = data_checker(data, verbosity=True, method_name="FBP3d_tomobar")
+
     RecToolsCP = _instantiate_direct_recon_class(
         data, angles, center, recon_size, gpu_id
     )
@@ -233,6 +239,9 @@ def LPRec3d_tomobar(
     cp.ndarray
         The Log-polar Fourier reconstructed volume as a CuPy array.
     """
+
+    data = data_checker(data, verbosity=True, method_name="LPRec3d_tomobar")
+
     RecToolsCP = _instantiate_direct_recon_class(data, angles, center, recon_size, 0)
 
     reconstruction = RecToolsCP.FOURIER_INV(
@@ -289,6 +298,8 @@ def SIRT3d_tomobar(
     cp.ndarray
         The SIRT reconstructed volume as a CuPy array.
     """
+    data = data_checker(data, verbosity=True, method_name="SIRT3d_tomobar")
+
     RecToolsCP = _instantiate_iterative_recon_class(
         data,
         angles,
@@ -354,6 +365,8 @@ def CGLS3d_tomobar(
     cp.ndarray
         The CGLS reconstructed volume as a CuPy array.
     """
+    data = data_checker(data, verbosity=True, method_name="CGLS3d_tomobar")
+
     RecToolsCP = _instantiate_iterative_recon_class(
         data, angles, center, recon_size, gpu_id, datafidelity="LS"
     )

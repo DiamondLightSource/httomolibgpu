@@ -34,6 +34,7 @@ def test_reconstruct_FBP_2d_astra(data, flats, darks, ensure_clean_memory):
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (recon_size, 128, recon_size)
 
+
 def test_reconstruct_FBP3d_tomobar_1(data, flats, darks, ensure_clean_memory):
     recon_data = FBP3d_tomobar(
         normalize_cupy(data, flats, darks, cutoff=10, minus_log=True),
