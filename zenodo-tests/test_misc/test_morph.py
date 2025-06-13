@@ -20,7 +20,7 @@ def test_sino_360_to_180_i13_dataset1(i13_dataset1):
     force_clean_gpu_memory()
 
     stiched_data_180degrees = sino_360_to_180(
-        data_normalised, overlap=473.822265625, rotation="right"
+        data_normalised, overlap=473.822265625, side="right"
     )
     stiched_data_180degrees = stiched_data_180degrees.get()
 
@@ -41,7 +41,7 @@ def test_sino_360_to_180_i13_dataset3(i13_dataset3):
     force_clean_gpu_memory()
 
     stiched_data_180degrees = sino_360_to_180(
-        data_normalised, overlap=438.173828, rotation="left"
+        data_normalised, overlap=438.173828, side="left"
     )
     stiched_data_180degrees = stiched_data_180degrees.get()
 

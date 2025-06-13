@@ -140,6 +140,7 @@ def test_center_360_i13_dataset1(i13_dataset1, ensure_clean_memory):
     cor, overlap, side, overlap_position = find_center_360(data_normalised)
 
     assert int(cor) == 2322
+    assert side == "right"
     assert int(overlap) == 473  # actual 473.822265625
     assert cor.dtype == np.float64
 
@@ -183,13 +184,14 @@ def test_center_360_i13_dataset3(i13_dataset3, ensure_clean_memory):
         data_normalised,
         ind=1,
         win_width=50,
-        side=0,
+        side="left",
         denoise=True,
         norm=True,
         use_overlap=True,
     )
 
     assert int(cor) == 218  # actual 218.08 (not correct CoR actually, should be 2341)
+    assert side == "left"
     assert int(overlap) == 438  # actual 438.173828
     assert cor.dtype == np.float64
 

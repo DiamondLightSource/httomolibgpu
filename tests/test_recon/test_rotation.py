@@ -126,7 +126,7 @@ def test_find_center_360_NaN_infs_raises(data, flats, darks):
 @pytest.mark.parametrize("norm", [False, True], ids=["no_normalise", "normalise"])
 @pytest.mark.parametrize("overlap", [False, True], ids=["no_overlap", "overlap"])
 @pytest.mark.parametrize("denoise", [False, True], ids=["no_denoise", "denoise"])
-@pytest.mark.parametrize("side", [1, 0])
+@pytest.mark.parametrize("side", ["right", "left"])
 @cp.testing.numpy_cupy_allclose(rtol=1e-5, atol=1e-6)
 def test_find_center_360_unity(ensure_clean_memory, xp, norm, overlap, denoise, side):
     # because it's random, we explicitly seed and use numpy only, to match the data

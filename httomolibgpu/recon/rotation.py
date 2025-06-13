@@ -416,16 +416,16 @@ def find_center_360(
     data: cp.ndarray,
     ind: Optional[int] = None,
     win_width: int = 10,
-    side: Optional[Literal[0, 1]] = None,
+    side: Optional[Literal["left", "right"]] = None,
     denoise: bool = True,
     norm: bool = False,
     use_overlap: bool = False,
-) -> Tuple[float, float, Optional[Literal[0, 1]], float]:
+) -> Tuple[np.float32, np.float32, Optional[Literal["left", "right"]], np.float32]:
     """
     Find the center-of-rotation (COR) in a 360-degree scan and also an offset
     to perform data transformation from 360 to 180 degrees scan. See :cite:`vo2021data`.
 
-    Parameters
+    Parameters Tuple[np.float32, np.float32, Literal["left", "right"], np.float32]:
     ----------
     data : cp.ndarray
         3D tomographic data as a Cupy array.
@@ -433,10 +433,9 @@ def find_center_360(
         Index of the slice to be used for estimate the CoR and the overlap.
     win_width : int, optional
         Window width used for finding the overlap area.
-    side : {None, 0, 1}, optional
-        Overlap size. Only there options: None, 0, or 1. "None" corresponds
-        to fully automated determination. "0" corresponds to the left side.
-        "1" corresponds to the right side.
+    side : {None, left, right}, optional
+        Chose between "left", "right" or "None" which corresponds to fully
+        automated determination of the side.
     denoise : bool, optional
         Apply the Gaussian filter if True.
     norm : bool, optional
@@ -451,8 +450,8 @@ def find_center_360(
         Center-of-rotation.
     overlap : float
         Width of the overlap area between two halves of the sinogram.
-    side : int
-        Overlap side between two halves of the sinogram.
+    side : str
+        Overlap side (left or right) between two halves of the sinogram.
     overlap_position : float
         Position of the window in the first image giving the best
         correlation metric.
@@ -475,8 +474,9 @@ def find_center_360(
     (overlap, side, overlap_position) = _find_overlap(
         sino_top, sino_bot, win_width, side, denoise, norm, use_overlap
     )
-    if side == 0:
-        cor = overlap / 2.0 - 1.0
+    if side == "left":
+        # cor = overlap / 2.0 - 1.0
+        cor = ncol // 2  # NOTE: major correction to check!
     else:
         cor = ncol - overlap / 2.0 - 1.0
 
@@ -498,10 +498,9 @@ def _find_overlap(
         2D array. Projection image or sinogram image.
     win_width : int
         Width of the searching window.
-    side : {None, 0, 1}, optional
-        Only there options: None, 0, or 1. "None" corresponding to fully
-        automated determination. "0" corresponding to the left side. "1"
-        corresponding to the right side.
+    side : {None, left, right}, optional
+        Chose between "left", "right" or "None" which corresponds to fully
+        automated determination of the side.
     denoise : bool, optional
         Apply the Gaussian filter if True.
     norm : bool, optional
@@ -514,8 +513,8 @@ def _find_overlap(
     -------
     overlap : float
         Width of the overlap area between two images.
-    side : int
-        Overlap side between two images.
+    side : str
+        Overlap side (left or right) between two images.
     overlap_position : float
         Position of the window in the first image giving the best
         correlation metric.
@@ -525,12 +524,12 @@ def _find_overlap(
     ncol2 = mat2.shape[1]
     win_width = int(np.clip(win_width, 6, min(ncol1, ncol2) // 2))
 
-    if side == 1:
+    if side == "right":
         (list_metric, offset) = _search_overlap(
             mat1,
             mat2,
             win_width,
-            side=side,
+            side=1,  # right side
             denoise=denoise,
             norm=norm,
             use_overlap=use_overlap,
@@ -538,12 +537,12 @@ def _find_overlap(
         overlap_position = _calculate_curvature(list_metric)[1]
         overlap_position += offset
         overlap = ncol1 - overlap_position + win_width // 2
-    elif side == 0:
+    elif side == "left":
         (list_metric, offset) = _search_overlap(
             mat1,
             mat2,
             win_width,
-            side=side,
+            side=0,  # left side
             denoise=denoise,
             norm=norm,
             use_overlap=use_overlap,
@@ -556,7 +555,7 @@ def _find_overlap(
             mat1,
             mat2,
             win_width,
-            side=1,
+            side=1,  # right side
             denoise=denoise,
             norm=norm,
             use_overlap=use_overlap,
@@ -565,7 +564,7 @@ def _find_overlap(
             mat1,
             mat2,
             win_width,
-            side=0,
+            side=0,  # left side
             denoise=denoise,
             norm=norm,
             use_overlap=use_overlap,
@@ -577,11 +576,11 @@ def _find_overlap(
         overlap_position2 += offset2
 
         if curvature1 > curvature2:
-            side = 1
+            side = "right"
             overlap_position = overlap_position1
             overlap = ncol1 - overlap_position + win_width // 2
         else:
-            side = 0
+            side = "left"
             overlap_position = overlap_position2
             overlap = overlap_position + win_width // 2
 

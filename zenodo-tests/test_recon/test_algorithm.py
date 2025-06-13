@@ -1,4 +1,3 @@
-
 import cupy as cp
 import numpy as np
 import pytest
@@ -114,7 +113,7 @@ def test_reconstruct_LPRec_tomobar_i13_dataset1(i13_dataset1):
     force_clean_gpu_memory()
 
     stiched_data_180degrees = sino_360_to_180(
-        data_normalised[:, 2:3, :], overlap=473.822265625, rotation="right"
+        data_normalised[:, 2:3, :], overlap=473.822265625, side="right"
     )
     del data_normalised
     force_clean_gpu_memory()
@@ -208,7 +207,7 @@ def test_reconstruct_LPRec3d_tomobar_i13_dataset2(i13_dataset2):
 
     assert isclose(np.sum(recon_data), 4095.6257, abs_tol=10**-3)
     assert pytest.approx(np.max(recon_data), rel=1e-3) == 0.0105672
-    assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.00839    
+    assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.00839
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 10, 2560)
 
@@ -262,7 +261,7 @@ def test_reconstruct_FBP3d_tomobar_i13_dataset3(i13_dataset3):
     force_clean_gpu_memory()
 
     stiched_data_180degrees = sino_360_to_180(
-        data_normalised, overlap=438.173828, rotation="left"
+        data_normalised, overlap=438.173828, side="left"
     )
     force_clean_gpu_memory()
 
@@ -278,5 +277,6 @@ def test_reconstruct_FBP3d_tomobar_i13_dataset3(i13_dataset3):
 
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
+
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (4682, 3, 4682)
