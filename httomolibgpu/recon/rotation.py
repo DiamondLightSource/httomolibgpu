@@ -474,11 +474,7 @@ def find_center_360(
     (overlap, side, overlap_position) = _find_overlap(
         sino_top, sino_bot, win_width, side, denoise, norm, use_overlap
     )
-    if side == "left":
-        # cor = overlap / 2.0 - 1.0
-        cor = ncol // 2  # NOTE: major correction to check!
-    else:
-        cor = ncol - overlap / 2.0 - 1.0
+    cor = ncol - overlap / 2.0 - 1.0
 
     return cor, overlap, side, overlap_position
 
