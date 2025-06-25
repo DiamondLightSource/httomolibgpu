@@ -271,12 +271,12 @@ def test_reconstruct_FBP3d_tomobar_i13_dataset3(i13_dataset3):
     recon_data = FBP3d_tomobar(
         stiched_data_180degrees,
         np.deg2rad(angles[0:3000]),
-        center=2341,
+        center=2339,
         filter_freq_cutoff=0.35,
     )
 
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
-
+        
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (4682, 3, 4682)

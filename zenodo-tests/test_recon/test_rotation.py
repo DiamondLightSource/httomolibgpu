@@ -184,7 +184,7 @@ def test_center_360_i13_dataset3(i13_dataset3, ensure_clean_memory):
         data_normalised,
         ind=1,
         win_width=50,
-        side="left",
+        side=None,
         denoise=True,
         norm=True,
         use_overlap=True,

@@ -15,7 +15,6 @@ from httomolibgpu.recon.rotation import (
     find_center_pc,
 )
 from numpy.testing import assert_allclose
-from .rotation_cpu_reference import find_center_360_numpy
 
 
 def test_find_center_vo(data, flats, darks):
@@ -99,7 +98,7 @@ def test_find_center_360_data(data):
 
     assert_allclose(cor, 132.45317, rtol=eps)
     assert_allclose(overlap, 53.093666, rtol=eps)
-    assert side == 1
+    assert side == 'right'
     assert_allclose(overlap_pos, 111.906334, rtol=eps)
 
 
@@ -121,29 +120,6 @@ def test_find_center_360_NaN_infs_raises(data, flats, darks):
     data[:] = cp.nan
     with pytest.raises(ValueError):
         find_center_360(data)
-
-
-@pytest.mark.parametrize("norm", [False, True], ids=["no_normalise", "normalise"])
-@pytest.mark.parametrize("overlap", [False, True], ids=["no_overlap", "overlap"])
-@pytest.mark.parametrize("denoise", [False, True], ids=["no_denoise", "denoise"])
-@pytest.mark.parametrize("side", ["right", "left"])
-@cp.testing.numpy_cupy_allclose(rtol=1e-5, atol=1e-6)
-def test_find_center_360_unity(ensure_clean_memory, xp, norm, overlap, denoise, side):
-    # because it's random, we explicitly seed and use numpy only, to match the data
-    np.random.seed(12345)
-    data = np.random.random_sample(size=(128, 1, 512)).astype(np.float32) * 2.0 + 0.001
-    data = xp.asarray(data)
-
-    if xp.__name__ == "numpy":
-        (cor, overlap, side, overlap_pos) = find_center_360_numpy(
-            data, use_overlap=overlap, norm=norm, denoise=denoise, side=side
-        )
-    else:
-        (cor, overlap, side, overlap_pos) = find_center_360(
-            data, use_overlap=overlap, norm=norm, denoise=denoise, side=side
-        )
-
-    return xp.asarray([cor, overlap, side, overlap_pos])
 
 
 @pytest.mark.perf

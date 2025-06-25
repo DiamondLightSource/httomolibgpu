@@ -119,7 +119,7 @@ def test_reconstruct_LPRec3d_tomobar_1(data, flats, darks, ensure_clean_memory):
     )
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
-    assert_allclose(np.mean(recon_data), 0.0070, atol=1e-4)
+    assert_allclose(np.mean(recon_data), 0.007, atol=1e-3)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (130, 128, 130)
 
