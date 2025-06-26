@@ -125,27 +125,6 @@ def test_center_pc_i12_dataset3(i12_dataset3, ensure_clean_memory):
 
 
 # ----------------------------------------------------------#
-# i13_dataset1 tests
-# 360 degrees dataset
-def test_center_360_i13_dataset1(i13_dataset1, ensure_clean_memory):
-    projdata = i13_dataset1[0]
-    flats = i13_dataset1[2]
-    darks = i13_dataset1[3]
-    del i13_dataset1
-
-    data_normalised = normalize(projdata, flats, darks, minus_log=False)
-    del flats, darks, projdata
-
-    ensure_clean_memory
-    cor, overlap, side, overlap_position = find_center_360(data_normalised)
-
-    assert int(cor) == 2322
-    assert side == "right"
-    assert int(overlap) == 473  # actual 473.822265625
-    assert cor.dtype == np.float64
-
-
-# ----------------------------------------------------------#
 # i13_dataset2 tests
 # 180 degrees dataset (2500 projections)
 def test_center_vo_i13_dataset2(i13_dataset2, ensure_clean_memory):
@@ -165,35 +144,6 @@ def test_center_vo_i13_dataset2(i13_dataset2, ensure_clean_memory):
 
     assert cor == 1286.25
     assert cor.dtype == np.float32
-
-
-# ----------------------------------------------------------#
-# i13_dataset3 tests
-# 360 degrees dataset
-def test_center_360_i13_dataset3(i13_dataset3, ensure_clean_memory):
-    projdata = i13_dataset3[0]
-    flats = i13_dataset3[2]
-    darks = i13_dataset3[3]
-    del i13_dataset3
-
-    data_normalised = normalize(projdata, flats, darks, minus_log=False)
-    del flats, darks, projdata
-
-    ensure_clean_memory
-    cor, overlap, side, overlap_position = find_center_360(
-        data_normalised,
-        ind=1,
-        win_width=50,
-        side=None,
-        denoise=True,
-        norm=True,
-        use_overlap=True,
-    )
-
-    assert int(cor) == 218  # actual 218.08 (not correct CoR actually, should be 2341)
-    assert side == "left"
-    assert int(overlap) == 438  # actual 438.173828
-    assert cor.dtype == np.float64
 
 
 # ----------------------------------------------------------#
@@ -234,3 +184,74 @@ def test_center_vo_k11_dataset1(k11_dataset1, ensure_clean_memory):
 
     assert cor == 1269.25
     assert cor.dtype == np.float32
+
+
+# ----------------------------------------------------------#
+# i12_dataset5 tests
+# 360 degrees dataset
+def test_center_360_i12_dataset5(i12_dataset5, ensure_clean_memory):
+    projdata = i12_dataset5[0]
+    flats = i12_dataset5[2]
+    darks = i12_dataset5[3]
+    del i12_dataset5
+
+    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    del flats, darks, projdata
+
+    ensure_clean_memory
+    cor, overlap, side, overlap_position = find_center_360(data_normalised)
+
+    assert int(cor) == 2466
+    assert side == "left"
+    assert int(overlap) == 186
+    assert cor.dtype == np.float64
+
+
+# ----------------------------------------------------------#
+# i13_dataset1 tests
+# 360 degrees dataset
+def test_center_360_i13_dataset1(i13_dataset1, ensure_clean_memory):
+    projdata = i13_dataset1[0]
+    flats = i13_dataset1[2]
+    darks = i13_dataset1[3]
+    del i13_dataset1
+
+    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    del flats, darks, projdata
+
+    ensure_clean_memory
+    cor, overlap, side, overlap_position = find_center_360(data_normalised)
+
+    assert int(cor) == 2323
+    assert side == "right"
+    assert int(overlap) == 473  # actual 473.822265625
+    assert cor.dtype == np.float64
+
+
+# ----------------------------------------------------------#
+# i13_dataset3 tests
+# 360 degrees dataset
+def test_center_360_i13_dataset3(i13_dataset3, ensure_clean_memory):
+    projdata = i13_dataset3[0]
+    flats = i13_dataset3[2]
+    darks = i13_dataset3[3]
+    del i13_dataset3
+
+    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    del flats, darks, projdata
+
+    ensure_clean_memory
+    cor, overlap, side, overlap_position = find_center_360(
+        data_normalised,
+        ind=1,
+        win_width=50,
+        side=None,
+        denoise=True,
+        norm=True,
+        use_overlap=True,
+    )
+
+    assert int(cor) == 2340
+    assert side == "left"
+    assert int(overlap) == 438  # actual 438.173828
+    assert cor.dtype == np.float64

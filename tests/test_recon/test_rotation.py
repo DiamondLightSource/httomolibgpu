@@ -96,9 +96,9 @@ def test_find_center_360_data(data):
     eps = 1e-5
     (cor, overlap, side, overlap_pos) = find_center_360(data, norm=True, denoise=False)
 
-    assert_allclose(cor, 132.45317, rtol=eps)
+    assert_allclose(cor, 133.453167, rtol=eps)
     assert_allclose(overlap, 53.093666, rtol=eps)
-    assert side == 'right'
+    assert side == "right"
     assert_allclose(overlap_pos, 111.906334, rtol=eps)
 
 
