@@ -1,4 +1,3 @@
-
 import cupy as cp
 import numpy as np
 import pytest
@@ -114,7 +113,7 @@ def test_reconstruct_LPRec_tomobar_i13_dataset1(i13_dataset1):
     force_clean_gpu_memory()
 
     stiched_data_180degrees = sino_360_to_180(
-        data_normalised[:, 2:3, :], overlap=473.822265625, rotation="right"
+        data_normalised[:, 2:3, :], overlap=473.822265625, side="right"
     )
     del data_normalised
     force_clean_gpu_memory()
@@ -208,7 +207,7 @@ def test_reconstruct_LPRec3d_tomobar_i13_dataset2(i13_dataset2):
 
     assert isclose(np.sum(recon_data), 4095.6257, abs_tol=10**-3)
     assert pytest.approx(np.max(recon_data), rel=1e-3) == 0.0105672
-    assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.00839    
+    assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.00839
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 10, 2560)
 
@@ -262,7 +261,7 @@ def test_reconstruct_FBP3d_tomobar_i13_dataset3(i13_dataset3):
     force_clean_gpu_memory()
 
     stiched_data_180degrees = sino_360_to_180(
-        data_normalised, overlap=438.173828, rotation="left"
+        data_normalised, overlap=438.173828, side="left"
     )
     force_clean_gpu_memory()
 
@@ -272,11 +271,43 @@ def test_reconstruct_FBP3d_tomobar_i13_dataset3(i13_dataset3):
     recon_data = FBP3d_tomobar(
         stiched_data_180degrees,
         np.deg2rad(angles[0:3000]),
-        center=2341,
+        center=2339,
         filter_freq_cutoff=0.35,
     )
 
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
+
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (4682, 3, 4682)
+
+
+def test_reconstruct_FBP3d_tomobar_i12_dataset5(i12_dataset5):
+    force_clean_gpu_memory()
+    projdata = i12_dataset5[0]
+    angles = i12_dataset5[1]
+    flats = i12_dataset5[2]
+    darks = i12_dataset5[3]
+    del i12_dataset5
+
+    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    del flats, darks, projdata
+    force_clean_gpu_memory()
+
+    stiched_data_180degrees = sino_360_to_180(
+        data_normalised, overlap=186.66, side="left"
+    )
+    force_clean_gpu_memory()
+
+    recon_data = FBP3d_tomobar(
+        stiched_data_180degrees,
+        np.deg2rad(angles[0:1800]),
+        center=2466,
+        filter_freq_cutoff=0.35,
+    )
+
+    assert recon_data.flags.c_contiguous
+    recon_data = recon_data.get()
+
+    assert recon_data.dtype == np.float32
+    assert recon_data.shape == (4933, 15, 4933)

@@ -20,7 +20,7 @@ def test_sino_360_to_180_i13_dataset1(i13_dataset1):
     force_clean_gpu_memory()
 
     stiched_data_180degrees = sino_360_to_180(
-        data_normalised, overlap=473.822265625, rotation="right"
+        data_normalised, overlap=473.822265625, side="right"
     )
     stiched_data_180degrees = stiched_data_180degrees.get()
 
@@ -41,11 +41,32 @@ def test_sino_360_to_180_i13_dataset3(i13_dataset3):
     force_clean_gpu_memory()
 
     stiched_data_180degrees = sino_360_to_180(
-        data_normalised, overlap=438.173828, rotation="left"
+        data_normalised, overlap=438.173828, side="left"
     )
     stiched_data_180degrees = stiched_data_180degrees.get()
 
     assert_allclose(np.sum(stiched_data_180degrees), 24865750.0, rtol=1e-07, atol=1e-6)
     assert stiched_data_180degrees.shape == (3000, 3, 4682)
+    assert stiched_data_180degrees.dtype == np.float32
+    assert stiched_data_180degrees.flags.c_contiguous
+
+
+def test_sino_360_to_180_i12_dataset5(i12_dataset5):
+    projdata = i12_dataset5[0]
+    flats = i12_dataset5[2]
+    darks = i12_dataset5[3]
+    del i12_dataset5
+
+    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    del flats, darks, projdata
+    force_clean_gpu_memory()
+
+    stiched_data_180degrees = sino_360_to_180(
+        data_normalised, overlap=186.66, side="left"
+    )
+    stiched_data_180degrees = stiched_data_180degrees.get()
+
+    assert_allclose(np.sum(stiched_data_180degrees), 145920580.0, rtol=1e-07, atol=1e-6)
+    assert stiched_data_180degrees.shape == (1800, 15, 4933)
     assert stiched_data_180degrees.dtype == np.float32
     assert stiched_data_180degrees.flags.c_contiguous
