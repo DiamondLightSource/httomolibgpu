@@ -73,7 +73,7 @@ def FBP2d_astra(
     This is a 2D recon using ASTRA's API for the FBP method, see for more parameters ASTRA's documentation here:
     https://astra-toolbox.com/docs/algs/FBP_CUDA.html.
 
-    Parameters`
+    Parameters
     ----------
     data : np.ndarray
         Projection data as a 3d numpy array.

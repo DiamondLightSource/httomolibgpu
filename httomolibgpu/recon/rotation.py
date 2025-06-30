@@ -425,7 +425,7 @@ def find_center_360(
     Find the center-of-rotation (COR) in a 360-degree scan and also an offset
     to perform data transformation from 360 to 180 degrees scan. See :cite:`vo2021data`.
 
-    Parameters Tuple[np.float32, np.float32, Literal["left", "right"], np.float32]:
+    Parameters
     ----------
     data : cp.ndarray
         3D tomographic data as a Cupy array.
