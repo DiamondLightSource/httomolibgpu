@@ -162,7 +162,7 @@ def data_checker(
 ) -> bool:
     """
     Function that performs the variety of checks on input data, in some cases also correct the data and prints warnings.
-    Currently it checks for: the presence of infs and nans in data; the number of zero elements.
+    Currently it checks for: the presence of infs and nans in data. 
 
     Parameters
     ----------
@@ -181,11 +181,12 @@ def data_checker(
 
     data = _naninfs_check(data, verbosity=verbosity, method_name=method_name)
 
-    _zeros_check(
-        data,
-        verbosity=verbosity,
-        percentage_threshold=50,
-        method_name=method_name,
-    )
+    # ! The number of zero elements check is currently switched off as it requires sorting or AtomicAdd, which makes it inefficient on GPUs. !
+    # _zeros_check(
+    #     data,
+    #     verbosity=verbosity,
+    #     percentage_threshold=50,
+    #     method_name=method_name,
+    # )
 
     return data
