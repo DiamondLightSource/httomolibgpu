@@ -157,7 +157,7 @@ def test_zeros_check3_numpy():
     assert warning_zeros == False
 
 
-def test_data_checker_numpy():
+def test_data_checker_infsnans_numpy():
     _data_input = np.ones(shape=(10, 10, 10)).astype(np.float32)
     _data_input[1, 1, 1] = -np.inf
     _data_input[1, 1, 2] = np.inf
@@ -181,7 +181,7 @@ def test_data_checker_numpy():
     assert _data_output.shape == (10, 10, 10)
 
 
-def test_data_checker():
+def test_data_infsnans_checker():
     _data_input = cp.ones(shape=(10, 10, 10)).astype(cp.float32) * 100.0
     _data_input[1, 1, 1] = -cp.inf
     _data_input[1, 1, 2] = cp.inf
