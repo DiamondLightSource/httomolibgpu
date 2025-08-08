@@ -30,6 +30,8 @@ from typing import Literal, Optional, Tuple, Union
 
 from httomolibgpu.misc.supp_func import data_checker
 
+from sofia.core.regularisers import rescale_to_int_C
+
 __all__ = [
     "rescale_to_int",
 ]
@@ -107,17 +109,18 @@ def rescale_to_int(
     else:
         factor = 1.0
 
-    res = xp.empty(data.shape, dtype=output_dtype)
     if xp.__name__ == "numpy":
         if input_max == pow(2, 32):
             input_max -= 1
-        res = np.copy(data.astype(float))
-        res[data.astype(float) < input_min] = int(input_min)
-        res[data.astype(float) > input_max] = int(input_max)
-        res -= input_min
-        res *= factor
-        res = output_dtype(res)
+        res = rescale_to_int_C(data, input_min, input_max, factor)
+        # res = np.copy(data.astype(float))
+        # res[data.astype(float) < input_min] = int(input_min)
+        # res[data.astype(float) > input_max] = int(input_max)
+        # res -= input_min
+        # res *= factor
+        # res = output_dtype(res)
     else:
+        res = xp.empty(data.shape, dtype=output_dtype)
         rescale_kernel = cp.ElementwiseKernel(
             "T x, raw T input_min, raw T input_max, raw T factor",
             "O out",
