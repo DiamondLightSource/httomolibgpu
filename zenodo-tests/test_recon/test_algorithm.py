@@ -130,6 +130,37 @@ def test_reconstruct_LPRec3d_tomobar_i12_dataset1(i12_dataset1: tuple):
     assert recon_data.shape == (2560, 3, 2560)
 
 
+def test_reconstruct_LPRec3d_tomobar_i12_dataset1_pad(i12_dataset1: tuple):
+    force_clean_gpu_memory()
+    projdata = i12_dataset1[0]
+    angles = i12_dataset1[1]
+    flats = i12_dataset1[2]
+    darks = i12_dataset1[3]
+    del i12_dataset1
+
+    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    data_normalised_cut = data_normalised[:, 5:8, :]
+    del flats, darks, projdata, data_normalised
+    force_clean_gpu_memory()
+
+    recon_data = LPRec3d_tomobar(
+        data_normalised_cut,
+        np.deg2rad(angles),
+        center=1253.75,
+        detector_pad=100,
+        filter_type="shepp",
+        filter_freq_cutoff=1.0,
+        recon_mask_radius=2.0,
+    )
+    assert recon_data.flags.c_contiguous
+    recon_data = recon_data.get()
+    assert isclose(np.sum(recon_data), 9629.825, abs_tol=10**-3)
+    assert pytest.approx(np.max(recon_data), rel=1e-3) == 0.006357904
+    assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.0061424887
+    assert recon_data.dtype == np.float32
+    assert recon_data.shape == (2560, 3, 2560)
+
+
 def test_reconstruct_LPRec_tomobar_i13_dataset1(i13_dataset1: tuple):
     force_clean_gpu_memory()
     projdata = i13_dataset1[0]
