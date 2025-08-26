@@ -38,7 +38,7 @@ Modules from `Data denoising` can be used as post-processing tools. For instance
 Stripes removal module
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Modules from `Stripes removal` normally used as pre-processing tools. Stripes removal is equivalent to removing ring artefacts in the reconstructed images.
+Modules from `Stripes removal` are normally used as a pre-processing tool. Stripes removal is equivalent to removing ring artefacts in the reconstructed images.
 
 
 .. toctree::
@@ -48,6 +48,23 @@ Modules from `Stripes removal` normally used as pre-processing tools. Stripes re
    methods_list/remove_all_stripe
    methods_list/remove_stripe_ti
    methods_list/raven_filter
+
+
+.. _image_reconstruction_module:
+
+Image reconstruction module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Modules from `Image reconstruction` are needed in order to reconstruct data from the set of sinograms into a reconstructed volume. The reconstruction methods can be divided into two groups: Direct methods and Iterative methods. 
+The former are faster and suitable for the majority of well-sampled and well-exposed data. The latter are more complex and slower methods when the data is erroneuos or/and undersampled. 
+
+.. toctree::
+   :glob:
+
+   methods_list/LPRec3d_tomobar
+   methods_list/FBP3d_tomobar
+   methods_list/FBP2d_astra
+   
 
 .. _data_rescale_module:
 
