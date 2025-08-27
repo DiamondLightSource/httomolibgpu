@@ -2,5 +2,5 @@
 ============================================
 .. automodule:: httomolibgpu.prep.phase
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:

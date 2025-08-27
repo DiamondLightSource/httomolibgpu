@@ -5,8 +5,7 @@ Median filter
 
 **Description**
 
-Median filter is a part of the module :doc:`../../api/httomolibgpu.misc.corr` for data correction. Median filter is a non-linear noise removing technique with 
-edge-preserving properties, see more on it `here <https://en.wikipedia.org/wiki/Median_filter>`_.  Mathematically, one can express the median filter as: 
+Median filter is a non-linear noise removing technique with edge-preserving properties, see more on it `here <https://en.wikipedia.org/wiki/Median_filter>`_.  Mathematically, one can express the median filter as: 
 
 .. math::
 
@@ -23,7 +22,7 @@ Where :math:`\mathrm{N}_{i}` is the symmetric neighbourhood (e.g. 3 x 3) of the 
 **Where and how to use it:**
 
 Median filter can be used in post-processing, e.g., after the reconstruction to remove the noise and prepare the image for further analysis. Applying edge-preserving noise correction
-can simplify segmentation. 
+can simplify segmentation. It is recommended, however, to use more advanced :ref:`data_denoising_module` in order to achieve a better quality of denoising.
 
 **What are the adjustable parameters:**
 
@@ -38,27 +37,27 @@ In this example we demonstrate how to apply median filter to projection data to 
 .. list-table:: 
 
 
-    * - .. figure:: ../../_static/auto_images_methods/normalisation_sino.png
+    * - .. figure:: ../../../_static/auto_images_methods/normalisation_sino.png
 
            Input (sinogram view)
 
-      - .. figure:: ../../_static/auto_images_methods/normalisation_proj.png
+      - .. figure:: ../../../_static/auto_images_methods/normalisation_proj.png
 
            Input (projection view)
 
-    * - .. figure:: ../../_static/auto_images_methods/median_filter_sino.png
+    * - .. figure:: ../../../_static/auto_images_methods/median_filter_sino.png
 
            After applying median filter (sinogram)
 
-      - .. figure:: ../../_static/auto_images_methods/median_filter_proj.png
+      - .. figure:: ../../../_static/auto_images_methods/median_filter_proj.png
 
            After applying median filter (projection)
 
-    * - .. figure:: ../../_static/auto_images_methods/median_filter_res_sino.png
+    * - .. figure:: ../../../_static/auto_images_methods/median_filter_res_sino.png
 
            Sinogram view of absolute residual between input and output
 
-      - .. figure:: ../../_static/auto_images_methods/median_filter_res_proj.png
+      - .. figure:: ../../../_static/auto_images_methods/median_filter_res_proj.png
 
            Projection view of absolute residual between input and output
 

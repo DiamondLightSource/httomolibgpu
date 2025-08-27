@@ -5,8 +5,7 @@ Remove stripes by sorting
 
 **Description**
 
-This stripe removal algorithm is developed by Dr. Nghia Vo and is a part of the module :doc:`../../../api/httomolibgpu.prep.stripe` for data correction.
-This filter works in the sinogram space to minimise stripes leading to `Ring Artifacts <https://radiopaedia.org/articles/ring-artifact-2?lang=gb>`_ in the reconstruction. See more about the filter in the original publication :cite:`vo2018superior`.
+This filter has been developed by Dr. Nghia Vo and it works in the sinogram space to minimise stripes leading to `Ring Artifacts <https://radiopaedia.org/articles/ring-artifact-2?lang=gb>`_ in the reconstruction. See more about the filter in the original publication :cite:`vo2018superior`.
 Also more information about the method can be found on the author's software `Sarepy <https://sarepy.readthedocs.io/>`_.
 
 **Where and how to use it:**
