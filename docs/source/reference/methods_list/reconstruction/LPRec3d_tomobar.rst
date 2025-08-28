@@ -12,13 +12,15 @@ the 3D projection data, hence the name of the method.
   
 **Where and how to use it:**
 
-It is the fastest direct method in the library compared to :ref:`method_FBP3d_tomobar` and :ref:`method_FBP2d_astra`. The Log-Polar accuracy is comparable to FBP if the data is well-sampled and evenly spaced. However, for poor/uneven-sampled
+It is the fastest direct method in the library compared to :ref:`method_FBP3d_tomobar` and :ref:`method_FBP2d_astra`, but also the most memory-hungry one. The Log-Polar accuracy is comparable to FBP if the data is well-sampled and evenly spaced. However, for poor/uneven-sampled
 projection data it is generally to recommend to use FBP methods to avoid interpolation errors during coordinate transformation. Arguably, the reconstruction errors (artifacts) can be minor and generally not visible.
 The Log-Polar can be used as a first choice method for fast reconstruction followed by :ref:`method_FBP3d_tomobar`.
 
+  
+
 **What are the adjustable parameters:**
 
-Most of parameters are self-explanatory from the method's API :mod:`httomolibgpu.recon.algorithm.LPRec3d_tomobar`, so we will mention only the ones that need more explanation.
+Most of parameters are self-explanatory from the method's API :mod:`httomolibgpu.recon.algorithm.LPRec3d_tomobar`, so we will mention only the ones that potentially need more explanation.
 
 * :code:`detector_pad` This parameter is responsible for padding of both (left/right) sides of the horizontal detector of each radiograph. This type of padding extend the edge assuming the sample outside the field of view is approximately similar. This should be used in cases when the sample is larger than the field of view or when the halo-type artifacts should be minimised.
 
@@ -26,14 +28,14 @@ Most of parameters are self-explanatory from the method's API :mod:`httomolibgpu
 
 
     * - .. figure:: ../../../_static/figures/reconstructions/lprec_recon_no_pad.png
-           :width: 300px
+           :width: 335px
 
            Reconstruction using Log-Polar method without detector padding :code:`detector_pad=0`.
 
       - .. figure:: ../../../_static/figures/reconstructions/lprec_recon_pad.png
-           :width: 300px
+           :width: 335px
 
-           Reconstruction using detector padding :code:`detector_pad=300`. See that the halo artifacts were removed.
+           Using detector padding :code:`detector_pad=300` leads to the halo artifacts removed.
 
 
 * :code:`recon_mask_radius` This applies the circular mask to the reconstructed volume by zeroing all data outside a certain radius. 
@@ -42,12 +44,12 @@ Most of parameters are self-explanatory from the method's API :mod:`httomolibgpu
 
 
     * - .. figure:: ../../../_static/figures/reconstructions/lprec_recon_no_pad.png
-           :width: 300px
+           :width: 335px
 
            Reconstruction with the mask  :code:`recon_mask_radius=2.0`.
 
       - .. figure:: ../../../_static/figures/reconstructions/lprec_recon_mask.png
-           :width: 300px
+           :width: 335px
 
            Reconstruction with the mask  :code:`recon_mask_radius=0.78`.
 
@@ -58,11 +60,11 @@ Most of parameters are self-explanatory from the method's API :mod:`httomolibgpu
 
 
     * - .. figure:: ../../../_static/figures/reconstructions/lprec_recon_filter_hann.png
-           :width: 300px
+           :width: 335px
 
            Reconstruction using :code:`filter_type = 'hann'` and :code:`filter_freq_cutoff=1.0`.
 
       - .. figure:: ../../../_static/figures/reconstructions/lprec_recon_filter_parzen.png
-           :width: 300px
+           :width: 335px
 
-           Reconstruction using :code:`filter_type = 'parzen'` and :code:`filter_freq_cutoff=1.5`.
+           Reconstruction using :code:`filter_type = 'parzen'` and :code:`filter_freq_cutoff=1.0`.

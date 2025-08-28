@@ -166,7 +166,7 @@ def FBP3d_tomobar(
     detector_pad : int
         Horizontal detector width padding with edge values to remove circle/arc type artifacts in the reconstruction.
     filter_freq_cutoff : float
-        Cutoff frequency parameter for the SINC filter, the lower values produce better contrast but noisy reconstruction.
+        Cutoff frequency parameter for the SINC filter, the lower values may produce better contrast but noisy reconstruction. The filter change will also affect the dynamic range of the reconstructed image. 
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
