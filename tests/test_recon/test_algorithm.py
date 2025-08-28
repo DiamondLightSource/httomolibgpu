@@ -22,6 +22,7 @@ def test_reconstruct_FBP_2d_astra(data, flats, darks, ensure_clean_memory):
         cp.asnumpy(normalised_data),
         np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
         79.5,
+        0,
         filter_type="shepp-logan",
         filter_parameter=None,
         filter_d=2.0,
@@ -31,6 +32,28 @@ def test_reconstruct_FBP_2d_astra(data, flats, darks, ensure_clean_memory):
     assert recon_data.flags.c_contiguous
     assert_allclose(np.mean(recon_data), 0.0020, atol=1e-04)
     assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.265129, rtol=1e-05)
+    assert recon_data.dtype == np.float32
+    assert recon_data.shape == (recon_size, 128, recon_size)
+
+
+def test_reconstruct_FBP_2d_astra_pad(data, flats, darks, ensure_clean_memory):
+    normalised_data = normalize_cupy(data, flats, darks, cutoff=10, minus_log=True)
+    recon_size = 150
+
+    recon_data = FBP2d_astra(
+        cp.asnumpy(normalised_data),
+        np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
+        79.5,
+        20,
+        filter_type="shepp-logan",
+        filter_parameter=None,
+        filter_d=2.0,
+        recon_size=recon_size,
+        recon_mask_radius=0.9,
+    )
+    assert recon_data.flags.c_contiguous
+    assert_allclose(np.mean(recon_data), 0.0020, atol=1e-04)
+    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.265565, rtol=1e-05)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (recon_size, 128, recon_size)
 
@@ -95,6 +118,7 @@ def test_reconstruct_FBP3d_tomobar_3(data, flats, darks, ensure_clean_memory):
         normalize_cupy(data, flats, darks, cutoff=20.5, minus_log=False),
         np.linspace(5.0 * np.pi / 360.0, 180.0 * np.pi / 360.0, data.shape[0]),
         79,  # center
+        0,  # detector pad
         1.1,  # filter_freq_cutoff
         210,  # recon_size
         0.9,  # recon_mask_radius
@@ -109,11 +133,48 @@ def test_reconstruct_FBP3d_tomobar_3(data, flats, darks, ensure_clean_memory):
     assert recon_data.shape == (210, 128, 210)
 
 
+def test_reconstruct_FBP3d_tomobar_3_pad(data, flats, darks, ensure_clean_memory):
+    recon_data = FBP3d_tomobar(
+        normalize_cupy(data, flats, darks, cutoff=20.5, minus_log=False),
+        np.linspace(5.0 * np.pi / 360.0, 180.0 * np.pi / 360.0, data.shape[0]),
+        79,  # center
+        20,  # detector pad
+        1.1,  # filter_freq_cutoff
+        210,  # recon_size
+        0.9,  # recon_mask_radius
+    )
+
+    recon_data = recon_data.get()
+    assert_allclose(np.mean(recon_data), -0.000392, atol=1e-6)
+    assert_allclose(
+        np.mean(recon_data, axis=(0, 2)).sum(), -0.050226, rtol=1e-06, atol=1e-5
+    )
+    assert recon_data.dtype == np.float32
+    assert recon_data.shape == (210, 128, 210)
+
+
 def test_reconstruct_LPRec3d_tomobar_1(data, flats, darks, ensure_clean_memory):
     recon_data = LPRec3d_tomobar(
         data=normalize_cupy(data, flats, darks, cutoff=10, minus_log=True),
         angles=np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
         center=79.5,
+        detector_pad=0,
+        recon_size=130,
+        recon_mask_radius=0.95,
+    )
+    assert recon_data.flags.c_contiguous
+    recon_data = recon_data.get()
+    assert_allclose(np.mean(recon_data), 0.007, atol=1e-3)
+    assert recon_data.dtype == np.float32
+    assert recon_data.shape == (130, 128, 130)
+
+
+def test_reconstruct_LPRec3d_tomobar_1_pad(data, flats, darks, ensure_clean_memory):
+    recon_data = LPRec3d_tomobar(
+        data=normalize_cupy(data, flats, darks, cutoff=10, minus_log=True),
+        angles=np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
+        center=79.5,
+        detector_pad=10,
         recon_size=130,
         recon_mask_radius=0.95,
     )
@@ -165,10 +226,11 @@ def test_FBP3d_tomobar_performance(ensure_clean_memory):
     data = cp.asarray(data_host, dtype=np.float32)
     angles = np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0])
     cor = 79.5
+    det_pad = 0
     filter_freq_cutoff = 1.1
 
     # cold run first
-    FBP3d_tomobar(data, angles, cor, filter_freq_cutoff)
+    FBP3d_tomobar(data, angles, cor, det_pad, filter_freq_cutoff)
     dev.synchronize()
 
     start = time.perf_counter_ns()
