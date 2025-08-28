@@ -59,6 +59,7 @@ def FBP2d_astra(
     data: np.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
+    detector_pad: int = 0,
     filter_type: str = "ram-lak",
     filter_parameter: Optional[float] = None,
     filter_d: Optional[float] = None,
@@ -81,6 +82,8 @@ def FBP2d_astra(
         An array of angles given in radians.
     center : float, optional
         The center of rotation (CoR).
+    detector_pad : int
+        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction.
     filter_type: str
         Type of projection filter, see ASTRA's API for all available options for filters.
     filter_parameter: float, optional
@@ -112,7 +115,7 @@ def FBP2d_astra(
         recon_size = data_shape[2]
 
     RecTools = _instantiate_direct_recon2d_class(
-        data, angles, center, recon_size, gpu_id
+        data, angles, center, detector_pad, recon_size, gpu_id
     )
 
     detY_size = data_shape[1]
@@ -140,6 +143,7 @@ def FBP3d_tomobar(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
+    detector_pad: int = 0,
     filter_freq_cutoff: float = 0.35,
     recon_size: Optional[int] = None,
     recon_mask_radius: Optional[float] = 0.95,
@@ -159,6 +163,8 @@ def FBP3d_tomobar(
         An array of angles given in radians.
     center : float, optional
         The center of rotation (CoR).
+    detector_pad : int
+        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction.
     filter_freq_cutoff : float
         Cutoff frequency parameter for the SINC filter, the lower values produce better contrast but noisy reconstruction.
     recon_size : int, optional
@@ -182,7 +188,7 @@ def FBP3d_tomobar(
     data = data_checker(data, verbosity=True, method_name="FBP3d_tomobar")
 
     RecToolsCP = _instantiate_direct_recon_class(
-        data, angles, center, recon_size, gpu_id
+        data, angles, center, detector_pad, recon_size, gpu_id
     )
 
     reconstruction = RecToolsCP.FBP(
@@ -200,6 +206,7 @@ def LPRec3d_tomobar(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
+    detector_pad: int = 0,
     filter_type: str = "shepp",
     filter_freq_cutoff: float = 1.0,
     recon_size: Optional[int] = None,
@@ -219,6 +226,8 @@ def LPRec3d_tomobar(
         An array of angles given in radians.
     center : float, optional
         The center of rotation (CoR).
+    detector_pad : int
+        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction.
     filter_type : str
         Filter type, the accepted strings are: none, ramp, shepp, cosine, cosine2, hamming, hann, parzen.
     filter_freq_cutoff : float
@@ -242,7 +251,9 @@ def LPRec3d_tomobar(
 
     data = data_checker(data, verbosity=True, method_name="LPRec3d_tomobar")
 
-    RecToolsCP = _instantiate_direct_recon_class(data, angles, center, recon_size, 0)
+    RecToolsCP = _instantiate_direct_recon_class(
+        data, angles, center, detector_pad, recon_size, 0
+    )
 
     reconstruction = RecToolsCP.FOURIER_INV(
         _take_neg_log(data) if neglog else data,
@@ -260,6 +271,7 @@ def SIRT3d_tomobar(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
+    detector_pad: int = 0,
     recon_size: Optional[int] = None,
     iterations: Optional[int] = 300,
     nonnegativity: Optional[bool] = True,
@@ -280,6 +292,8 @@ def SIRT3d_tomobar(
         An array of angles given in radians.
     center : float, optional
         The center of rotation (CoR).
+    detector_pad : int
+        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction.
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
@@ -304,6 +318,7 @@ def SIRT3d_tomobar(
         data,
         angles,
         center,
+        detector_pad,
         recon_size,
         gpu_id,
         datafidelity="LS",
@@ -327,6 +342,7 @@ def CGLS3d_tomobar(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
+    detector_pad: int = 0,
     recon_size: Optional[int] = None,
     iterations: Optional[int] = 20,
     nonnegativity: Optional[bool] = True,
@@ -347,6 +363,8 @@ def CGLS3d_tomobar(
         An array of angles given in radians.
     center : float, optional
         The center of rotation (CoR).
+    detector_pad : int
+        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction.
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
@@ -368,7 +386,7 @@ def CGLS3d_tomobar(
     data = data_checker(data, verbosity=True, method_name="CGLS3d_tomobar")
 
     RecToolsCP = _instantiate_iterative_recon_class(
-        data, angles, center, recon_size, gpu_id, datafidelity="LS"
+        data, angles, center, detector_pad, recon_size, gpu_id, datafidelity="LS"
     )
 
     _data_ = {
@@ -386,6 +404,7 @@ def _instantiate_direct_recon_class(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
+    detector_pad: int = 0,
     recon_size: Optional[int] = None,
     gpu_id: int = 0,
 ) -> Type:
@@ -395,6 +414,7 @@ def _instantiate_direct_recon_class(
         data (cp.ndarray): data array
         angles (np.ndarray): angles
         center (Optional[float], optional): center of recon. Defaults to None.
+        detector_pad (int): Detector width padding. Defaults to 0.
         recon_size (Optional[int], optional): recon_size. Defaults to None.
         gpu_id (int, optional): gpu ID. Defaults to 0.
 
@@ -407,6 +427,7 @@ def _instantiate_direct_recon_class(
         recon_size = data.shape[2]
     RecToolsCP = RecToolsDIRCuPy(
         DetectorsDimH=data.shape[2],  # Horizontal detector dimension
+        DetectorsDimH_pad=detector_pad,  # padding for horizontal detector
         DetectorsDimV=data.shape[1],  # Vertical detector dimension (3D case)
         CenterRotOffset=data.shape[2] / 2
         - center
@@ -423,6 +444,7 @@ def _instantiate_direct_recon2d_class(
     data: np.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
+    detector_pad: int = 0,
     recon_size: Optional[int] = None,
     gpu_id: int = 0,
 ) -> Type:
@@ -432,6 +454,7 @@ def _instantiate_direct_recon2d_class(
         data (cp.ndarray): data array
         angles (np.ndarray): angles
         center (Optional[float], optional): center of recon. Defaults to None.
+        detector_pad (int): Detector width padding. Defaults to 0.
         recon_size (Optional[int], optional): recon_size. Defaults to None.
         gpu_id (int, optional): gpu ID. Defaults to 0.
 
@@ -444,6 +467,7 @@ def _instantiate_direct_recon2d_class(
         recon_size = data.shape[2]
     RecTools = RecToolsDIR(
         DetectorsDimH=data.shape[2],  # Horizontal detector dimension
+        DetectorsDimH_pad=detector_pad,  # padding for horizontal detector
         DetectorsDimV=None,  # 2d case
         CenterRotOffset=data.shape[2] / 2
         - center
@@ -459,6 +483,7 @@ def _instantiate_iterative_recon_class(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
+    detector_pad: int = 0,
     recon_size: Optional[int] = None,
     gpu_id: int = 0,
     datafidelity: str = "LS",
@@ -469,6 +494,7 @@ def _instantiate_iterative_recon_class(
         data (cp.ndarray): data array
         angles (np.ndarray): angles
         center (Optional[float], optional): center of recon. Defaults to None.
+        detector_pad (int): Detector width padding. Defaults to 0.
         recon_size (Optional[int], optional): recon_size. Defaults to None.
         datafidelity (str, optional): Data fidelity
         gpu_id (int, optional): gpu ID. Defaults to 0.
@@ -482,6 +508,7 @@ def _instantiate_iterative_recon_class(
         recon_size = data.shape[2]
     RecToolsCP = RecToolsIRCuPy(
         DetectorsDimH=data.shape[2],  # Horizontal detector dimension
+        DetectorsDimH_pad=detector_pad,  # padding for horizontal detector
         DetectorsDimV=data.shape[1],  # Vertical detector dimension (3D case)
         CenterRotOffset=data.shape[2] / 2
         - center
