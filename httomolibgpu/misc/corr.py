@@ -114,7 +114,7 @@ def median_filter(
 
 
 def remove_outlier(
-    data: cp.ndarray, kernel_size: int = 3, dif: float = 0.1
+    data: cp.ndarray, kernel_size: int = 3, dif: float = 1000
 ) -> cp.ndarray:
     """Selectively applies 3D median filter to a 3D CuPy array to remove outliers. Also called a dezinger.
     For more detailed information, see :ref:`method_outlier_removal`.
@@ -126,8 +126,8 @@ def remove_outlier(
     kernel_size : int, optional
         The size of the filter's kernel (a diameter).
     dif : float, optional
-        Expected difference value between outlier value and the
-        median value of the array.
+        Expected difference value between the outlier value (central voxel) and the
+        median value of the neighbourhood. Lower values lead to median filtering.
 
     Returns
     -------
