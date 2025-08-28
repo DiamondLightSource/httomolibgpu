@@ -97,12 +97,11 @@ def test_rescale_double_offset_min_percentage(bits: Literal[8, 16, 32]):
 
 
 def test_tomo_data_scale(data):
-    data_cpu = data.get()
     res_dev = rescale_to_int(
         data.astype(cp.float32), perc_range_min=10, perc_range_max=90, bits=8
     )
     res = res_dev.get()
-    assert res_dev.dtype == np.uint8
+    assert res.dtype == np.uint8
 
 
 @pytest.mark.perf

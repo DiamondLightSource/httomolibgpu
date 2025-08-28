@@ -24,7 +24,6 @@ import numpy as np
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
-cupy_run = cupywrapper.cupy_run
 
 from typing import Literal, Optional, Tuple, Union
 
