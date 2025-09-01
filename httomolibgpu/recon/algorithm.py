@@ -18,7 +18,7 @@
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Changes relative to ToMoBAR 2024.01 version
 # ---------------------------------------------------------------------------
-"""Module for tomographic reconstruction"""
+"""Module for tomographic reconstruction. For more detailed information see :ref:`image_reconstruction_module`"""
 
 import numpy as np
 from httomolibgpu import cupywrapper
@@ -71,8 +71,7 @@ def FBP2d_astra(
     """
     Perform Filtered Backprojection (FBP) reconstruction slice-by-slice (2d) using ASTRA toolbox :cite:`van2016fast` and
     ToMoBAR :cite:`kazantsev2020tomographic` wrappers.
-    This is a 2D recon using ASTRA's API for the FBP method, see for more parameters ASTRA's documentation here:
-    https://astra-toolbox.com/docs/algs/FBP_CUDA.html.
+    This is a 2D recon using ASTRA's API for the FBP_CUDA method, see more in :ref:`method_FBP2d_astra`.
 
     Parameters
     ----------
@@ -153,7 +152,8 @@ def FBP3d_tomobar(
     """
     Perform Filtered Backprojection (FBP) reconstruction using ASTRA toolbox :cite:`van2016fast` and
     ToMoBAR :cite:`kazantsev2020tomographic` wrappers.
-    This is a 3D recon from the CuPy array directly and using a custom built SINC filter for filtration in Fourier space.
+    This is a 3D recon from the CuPy array directly and using a custom built SINC filter for filtration in Fourier space, 
+    see more in :ref:`method_FBP3d_tomobar`.
 
     Parameters
     ----------
@@ -166,7 +166,7 @@ def FBP3d_tomobar(
     detector_pad : int
         Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction.
     filter_freq_cutoff : float
-        Cutoff frequency parameter for the SINC filter, the lower values produce better contrast but noisy reconstruction.
+        Cutoff frequency parameter for the SINC filter, the lower values may produce better contrast but noisy reconstruction. The filter change will also affect the dynamic range of the reconstructed image. 
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
@@ -216,7 +216,7 @@ def LPRec3d_tomobar(
     """
     Fourier direct inversion in 3D on unequally spaced (also called as Log-Polar) grids using
     CuPy array as an input. This implementation follows V. Nikitin's CUDA-C implementation and TomoCuPy package.
-    :cite:`andersson2016fast`.
+    :cite:`andersson2016fast`, see more in :ref:`method_LPRec3d_tomobar`.
 
     Parameters
     ----------
@@ -231,7 +231,7 @@ def LPRec3d_tomobar(
     filter_type : str
         Filter type, the accepted strings are: none, ramp, shepp, cosine, cosine2, hamming, hann, parzen.
     filter_freq_cutoff : float
-        Cutoff frequency parameter for a filter. The higher values increase the resolution but also amplify the noise.
+        Cutoff frequency parameter for a filter.
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.

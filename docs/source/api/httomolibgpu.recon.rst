@@ -15,5 +15,5 @@ Module contents
 
 .. automodule:: httomolibgpu.recon
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:

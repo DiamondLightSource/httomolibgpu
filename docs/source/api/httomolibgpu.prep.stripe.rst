@@ -2,5 +2,5 @@
 ============================================
 .. automodule:: httomolibgpu.prep.stripe
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:

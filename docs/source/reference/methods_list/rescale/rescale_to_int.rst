@@ -34,24 +34,24 @@ In this example we demonstrate how to use the rescaling when saving the data fro
 .. list-table::
 
 
-    * - .. figure:: ../../_static/auto_images_methods/rescale_to_int_proj_0_to_100.png
+    * - .. figure:: ../../../_static/auto_images_methods/rescale_to_int_proj_0_to_100.png
 
            Projection data saved into 8-bit image with :code:`perc_range_min = 0` and :code:`perc_range_max = 100` scaling.
 
-      - .. figure:: ../../_static/auto_images_methods/rescale_to_int_histo_0_to_100.png
+      - .. figure:: ../../../_static/auto_images_methods/rescale_to_int_histo_0_to_100.png
 
            The corresponding histogram of the image to the left. Note that the background contains high values (250-255) and they dominate the image which is what reflected in the histogram.
 
-    * - .. figure:: ../../_static/auto_images_methods/rescale_to_int_proj_10_to_90.png
+    * - .. figure:: ../../../_static/auto_images_methods/rescale_to_int_proj_10_to_90.png
 
            Projection data saved into 8-bit image with :code:`perc_range_min = 10` and :code:`perc_range_max = 90` scaling. Note that the contrast appears to be better with this scaling.
-      - .. figure:: ../../_static/auto_images_methods/rescale_to_int_histo_10_to_90.png
+      - .. figure:: ../../../_static/auto_images_methods/rescale_to_int_histo_10_to_90.png
 
            The corresponding histogram of the image to the left. Note that the background is now outside the range and the histogram shows a good distribution of values withing the [0,128] range. If possible, however, it is better to aim for a wider histogram which represents the image well within the given range.
 
-    * - .. figure:: ../../_static/auto_images_methods/rescale_to_int_proj_30_to_70.png
+    * - .. figure:: ../../../_static/auto_images_methods/rescale_to_int_proj_30_to_70.png
 
            Projection data saved into 8-bit image with :code:`perc_range_min = 30` and :code:`perc_range_max = 70` scaling. This is en example of a poorer scaling when the loss of the information is clearly visible through poorer contrast.
-      - .. figure:: ../../_static/auto_images_methods/rescale_to_int_histo_30_to_70.png
+      - .. figure:: ../../../_static/auto_images_methods/rescale_to_int_histo_30_to_70.png
 
            The corresponding histogram of the image to the left. Note that the histogram has been significantly flattened with this scaling. Meaning that there is less values that represent the image in the selected range. And the histogram also has got less variation of values compared to the histogram without percentage scaling. Such flat histograms is best to avoid.

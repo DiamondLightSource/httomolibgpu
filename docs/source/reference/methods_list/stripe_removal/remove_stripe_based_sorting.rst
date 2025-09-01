@@ -5,8 +5,7 @@ Remove stripes by sorting
 
 **Description**
 
-This stripe removal algorithm is developed by Dr. Nghia Vo and is a part of the module :doc:`../../api/httomolibgpu.prep.stripe` for data correction.
-This filter works in the sinogram space to minimise stripes leading to `Ring Artifacts <https://radiopaedia.org/articles/ring-artifact-2?lang=gb>`_ in the reconstruction. See more about the filter in the original publication :cite:`vo2018superior`.
+This filter has been developed by Dr. Nghia Vo and it works in the sinogram space to minimise stripes leading to `Ring Artifacts <https://radiopaedia.org/articles/ring-artifact-2?lang=gb>`_ in the reconstruction. See more about the filter in the original publication :cite:`vo2018superior`.
 Also more information about the method can be found on the author's software `Sarepy <https://sarepy.readthedocs.io/>`_.
 
 **Where and how to use it:**
@@ -26,27 +25,27 @@ In this example we demonstrate how to apply the stripe removal algorithm to the 
 .. list-table::
 
 
-    * - .. figure:: ../../_static/auto_images_methods/data_stripes_added_sino.png
+    * - .. figure:: ../../../_static/auto_images_methods/data_stripes_added_sino.png
 
            Input (sinogram view) with the stripes added
 
-      - .. figure:: ../../_static/auto_images_methods/data_stripes_added_proj.png
+      - .. figure:: ../../../_static/auto_images_methods/data_stripes_added_proj.png
 
            Input (projection view) with the stripes added
 
-    * - .. figure:: ../../_static/auto_images_methods/remove_stripe_based_sorting_sino.png
+    * - .. figure:: ../../../_static/auto_images_methods/remove_stripe_based_sorting_sino.png
 
            After applying remove stripes by sorting (sinogram)
 
-      - .. figure:: ../../_static/auto_images_methods/remove_stripe_based_sorting_proj.png
+      - .. figure:: ../../../_static/auto_images_methods/remove_stripe_based_sorting_proj.png
 
            After applying remove stripes by sorting (projection)
 
-    * - .. figure:: ../../_static/auto_images_methods/remove_stripe_based_sorting_res_sino.png
+    * - .. figure:: ../../../_static/auto_images_methods/remove_stripe_based_sorting_res_sino.png
 
            Sinogram view of absolute residual between input and output
 
-      - .. figure:: ../../_static/auto_images_methods/remove_stripe_based_sorting_res_proj.png
+      - .. figure:: ../../../_static/auto_images_methods/remove_stripe_based_sorting_res_proj.png
 
            Projection view of absolute residual between input and output
 
