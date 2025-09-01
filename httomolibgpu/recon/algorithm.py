@@ -82,7 +82,7 @@ def FBP2d_astra(
     center : float, optional
         The center of rotation (CoR).
     detector_pad : int
-        Horizontal detector width padding with edge values to remove circle/arc type artifacts in the reconstruction.
+        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction.
     filter_type: str
         Type of projection filter, see ASTRA's API for all available options for filters.
     filter_parameter: float, optional
@@ -164,7 +164,7 @@ def FBP3d_tomobar(
     center : float, optional
         The center of rotation (CoR).
     detector_pad : int
-        Horizontal detector width padding with edge values to remove circle/arc type artifacts in the reconstruction.
+        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction.
     filter_freq_cutoff : float
         Cutoff frequency parameter for the SINC filter, the lower values may produce better contrast but noisy reconstruction. The filter change will also affect the dynamic range of the reconstructed image. 
     recon_size : int, optional
@@ -227,7 +227,7 @@ def LPRec3d_tomobar(
     center : float, optional
         The center of rotation (CoR).
     detector_pad : int
-        Horizontal detector width padding with edge values to remove circle/arc type artifacts in the reconstruction.
+        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction.
     filter_type : str
         Filter type, the accepted strings are: none, ramp, shepp, cosine, cosine2, hamming, hann, parzen.
     filter_freq_cutoff : float
@@ -293,7 +293,7 @@ def SIRT3d_tomobar(
     center : float, optional
         The center of rotation (CoR).
     detector_pad : int
-        Horizontal detector width padding with edge values to remove circle/arc type artifacts in the reconstruction.
+        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction.
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
@@ -364,7 +364,7 @@ def CGLS3d_tomobar(
     center : float, optional
         The center of rotation (CoR).
     detector_pad : int
-        Horizontal detector width padding with edge values to remove circle/arc type artifacts in the reconstruction.
+        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction.
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
@@ -414,7 +414,7 @@ def _instantiate_direct_recon_class(
         data (cp.ndarray): data array
         angles (np.ndarray): angles
         center (Optional[float], optional): center of recon. Defaults to None.
-        detector_pad (int): Horizontal detector width padding. Defaults to 0.
+        detector_pad (int): Detector width padding. Defaults to 0.
         recon_size (Optional[int], optional): recon_size. Defaults to None.
         gpu_id (int, optional): gpu ID. Defaults to 0.
 
@@ -454,7 +454,7 @@ def _instantiate_direct_recon2d_class(
         data (cp.ndarray): data array
         angles (np.ndarray): angles
         center (Optional[float], optional): center of recon. Defaults to None.
-        detector_pad (int): Horizontal detector width padding. Defaults to 0.
+        detector_pad (int): Detector width padding. Defaults to 0.
         recon_size (Optional[int], optional): recon_size. Defaults to None.
         gpu_id (int, optional): gpu ID. Defaults to 0.
 
@@ -494,7 +494,7 @@ def _instantiate_iterative_recon_class(
         data (cp.ndarray): data array
         angles (np.ndarray): angles
         center (Optional[float], optional): center of recon. Defaults to None.
-        detector_pad (int): Horizontal detector width padding. Defaults to 0.
+        detector_pad (int): Detector width padding. Defaults to 0.
         recon_size (Optional[int], optional): recon_size. Defaults to None.
         datafidelity (str, optional): Data fidelity
         gpu_id (int, optional): gpu ID. Defaults to 0.
