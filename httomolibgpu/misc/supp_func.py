@@ -162,7 +162,7 @@ def data_checker(
 ) -> bool:
     """
     Function that performs the variety of checks on input data, in some cases also correct the data and prints warnings.
-    Currently it checks for: the presence of infs and nans in data. 
+    Currently it checks for: the presence of infs and nans in data.
 
     Parameters
     ----------
