@@ -2,5 +2,5 @@
 ============================================
 .. automodule:: httomolibgpu.recon.rotation
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:

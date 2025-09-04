@@ -2,5 +2,5 @@
 ============================================
 .. automodule:: httomolibgpu.cupywrapper
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:

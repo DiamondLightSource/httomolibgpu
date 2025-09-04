@@ -5,7 +5,7 @@ Raven filter
 
 **Description**
 
-Raven filter is a part of the module :doc:`../../api/httomolibgpu.prep.stripe` for data correction. Raven filter is based on a FFT filter applied in sinogram space to minimise stripes leading to `Ring Artifacts <https://radiopaedia.org/articles/ring-artifact-2?lang=gb>`_ in reconstruction. See more about the filter in the original publication :cite:`raven1998numerical`.
+Raven filter is based on a FFT filter applied in sinogram space to minimise stripes leading to `Ring Artifacts <https://radiopaedia.org/articles/ring-artifact-2?lang=gb>`_ in reconstruction. See more about the filter in the original publication :cite:`raven1998numerical`.
 
 **Where and how to use it:**
 
@@ -23,27 +23,27 @@ In this example we demonstrate how to apply Raven filter to the normalised proje
 .. list-table::
 
 
-    * - .. figure:: ../../_static/auto_images_methods/data_stripes_added_sino.png
+    * - .. figure:: ../../../_static/auto_images_methods/data_stripes_added_sino.png
 
            Input (sinogram view) with the stripes added
 
-      - .. figure:: ../../_static/auto_images_methods/data_stripes_added_proj.png
+      - .. figure:: ../../../_static/auto_images_methods/data_stripes_added_proj.png
 
            Input (projection view) with the stripes added
 
-    * - .. figure:: ../../_static/auto_images_methods/raven_filter_sino.png
+    * - .. figure:: ../../../_static/auto_images_methods/raven_filter_sino.png
 
            After applying Raven filter (sinogram)
 
-      - .. figure:: ../../_static/auto_images_methods/raven_filter_proj.png
+      - .. figure:: ../../../_static/auto_images_methods/raven_filter_proj.png
 
            After applying Raven filter (projection)
 
-    * - .. figure:: ../../_static/auto_images_methods/raven_filter_res_sino.png
+    * - .. figure:: ../../../_static/auto_images_methods/raven_filter_res_sino.png
 
            Sinogram view of absolute residual between input and output
 
-      - .. figure:: ../../_static/auto_images_methods/raven_filter_res_proj.png
+      - .. figure:: ../../../_static/auto_images_methods/raven_filter_res_proj.png
 
            Projection view of absolute residual between input and output
 

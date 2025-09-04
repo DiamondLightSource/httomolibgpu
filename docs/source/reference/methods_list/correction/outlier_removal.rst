@@ -5,8 +5,7 @@ Outliers removal filter
 
 **Description**
 
-Also called as a **dezinger**. Outliers removal filter is a part of the module :doc:`../../api/httomolibgpu.misc.corr` for data correction. 
-This method seeks the pixels/voxels that do not fit normally distributed data and replace them by using the :ref:`method_median_filter`. Essentially, dezinger is 
+Outliers removal filter is also called as a **dezinger**. This method seeks the pixels/voxels that do not fit normally distributed data and replace them by using the :ref:`method_median_filter`. Essentially, dezinger is 
 a spatially variant median filter. The user needs to set the threshold parameter, based on which the filter will remove the outliers that are **above** 
 the chosen threshold. See the :code:`dif` parameter of the :code:`remove_outlier` method. 
 Mathematically, one can express the dezinger as: 
@@ -46,26 +45,26 @@ In this example we demonstrate how the outliers, visible in sinogram and project
 .. list-table:: 
 
 
-    * - .. figure:: ../../_static/auto_images_methods/remove_outlier_input_sino.png
+    * - .. figure:: ../../../_static/auto_images_methods/remove_outlier_input_sino.png
 
            Input (sinogram view) with a stripe of outliers in the middle of the image. 
 
-      - .. figure:: ../../_static/auto_images_methods/remove_outlier_input_proj.png
+      - .. figure:: ../../../_static/auto_images_methods/remove_outlier_input_proj.png
 
            Input (projection view) with some outliers in the left part of the image.
 
-    * - .. figure:: ../../_static/auto_images_methods/remove_outlier_sino.png
+    * - .. figure:: ../../../_static/auto_images_methods/remove_outlier_sino.png
 
            After applying outliers removal (sinogram)
 
-      - .. figure:: ../../_static/auto_images_methods/remove_outlier_proj.png
+      - .. figure:: ../../../_static/auto_images_methods/remove_outlier_proj.png
 
            After applying outliers removal (projection)
 
-    * - .. figure:: ../../_static/auto_images_methods/remove_outlier_res_sino.png
+    * - .. figure:: ../../../_static/auto_images_methods/remove_outlier_res_sino.png
 
            Sinogram view of absolute residual between input and output. Note that the residual contains only removed outliers, we want to avoid smoothing the data.
 
-      - .. figure:: ../../_static/auto_images_methods/remove_outlier_res_proj.png
+      - .. figure:: ../../../_static/auto_images_methods/remove_outlier_res_proj.png
 
            Projection view of absolute residual between input and output. Note that the residual contains only removed outliers, we want to avoid smoothing the data.

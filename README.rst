@@ -34,7 +34,7 @@ Conda environment
 
    $ conda create --name httomolibgpu # create a fresh conda environment
    $ conda activate httomolibgpu # activate the environment
-   $ conda install -c conda-forge cupy==12.3.0 # for linux users
+   $ conda install conda-forge::cupy==12.3.0
    $ pip install httomolibgpu
 
 Setup the development environment:
