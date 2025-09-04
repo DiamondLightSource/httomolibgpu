@@ -152,7 +152,7 @@ def FBP3d_tomobar(
     """
     Perform Filtered Backprojection (FBP) reconstruction using ASTRA toolbox :cite:`van2016fast` and
     ToMoBAR :cite:`kazantsev2020tomographic` wrappers.
-    This is a 3D recon from the CuPy array directly and using a custom built SINC filter for filtration in Fourier space, 
+    This is a 3D recon from the CuPy array directly and using a custom built SINC filter for filtration in Fourier space,
     see more in :ref:`method_FBP3d_tomobar`.
 
     Parameters
@@ -166,7 +166,7 @@ def FBP3d_tomobar(
     detector_pad : int
         Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction.
     filter_freq_cutoff : float
-        Cutoff frequency parameter for the SINC filter, the lower values may produce better contrast but noisy reconstruction. The filter change will also affect the dynamic range of the reconstructed image. 
+        Cutoff frequency parameter for the SINC filter, the lower values may produce better contrast but noisy reconstruction. The filter change will also affect the dynamic range of the reconstructed image.
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
