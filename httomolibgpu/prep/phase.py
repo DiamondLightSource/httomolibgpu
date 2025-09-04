@@ -45,6 +45,7 @@ __all__ = [
     "paganin_filter_tomopy",
 ]
 
+
 ##-------------------------------------------------------------##
 # Adaptation of retrieve_phase (Paganin filter) from TomoPy
 def paganin_filter_tomopy(
