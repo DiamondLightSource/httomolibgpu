@@ -30,11 +30,6 @@ jobs:
           post-cleanup: 'all'
           init-shell: bash
 
-      - name: Download test data from Zenodo
-        run: |
-          chmod +x ./.scripts/download_zenodo.py
-          ./.scripts/download_zenodo.py zenodo-tests/large_data_archive
-
       - name: Install httomolibgpu
         run: |
           pip install .[dev]
@@ -44,6 +39,8 @@ jobs:
         run: |
           pytest tests/
 
-      - name: Run Zenodo tests
+      - name: Download Zenodo data and run large data tests
         run: |
+          chmod +x ./.scripts/download_zenodo.py
+          ./.scripts/download_zenodo.py zenodo-tests/large_data_archive
           pytest zenodo-tests/
