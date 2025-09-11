@@ -1,11 +1,11 @@
 name: httomolibgpu zenodo tests
 on:
   pull_request:
-    branches:
-      - main
+    types: [ labeled ]
 
 jobs:
   iris-gpu:
+    if: ${{ github.event.label.name == 'run-zenodo-tests' }}
     runs-on: iris-gpu
     container:
       image: nvidia/cuda:12.6.3-devel-ubi8
@@ -35,9 +35,7 @@ jobs:
           pip install .[dev]
           micromamba list
 
-      # Optional: Run Zenodo tests only if PR has a label
       - name: Download and run Zenodo tests
-        if: contains(github.event.pull_request.labels.*.name, 'run-zenodo-tests')
         run: |
           chmod +x ./.scripts/download_zenodo.py
           ./.scripts/download_zenodo.py zenodo-tests/large_data_archive
