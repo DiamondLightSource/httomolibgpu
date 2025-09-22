@@ -399,6 +399,68 @@ def CGLS3d_tomobar(
     return cp.require(cp.swapaxes(reconstruction, 0, 1), requirements="C")
 
 
+## %%%%%%%%%%%%%%%%%%%%%%% FISTA reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+def FISTA3d_tomobar(
+    data: cp.ndarray,
+    angles: np.ndarray,
+    center: Optional[float] = None,
+    detector_pad: int = 0,
+    recon_size: Optional[int] = None,
+    iterations: Optional[int] = 20,
+    nonnegativity: Optional[bool] = True,
+    neglog: bool = False,
+    gpu_id: int = 0,
+) -> cp.ndarray:
+    """
+    Perform Conjugate Gradient Least Squares (CGLS) using ASTRA toolbox :cite:`van2016fast` and
+    ToMoBAR :cite:`kazantsev2020tomographic` wrappers.
+    This is 3D recon directly from a CuPy array while using ASTRA GPUlink capability to avoid host-device
+    transactions for projection and backprojection.
+
+    Parameters
+    ----------
+    data : cp.ndarray
+        Projection data as a CuPy array.
+    angles : np.ndarray
+        An array of angles given in radians.
+    center : float, optional
+        The center of rotation (CoR).
+    detector_pad : int
+        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction.
+    recon_size : int, optional
+        The [recon_size, recon_size] shape of the reconstructed slice in pixels.
+        By default (None), the reconstructed size will be the dimension of the horizontal detector.
+    iterations : int, optional
+        The number of CGLS iterations.
+    nonnegativity : bool, optional
+        Impose nonnegativity constraint on reconstructed image.
+    neglog: bool
+        Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Defaults to False,
+        assuming that the negative log is taken either in normalisation procedure on with Paganin filter application.
+    gpu_id : int, optional
+        A GPU device index to perform operation on.
+
+    Returns
+    -------
+    cp.ndarray
+        The CGLS reconstructed volume as a CuPy array.
+    """
+    data = data_checker(data, verbosity=True, method_name="CGLS3d_tomobar")
+
+    RecToolsCP = _instantiate_iterative_recon_class(
+        data, angles, center, detector_pad, recon_size, gpu_id, datafidelity="LS"
+    )
+
+    _data_ = {
+        "projection_norm_data": _take_neg_log(data) if neglog else data,
+        "data_axes_labels_order": input_data_axis_labels,
+    }  # data dictionary
+    _algorithm_ = {"iterations": iterations, "nonnegativity": nonnegativity}
+    reconstruction = RecToolsCP.CGLS(_data_, _algorithm_)
+    cp._default_memory_pool.free_all_blocks()
+    return cp.require(cp.swapaxes(reconstruction, 0, 1), requirements="C")
+
+
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 def _instantiate_direct_recon_class(
     data: cp.ndarray,
