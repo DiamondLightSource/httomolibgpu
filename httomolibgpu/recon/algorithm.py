@@ -49,6 +49,7 @@ __all__ = [
     "LPRec3d_tomobar",
     "SIRT3d_tomobar",
     "CGLS3d_tomobar",
+    "FISTA3d_tomobar",
 ]
 
 input_data_axis_labels = ["angles", "detY", "detX"]  # set the labels of the input data
@@ -210,7 +211,7 @@ def LPRec3d_tomobar(
     filter_type: str = "shepp",
     filter_freq_cutoff: float = 1.0,
     recon_size: Optional[int] = None,
-    recon_mask_radius: Optional[float] = 0.95,
+    recon_mask_radius: float = 0.95,
     neglog: bool = False,
 ) -> cp.ndarray:
     """
@@ -235,7 +236,7 @@ def LPRec3d_tomobar(
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
-    recon_mask_radius: float, optional
+    recon_mask_radius: float
         The radius of the circular mask that applies to the reconstructed slice in order to crop
         out some undesirable artifacts. The values outside the given diameter will be set to zero.
         It is recommended to keep the value in the range [0.7-1.0].
@@ -273,8 +274,8 @@ def SIRT3d_tomobar(
     center: Optional[float] = None,
     detector_pad: int = 0,
     recon_size: Optional[int] = None,
-    iterations: Optional[int] = 300,
-    nonnegativity: Optional[bool] = True,
+    iterations: int = 300,
+    nonnegativity: bool = True,
     neglog: bool = False,
     gpu_id: int = 0,
 ) -> cp.ndarray:
@@ -297,14 +298,14 @@ def SIRT3d_tomobar(
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
-    iterations : int, optional
+    iterations : int
         The number of SIRT iterations.
-    nonnegativity : bool, optional
+    nonnegativity : bool
         Impose nonnegativity constraint on reconstructed image.
     neglog: bool
         Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Defaults to False,
         assuming that the negative log is taken either in normalisation procedure on with Paganin filter application.
-    gpu_id : int, optional
+    gpu_id : int
         A GPU device index to perform operation on.
 
     Returns
@@ -344,8 +345,8 @@ def CGLS3d_tomobar(
     center: Optional[float] = None,
     detector_pad: int = 0,
     recon_size: Optional[int] = None,
-    iterations: Optional[int] = 20,
-    nonnegativity: Optional[bool] = True,
+    iterations: int = 20,
+    nonnegativity: bool = True,
     neglog: bool = False,
     gpu_id: int = 0,
 ) -> cp.ndarray:
@@ -368,9 +369,9 @@ def CGLS3d_tomobar(
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
-    iterations : int, optional
+    iterations : int
         The number of CGLS iterations.
-    nonnegativity : bool, optional
+    nonnegativity : bool
         Impose nonnegativity constraint on reconstructed image.
     neglog: bool
         Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Defaults to False,
@@ -406,16 +407,19 @@ def FISTA3d_tomobar(
     center: Optional[float] = None,
     detector_pad: int = 0,
     recon_size: Optional[int] = None,
-    iterations: Optional[int] = 20,
-    nonnegativity: Optional[bool] = True,
+    iterations: int = 20,
+    subsets_number: int = 6,
+    regularisation_type: str = "PD_TV",
+    regularisation_parameter: float = 0.000001,
+    regularisation_iterations: int = 50,
+    regularisation_half_precision: bool = True,
+    nonnegativity: bool = True,
     neglog: bool = False,
     gpu_id: int = 0,
 ) -> cp.ndarray:
     """
-    Perform Conjugate Gradient Least Squares (CGLS) using ASTRA toolbox :cite:`van2016fast` and
-    ToMoBAR :cite:`kazantsev2020tomographic` wrappers.
-    This is 3D recon directly from a CuPy array while using ASTRA GPUlink capability to avoid host-device
-    transactions for projection and backprojection.
+    A Fast Iterative Shrinkage-Thresholding Algorithm :cite:`beck2009fast` with various types of regularisation or
+    denoising operations :cite:`kazantsev2019ccpi` (currently accepts ROF_TV and PD_TV regularisations only).
 
     Parameters
     ----------
@@ -430,22 +434,32 @@ def FISTA3d_tomobar(
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
-    iterations : int, optional
-        The number of CGLS iterations.
-    nonnegativity : bool, optional
-        Impose nonnegativity constraint on reconstructed image.
+    iterations : int
+        The number of FISTA algorithm iterations.
+    subsets_number: int
+        The number of the ordered subsets to accelerate convergence. Keep the value bellow 10 to avoid divergence.
+    regularisation_type: str
+        A method to use for regularisation. Currently PD_TV and ROF_TV are available.
+    regularisation_parameter: float
+        The main regularisation parameter to control the amount of smoothing/noise removal. Larger values lead to stronger smoothing.
+    regularisation_iterations: int
+        The number of iterations for regularisers (aka INNER iterations).
+    regularisation_half_precision: bool
+        Perform faster regularisation computation in half-precision with a very minimal sacrifice in quality.
+    nonnegativity : bool
+        Impose nonnegativity constraint on the reconstructed image.
     neglog: bool
         Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Defaults to False,
         assuming that the negative log is taken either in normalisation procedure on with Paganin filter application.
-    gpu_id : int, optional
+    gpu_id : int
         A GPU device index to perform operation on.
 
     Returns
     -------
     cp.ndarray
-        The CGLS reconstructed volume as a CuPy array.
+        The FISTA reconstructed volume as a CuPy array.
     """
-    data = data_checker(data, verbosity=True, method_name="CGLS3d_tomobar")
+    data = data_checker(data, verbosity=True, method_name="FISTA3d_tomobar")
 
     RecToolsCP = _instantiate_iterative_recon_class(
         data, angles, center, detector_pad, recon_size, gpu_id, datafidelity="LS"
@@ -453,10 +467,25 @@ def FISTA3d_tomobar(
 
     _data_ = {
         "projection_norm_data": _take_neg_log(data) if neglog else data,
+        "OS_number": subsets_number,
         "data_axes_labels_order": input_data_axis_labels,
-    }  # data dictionary
-    _algorithm_ = {"iterations": iterations, "nonnegativity": nonnegativity}
-    reconstruction = RecToolsCP.CGLS(_data_, _algorithm_)
+    }
+    lc = RecToolsCP.powermethod(_data_)  # calculate Lipschitz constant (run once)
+
+    _algorithm_ = {
+        "iterations": iterations,
+        "lipschitz_const": lc.get(),
+        "nonnegativity": nonnegativity,
+    }
+
+    _regularisation_ = {
+        "method": regularisation_type,  # Selected regularisation method
+        "regul_param": regularisation_parameter,  # Regularisation parameter
+        "iterations": regularisation_iterations,  # The number of regularisation iterations
+        "half_precision": regularisation_half_precision,  # enabling half-precision calculation
+    }
+
+    reconstruction = RecToolsCP.FISTA(_data_, _algorithm_, _regularisation_)
     cp._default_memory_pool.free_all_blocks()
     return cp.require(cp.swapaxes(reconstruction, 0, 1), requirements="C")
 

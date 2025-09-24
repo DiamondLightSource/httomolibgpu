@@ -21,7 +21,6 @@
 """Module for data denoising. For more detailed information see :ref:`data_denoising_module`."""
 
 import numpy as np
-from typing import Union, Optional
 
 from httomolibgpu import cupywrapper
 
@@ -33,7 +32,7 @@ from unittest.mock import Mock
 from httomolibgpu.misc.supp_func import data_checker
 
 if cupy_run:
-    from ccpi.filters.regularisersCuPy import ROF_TV, PD_TV
+    from tomobar.regularisersCuPy import ROF_TV_cupy, PD_TV_cupy
 else:
     ROF_TV = Mock()
     PD_TV = Mock()
@@ -47,10 +46,11 @@ __all__ = [
 
 def total_variation_ROF(
     data: cp.ndarray,
-    regularisation_parameter: Optional[float] = 1e-05,
-    iterations: Optional[int] = 3000,
-    time_marching_parameter: Optional[float] = 0.001,
-    gpu_id: Optional[int] = 0,
+    regularisation_parameter: float = 1e-05,
+    iterations: int = 3000,
+    time_marching_parameter: float = 0.001,
+    gpu_id: int = 0,
+    half_precision: bool = False,
 ) -> cp.ndarray:
     """
     Total Variation using Rudin-Osher-Fatemi (ROF) :cite:`rudin1992nonlinear` explicit iteration scheme to perform edge-preserving image denoising.
@@ -62,14 +62,16 @@ def total_variation_ROF(
     ----------
     data : cp.ndarray
         Input CuPy 3D array of float32 data type.
-    regularisation_parameter : float, optional
+    regularisation_parameter : float
         Regularisation parameter to control the level of smoothing. Defaults to 1e-05.
-    iterations : int, optional
+    iterations : int
         The number of iterations. Defaults to 3000.
-    time_marching_parameter : float, optional
+    time_marching_parameter : float
         Time marching parameter, needs to be small to ensure convergence. Defaults to 0.001.
-    gpu_id : int, optional
+    gpu_id : int
         GPU device index to perform processing on. Defaults to 0.
+    half_precision : bool
+        Perform faster computation in half-precision with a very minimal sacrifice in quality. Defaults to False.
 
     Returns
     -------
@@ -84,19 +86,25 @@ def total_variation_ROF(
 
     data = data_checker(data, verbosity=True, method_name="total_variation_ROF")
 
-    return ROF_TV(
-        data, regularisation_parameter, iterations, time_marching_parameter, gpu_id
+    return ROF_TV_cupy(
+        data,
+        regularisation_parameter,
+        iterations,
+        time_marching_parameter,
+        gpu_id,
+        half_precision,
     )
 
 
 def total_variation_PD(
     data: cp.ndarray,
-    regularisation_parameter: Optional[float] = 1e-05,
-    iterations: Optional[int] = 1000,
-    isotropic: Optional[bool] = True,
-    nonnegativity: Optional[bool] = False,
-    lipschitz_const: Optional[float] = 8.0,
-    gpu_id: Optional[int] = 0,
+    regularisation_parameter: float = 1e-05,
+    iterations: int = 1000,
+    isotropic: bool = True,
+    nonnegativity: bool = False,
+    lipschitz_const: float = 8.0,
+    gpu_id: int = 0,
+    half_precision: bool = False,
 ) -> cp.ndarray:
     """
     Primal Dual algorithm for non-smooth convex Total Variation functional :cite:`chan1999nonlinear`. See more in :ref:`method_total_variation_PD`.
@@ -117,6 +125,8 @@ def total_variation_PD(
         Lipschitz constant to control convergence. Defaults to 8.
     gpu_id : int
         GPU device index to perform processing on. Defaults to 0.
+    half_precision : bool
+        Perform faster computation in half-precision with a very minimal sacrifice in quality. Defaults to False.
 
     Returns
     -------
@@ -139,7 +149,7 @@ def total_variation_PD(
     if nonnegativity:
         nonneg = 1
 
-    return PD_TV(
+    return PD_TV_cupy(
         data,
         regularisation_parameter,
         iterations,
@@ -147,4 +157,5 @@ def total_variation_PD(
         nonneg,
         lipschitz_const,
         gpu_id,
+        half_precision,
     )
