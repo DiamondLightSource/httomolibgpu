@@ -7,6 +7,7 @@ from httomolibgpu.recon.algorithm import (
     LPRec3d_tomobar,
     SIRT3d_tomobar,
     CGLS3d_tomobar,
+    FISTA3d_tomobar,
 )
 from numpy.testing import assert_allclose
 import time
@@ -216,6 +217,51 @@ def test_reconstruct_CGLS3d_tomobar(data, flats, darks, ensure_clean_memory):
     recon_data = recon_data.get()
     assert_allclose(np.mean(recon_data), 0.0021818762, rtol=1e-07, atol=1e-6)
     assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.279187, rtol=1e-03)
+    assert recon_data.dtype == np.float32
+
+
+def test_reconstruct_FISTA3d_tomobar_pd_tv(data, flats, darks, ensure_clean_memory):
+    objrecon_size = data.shape[2]
+    recon_data = FISTA3d_tomobar(
+        normalize_cupy(data, flats, darks, cutoff=10, minus_log=True),
+        np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
+        79.5,
+        recon_size=objrecon_size,
+        iterations=15,
+        subsets_number=6,
+        regularisation_type="PD_TV",
+        regularisation_parameter=0.00001,
+        regularisation_iterations=50,
+        regularisation_half_precision=True,
+        nonnegativity=True,
+    )
+    assert recon_data.flags.c_contiguous
+    recon_data = cp.asnumpy(recon_data)
+    assert_allclose(np.mean(recon_data), 0.0018372332, rtol=1e-07, atol=1e-6)
+    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.235165, rtol=1e-03)
+    assert recon_data.dtype == np.float32
+
+
+def test_reconstruct_FISTA3d_tomobar_rof_tv(data, flats, darks, ensure_clean_memory):
+    objrecon_size = data.shape[2]
+    recon_data = FISTA3d_tomobar(
+        normalize_cupy(data, flats, darks, cutoff=10, minus_log=True),
+        np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
+        79.5,
+        recon_size=objrecon_size,
+        iterations=15,
+        subsets_number=6,
+        regularisation_type="ROF_TV",
+        regularisation_parameter=0.00001,
+        regularisation_iterations=50,
+        regularisation_half_precision=True,
+        nonnegativity=True,
+    )
+    assert recon_data.flags.c_contiguous
+    recon_data = cp.asnumpy(recon_data)
+    recon_slice = recon_data[64, :, :]
+    assert_allclose(np.mean(recon_data), 0.0018407269, rtol=1e-07, atol=1e-6)
+    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.235613, rtol=1e-03)
     assert recon_data.dtype == np.float32
 
 
