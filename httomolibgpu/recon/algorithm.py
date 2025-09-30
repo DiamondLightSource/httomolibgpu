@@ -96,7 +96,7 @@ def FBP2d_astra(
     recon_mask_radius: float
         The radius of the circular mask that applies to the reconstructed slice in order to crop
         out some undesirable artifacts. The values outside the given diameter will be set to zero.
-        It is recommended to keep the value in the range [0.7-1.0].
+        To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.
     neglog: bool
         Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Defaults to False,
         assuming that the negative log is taken either in normalisation procedure on with Paganin filter application.
@@ -174,7 +174,7 @@ def FBP3d_tomobar(
     recon_mask_radius: float, optional
         The radius of the circular mask that applies to the reconstructed slice in order to crop
         out some undesirable artifacts. The values outside the given diameter will be set to zero.
-        It is recommended to keep the value in the range [0.7-1.0].
+        To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.
     neglog: bool
         Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Defaults to False,
         assuming that the negative log is taken either in normalisation procedure on with Paganin filter application.
@@ -239,7 +239,7 @@ def LPRec3d_tomobar(
     recon_mask_radius: float
         The radius of the circular mask that applies to the reconstructed slice in order to crop
         out some undesirable artifacts. The values outside the given diameter will be set to zero.
-        It is recommended to keep the value in the range [0.7-1.0].
+        To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.
     neglog: bool
         Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Defaults to False,
         assuming that the negative log is taken either in normalisation procedure on with Paganin filter application.
@@ -274,6 +274,7 @@ def SIRT3d_tomobar(
     center: Optional[float] = None,
     detector_pad: int = 0,
     recon_size: Optional[int] = None,
+    recon_mask_radius: float = 0.95,
     iterations: int = 300,
     nonnegativity: bool = True,
     neglog: bool = False,
@@ -298,6 +299,10 @@ def SIRT3d_tomobar(
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
+    recon_mask_radius: float
+        The radius of the circular mask that applies to the reconstructed slice in order to crop
+        out some undesirable artifacts. The values outside the given diameter will be set to zero.
+        To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.
     iterations : int
         The number of SIRT iterations.
     nonnegativity : bool
@@ -332,6 +337,7 @@ def SIRT3d_tomobar(
     _algorithm_ = {
         "iterations": iterations,
         "nonnegativity": nonnegativity,
+        "recon_mask_radius": recon_mask_radius,
     }
     reconstruction = RecToolsCP.SIRT(_data_, _algorithm_)
     cp._default_memory_pool.free_all_blocks()
@@ -345,6 +351,7 @@ def CGLS3d_tomobar(
     center: Optional[float] = None,
     detector_pad: int = 0,
     recon_size: Optional[int] = None,
+    recon_mask_radius: float = 0.95,
     iterations: int = 20,
     nonnegativity: bool = True,
     neglog: bool = False,
@@ -369,6 +376,10 @@ def CGLS3d_tomobar(
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
+    recon_mask_radius: float
+        The radius of the circular mask that applies to the reconstructed slice in order to crop
+        out some undesirable artifacts. The values outside the given diameter will be set to zero.
+        To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.
     iterations : int
         The number of CGLS iterations.
     nonnegativity : bool
@@ -394,7 +405,11 @@ def CGLS3d_tomobar(
         "projection_norm_data": _take_neg_log(data) if neglog else data,
         "data_axes_labels_order": input_data_axis_labels,
     }  # data dictionary
-    _algorithm_ = {"iterations": iterations, "nonnegativity": nonnegativity}
+    _algorithm_ = {
+        "iterations": iterations,
+        "nonnegativity": nonnegativity,
+        "recon_mask_radius": recon_mask_radius,
+    }
     reconstruction = RecToolsCP.CGLS(_data_, _algorithm_)
     cp._default_memory_pool.free_all_blocks()
     return cp.require(cp.swapaxes(reconstruction, 0, 1), requirements="C")
@@ -407,6 +422,7 @@ def FISTA3d_tomobar(
     center: Optional[float] = None,
     detector_pad: int = 0,
     recon_size: Optional[int] = None,
+    recon_mask_radius: float = 0.95,
     iterations: int = 20,
     subsets_number: int = 6,
     regularisation_type: str = "PD_TV",
@@ -434,6 +450,10 @@ def FISTA3d_tomobar(
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
+    recon_mask_radius: float
+        The radius of the circular mask that applies to the reconstructed slice in order to crop
+        out some undesirable artifacts. The values outside the given diameter will be set to zero.
+        To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.
     iterations : int
         The number of FISTA algorithm iterations.
     subsets_number: int
@@ -476,6 +496,7 @@ def FISTA3d_tomobar(
         "iterations": iterations,
         "lipschitz_const": lc.get(),
         "nonnegativity": nonnegativity,
+        "recon_mask_radius": recon_mask_radius,
     }
 
     _regularisation_ = {
