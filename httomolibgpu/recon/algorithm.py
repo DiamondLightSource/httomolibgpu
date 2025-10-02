@@ -37,8 +37,8 @@ else:
     RecToolsDIRCuPy = Mock()
     RecToolsIRCuPy = Mock()
 
-from numpy import float32, complex64
-from typing import Optional, Type
+from numpy import float32
+from typing import Optional, Type, Union
 
 from httomolibgpu.misc.supp_func import data_checker
 
@@ -60,7 +60,7 @@ def FBP2d_astra(
     data: np.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
-    detector_pad: int = 0,
+    detector_pad: Union[bool, int] = False,
     filter_type: str = "ram-lak",
     filter_parameter: Optional[float] = None,
     filter_d: Optional[float] = None,
@@ -82,8 +82,9 @@ def FBP2d_astra(
         An array of angles given in radians.
     center : float, optional
         The center of rotation (CoR).
-    detector_pad : int
-        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction.
+    detector_pad : bool, int
+        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction. Set to True to perform
+        an automated padding or specify a certain value as an integer.
     filter_type: str
         Type of projection filter, see ASTRA's API for all available options for filters.
     filter_parameter: float, optional
@@ -120,7 +121,7 @@ def FBP2d_astra(
 
     detY_size = data_shape[1]
     reconstruction = np.empty(
-        (recon_size, detY_size, recon_size), dtype=np.float32(), order="C"
+        (recon_size, detY_size, recon_size), dtype=float32, order="C"
     )
     _take_neg_log_np(data) if neglog else data
 
@@ -143,7 +144,7 @@ def FBP3d_tomobar(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
-    detector_pad: int = 0,
+    detector_pad: Union[bool, int] = False,
     filter_freq_cutoff: float = 0.35,
     recon_size: Optional[int] = None,
     recon_mask_radius: Optional[float] = 0.95,
@@ -164,8 +165,9 @@ def FBP3d_tomobar(
         An array of angles given in radians.
     center : float, optional
         The center of rotation (CoR).
-    detector_pad : int
-        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction.
+    detector_pad : bool, int
+        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction. Set to True to perform
+        an automated padding or specify a certain value as an integer.
     filter_freq_cutoff : float
         Cutoff frequency parameter for the SINC filter, the lower values may produce better contrast but noisy reconstruction. The filter change will also affect the dynamic range of the reconstructed image.
     recon_size : int, optional
@@ -207,7 +209,7 @@ def LPRec3d_tomobar(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
-    detector_pad: int = 0,
+    detector_pad: Union[bool, int] = False,
     filter_type: str = "shepp",
     filter_freq_cutoff: float = 1.0,
     recon_size: Optional[int] = None,
@@ -227,8 +229,9 @@ def LPRec3d_tomobar(
         An array of angles given in radians.
     center : float, optional
         The center of rotation (CoR).
-    detector_pad : int
-        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction.
+    detector_pad : bool, int
+        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction. Set to True to perform
+        an automated padding or specify a certain value as an integer.
     filter_type : str
         Filter type, the accepted strings are: none, ramp, shepp, cosine, cosine2, hamming, hann, parzen.
     filter_freq_cutoff : float
@@ -272,7 +275,7 @@ def SIRT3d_tomobar(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
-    detector_pad: int = 0,
+    detector_pad: Union[bool, int] = False,
     recon_size: Optional[int] = None,
     recon_mask_radius: float = 0.95,
     iterations: int = 300,
@@ -294,8 +297,9 @@ def SIRT3d_tomobar(
         An array of angles given in radians.
     center : float, optional
         The center of rotation (CoR).
-    detector_pad : int
-        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction.
+    detector_pad : bool, int
+        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction. Set to True to perform
+        an automated padding or specify a certain value as an integer.
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
@@ -349,7 +353,7 @@ def CGLS3d_tomobar(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
-    detector_pad: int = 0,
+    detector_pad: Union[bool, int] = False,
     recon_size: Optional[int] = None,
     recon_mask_radius: float = 0.95,
     iterations: int = 20,
@@ -371,8 +375,9 @@ def CGLS3d_tomobar(
         An array of angles given in radians.
     center : float, optional
         The center of rotation (CoR).
-    detector_pad : int
-        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction.
+    detector_pad : bool, int
+        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction. Set to True to perform
+        an automated padding or specify a certain value as an integer.
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
@@ -420,7 +425,7 @@ def FISTA3d_tomobar(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
-    detector_pad: int = 0,
+    detector_pad: Union[bool, int] = False,
     recon_size: Optional[int] = None,
     recon_mask_radius: float = 0.95,
     iterations: int = 20,
@@ -445,8 +450,9 @@ def FISTA3d_tomobar(
         An array of angles given in radians.
     center : float, optional
         The center of rotation (CoR).
-    detector_pad : int
-        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction.
+    detector_pad : bool, int
+        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction. Set to True to perform
+        an automated padding or specify a certain value as an integer.
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
@@ -516,7 +522,7 @@ def _instantiate_direct_recon_class(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
-    detector_pad: int = 0,
+    detector_pad: Union[bool, int] = False,
     recon_size: Optional[int] = None,
     gpu_id: int = 0,
 ) -> Type:
@@ -526,7 +532,7 @@ def _instantiate_direct_recon_class(
         data (cp.ndarray): data array
         angles (np.ndarray): angles
         center (Optional[float], optional): center of recon. Defaults to None.
-        detector_pad (int): Detector width padding. Defaults to 0.
+        detector_pad : (Union[bool, int]) : Detector width padding. Defaults to False.
         recon_size (Optional[int], optional): recon_size. Defaults to None.
         gpu_id (int, optional): gpu ID. Defaults to 0.
 
@@ -537,6 +543,10 @@ def _instantiate_direct_recon_class(
         center = data.shape[2] // 2  # making a crude guess
     if recon_size is None:
         recon_size = data.shape[2]
+    if detector_pad is True:
+        detector_pad = __estimate_detectorHoriz_padding(data.shape[2])
+    elif detector_pad is False:
+        detector_pad = 0
     RecToolsCP = RecToolsDIRCuPy(
         DetectorsDimH=data.shape[2],  # Horizontal detector dimension
         DetectorsDimH_pad=detector_pad,  # padding for horizontal detector
@@ -556,7 +566,7 @@ def _instantiate_direct_recon2d_class(
     data: np.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
-    detector_pad: int = 0,
+    detector_pad: Union[bool, int] = False,
     recon_size: Optional[int] = None,
     gpu_id: int = 0,
 ) -> Type:
@@ -566,7 +576,7 @@ def _instantiate_direct_recon2d_class(
         data (cp.ndarray): data array
         angles (np.ndarray): angles
         center (Optional[float], optional): center of recon. Defaults to None.
-        detector_pad (int): Detector width padding. Defaults to 0.
+        detector_pad : (Union[bool, int]) : Detector width padding. Defaults to False.
         recon_size (Optional[int], optional): recon_size. Defaults to None.
         gpu_id (int, optional): gpu ID. Defaults to 0.
 
@@ -577,6 +587,10 @@ def _instantiate_direct_recon2d_class(
         center = data.shape[2] // 2  # making a crude guess
     if recon_size is None:
         recon_size = data.shape[2]
+    if detector_pad is True:
+        detector_pad = __estimate_detectorHoriz_padding(data.shape[2])
+    elif detector_pad is False:
+        detector_pad = 0
     RecTools = RecToolsDIR(
         DetectorsDimH=data.shape[2],  # Horizontal detector dimension
         DetectorsDimH_pad=detector_pad,  # padding for horizontal detector
@@ -595,7 +609,7 @@ def _instantiate_iterative_recon_class(
     data: cp.ndarray,
     angles: np.ndarray,
     center: Optional[float] = None,
-    detector_pad: int = 0,
+    detector_pad: Union[bool, int] = False,
     recon_size: Optional[int] = None,
     gpu_id: int = 0,
     datafidelity: str = "LS",
@@ -606,7 +620,7 @@ def _instantiate_iterative_recon_class(
         data (cp.ndarray): data array
         angles (np.ndarray): angles
         center (Optional[float], optional): center of recon. Defaults to None.
-        detector_pad (int): Detector width padding. Defaults to 0.
+        detector_pad : (Union[bool, int]) : Detector width padding. Defaults to False.
         recon_size (Optional[int], optional): recon_size. Defaults to None.
         datafidelity (str, optional): Data fidelity
         gpu_id (int, optional): gpu ID. Defaults to 0.
@@ -618,6 +632,10 @@ def _instantiate_iterative_recon_class(
         center = data.shape[2] // 2  # making a crude guess
     if recon_size is None:
         recon_size = data.shape[2]
+    if detector_pad is True:
+        detector_pad = __estimate_detectorHoriz_padding(data.shape[2])
+    elif detector_pad is False:
+        detector_pad = 0
     RecToolsCP = RecToolsIRCuPy(
         DetectorsDimH=data.shape[2],  # Horizontal detector dimension
         DetectorsDimH_pad=detector_pad,  # padding for horizontal detector
@@ -649,3 +667,8 @@ def _take_neg_log_np(data: np.ndarray) -> np.ndarray:
     data[np.isnan(data)] = 6.0
     data[np.isinf(data)] = 0
     return data
+
+
+def __estimate_detectorHoriz_padding(detX_size) -> int:
+    det_half = detX_size // 2
+    return int(np.sqrt(2 * (det_half**2)) // 2)
