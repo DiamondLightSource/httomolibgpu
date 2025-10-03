@@ -2,5 +2,5 @@
 ============================================
 .. automodule:: httomolibgpu.prep.normalize
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:

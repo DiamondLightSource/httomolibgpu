@@ -25,7 +25,7 @@ From the user perspective this model usually leads to true piecewise-constant im
 
            Zoomed to PD-TV denoised image
 
-Mathematically speaking, the optimisation problem involving the exact TV-norm needs to be solved, where TV norm is defined as:
+Mathematically speaking, the optimisation problem involving the exact TV-norm needs to be solved, where the TV norm is defined as:
 
 .. math::
 
@@ -44,7 +44,7 @@ More information about different denoising models, including TV-models can be fo
 
 Use it when the noise in the reconstructed image/volume needs to be removed. The TV-denoising should work better than :ref:`method_median_filter` and introduce less undesirable smoothing and features distortion/disappearance. Also the contrast improvement is expected.
 
-.. note:: Applying denoising after the reconstruction is different to employ that kind of smoothing as a regularisation within an iterative method. Use the latter when the projection data is undersampled and of poor quality (many artefacts, distortions, etc.). In that case, just denoising, might be not very effective.
+.. note:: Applying denoising after the reconstruction is different to employ that kind of smoothing as a regularisation within an iterative method. Use the latter when the projection data is undersampled and of poor quality (many artefacts, distortions, etc.). In that case, just denoising, might be not very effective and iterative methods like :ref:`method_FISTA3d_tomobar` should be used.
 
 **What are the adjustable parameters:**
 

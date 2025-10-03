@@ -159,7 +159,7 @@ def data_checker(
     data: cp.ndarray,
     verbosity: bool = True,
     method_name: Optional[str] = None,
-) -> bool:
+) -> cp.ndarray:
     """
     Function that performs the variety of checks on input data, in some cases also correct the data and prints warnings.
     Currently it checks for: the presence of infs and nans in data.

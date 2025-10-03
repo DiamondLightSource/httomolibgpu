@@ -2,5 +2,5 @@
 ============================================
 .. automodule:: httomolibgpu.misc.corr
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:

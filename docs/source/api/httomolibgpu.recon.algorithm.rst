@@ -2,5 +2,5 @@
 ============================================
 .. automodule:: httomolibgpu.recon.algorithm
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:
