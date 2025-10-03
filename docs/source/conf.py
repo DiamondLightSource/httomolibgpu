@@ -23,16 +23,16 @@ MOCK_MODULES = [
     "cupy",
     "cupyx",
     "numpy.polynomial",
+    "httomolibgpu",
     "tomobar",
     "tomobar.methodsDIR",
-    "tomobar.methodsDIR_CuPy",
+    "tomobar.regularisersCuPy" "tomobar.methodsDIR_CuPy",
     "tomobar.methodsIR_CuPy",
     "PIL",
     "skimage",
     "scipy",
     "scipy.fft",
     "scipy.ndimage",
-    "ccpi.filters.regularisersCuPy",
 ]
 
 for mod_name in MOCK_MODULES:
