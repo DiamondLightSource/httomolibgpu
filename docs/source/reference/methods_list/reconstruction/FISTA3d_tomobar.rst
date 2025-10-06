@@ -50,7 +50,7 @@ When the data is highly inaccurate,  noisy, incomplete, or limited-angle data. D
         - .. figure:: ../../../_static/figures/reconstructions/fistaos_recon_iter10_regul_high_nonneg.jpg
            :width: 300px
 
-           Same as left but :code:`nonnegativity = True`. See how reconstruction now almost look like a segmented image.
+           Same as left but :code:`nonnegativity = True`. See how the reconstruction looks like a segmented image now.
 
 * :code:`regularisation_iterations` defines how many inner iterations for regularisation performed on every step of the outer (FISTA) algorithm. This can depend on :code:`regularisation_type` and  :code:`subsets_number`. The general rule is when :code:`subsets_number` is smaller then :code:`regularisation_iterations` should be increased.
 
