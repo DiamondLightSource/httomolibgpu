@@ -143,8 +143,8 @@ def remove_stripe_ti(
 
     _, _, dx_orig = data.shape
     if (dx_orig % 2) != 0:
-        # the horizontal detector size is odd, data needs to be padded/cropped, for now raising the error
-        raise ValueError("The horizontal detector size must be even")
+        # if the horizontal detector size is odd, the data needs to be padded
+        data = cp.pad(data, ((0, 0), (0, 0), (0, 1)), mode="edge")
 
     gamma = beta * ((1 - beta) / (1 + beta)) ** cp.abs(
         cp.fft.fftfreq(data.shape[-1]) * data.shape[-1]
@@ -154,7 +154,11 @@ def remove_stripe_ti(
     v = v - v[:, 0:1]
     v = cp.fft.irfft(cp.fft.rfft(v) * cp.fft.rfft(gamma)).astype(data.dtype)
     data[:] += v
-    return data
+    if (dx_orig % 2) != 0:
+        # unpad
+        return data[:, :, :-1]
+    else:
+        return data
 
 
 ######## Optimized version for Vo-all ring removal in tomopy########

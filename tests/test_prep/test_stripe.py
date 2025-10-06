@@ -36,7 +36,7 @@ def test_remove_stripe_ti_on_data(data, flats, darks):
 
 @pytest.mark.parametrize("angles", [180, 181])
 @pytest.mark.parametrize("det_x", [11, 18])
-@pytest.mark.parametrize("det_y", [5, 7])
+@pytest.mark.parametrize("det_y", [5, 7, 8])
 def test_remove_stripe_ti_dims_change(angles, det_y, det_x):
     data = cp.random.random_sample(size=(angles, det_y, det_x)).astype(cp.float32) * 2.0
     corrected_data = remove_stripe_ti(data.copy())
