@@ -13,15 +13,15 @@ From the user perspective this model usually leads to true piecewise-constant im
 .. list-table::
 
 
-    * - .. figure:: ../../_static/figures/FBP.png
+    * - .. figure:: ../../../_static/figures/FBP.png
 
            The noisy image
 
-      - .. figure:: ../../_static/figures/SB.png
+      - .. figure:: ../../../_static/figures/SB.png
 
            Recovery using PD-TV denoising
 
-      - .. figure:: ../../_static/figures/SB_zoom.png
+      - .. figure:: ../../../_static/figures/SB_zoom.png
 
            Zoomed to PD-TV denoised image
 

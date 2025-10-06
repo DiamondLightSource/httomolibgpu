@@ -25,5 +25,5 @@ Module contents
 
 .. automodule:: httomolibgpu
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:

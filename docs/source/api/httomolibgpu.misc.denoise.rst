@@ -2,5 +2,5 @@
 ============================================
 .. automodule:: httomolibgpu.misc.denoise
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:

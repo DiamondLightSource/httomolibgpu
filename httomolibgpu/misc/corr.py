@@ -18,9 +18,7 @@
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 21/October/2022
 # ---------------------------------------------------------------------------
-""" Module for data correction. For more detailed information see :ref:`data_correction_module`.
-
-"""
+"""Module for data correction. For more detailed information see :ref:`data_correction_module`."""
 
 import numpy as np
 from typing import Union
@@ -38,6 +36,7 @@ if cupy_run:
 else:
     load_cuda_module = Mock()
 
+from httomolibgpu.misc.supp_func import data_checker
 
 __all__ = [
     "median_filter",
@@ -74,7 +73,6 @@ def median_filter(
         If the input array is not three dimensional.
     """
     input_type = data.dtype
-
     if input_type not in ["float32", "uint16"]:
         raise ValueError("The input data should be either float32 or uint16 data type")
 
@@ -83,6 +81,10 @@ def median_filter(
             raise ValueError("The length of one of dimensions is equal to zero")
     else:
         raise ValueError("The input array must be a 3D array")
+
+    data = data_checker(
+        data, verbosity=True, method_name="median_filter_or_remove_outlier"
+    )
 
     if kernel_size not in [3, 5, 7, 9, 11, 13]:
         raise ValueError("Please select a correct kernel size: 3, 5, 7, 9, 11, 13")
@@ -112,7 +114,7 @@ def median_filter(
 
 
 def remove_outlier(
-    data: cp.ndarray, kernel_size: int = 3, dif: float = 0.1
+    data: cp.ndarray, kernel_size: int = 3, dif: float = 1000
 ) -> cp.ndarray:
     """Selectively applies 3D median filter to a 3D CuPy array to remove outliers. Also called a dezinger.
     For more detailed information, see :ref:`method_outlier_removal`.
@@ -124,8 +126,8 @@ def remove_outlier(
     kernel_size : int, optional
         The size of the filter's kernel (a diameter).
     dif : float, optional
-        Expected difference value between outlier value and the
-        median value of the array.
+        Expected difference value between the outlier value (central voxel) and the
+        median value of the neighbourhood. Lower values lead to median filtering.
 
     Returns
     -------

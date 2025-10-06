@@ -35,6 +35,8 @@ else:
 
 from typing import Literal
 
+from httomolibgpu.misc.supp_func import data_checker
+
 __all__ = [
     "sino_360_to_180",
     "data_resampler",
@@ -42,7 +44,7 @@ __all__ = [
 
 
 def sino_360_to_180(
-    data: cp.ndarray, overlap: int = 0, rotation: Literal["left", "right"] = "left"
+    data: cp.ndarray, overlap: float = 0, side: Literal["left", "right"] = "left"
 ) -> cp.ndarray:
     """
     Converts 0-360 degrees sinogram to a 0-180 sinogram.
@@ -53,9 +55,9 @@ def sino_360_to_180(
     ----------
     data : cp.ndarray
         Input 3D data.
-    overlap : scalar, optional
-        Overlapping number of pixels.
-    rotation : string, optional
+    overlap : float
+        Overlapping number of pixels. Floats will be converted to integers.
+    side : string
         'left' if rotation center is close to the left of the
         field-of-view, 'right' otherwise.
     Returns
@@ -66,22 +68,26 @@ def sino_360_to_180(
     if data.ndim != 3:
         raise ValueError("only 3D data is supported")
 
+    data = data_checker(data, verbosity=True, method_name="sino_360_to_180")
+
     dx, dy, dz = data.shape
 
     overlap = int(np.round(overlap))
     if overlap >= dz:
-        raise ValueError("overlap must be less than data.shape[2]")
+        raise ValueError("Overlap must be less than data.shape[2]")
     if overlap < 0:
-        raise ValueError("only positive overlaps are allowed.")
+        raise ValueError("Only positive overlaps are allowed.")
 
-    if rotation not in ["left", "right"]:
-        raise ValueError('rotation parameter must be either "left" or "right"')
+    if side not in ["left", "right"]:
+        raise ValueError(
+            f'The value {side} is invalid, only "left" or "right" strings are accepted'
+        )
 
     n = dx // 2
 
     out = cp.empty((n, dy, 2 * dz - overlap), dtype=data.dtype)
 
-    if rotation == "left":
+    if side == "left":
         weights = cp.linspace(0, 1.0, overlap, dtype=cp.float32)
         out[:, :, -dz + overlap :] = data[:n, :, overlap:]
         out[:, :, : dz - overlap] = data[n : 2 * n, :, overlap:][:, :, ::-1]
@@ -89,7 +95,7 @@ def sino_360_to_180(
             weights * data[:n, :, :overlap]
             + (weights * data[n : 2 * n, :, :overlap])[:, :, ::-1]
         )
-    if rotation == "right":
+    if side == "right":
         weights = cp.linspace(1.0, 0, overlap, dtype=cp.float32)
         out[:, :, : dz - overlap] = data[:n, :, :-overlap]
         out[:, :, -dz + overlap :] = data[n : 2 * n, :, :-overlap][:, :, ::-1]
@@ -135,6 +141,8 @@ def data_resampler(
         expanded = True
         data = cp.expand_dims(data, 1)
         axis = 1
+
+    data = data_checker(data, verbosity=True, method_name="data_resampler")
 
     N, M, Z = cp.shape(data)
 

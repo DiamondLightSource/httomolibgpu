@@ -13,15 +13,15 @@ The resulting denoised images are piecewise-constant or cartoon-like.
 .. list-table::
 
 
-    * - .. figure:: ../../_static/figures/FBP.png
+    * - .. figure:: ../../../_static/figures/FBP.png
 
            The noisy image
 
-      - .. figure:: ../../_static/figures/ROF.png
+      - .. figure:: ../../../_static/figures/ROF.png
 
            Recovery using ROF-TV denoising
 
-      - .. figure:: ../../_static/figures/ROF_zoom.png
+      - .. figure:: ../../../_static/figures/ROF_zoom.png
 
            Zoomed to ROF-TV denoised image
 

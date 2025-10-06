@@ -2,5 +2,5 @@
 ============================================
 .. automodule:: httomolibgpu.misc.rescale
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
