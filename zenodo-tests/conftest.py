@@ -186,6 +186,22 @@ def k11_dataset1(k11_dataset1_file):
 
 
 @pytest.fixture(scope="session")
+def k11_dataset2_file(test_data_path):
+    in_file = os.path.join(test_data_path, "k11_dataset2.npz")
+    return np.load(in_file)
+
+
+@pytest.fixture
+def k11_dataset2(k11_dataset2_file):
+    return (
+        cp.asarray(k11_dataset2_file["projdata"]),
+        k11_dataset2_file["angles"],
+        cp.asarray(k11_dataset2_file["flats"]),
+        cp.asarray(k11_dataset2_file["darks"]),
+    )
+
+
+@pytest.fixture(scope="session")
 def geant4_dataset1_file(test_data_path):
     in_file = os.path.join(test_data_path, "geant4_dataset1.npz")
     return np.load(in_file)

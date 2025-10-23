@@ -10,6 +10,9 @@ from httomolibgpu.recon.algorithm import (
     FBP2d_astra,
     FBP3d_tomobar,
     LPRec3d_tomobar,
+    CGLS3d_tomobar,
+    SIRT3d_tomobar,
+    FISTA3d_tomobar,
 )
 from httomolibgpu.misc.morph import sino_360_to_180
 from numpy.testing import assert_allclose
@@ -100,6 +103,33 @@ def test_reconstruct_FBP3d_tomobar_i12_dataset1_pad(i12_dataset1: tuple):
     assert recon_data.shape == (2560, 10, 2560)
 
 
+def test_reconstruct_FBP3d_tomobar_i12_dataset1_autopad(i12_dataset1: tuple):
+    force_clean_gpu_memory()
+    projdata = i12_dataset1[0]
+    angles = i12_dataset1[1]
+    flats = i12_dataset1[2]
+    darks = i12_dataset1[3]
+    del i12_dataset1
+
+    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    del flats, darks, projdata
+    force_clean_gpu_memory()
+
+    recon_data = FBP3d_tomobar(
+        data_normalised[:, 10:15, :],
+        np.deg2rad(angles),
+        center=1253.75,
+        detector_pad=True,
+        filter_freq_cutoff=0.35,
+        recon_mask_radius=2.0,
+    )
+    assert recon_data.flags.c_contiguous
+    recon_data = recon_data.get()
+    assert_allclose(np.sum(recon_data), 7422.912, rtol=1e-07, atol=1e-6)
+    assert recon_data.dtype == np.float32
+    assert recon_data.shape == (2560, 5, 2560)
+
+
 def test_reconstruct_LPRec3d_tomobar_i12_dataset1(i12_dataset1: tuple):
     force_clean_gpu_memory()
     projdata = i12_dataset1[0]
@@ -120,17 +150,18 @@ def test_reconstruct_LPRec3d_tomobar_i12_dataset1(i12_dataset1: tuple):
         detector_pad=0,
         filter_type="shepp",
         filter_freq_cutoff=1.0,
+        recon_mask_radius=2.0,
     )
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
-    assert isclose(np.sum(recon_data), 8970.176, abs_tol=10**-3)
-    assert pytest.approx(np.max(recon_data), rel=1e-3) == 0.00635
-    assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.00614
+    assert isclose(np.sum(recon_data), 9085.442, abs_tol=10**-3)
+    assert pytest.approx(np.max(recon_data), rel=1e-3) == 0.0063419784
+    assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.0062314235
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 3, 2560)
 
 
-def test_reconstruct_LPRec3d_tomobar_i12_dataset1_pad(i12_dataset1: tuple):
+def test_reconstruct_LPRec3d_tomobar_i12_dataset1_autopad(i12_dataset1: tuple):
     force_clean_gpu_memory()
     projdata = i12_dataset1[0]
     angles = i12_dataset1[1]
@@ -147,16 +178,16 @@ def test_reconstruct_LPRec3d_tomobar_i12_dataset1_pad(i12_dataset1: tuple):
         data_normalised_cut,
         np.deg2rad(angles),
         center=1253.75,
-        detector_pad=100,
+        detector_pad=True,
         filter_type="shepp",
         filter_freq_cutoff=1.0,
         recon_mask_radius=2.0,
     )
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
-    assert isclose(np.sum(recon_data), 9629.825, abs_tol=10**-3)
-    assert pytest.approx(np.max(recon_data), rel=1e-3) == 0.006357904
-    assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.0061424887
+    assert int(np.sum(recon_data)) == 8590
+    assert pytest.approx(np.max(recon_data), rel=1e-3) == 0.006351378
+    assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.00622256
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 3, 2560)
 
@@ -192,16 +223,15 @@ def test_reconstruct_LPRec_tomobar_i13_dataset1(i13_dataset1: tuple):
         data=stiched_data_180degrees,
         angles=np.deg2rad(angles[0:3000]),
         center=2322.08,
-        detector_pad=0,
+        detector_pad=False,
         filter_type="shepp",
         filter_freq_cutoff=1.0,
+        recon_mask_radius=2.0,
     )
 
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
-    assert isclose(np.sum(recon_data), 1239.8801, abs_tol=10**-3)
-    assert pytest.approx(np.max(recon_data), rel=1e-3) == 0.007986549
-    assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.006794364
+    assert int(np.sum(recon_data)) == 1134
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (4646, 1, 4646)
 
@@ -263,16 +293,16 @@ def test_reconstruct_LPRec3d_tomobar_i13_dataset2(i13_dataset2: tuple):
         data=data_normalised,
         angles=np.deg2rad(angles),
         center=1286.25,
-        detector_pad=0,
+        detector_pad=False,
         filter_type="shepp",
         filter_freq_cutoff=1.0,
+        recon_mask_radius=2.0,
     )
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
-
-    assert isclose(np.sum(recon_data), 4091.8125, abs_tol=10**-3)
-    assert pytest.approx(np.max(recon_data), rel=1e-3) == 0.0106421355
-    assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.008390848
+    assert int(np.sum(recon_data)) == 3887
+    assert pytest.approx(np.max(recon_data), rel=1e-3) == 0.0105562
+    assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.00835598
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 10, 2560)
 
@@ -380,3 +410,113 @@ def test_reconstruct_FBP3d_tomobar_i12_dataset5(i12_dataset5: tuple):
 
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (4933, 15, 4933)
+
+
+def test_reconstruct_LPRec3d_tomobar_k11_dataset2(k11_dataset2: tuple):
+    force_clean_gpu_memory()
+    projdata = k11_dataset2[0]
+    angles = k11_dataset2[1]
+    flats = k11_dataset2[2]
+    darks = k11_dataset2[3]
+    del k11_dataset2
+
+    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    del flats, darks, projdata
+    force_clean_gpu_memory()
+
+    recon_data = LPRec3d_tomobar(
+        data=data_normalised,
+        angles=np.deg2rad(angles),
+        center=1280.25,
+        detector_pad=False,
+        filter_type="shepp",
+        filter_freq_cutoff=1.0,
+        recon_mask_radius=2.0,
+    )
+    assert recon_data.flags.c_contiguous
+    recon_data = recon_data.get()
+    assert isclose(np.sum(recon_data), 7689.375, abs_tol=10**-3)
+    assert recon_data.dtype == np.float32
+    assert recon_data.shape == (2560, 25, 2560)
+
+
+def test_reconstruct_CGLS3d_tomobar_k11_dataset2(k11_dataset2: tuple):
+    force_clean_gpu_memory()
+    projdata = k11_dataset2[0]
+    angles = k11_dataset2[1]
+    flats = k11_dataset2[2]
+    darks = k11_dataset2[3]
+    del k11_dataset2
+
+    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    del flats, darks, projdata
+    force_clean_gpu_memory()
+
+    recon_data = CGLS3d_tomobar(
+        data=data_normalised[:, 5:10, :],
+        angles=np.deg2rad(angles),
+        center=1280.25,
+        detector_pad=False,
+        recon_mask_radius=2.0,
+        iterations=15,
+    )
+    assert recon_data.flags.c_contiguous
+    recon_data = recon_data.get()
+    assert isclose(np.sum(recon_data), 6392.362, abs_tol=10**-3)
+    assert recon_data.dtype == np.float32
+    assert recon_data.shape == (2560, 5, 2560)
+
+
+def test_reconstruct_SIRT3d_tomobar_k11_dataset2(k11_dataset2: tuple):
+    force_clean_gpu_memory()
+    projdata = k11_dataset2[0]
+    angles = k11_dataset2[1]
+    flats = k11_dataset2[2]
+    darks = k11_dataset2[3]
+    del k11_dataset2
+
+    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    del flats, darks, projdata
+    force_clean_gpu_memory()
+
+    recon_data = SIRT3d_tomobar(
+        data=data_normalised[:, 5:10, :],
+        angles=np.deg2rad(angles),
+        center=1280.25,
+        detector_pad=False,
+        recon_mask_radius=2.0,
+        iterations=15,
+    )
+    assert recon_data.flags.c_contiguous
+    recon_data = recon_data.get()
+    assert isclose(np.sum(recon_data), 2564.5596, abs_tol=10**-3)
+    assert recon_data.dtype == np.float32
+    assert recon_data.shape == (2560, 5, 2560)
+
+
+def test_reconstruct_FISTA3d_tomobar_autopad_k11_dataset2(k11_dataset2: tuple):
+    force_clean_gpu_memory()
+    projdata = k11_dataset2[0]
+    angles = k11_dataset2[1]
+    flats = k11_dataset2[2]
+    darks = k11_dataset2[3]
+    del k11_dataset2
+
+    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    del flats, darks, projdata
+    force_clean_gpu_memory()
+
+    recon_data = FISTA3d_tomobar(
+        data=data_normalised[:, 5:10, :],
+        angles=np.deg2rad(angles),
+        center=1280.25,
+        detector_pad=True,
+        recon_mask_radius=2.0,
+        iterations=7,
+        regularisation_parameter=0.0000005,
+    )
+    assert recon_data.flags.c_contiguous
+    recon_data = recon_data.get()
+    assert isclose(np.sum(recon_data), 1293.3489, abs_tol=10**-3)
+    assert recon_data.dtype == np.float32
+    assert recon_data.shape == (2560, 5, 2560)

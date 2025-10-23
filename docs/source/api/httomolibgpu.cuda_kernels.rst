@@ -6,5 +6,5 @@ Module contents
 
 .. automodule:: httomolibgpu.cuda_kernels
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:
