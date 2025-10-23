@@ -70,7 +70,7 @@ def paganin_filter_tomopy(
     energy : float, optional
         Energy of incident wave in keV.
     alpha : float, optional
-        Regularization parameter, the ratio of delta/beta. Larger values lead to more smoothing.
+        Regularization parameter, the ratio of delta/beta. Smaller values lead to less noise and more blur.
 
     Returns
     -------
