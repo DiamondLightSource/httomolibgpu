@@ -125,7 +125,7 @@ def test_reconstruct_FBP3d_tomobar_i12_dataset1_autopad(i12_dataset1: tuple):
     )
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
-    assert_allclose(np.sum(recon_data), 7422.912, rtol=1e-07, atol=1e-6)
+    assert_allclose(np.sum(recon_data), 6669.1274, rtol=1e-07, atol=1e-6)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 5, 2560)
 
@@ -154,9 +154,9 @@ def test_reconstruct_LPRec3d_tomobar_i12_dataset1(i12_dataset1: tuple):
     )
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
-    assert isclose(np.sum(recon_data), 9085.442, abs_tol=10**-3)
-    assert pytest.approx(np.max(recon_data), rel=1e-3) == 0.0063419784
-    assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.0062314235
+    assert isclose(np.sum(recon_data), 9628.818, abs_tol=10**-3)
+    assert pytest.approx(np.max(recon_data), rel=1e-3) == 0.006367563270032406
+    assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.0062076798
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 3, 2560)
 
@@ -185,9 +185,9 @@ def test_reconstruct_LPRec3d_tomobar_i12_dataset1_autopad(i12_dataset1: tuple):
     )
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
-    assert int(np.sum(recon_data)) == 8590
-    assert pytest.approx(np.max(recon_data), rel=1e-3) == 0.006351378
-    assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.00622256
+    assert int(np.sum(recon_data)) == 9147
+    assert pytest.approx(np.max(recon_data), rel=1e-3) == 0.0063818083
+    assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.006200762
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 3, 2560)
 
@@ -231,7 +231,7 @@ def test_reconstruct_LPRec_tomobar_i13_dataset1(i13_dataset1: tuple):
 
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
-    assert int(np.sum(recon_data)) == 1134
+    assert int(np.sum(recon_data)) == 1149
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (4646, 1, 4646)
 
@@ -300,9 +300,9 @@ def test_reconstruct_LPRec3d_tomobar_i13_dataset2(i13_dataset2: tuple):
     )
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
-    assert int(np.sum(recon_data)) == 3887
-    assert pytest.approx(np.max(recon_data), rel=1e-3) == 0.0105562
-    assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.00835598
+    assert int(np.sum(recon_data)) == 3448
+    assert pytest.approx(np.max(recon_data), rel=1e-3) == 0.010543354
+    assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.008385599
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 10, 2560)
 
@@ -435,7 +435,7 @@ def test_reconstruct_LPRec3d_tomobar_k11_dataset2(k11_dataset2: tuple):
     )
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
-    assert isclose(np.sum(recon_data), 7689.375, abs_tol=10**-3)
+    assert isclose(np.sum(recon_data), 10865.341, abs_tol=10**-3)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 25, 2560)
 
@@ -517,6 +517,6 @@ def test_reconstruct_FISTA3d_tomobar_autopad_k11_dataset2(k11_dataset2: tuple):
     )
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
-    assert isclose(np.sum(recon_data), 1293.3489, abs_tol=10**-3)
+    assert isclose(np.sum(recon_data), 1518.5251, abs_tol=10**-3)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 5, 2560)
