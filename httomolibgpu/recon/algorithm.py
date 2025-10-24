@@ -214,6 +214,9 @@ def LPRec3d_tomobar(
     filter_freq_cutoff: float = 1.0,
     recon_size: Optional[int] = None,
     recon_mask_radius: float = 0.95,
+    power_of_2_oversampling: Optional[bool] = True,
+    min_mem_usage_filter: Optional[bool] = False,
+    min_mem_usage_ifft2: Optional[bool] = False,
     neglog: bool = False,
 ) -> cp.ndarray:
     """
@@ -265,6 +268,9 @@ def LPRec3d_tomobar(
         data_axes_labels_order=input_data_axis_labels,
         filter_type=filter_type,
         cutoff_freq=filter_freq_cutoff,
+        power_of_2_oversampling=power_of_2_oversampling,
+        min_mem_usage_filter=min_mem_usage_filter,
+        min_mem_usage_ifft2=min_mem_usage_ifft2,
     )
     cp._default_memory_pool.free_all_blocks()
     return cp.require(cp.swapaxes(reconstruction, 0, 1), requirements="C")
