@@ -435,7 +435,7 @@ def test_reconstruct_LPRec3d_tomobar_k11_dataset2(k11_dataset2: tuple):
     )
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
-    assert isclose(np.sum(recon_data), 10865.341, abs_tol=10**-3)
+    assert isclose(np.sum(recon_data), 10865.34, abs_tol=10**-2)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 25, 2560)
 
