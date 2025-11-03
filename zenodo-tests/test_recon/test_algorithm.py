@@ -125,7 +125,7 @@ def test_reconstruct_FBP3d_tomobar_i12_dataset1_autopad(i12_dataset1: tuple):
     )
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
-    assert_allclose(np.sum(recon_data), 6669.1274, rtol=1e-07, atol=1e-6)
+    assert_allclose(np.sum(recon_data), 7208.2295, rtol=1e-07, atol=1e-6)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 5, 2560)
 
@@ -517,6 +517,6 @@ def test_reconstruct_FISTA3d_tomobar_autopad_k11_dataset2(k11_dataset2: tuple):
     )
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
-    assert isclose(np.sum(recon_data), 1518.5251, abs_tol=10**-3)
+    assert isclose(np.sum(recon_data), 1355.4624, abs_tol=10**-3)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 5, 2560)

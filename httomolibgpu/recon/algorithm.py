@@ -680,5 +680,5 @@ def _take_neg_log_np(data: np.ndarray) -> np.ndarray:
 def __estimate_detectorHoriz_padding(detX_size) -> int:
     det_half = detX_size // 2
     padded_value_exact = int(np.sqrt(2 * (det_half**2))) - det_half
-    padded_add_margin = int(0.1 * padded_value_exact)
+    padded_add_margin = padded_value_exact // 2
     return padded_value_exact + padded_add_margin

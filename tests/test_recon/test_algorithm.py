@@ -168,9 +168,9 @@ def test_reconstruct_FBP3d_tomobar_3_detpad_true(
     )
 
     recon_data = recon_data.get()
-    assert_allclose(np.mean(recon_data), -0.00035695144, atol=1e-6)
+    assert_allclose(np.mean(recon_data), -0.00041842036, atol=1e-6)
     assert_allclose(
-        np.mean(recon_data, axis=(0, 2)).sum(), -0.045689818, rtol=1e-06, atol=1e-5
+        np.mean(recon_data, axis=(0, 2)).sum(), -0.05355779, rtol=1e-06, atol=1e-5
     )
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (210, 128, 210)
@@ -257,8 +257,8 @@ def test_reconstruct_CGLS3d_tomobar_detpad_true(
     )
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
-    assert_allclose(np.mean(recon_data), 0.0021554278, rtol=1e-07, atol=1e-6)
-    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.27589476, rtol=1e-03)
+    assert_allclose(np.mean(recon_data), 0.0021257945, rtol=1e-07, atol=1e-6)
+    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.27210176, rtol=1e-03)
     assert recon_data.dtype == np.float32
 
 
@@ -306,8 +306,8 @@ def test_reconstruct_FISTA3d_tomobar_pd_tv_detpad_true(
     )
     assert recon_data.flags.c_contiguous
     recon_data = cp.asnumpy(recon_data)
-    assert_allclose(np.mean(recon_data), 0.0018338546, rtol=1e-07, atol=1e-6)
-    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.23473345, rtol=1e-04)
+    assert_allclose(np.mean(recon_data), 0.00183313, rtol=1e-07, atol=1e-6)
+    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.23464072, rtol=1e-04)
     assert recon_data.dtype == np.float32
 
 
