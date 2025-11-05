@@ -132,6 +132,98 @@ def paganin_filter_tomopy(
     return _log_kernel(tomo)
 
 
+def paganin_filter(
+    tomo: cp.ndarray,
+    pixel_size: float = 1.28,
+    distance: float = 1.0,
+    energy: float = 53.0,
+    ratio_delta_beta: float = 250,
+) -> cp.ndarray:
+    """
+    Perform single-material phase retrieval from flats/darks corrected tomographic measurements. See
+    :cite:`Paganin02` for a reference.
+
+    Parameters
+    ----------
+    tomo : cp.ndarray
+        3D array of f/d corrected tomographic projections.
+    pixel_size : float
+        Detector pixel size (resolution) in micron units.
+    distance : float
+        Propagation distance of the wavefront from sample to detector in metre units. 
+    energy : float
+        Beam energy in keV.
+    ratio_delta_beta : float
+        The ratio of delta/beta, where delta is the phase shift and real part of the complex material refractive index :math:`n = (1 - \delta) + i \beta` and beta is the absorption.
+
+    Returns
+    -------
+    cp.ndarray
+        The 3D array of Paganin phase-filtered projection images.
+    """
+    # Check the input data is valid
+    if tomo.ndim != 3:
+        raise ValueError(
+            f"Invalid number of dimensions in data: {tomo.ndim},"
+            " please provide a stack of 2D projections."
+        )
+
+    tomo = data_checker(tomo, verbosity=True, method_name="paganin_filter_tomopy")
+
+    dz_orig, dy_orig, dx_orig = tomo.shape
+
+    # Perform padding to the power of 2 as FFT is O(n*log(n)) complexity
+    # TODO: adding other options of padding?
+    padded_tomo, pad_tup = _pad_projections_to_second_power(tomo)
+
+    dz, dy, dx = padded_tomo.shape
+
+    # 3D FFT of tomo data
+    padded_tomo = cp.asarray(padded_tomo, dtype=cp.complex64)
+    fft_tomo = fft2(padded_tomo, axes=(-2, -1), overwrite_x=True)
+
+    # Compute the reciprocal grid.
+    w2 = _reciprocal_grid(pixel_size, (dy, dx))
+
+    # Build filter in the Fourier space.
+    alpha = _calculate_alpha(energy, distance, ratio_delta_beta)
+    phase_filter_pre_fft = 1/(1. + alpha*w2)
+    phase_filter_complex = fftshift(phase_filter_pre_fft)
+        
+    
+    phase_filter = phase_filter / phase_filter.max()  # normalisation
+
+    # Filter projections
+    fft_tomo *= phase_filter
+
+    # Apply filter and take inverse FFT
+    ifft_filtered_tomo = ifft2(fft_tomo, axes=(-2, -1), overwrite_x=True).real
+
+    # slicing indices for cropping
+    slc_indices = (
+        slice(pad_tup[0][0], pad_tup[0][0] + dz_orig, 1),
+        slice(pad_tup[1][0], pad_tup[1][0] + dy_orig, 1),
+        slice(pad_tup[2][0], pad_tup[2][0] + dx_orig, 1),
+    )
+
+    # crop the padded filtered data:
+    tomo = ifft_filtered_tomo[slc_indices].astype(cp.float32)
+
+    # taking the negative log
+    _log_kernel = cp.ElementwiseKernel(
+        "C tomo",
+        "C out",
+        "out = -log(tomo)",
+        name="log_kernel",
+    )
+
+    return _log_kernel(tomo)
+
+
+def _calculate_alpha(energy, distance, ratio_delta_beta):
+    return (_wavelength(energy) * distance / (4 * math.pi)) * ratio_delta_beta
+
+
 def _shift_bit_length(x: int) -> int:
     return 1 << (x - 1).bit_length()
 
@@ -193,7 +285,6 @@ def _pad_projections_to_second_power(
 
 
 def _paganin_filter_factor2(energy, dist, alpha, w2):
-    # Alpha represents the ratio of delta/beta.
     return 1 / (_wavelength(energy) * dist * w2 / (4 * math.pi) + alpha)
 
 
