@@ -49,14 +49,12 @@ __all__ = [
 # This implementation originated from the TomoPy version. It has been modified to conform
 # different unit standards and also control of the filter driven by 'delta/beta' ratio
 # as opposed to 'alpha' in the TomoPy implementation.
-# The generalised formulation for Paganin is also added.
 def paganin_filter(
     tomo: cp.ndarray,
     pixel_size: float = 1.28,
     distance: float = 1.0,
     energy: float = 53.0,
     ratio_delta_beta: float = 250,
-    generalised_paganin: bool = False,
 ) -> cp.ndarray:
     """
     Perform single-material phase retrieval from flats/darks corrected tomographic measurements. See
@@ -74,8 +72,6 @@ def paganin_filter(
         Beam energy in keV.
     ratio_delta_beta : float
         The ratio of delta/beta, where delta is the phase shift and real part of the complex material refractive index :math:`n = (1 - \delta) + i \beta` and beta is the absorption.
-    generalised_paganin : bool
-        Implementation of the filter following a newer generalised formulation for Paganin. This can further boost the resolution through periodic boundary conditions.
 
     Returns
     -------
@@ -107,26 +103,13 @@ def paganin_filter(
     alpha = _calculate_alpha(energy, distance / 1e-6, ratio_delta_beta)
 
     # Compute the reciprocal grid
-    indx = _reciprocal_coord(pixel_size, dx)
-    indy = _reciprocal_coord(pixel_size, dy)
+    indx = _reciprocal_coord(pixel_size, dy)
+    indy = _reciprocal_coord(pixel_size, dx)
 
-    # Build filter either following the classical Paganin or the generilised modification in 2020 paper by Paganin
-    if generalised_paganin:
-        phase_filter = fftshift(
-            1.0
-            / (
-                1.0
-                - (2 * alpha / pixel_size**2)
-                * (
-                    cp.add.outer(cp.cos(pixel_size * indx), cp.cos(pixel_size * indy))
-                    - 2
-                )
-            )
-        )
-    else:
-        phase_filter = fftshift(
-            1.0 / (1.0 + alpha * (cp.add.outer(cp.square(indx), cp.square(indy))))
-        )
+    # Build Lorentzian-type filter
+    phase_filter = fftshift(
+        1.0 / (1.0 + alpha * (cp.add.outer(cp.square(indx), cp.square(indy))))
+    )
 
     phase_filter = phase_filter / phase_filter.max()  # normalisation
 
