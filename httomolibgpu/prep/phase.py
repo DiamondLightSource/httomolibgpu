@@ -18,7 +18,7 @@
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 01 November 2022
 # ---------------------------------------------------------------------------
-"""Modules for phase retrieval and phase-contrast enhancement"""
+"""Modules for phase retrieval and phase-contrast enhancement. For more detailed information, see :ref:`phase_contrast_module`."""
 
 import numpy as np
 from httomolibgpu import cupywrapper
@@ -48,7 +48,7 @@ __all__ = [
 
 # This implementation originated from the TomoPy version. It has been modified to conform
 # different unit standards and also control of the filter driven by 'delta/beta' ratio
-# as opposed to 'alpha' in the TomoPy implementation.
+# as opposed to 'alpha' in the TomoPy's implementation.
 def paganin_filter(
     tomo: cp.ndarray,
     pixel_size: float = 1.28,
@@ -71,7 +71,7 @@ def paganin_filter(
     energy : float
         Beam energy in keV.
     ratio_delta_beta : float
-        The ratio of delta/beta, where delta is the phase shift and real part of the complex material refractive index :math:`n = (1 - \delta) + i \beta` and beta is the absorption.
+        The ratio of delta/beta, where delta is the phase shift and real part of the complex material refractive index and beta is the absorption.
 
     Returns
     -------

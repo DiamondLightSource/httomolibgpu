@@ -18,7 +18,7 @@
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Changes relative to ToMoBAR 2024.01 version
 # ---------------------------------------------------------------------------
-"""Module for tomographic reconstruction. For more detailed information see :ref:`image_reconstruction_module`"""
+"""Module for tomographic reconstruction. For more detailed information, see :ref:`image_reconstruction_module`"""
 
 import numpy as np
 from httomolibgpu import cupywrapper
