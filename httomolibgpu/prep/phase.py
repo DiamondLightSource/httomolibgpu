@@ -46,6 +46,10 @@ __all__ = [
 ]
 
 
+# This implementation originated from the TomoPy version. It has been modified to conform
+# different unit standards and also control of the filter driven by 'delta/beta' ratio
+# as opposed to 'alpha' in the TomoPy implementation.
+# The generalised formulation for Paganin is also added.
 def paganin_filter(
     tomo: cp.ndarray,
     pixel_size: float = 1.28,
@@ -56,9 +60,7 @@ def paganin_filter(
 ) -> cp.ndarray:
     """
     Perform single-material phase retrieval from flats/darks corrected tomographic measurements. See
-    :cite:`Paganin02` and :cite:`paganin2020boosting` for references. This implementation originated from the TomoPy version,
-    but has been modified to conform different metric strandards and also control of the filter is driven by 'delta/beta' ratio
-    as opposed to 'alpha' in the TomoPy implementation.
+    :cite:`Paganin02` and :cite:`paganin2020boosting` for references.
 
     Parameters
     ----------
@@ -87,7 +89,7 @@ def paganin_filter(
             " please provide a stack of 2D projections."
         )
 
-    tomo = data_checker(tomo, verbosity=True, method_name="paganin_filter_tomopy")
+    tomo = data_checker(tomo, verbosity=True, method_name="paganin_filter")
 
     dz_orig, dy_orig, dx_orig = tomo.shape
 
