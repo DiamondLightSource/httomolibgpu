@@ -8,6 +8,7 @@ from httomolibgpu.prep.normalize import normalize
 from httomolibgpu.prep.stripe import (
     remove_stripe_based_sorting,
     remove_stripe_ti,
+    remove_stripe_fw,
     remove_all_stripe,
     raven_filter,
 )
@@ -27,6 +28,25 @@ def test_remove_stripe_ti_on_data(data, flats, darks):
     )
     assert_allclose(np.median(data_after_stripe_removal), 0.026177486, rtol=1e-05)
     assert_allclose(np.max(data_after_stripe_removal), 2.715983, rtol=1e-05)
+    assert data_after_stripe_removal.flags.c_contiguous
+
+    data = None  #: free up GPU memory
+    # make sure the output is float32
+    assert data_after_stripe_removal.dtype == np.float32
+
+
+def test_remove_stripe_fw_on_data(data, flats, darks):
+    # --- testing the CuPy implementation from TomoCupy ---#
+    data = normalize(data, flats, darks, cutoff=10, minus_log=True)
+
+    data_after_stripe_removal = remove_stripe_fw(cp.copy(data)).get()
+
+    assert_allclose(np.mean(data_after_stripe_removal), 0.279236, rtol=1e-05)
+    assert_allclose(
+        np.mean(data_after_stripe_removal, axis=(1, 2)).sum(), 50.2624, rtol=1e-06
+    )
+    assert_allclose(np.median(data_after_stripe_removal), 0.079203, rtol=1e-05)
+    assert_allclose(np.max(data_after_stripe_removal), 2.442347, rtol=1e-05)
     assert data_after_stripe_removal.flags.c_contiguous
 
     data = None  #: free up GPU memory
