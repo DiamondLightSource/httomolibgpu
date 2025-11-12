@@ -208,7 +208,7 @@ def _reflect(x, minx, maxx):
     return cp.array(out, dtype=x.dtype)
 
 
-def _mypad(x, pad, value=0):
+def _mypad(x, pad):
     """ Function to do numpy like padding on Arrays. Only works for 2-D
     padding.
 
@@ -230,7 +230,7 @@ def _mypad(x, pad, value=0):
         return x[:, :, :, xe]
 
 
-def _conv2d(x, w, stride, pad, groups=1):
+def _conv2d(x, w, stride, pad, groups):
     """ Convolution (equivalent pytorch.conv2d)
     """
     if pad != 0:
@@ -255,7 +255,7 @@ def _conv2d(x, w, stride, pad, groups=1):
     return out
 
 
-def _conv_transpose2d(x, w, stride, pad, bias=None, groups=1):
+def _conv_transpose2d(x, w, stride, pad, groups):
     """ Transposed convolution (equivalent pytorch.conv_transpose2d)
     """
     b,  co, ho, wo = x.shape
@@ -277,7 +277,7 @@ def _conv_transpose2d(x, w, stride, pad, bias=None, groups=1):
     return out
 
 
-def afb1d(x, h0, h1='zero', dim=-1):
+def afb1d(x, h0, h1, dim):
     """ 1D analysis filter bank (along one dimension only) of an image
 
     Parameters
@@ -303,7 +303,6 @@ def afb1d(x, h0, h1='zero', dim=-1):
     s = (2, 1) if d == 2 else (1, 2)
     N = x.shape[d]
     L = h0.size
-    L2 = L // 2
     shape = [1, 1, 1, 1]
     shape[d] = L
     h = cp.concatenate([h0.reshape(*shape), h1.reshape(*shape)]*C, axis=0)
@@ -316,7 +315,7 @@ def afb1d(x, h0, h1='zero', dim=-1):
     return lohi
 
 
-def sfb1d(lo, hi, g0, g1='zero', dim=-1):
+def sfb1d(lo, hi, g0, g1, dim):
     """ 1D synthesis filter bank of an image Array
     """
 
@@ -325,7 +324,6 @@ def sfb1d(lo, hi, g0, g1='zero', dim=-1):
     L = g0.size
     shape = [1, 1, 1, 1]
     shape[d] = L
-    N = 2*lo.shape[d]
     s = (2, 1) if d == 2 else (1, 2)
     g0 = cp.concatenate([g0.reshape(*shape)]*C, axis=0)
     g1 = cp.concatenate([g1.reshape(*shape)]*C, axis=0)
@@ -343,7 +341,7 @@ class DWTForward():
         wave (str): Which wavelet to use.                    
         """
 
-    def __init__(self, wave='db1'):
+    def __init__(self, wave):
         super().__init__()
 
         wave = pywt.Wavelet(wave)
@@ -395,7 +393,7 @@ class DWTInverse():
         wave (str): Which wavelet to use.            
     """
 
-    def __init__(self, wave='db1'):
+    def __init__(self, wave):
         super().__init__()
         wave = pywt.Wavelet(wave)
         g0_col, g1_col = wave.rec_lo, wave.rec_hi
@@ -439,7 +437,6 @@ def remove_stripe_fw(data, sigma=1, wname='sym16', level=7):
     [nproj, nz, ni] = data.shape
 
     nproj_pad = nproj + nproj // 8
-    xshift = int((nproj_pad - nproj) // 2)
 
     # Accepts all wave types available to PyWavelets
     xfm = DWTForward(wave=wname)
