@@ -57,8 +57,8 @@ def paganin_filter(
     ratio_delta_beta: float = 250,
 ) -> cp.ndarray:
     """
-    Perform single-material phase retrieval from flats/darks corrected tomographic measurements. See
-    :cite:`Paganin02` and :cite:`paganin2020boosting` for references.
+    Perform single-material phase retrieval from flats/darks corrected tomographic measurements. For more detailed information, see :ref:`phase_contrast_module`.
+    Also see :cite:`Paganin02` and :cite:`paganin2020boosting` for references.
 
     Parameters
     ----------
