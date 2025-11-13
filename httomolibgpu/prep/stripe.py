@@ -42,7 +42,7 @@ else:
     fftshift = Mock()
 
 
-from typing import Union
+from typing import Tuple, Union
 
 __all__ = [
     "remove_stripe_based_sorting",
@@ -183,7 +183,7 @@ def remove_stripe_ti(
 #                                                                             #
 # *************************************************************************** #
 
-def _reflect(x, minx, maxx):
+def _reflect(x: np.ndarray, minx: float, maxx: float) -> np.ndarray:
     """Reflect the values in matrix *x* about the scalar values *minx* and
     *maxx*.  Hence a vector *x* containing a long linearly increasing series is
     converted into a waveform which ramps linearly up and down between *minx*
@@ -194,16 +194,15 @@ def _reflect(x, minx, maxx):
     .. codeauthor:: Nick Kingsbury, Cambridge University, January 1999.
 
     """
-    x = cp.asanyarray(x)
     rng = maxx - minx
     rng_by_2 = 2 * rng
-    mod = cp.fmod(x - minx, rng_by_2)
-    normed_mod = cp.where(mod < 0, mod + rng_by_2, mod)
-    out = cp.where(normed_mod >= rng, rng_by_2 - normed_mod, normed_mod) + minx
-    return cp.array(out, dtype=x.dtype)
+    mod = np.fmod(x - minx, rng_by_2)
+    normed_mod = np.where(mod < 0, mod + rng_by_2, mod)
+    out = np.where(normed_mod >= rng, rng_by_2 - normed_mod, normed_mod) + minx
+    return np.array(out, dtype=x.dtype)
 
 
-def _mypad(x, pad):
+def _mypad(x: cp.ndarray, pad: Tuple[int, int, int, int]) -> cp.ndarray:
     """ Function to do numpy like padding on Arrays. Only works for 2-D
     padding.
 
@@ -215,42 +214,40 @@ def _mypad(x, pad):
     if pad[0] == 0 and pad[1] == 0:
         m1, m2 = pad[2], pad[3]
         l = x.shape[-2]
-        xe = _reflect(cp.arange(-m1, l+m2, dtype='int32'), -0.5, l-0.5)
+        xe = _reflect(np.arange(-m1, l+m2, dtype='int32'), -0.5, l-0.5)
         return x[:, :, xe]
     # horizontal only
     elif pad[2] == 0 and pad[3] == 0:
         m1, m2 = pad[0], pad[1]
         l = x.shape[-1]
-        xe = _reflect(cp.arange(-m1, l+m2, dtype='int32'), -0.5, l-0.5)
+        xe = _reflect(np.arange(-m1, l+m2, dtype='int32'), -0.5, l-0.5)
         return x[:, :, :, xe]
 
 
-def _conv2d(x, w, stride, pad, groups):
+def _conv2d(x: cp.ndarray, w: np.ndarray, stride: Tuple[int, int], groups: int) -> cp.ndarray:
     """ Convolution (equivalent pytorch.conv2d)
     """
-    if pad != 0:
-        x = cp.pad(x, ((0, 0), (0, 0), (pad, pad), (pad, pad)), 'constant')
-
-    b,  ci, hi, wi = x.shape
+    b, ci, hi, wi = x.shape
     co, _, hk, wk = w.shape
     ho = int(cp.floor(1 + (hi - hk) / stride[0]))
     wo = int(cp.floor(1 + (wi - wk) / stride[1]))
     out = cp.zeros([b, co, ho, wo], dtype='float32')
+    w = cp.asarray(w)
     x = cp.expand_dims(x, axis=1)
-    w = cp.expand_dims(w, axis=0)
+    w = np.expand_dims(w, axis=0)
     chunk = ci//groups
     chunko = co//groups
+    sum_out = cp.zeros([x.shape[0], chunko, ho * stride[0] // stride[0], wo], dtype='float32')
     for g in range(groups):
         for ii in range(hk):
             for jj in range(wk):
-                x_windows = x[:, :, g*chunk:(g+1)*chunk, ii:ho *
-                              stride[0]+ii:stride[0], jj:wo*stride[1]+jj:stride[1]]
-                out[:, g*chunko:(g+1)*chunko] += cp.sum(x_windows *
-                                                        w[:, g*chunko:(g+1)*chunko, :, ii:ii+1, jj:jj+1], axis=2)
+                x_windows = x[:, :, g*chunk:(g+1)*chunk, ii:ho * stride[0]+ii:stride[0], jj:wo*stride[1]+jj:stride[1]]
+                cp.sum(x_windows * w[:, g*chunko:(g+1)*chunko, :, ii:ii+1, jj:jj+1], axis=2, out=sum_out)
+                out[:, g*chunko:(g+1)*chunko] += sum_out
     return out
 
 
-def _conv_transpose2d(x, w, stride, pad, groups):
+def _conv_transpose2d(x: cp.ndarray, w: np.ndarray, stride: Tuple[int, int], pad: Tuple[int, int], groups: int) -> cp.ndarray:
     """ Transposed convolution (equivalent pytorch.conv_transpose2d)
     """
     b,  co, ho, wo = x.shape
@@ -261,6 +258,7 @@ def _conv_transpose2d(x, w, stride, pad, groups):
     out = cp.zeros([b, ci, hi, wi], dtype='float32')
     chunk = ci//groups
     chunko = co//groups
+    w = cp.asarray(w)
     for g in range(groups):
         for ii in range(hk):
             for jj in range(wk):
@@ -272,7 +270,7 @@ def _conv_transpose2d(x, w, stride, pad, groups):
     return out
 
 
-def afb1d(x, h0, h1, dim):
+def afb1d(x: cp.ndarray, h0: np.ndarray, h1: np.ndarray, dim: int) -> cp.ndarray:
     """ 1D analysis filter bank (along one dimension only) of an image
 
     Parameters
@@ -300,17 +298,17 @@ def afb1d(x, h0, h1, dim):
     L = h0.size
     shape = [1, 1, 1, 1]
     shape[d] = L
-    h = cp.concatenate([h0.reshape(*shape), h1.reshape(*shape)]*C, axis=0)
+    h = np.concatenate([h0.reshape(*shape), h1.reshape(*shape)]*C, axis=0)
     # Calculate the pad size
     outsize = pywt.dwt_coeff_len(N, L, mode='symmetric')
     p = 2 * (outsize - 1) - N + L
     pad = (0, 0, p//2, (p+1)//2) if d == 2 else (p//2, (p+1)//2, 0, 0)
     x = _mypad(x, pad=pad)
-    lohi = _conv2d(x, h, stride=s, pad=0, groups=C)
+    lohi = _conv2d(x, h, stride=s, groups=C)
     return lohi
 
 
-def sfb1d(lo, hi, g0, g1, dim):
+def sfb1d(lo: cp.ndarray, hi: cp.ndarray, g0: np.ndarray, g1: np.ndarray, dim: int) -> cp.ndarray:
     """ 1D synthesis filter bank of an image Array
     """
 
@@ -320,12 +318,11 @@ def sfb1d(lo, hi, g0, g1, dim):
     shape = [1, 1, 1, 1]
     shape[d] = L
     s = (2, 1) if d == 2 else (1, 2)
-    g0 = cp.concatenate([g0.reshape(*shape)]*C, axis=0)
-    g1 = cp.concatenate([g1.reshape(*shape)]*C, axis=0)
+    g0 = np.concatenate([g0.reshape(*shape)]*C, axis=0)
+    g1 = np.concatenate([g1.reshape(*shape)]*C, axis=0)
     pad = (L-2, 0) if d == 2 else (0, L-2)
-    y = _conv_transpose2d(cp.asarray(lo), cp.asarray(g0), stride=s, pad=pad, groups=C) + \
-        _conv_transpose2d(cp.asarray(hi), cp.asarray(g1),
-                          stride=s, pad=pad, groups=C)
+    y = _conv_transpose2d(lo, g0, stride=s, pad=pad, groups=C) + \
+        _conv_transpose2d(hi, g1, stride=s, pad=pad, groups=C)
     return y
 
 
@@ -336,23 +333,23 @@ class DWTForward():
         wave (str): Which wavelet to use.                    
         """
 
-    def __init__(self, wave):
+    def __init__(self, wave: str):
         super().__init__()
 
         wave = pywt.Wavelet(wave)
         h0_col, h1_col = wave.dec_lo, wave.dec_hi
         h0_row, h1_row = h0_col, h1_col
 
-        self.h0_col = cp.array(h0_col).astype('float32')[
+        self.h0_col = np.array(h0_col).astype('float32')[
             ::-1].reshape((1, 1, -1, 1))
-        self.h1_col = cp.array(h1_col).astype('float32')[
+        self.h1_col = np.array(h1_col).astype('float32')[
             ::-1].reshape((1, 1, -1, 1))
-        self.h0_row = cp.array(h0_row).astype('float32')[
+        self.h0_row = np.array(h0_row).astype('float32')[
             ::-1].reshape((1, 1, 1, -1))
-        self.h1_row = cp.array(h1_row).astype('float32')[
+        self.h1_row = np.array(h1_row).astype('float32')[
             ::-1].reshape((1, 1, 1, -1))
 
-    def apply(self, x):
+    def apply(self, x: cp.ndarray) -> Tuple[cp.ndarray, cp.ndarray]:
         """ Forward pass of the DWT.
 
         Args:
@@ -374,6 +371,7 @@ class DWTForward():
         # Do 1 level of the transform
         lohi = afb1d(x, self.h0_row, self.h1_row, dim=3)
         y = afb1d(lohi, self.h0_col, self.h1_col, dim=2)
+        del lohi
         s = y.shape
         y = y.reshape(s[0], -1, 4, s[-2], s[-1])
         x = cp.ascontiguousarray(y[:, :, 0])
@@ -388,18 +386,18 @@ class DWTInverse():
         wave (str): Which wavelet to use.            
     """
 
-    def __init__(self, wave):
+    def __init__(self, wave: str):
         super().__init__()
         wave = pywt.Wavelet(wave)
         g0_col, g1_col = wave.rec_lo, wave.rec_hi
         g0_row, g1_row = g0_col, g1_col
         # Prepare the filters
-        self.g0_col = cp.array(g0_col).astype('float32').reshape((1, 1, -1, 1))
-        self.g1_col = cp.array(g1_col).astype('float32').reshape((1, 1, -1, 1))
-        self.g0_row = cp.array(g0_row).astype('float32').reshape((1, 1, 1, -1))
-        self.g1_row = cp.array(g1_row).astype('float32').reshape((1, 1, 1, -1))
+        self.g0_col = np.array(g0_col).astype('float32').reshape((1, 1, -1, 1))
+        self.g1_col = np.array(g1_col).astype('float32').reshape((1, 1, -1, 1))
+        self.g0_row = np.array(g0_row).astype('float32').reshape((1, 1, 1, -1))
+        self.g1_row = np.array(g1_row).astype('float32').reshape((1, 1, 1, -1))
 
-    def apply(self, coeffs):
+    def apply(self, coeffs: Tuple[cp.ndarray, cp.ndarray]) -> cp.ndarray:
         """
         Args:
             coeffs (yl, yh): tuple of lowpass and bandpass coefficients, where:
@@ -426,7 +424,7 @@ class DWTInverse():
         return yl
 
 
-def remove_stripe_fw(data, sigma=1, wname='sym16', level=7):
+def remove_stripe_fw(data: cp.ndarray, sigma: float=1, wname: str='sym16', level: int=7) -> cp.ndarray:
     """Remove stripes with wavelet filtering"""
 
     [nproj, nz, ni] = data.shape
