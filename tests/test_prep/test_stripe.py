@@ -6,6 +6,7 @@ import pytest
 
 from httomolibgpu.prep.normalize import dark_flat_field_correction, minus_log
 from httomolibgpu.prep.stripe import (
+    DeviceMemStack,
     remove_stripe_based_sorting,
     remove_stripe_ti,
     remove_stripe_fw,
@@ -35,6 +36,23 @@ def test_remove_stripe_ti_on_data(data, flats, darks):
     assert data_after_stripe_removal.dtype == np.float32
 
 
+class MaxMemoryHook(cp.cuda.MemoryHook):
+    def __init__(self, initial=0):
+        self.max_mem = initial
+        self.current = initial
+
+    def malloc_postprocess(
+        self, device_id: int, size: int, mem_size: int, mem_ptr: int, pmem_id: int
+    ):
+        self.current += mem_size
+        self.max_mem = max(self.max_mem, self.current)
+
+    def free_postprocess(
+        self, device_id: int, mem_size: int, mem_ptr: int, pmem_id: int
+    ):
+        self.current -= mem_size
+
+
 def test_remove_stripe_fw_on_data(data, flats, darks):
     # --- testing the CuPy implementation from TomoCupy ---#
     data_norm = dark_flat_field_correction(data, flats, darks, cutoff=10)
@@ -53,6 +71,42 @@ def test_remove_stripe_fw_on_data(data, flats, darks):
     data = None  #: free up GPU memory
     # make sure the output is float32
     assert data_after_stripe_removal.dtype == np.float32
+
+
+@pytest.fixture
+def ensure_clean_memory():
+    cp.get_default_memory_pool().free_all_blocks()
+    cp.get_default_pinned_memory_pool().free_all_blocks()
+    cache = cp.fft.config.get_plan_cache()
+    cache.clear()
+    yield None
+    cp.get_default_memory_pool().free_all_blocks()
+    cp.get_default_pinned_memory_pool().free_all_blocks()
+    cache = cp.fft.config.get_plan_cache()
+    cache.clear()
+
+
+@pytest.mark.parametrize("slices", [55, 80])
+@pytest.mark.parametrize("level", [1, 3, 7, 11])
+@pytest.mark.parametrize("dim_x", [128, 140])
+def test_remove_stripe_fw_mem_stack(slices, level, dim_x, ensure_clean_memory):
+    dim_y = 159
+    data = cp.random.random_sample((slices, dim_x, dim_y), dtype=np.float32)
+    hook = MaxMemoryHook()
+    with hook:
+        remove_stripe_fw(cp.copy(data), level=level)
+    actual_mem_peak = hook.max_mem
+
+    hook = MaxMemoryHook()
+    mem_stack = DeviceMemStack()
+    with hook:
+        remove_stripe_fw(data.shape, level=level, mem_stack=mem_stack)
+    assert hook.max_mem == 0
+    estimated_mem_peak = mem_stack.highwater
+
+    # assert actual_mem_peak == estimated_mem_peak
+    assert actual_mem_peak * 0.99 <= estimated_mem_peak
+    assert estimated_mem_peak <= actual_mem_peak * 1.01
 
 
 @pytest.mark.parametrize("angles", [180, 181])
