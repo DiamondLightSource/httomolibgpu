@@ -215,9 +215,9 @@ def LPRec3d_tomobar(
     recon_size: Optional[int] = None,
     recon_mask_radius: float = 0.95,
     power_of_2_oversampling: Optional[bool] = True,
-    power_of_2_cropping: Optional[bool] = True,
-    min_mem_usage_filter: Optional[bool] = False,
-    min_mem_usage_ifft2: Optional[bool] = False,
+    power_of_2_cropping: Optional[bool] = False,
+    min_mem_usage_filter: Optional[bool] = True,
+    min_mem_usage_ifft2: Optional[bool] = True,
     neglog: bool = False,
 ) -> cp.ndarray:
     """
