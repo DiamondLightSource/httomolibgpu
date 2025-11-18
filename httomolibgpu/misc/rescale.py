@@ -27,8 +27,6 @@ cp = cupywrapper.cp
 
 from typing import Literal, Optional, Tuple, Union
 
-from httomolibgpu.misc.supp_func import data_checker
-
 
 __all__ = [
     "rescale_to_int",
@@ -79,8 +77,6 @@ def rescale_to_int(
         output_dtype = np.uint16
     else:
         output_dtype = np.uint32
-
-    data = data_checker(data, verbosity=True, method_name="rescale_to_int")
 
     # get the min and max integer values of the output type
     output_min = cp.iinfo(output_dtype).min

@@ -43,8 +43,6 @@ else:
 
 from typing import Union
 
-from httomolibgpu.misc.supp_func import data_checker
-
 __all__ = [
     "remove_stripe_based_sorting",
     "remove_stripe_ti",
@@ -82,8 +80,6 @@ def remove_stripe_based_sorting(
         Corrected 3D tomographic data as a CuPy or NumPy array.
 
     """
-
-    data = data_checker(data, verbosity=True, method_name="remove_stripe_based_sorting")
 
     if size is None:
         if data.shape[2] > 2000:
@@ -139,7 +135,6 @@ def remove_stripe_ti(
     ndarray
         3D array of de-striped projections.
     """
-    data = data_checker(data, verbosity=True, method_name="remove_stripe_ti")
 
     _, _, dx_orig = data.shape
     if (dx_orig % 2) != 0:
@@ -216,7 +211,6 @@ def remove_all_stripe(
         Corrected 3D tomographic data as a CuPy or NumPy array.
 
     """
-    data = data_checker(data, verbosity=True, method_name="remove_all_stripe")
 
     matindex = _create_matindex(data.shape[2], data.shape[0])
     for m in range(data.shape[1]):
@@ -392,7 +386,6 @@ def raven_filter(
     if data.dtype != cp.float32:
         raise ValueError("The input data should be float32 data type")
 
-    data = data_checker(data, verbosity=True, method_name="raven_filter")
 
     # Padding of the sinogram
     data = cp.pad(data, ((pad_y, pad_y), (0, 0), (pad_x, pad_x)), mode=pad_method)

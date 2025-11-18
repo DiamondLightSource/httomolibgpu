@@ -36,13 +36,10 @@ if cupy_run:
 else:
     load_cuda_module = Mock()
 
-from httomolibgpu.misc.supp_func import data_checker
-
 __all__ = [
     "median_filter",
     "remove_outlier",
 ]
-
 
 def median_filter(
     data: cp.ndarray,
@@ -81,10 +78,6 @@ def median_filter(
             raise ValueError("The length of one of dimensions is equal to zero")
     else:
         raise ValueError("The input array must be a 3D array")
-
-    data = data_checker(
-        data, verbosity=True, method_name="median_filter_or_remove_outlier"
-    )
 
     if kernel_size not in [3, 5, 7, 9, 11, 13]:
         raise ValueError("Please select a correct kernel size: 3, 5, 7, 9, 11, 13")
