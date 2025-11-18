@@ -554,6 +554,7 @@ def remove_stripe_fw(data: cp.ndarray, sigma: float=1, wname: str='sym16', level
             sli_shape = new_sli_shape
         for c in cc:
             mem_stack.free(np.prod(c) * np.float32().itemsize)
+        mem_stack.malloc(np.prod(data) * np.float32().itemsize)
         mem_stack.free(np.prod(sli_shape) * np.float32().itemsize)
         return
 
@@ -580,8 +581,7 @@ def remove_stripe_fw(data: cp.ndarray, sigma: float=1, wname: str='sym16', level
 
     data = sli[:, 0, (nproj_pad - nproj)//2:(nproj_pad + nproj) // 2, :ni]
     data = data.swapaxes(0, 1)
-
-    return data
+    return cp.ascontiguousarray(data)
 
 
 ######## Optimized version for Vo-all ring removal in tomopy########

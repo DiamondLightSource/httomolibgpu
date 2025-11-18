@@ -5,6 +5,7 @@ import pytest
 from numpy.testing import assert_allclose
 from httomolibgpu.prep.stripe import (
     remove_stripe_based_sorting,
+    remove_stripe_fw,
     remove_stripe_ti,
     remove_all_stripe,
     raven_filter,
@@ -94,6 +95,51 @@ def test_remove_stripe_ti_i12_dataset4(
     force_clean_gpu_memory()
 
     output = remove_stripe_ti(cp.copy(data_normalised), beta=beta_val)
+
+    residual_calc = data_normalised - output
+    norm_res = cp.linalg.norm(residual_calc.flatten())
+
+    assert isclose(norm_res, norm_res_expected, abs_tol=10**-4)
+
+    assert output.dtype == np.float32
+    assert output.flags.c_contiguous
+
+
+@pytest.mark.parametrize(
+    "dataset_fixture, sigma_val, level, norm_res_expected",
+    [
+        (
+            "i12_dataset4",
+            0.01,
+            7,
+            52.4856,
+        ),
+        (
+            "i12_dataset4",
+            0.3,
+            5,
+            53.7807,
+        ),
+        (
+            "i12_dataset4",
+            1.0,
+            10,
+            262.2167,
+        ),
+    ],
+    ids=["case_001", "case_003", "case_006"],
+)
+def test_remove_stripe_fw_i12_dataset4(
+    request, dataset_fixture, sigma_val, level, norm_res_expected
+):
+    dataset = request.getfixturevalue(dataset_fixture)
+    data_normalised = dark_flat_field_correction(dataset[0], dataset[2], dataset[3])
+    data_normalised = minus_log(data_normalised)
+
+    del dataset
+    force_clean_gpu_memory()
+
+    output = remove_stripe_fw(cp.copy(data_normalised), sigma=sigma_val, level=level)
 
     residual_calc = data_normalised - output
     norm_res = cp.linalg.norm(residual_calc.flatten())
