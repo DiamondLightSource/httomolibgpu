@@ -7,6 +7,7 @@ from httomolibgpu.prep.normalize import normalize
 from httomolibgpu.prep.phase import paganin_filter
 from httomolibgpu.prep.stripe import (
     remove_stripe_based_sorting,
+    remove_stripe_fw,
     remove_stripe_ti,
     remove_all_stripe,
     raven_filter,

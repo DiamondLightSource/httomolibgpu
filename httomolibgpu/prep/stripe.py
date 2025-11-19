@@ -21,6 +21,7 @@
 """Module for stripes removal"""
 
 import numpy as np
+import pywt
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
@@ -41,12 +42,13 @@ else:
     fftshift = Mock()
 
 
-from typing import Union
+from typing import Optional, Tuple, Union
 
 from httomolibgpu.misc.supp_func import data_checker
 
 __all__ = [
     "remove_stripe_based_sorting",
+    "remove_stripe_fw",
     "remove_stripe_ti",
     "remove_all_stripe",
     "raven_filter",
@@ -159,6 +161,433 @@ def remove_stripe_ti(
         return data[:, :, :-1]
     else:
         return data
+
+
+###### Ring removal with wavelet filtering (adapted for cupy from pytroch_wavelet package https://pytorch-wavelets.readthedocs.io/)##########
+# These functions are taken from TomoCuPy package
+# *************************************************************************** #
+#                  Copyright © 2022, UChicago Argonne, LLC                    #
+#                           All Rights Reserved                               #
+#                         Software Name: Tomocupy                             #
+#                     By: Argonne National Laboratory                         #
+#                                                                             #
+#                           OPEN SOURCE LICENSE                               #
+#                                                                             #
+# Redistribution and use in source and binary forms, with or without          #
+# modification, are permitted provided that the following conditions are met: #
+#                                                                             #
+# 1. Redistributions of source code must retain the above copyright notice,   #
+#    this list of conditions and the following disclaimer.                    #
+# 2. Redistributions in binary form must reproduce the above copyright        #
+#    notice, this list of conditions and the following disclaimer in the      #
+#    documentation and/or other materials provided with the distribution.     #
+# 3. Neither the name of the copyright holder nor the names of its            #
+#    contributors may be used to endorse or promote products derived          #
+#    from this software without specific prior written permission.            #
+#                                                                             #
+#                                                                             #
+# *************************************************************************** #
+
+def _reflect(x: np.ndarray, minx: float, maxx: float) -> np.ndarray:
+    """Reflect the values in matrix *x* about the scalar values *minx* and
+    *maxx*.  Hence a vector *x* containing a long linearly increasing series is
+    converted into a waveform which ramps linearly up and down between *minx*
+    and *maxx*.  If *x* contains integers and *minx* and *maxx* are (integers +
+    0.5), the ramps will have repeated max and min samples.
+
+    .. codeauthor:: Rich Wareham <rjw57@cantab.net>, Aug 2013
+    .. codeauthor:: Nick Kingsbury, Cambridge University, January 1999.
+
+    """
+    rng = maxx - minx
+    rng_by_2 = 2 * rng
+    mod = np.fmod(x - minx, rng_by_2)
+    normed_mod = np.where(mod < 0, mod + rng_by_2, mod)
+    out = np.where(normed_mod >= rng, rng_by_2 - normed_mod, normed_mod) + minx
+    return np.array(out, dtype=x.dtype)
+
+
+class _DeviceMemStack:
+    def __init__(self) -> None:
+        self.allocations = []
+        self.current = 0
+        self.highwater = 0
+
+    def malloc(self, bytes):
+        self.allocations.append(bytes)
+        allocated = self._round_up(bytes)
+        self.current += allocated
+        self.highwater = max(self.current, self.highwater)
+
+    def free(self, bytes):
+        assert bytes in self.allocations
+        self.allocations.remove(bytes)
+        self.current -= self._round_up(bytes)
+        assert self.current >= 0
+
+    def _round_up(self, size):
+        ALLOCATION_UNIT_SIZE = 512
+        size = (size + ALLOCATION_UNIT_SIZE - 1) // ALLOCATION_UNIT_SIZE
+        return size * ALLOCATION_UNIT_SIZE
+
+
+def _mypad(x: cp.ndarray, pad: Tuple[int, int, int, int], mem_stack: Optional[_DeviceMemStack]) -> cp.ndarray:
+    """ Function to do numpy like padding on Arrays. Only works for 2-D
+    padding.
+
+    Inputs:
+        x (array): Array to pad
+        pad (tuple): tuple of (left, right, top, bottom) pad sizes        
+    """
+    # Vertical only
+    if pad[0] == 0 and pad[1] == 0:
+        m1, m2 = pad[2], pad[3]
+        l = x.shape[-2] if not mem_stack else x[-2]
+        xe = _reflect(np.arange(-m1, l+m2, dtype='int32'), -0.5, l-0.5)
+        if mem_stack:
+            ret_shape = [x[0], x[1], xe.size, x[3]]
+            mem_stack.malloc(np.prod(ret_shape) * np.float32().itemsize)
+            return ret_shape
+        return x[:, :, xe, :]
+    # horizontal only
+    elif pad[2] == 0 and pad[3] == 0:
+        m1, m2 = pad[0], pad[1]
+        l = x.shape[-1] if not mem_stack else x[-1]
+        xe = _reflect(np.arange(-m1, l+m2, dtype='int32'), -0.5, l-0.5)
+        if mem_stack:
+            ret_shape = [x[0], x[1], x[2], xe.size]
+            mem_stack.malloc(np.prod(ret_shape) * np.float32().itemsize)
+            return ret_shape
+        return x[:, :, :, xe]
+
+
+def _conv2d(x: cp.ndarray, w: np.ndarray, stride: Tuple[int, int], groups: int, mem_stack: Optional[_DeviceMemStack]) -> cp.ndarray:
+    """ Convolution (equivalent pytorch.conv2d)
+    """
+    b, ci, hi, wi = x.shape if not mem_stack else x
+    co, _, hk, wk = w.shape
+    ho = int(np.floor(1 + (hi - hk) / stride[0]))
+    wo = int(np.floor(1 + (wi - wk) / stride[1]))
+    chunk = ci//groups
+    chunko = co//groups
+    out_shape = [b, co, ho, wo]
+    sum_out_shape = [b, chunko, ho * stride[0] // stride[0], wo]
+    if mem_stack:
+        # sum_out shape is counted twice, because the size of the temporary multiplication result
+        mem_stack.malloc((2*np.prod(sum_out_shape) + w.size) * np.float32().itemsize)
+        mem_stack.malloc(np.prod(out_shape) * np.float32().itemsize)
+        # everything but out gets freed
+        mem_stack.free((2*np.prod(sum_out_shape) + w.size) * np.float32().itemsize)
+        return out_shape
+
+    out = cp.zeros(out_shape, dtype='float32')
+    w = cp.asarray(w)
+    x = cp.expand_dims(x, axis=1)
+    w = np.expand_dims(w, axis=0)
+    sum_out = cp.zeros(sum_out_shape, dtype='float32')
+    for g in range(groups):
+        for ii in range(hk):
+            for jj in range(wk):
+                x_windows = x[:, :, g*chunk:(g+1)*chunk, ii:ho * stride[0]+ii:stride[0], jj:wo*stride[1]+jj:stride[1]]
+                cp.sum(x_windows * w[:, g*chunko:(g+1)*chunko, :, ii:ii+1, jj:jj+1], axis=2, out=sum_out)
+                out[:, g*chunko:(g+1)*chunko] += sum_out
+    del sum_out
+    del w
+    return out
+
+
+def _conv_transpose2d(x: cp.ndarray, w: np.ndarray, stride: Tuple[int, int], pad: Tuple[int, int], groups: int, mem_stack: Optional[_DeviceMemStack]) -> cp.ndarray:
+    """ Transposed convolution (equivalent pytorch.conv_transpose2d)
+    """
+    b,  co, ho, wo = x.shape if not mem_stack else x
+    co, ci, hk, wk = w.shape
+
+    hi = (ho-1)*stride[0]+hk
+    wi = (wo-1)*stride[1]+wk
+    chunk = ci//groups
+    chunko = co//groups
+    out_shape = [b, ci, hi, wi]
+    if mem_stack:
+        tmp_weighted_shape = (b, co, ho, wo)
+        # The trouble here is that we allocate more than the returned size
+        out_actual_bytes = np.prod(out_shape) * np.float32().itemsize
+        mem_stack.malloc(out_actual_bytes)
+        mem_stack.malloc((np.prod(tmp_weighted_shape) + w.size) * np.float32().itemsize)
+        mem_stack.free((np.prod(tmp_weighted_shape) + w.size) * np.float32().itemsize)
+        if pad != 0:
+            return [out_shape[0], out_shape[1], out_shape[2] - 2*pad[0], out_shape[3] - 2*pad[1]], out_actual_bytes
+        return out_shape, out_actual_bytes
+
+    out = cp.zeros(out_shape, dtype='float32')
+    w = cp.asarray(w)
+    for g in range(groups):
+        for ii in range(hk):
+            for jj in range(wk):
+                x_windows = x[:, g*chunko:(g+1)*chunko]
+                out[:, g*chunk:(g+1)*chunk, ii:ho*stride[0]+ii:stride[0], jj:wo*stride[1] +
+                    jj:stride[1]] += x_windows * w[g*chunko:(g+1)*chunko, :, ii:ii+1, jj:jj+1]
+    if pad != 0:
+        out = out[:, :, pad[0]:out.shape[2]-pad[0], pad[1]:out.shape[3]-pad[1]]
+    return out, None
+
+
+def _afb1d(x: cp.ndarray, h0: np.ndarray, h1: np.ndarray, dim: int, mem_stack: Optional[_DeviceMemStack]) -> cp.ndarray:
+    """ 1D analysis filter bank (along one dimension only) of an image
+
+    Parameters
+    ----------
+    x (array): 4D input with the last two dimensions the spatial input
+    h0 (array): 4D input for the lowpass filter. Should have shape (1, 1,
+        h, 1) or (1, 1, 1, w)
+    h1 (array): 4D input for the highpass filter. Should have shape (1, 1,
+        h, 1) or (1, 1, 1, w)
+    dim (int) - dimension of filtering. d=2 is for a vertical filter (called
+        column filtering but filters across the rows). d=3 is for a
+        horizontal filter, (called row filtering but filters across the
+        columns).
+
+    Returns
+    -------
+    lohi: lowpass and highpass subbands concatenated along the channel
+        dimension
+    """
+    C = x.shape[1] if not mem_stack else x[1]
+    # Convert the dim to positive
+    d = dim % 4
+    s = (2, 1) if d == 2 else (1, 2)
+    N = x.shape[d] if not mem_stack else x[d]
+    L = h0.size
+    shape = [1, 1, 1, 1]
+    shape[d] = L
+    h = np.concatenate([h0.reshape(*shape), h1.reshape(*shape)]*C, axis=0)
+    # Calculate the pad size
+    outsize = pywt.dwt_coeff_len(N, L, mode='symmetric')
+    p = 2 * (outsize - 1) - N + L
+    pad = (0, 0, p//2, (p+1)//2) if d == 2 else (p//2, (p+1)//2, 0, 0)
+    padded_x = _mypad(x, pad=pad, mem_stack=mem_stack)
+    lohi = _conv2d(padded_x, h, stride=s, groups=C, mem_stack=mem_stack)
+    if mem_stack:
+        mem_stack.free(np.prod(padded_x) * np.float32().itemsize)
+    del padded_x
+    return lohi
+
+
+def _sfb1d(lo: cp.ndarray, hi: cp.ndarray, g0: np.ndarray, g1: np.ndarray, dim: int, mem_stack: Optional[_DeviceMemStack]) -> cp.ndarray:
+    """ 1D synthesis filter bank of an image Array
+    """
+
+    C = lo.shape[1] if not mem_stack else lo[1]
+    d = dim % 4
+    L = g0.size
+    shape = [1, 1, 1, 1]
+    shape[d] = L
+    s = (2, 1) if d == 2 else (1, 2)
+    g0 = np.concatenate([g0.reshape(*shape)]*C, axis=0)
+    g1 = np.concatenate([g1.reshape(*shape)]*C, axis=0)
+    pad = (L-2, 0) if d == 2 else (0, L-2)
+    y_lo, y_lo_alloc_bytes = _conv_transpose2d(lo, g0, stride=s, pad=pad, groups=C, mem_stack=mem_stack)
+    y_hi, y_hi_alloc_bytes = _conv_transpose2d(hi, g1, stride=s, pad=pad, groups=C, mem_stack=mem_stack)
+    if mem_stack:
+        # Allocation of the sum
+        mem_stack.malloc(np.prod(y_hi) * np.float32().itemsize)
+        mem_stack.free(y_lo_alloc_bytes)
+        mem_stack.free(y_hi_alloc_bytes)
+        return y_lo
+    return y_lo + y_hi
+
+
+class _DWTForward():
+    """ Performs a 2d DWT Forward decomposition of an image
+
+    Args:
+        wave (str): Which wavelet to use.                    
+        """
+
+    def __init__(self, wave: str):
+        super().__init__()
+
+        wave = pywt.Wavelet(wave)
+        h0_col, h1_col = wave.dec_lo, wave.dec_hi
+        h0_row, h1_row = h0_col, h1_col
+
+        self.h0_col = np.array(h0_col).astype('float32')[
+            ::-1].reshape((1, 1, -1, 1))
+        self.h1_col = np.array(h1_col).astype('float32')[
+            ::-1].reshape((1, 1, -1, 1))
+        self.h0_row = np.array(h0_row).astype('float32')[
+            ::-1].reshape((1, 1, 1, -1))
+        self.h1_row = np.array(h1_row).astype('float32')[
+            ::-1].reshape((1, 1, 1, -1))
+
+    def apply(self, x: cp.ndarray, mem_stack: Optional[_DeviceMemStack] = None) -> Tuple[cp.ndarray, cp.ndarray]:
+        """ Forward pass of the DWT.
+
+        Args:
+            x (array): Input of shape :math:`(N, C_{in}, H_{in}, W_{in})`
+
+        Returns:
+            (yl, yh)
+                tuple of lowpass (yl) and bandpass (yh) coefficients.
+                yh is a list of scale coefficients. yl has shape
+                :math:`(N, C_{in}, H_{in}', W_{in}')` and yh has shape
+                :math:`list(N, C_{in}, 3, H_{in}'', W_{in}'')`. The new
+                dimension in yh iterates over the LH, HL and HH coefficients.
+
+        Note:
+            :math:`H_{in}', W_{in}', H_{in}'', W_{in}''` denote the correctly
+            downsampled shapes of the DWT pyramid.
+        """
+        # Do a multilevel transform
+        # Do 1 level of the transform
+        lohi = _afb1d(x, self.h0_row, self.h1_row, dim=3, mem_stack=mem_stack)
+        y = _afb1d(lohi, self.h0_col, self.h1_col, dim=2, mem_stack=mem_stack)
+        if mem_stack:
+            y_shape = [y[0], np.prod(y) // y[0] // 4 // y[-2] // y[-1], 4, y[-2], y[-1]]
+            x_shape = [y_shape[0], y_shape[1], y_shape[3], y_shape[4]]
+            yh_shape = [y_shape[0], y_shape[1], y_shape[2] - 1, y_shape[3], y_shape[4]]
+
+            mem_stack.free(np.prod(lohi) * np.float32().itemsize)
+            mem_stack.malloc(np.prod(x_shape) * np.float32().itemsize)
+            mem_stack.malloc(np.prod(yh_shape) * np.float32().itemsize)
+            mem_stack.free(np.prod(y) * np.float32().itemsize)
+            return x_shape, yh_shape
+        del lohi
+        s = y.shape
+        y = y.reshape(s[0], -1, 4, s[-2], s[-1])
+        x = cp.ascontiguousarray(y[:, :, 0])
+        yh = cp.ascontiguousarray(y[:, :, 1:])
+        return (x, yh)
+
+
+class _DWTInverse():
+    """ Performs a 2d DWT Inverse reconstruction of an image
+
+    Args:
+        wave (str): Which wavelet to use.            
+    """
+
+    def __init__(self, wave: str):
+        super().__init__()
+        wave = pywt.Wavelet(wave)
+        g0_col, g1_col = wave.rec_lo, wave.rec_hi
+        g0_row, g1_row = g0_col, g1_col
+        # Prepare the filters
+        self.g0_col = np.array(g0_col).astype('float32').reshape((1, 1, -1, 1))
+        self.g1_col = np.array(g1_col).astype('float32').reshape((1, 1, -1, 1))
+        self.g0_row = np.array(g0_row).astype('float32').reshape((1, 1, 1, -1))
+        self.g1_row = np.array(g1_row).astype('float32').reshape((1, 1, 1, -1))
+
+    def apply(self, coeffs: Tuple[cp.ndarray, cp.ndarray], mem_stack: Optional[_DeviceMemStack] = None) -> cp.ndarray:
+        """
+        Args:
+            coeffs (yl, yh): tuple of lowpass and bandpass coefficients, where:
+              yl is a lowpass array of shape :math:`(N, C_{in}, H_{in}',
+              W_{in}')` and yh is a list of bandpass arrays of shape
+              :math:`list(N, C_{in}, 3, H_{in}'', W_{in}'')`. I.e. should match
+              the format returned by DWTForward
+
+        Returns:
+            Reconstructed input of shape :math:`(N, C_{in}, H_{in}, W_{in})`
+
+        Note:
+            :math:`H_{in}', W_{in}', H_{in}'', W_{in}''` denote the correctly
+            downsampled shapes of the DWT pyramid.
+
+        """
+        yl, yh = coeffs
+        lh = yh[:, :, 0, :, :] if not mem_stack else [yh[0], yh[1], yh[3], yh[4]]
+        hl = yh[:, :, 1, :, :] if not mem_stack else [yh[0], yh[1], yh[3], yh[4]]
+        hh = yh[:, :, 2, :, :] if not mem_stack else [yh[0], yh[1], yh[3], yh[4]]
+        lo = _sfb1d(yl, lh, self.g0_col, self.g1_col, dim=2, mem_stack=mem_stack)
+        hi = _sfb1d(hl, hh, self.g0_col, self.g1_col, dim=2, mem_stack=mem_stack)
+        yl = _sfb1d(lo, hi, self.g0_row, self.g1_row, dim=3, mem_stack=mem_stack)
+        if mem_stack:
+            mem_stack.free(np.prod(lo) * np.float32().itemsize)
+            mem_stack.free(np.prod(hi) * np.float32().itemsize)
+        del lo
+        del hi
+        return yl
+
+
+def remove_stripe_fw(data, sigma: float=1, wname: str='sym16', level: int=7, calc_peak_gpu_mem: bool = False) -> cp.ndarray:
+    """Remove stripes with wavelet filtering"""
+
+    [nproj, nz, ni] = data.shape if not calc_peak_gpu_mem else data
+
+    nproj_pad = nproj + nproj // 8
+
+    # Accepts all wave types available to PyWavelets
+    xfm = _DWTForward(wave=wname)
+    ifm = _DWTInverse(wave=wname)
+
+    # Wavelet decomposition.
+    cc = []
+    sli_shape = [nz, 1, nproj_pad, ni]
+
+    if calc_peak_gpu_mem:
+        mem_stack = _DeviceMemStack()
+        # A data copy is assumed when invoking the function
+        mem_stack.malloc(np.prod(data) * np.float32().itemsize)
+        mem_stack.malloc(np.prod(sli_shape) * np.float32().itemsize)
+        cc = []
+        fcV_bytes = None
+        for k in range(level):
+            new_sli_shape, c = xfm.apply(sli_shape, mem_stack)
+            mem_stack.free(np.prod(sli_shape) * np.float32().itemsize)
+            sli_shape = new_sli_shape
+            cc.append(c)
+
+            if fcV_bytes:
+                mem_stack.free(fcV_bytes)
+            fcV_shape = [c[0], c[3], c[4]]
+            fcV_bytes = np.prod(fcV_shape) * np.complex64().itemsize
+            mem_stack.malloc(fcV_bytes)
+
+            # For the FFT
+            mem_stack.malloc(2 * fcV_bytes)
+            # This is "leaked" by the FFT
+            fcV_fft_bytes = fcV_shape[0] * fcV_shape[2] * np.complex64().itemsize
+            mem_stack.malloc(fcV_fft_bytes)
+            mem_stack.free(2 * fcV_bytes)
+
+            # The rest of the iteration doesn't contribute to the peak
+        # NOTE: The last iteration of fcV is "leaked"
+
+        for k in range(level)[::-1]:
+            new_sli_shape = [sli_shape[0], sli_shape[1], cc[k][-2], cc[k][-1]]
+            new_sli_shape = ifm.apply((new_sli_shape, cc[k]), mem_stack)
+            mem_stack.free(np.prod(sli_shape) * np.float32().itemsize)
+            sli_shape = new_sli_shape
+        for c in cc:
+            mem_stack.free(np.prod(c) * np.float32().itemsize)
+        mem_stack.malloc(np.prod(data) * np.float32().itemsize)
+        mem_stack.free(np.prod(sli_shape) * np.float32().itemsize)
+        return mem_stack.highwater
+
+    sli = cp.zeros(sli_shape, dtype='float32')
+    sli[:, 0, (nproj_pad - nproj)//2:(nproj_pad + nproj) // 2] = data.swapaxes(0, 1)
+    for k in range(level):
+        sli, c = xfm.apply(sli)
+        cc.append(c)
+        # FFT
+        fcV = cp.fft.fft(cc[k][:, 0, 1], axis=1)
+        _, my, mx = fcV.shape
+        # Damping of ring artifact information.
+        y_hat = np.fft.ifftshift((np.arange(-my, my, 2) + 1) / 2)
+        damp = -np.expm1(-y_hat**2 / (2 * sigma**2))
+        fcV *= cp.tile(damp, (mx, 1)).swapaxes(0, 1)
+        # Inverse FFT.
+        cc[k][:, 0, 1] = cp.fft.ifft(fcV, my, axis=1).real
+
+    # Wavelet reconstruction.
+    for k in range(level)[::-1]:
+        shape0 = cc[k][0, 0, 1].shape
+        sli = sli[:, :, :shape0[0], :shape0[1]]
+        sli = ifm.apply((sli, cc[k]))
+
+    data = sli[:, 0, (nproj_pad - nproj)//2:(nproj_pad + nproj) // 2, :ni]
+    data = data.swapaxes(0, 1)
+    return cp.ascontiguousarray(data)
 
 
 ######## Optimized version for Vo-all ring removal in tomopy########
