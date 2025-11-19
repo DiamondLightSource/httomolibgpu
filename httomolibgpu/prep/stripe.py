@@ -202,7 +202,7 @@ def _reflect(x: np.ndarray, minx: float, maxx: float) -> np.ndarray:
     return np.array(out, dtype=x.dtype)
 
 
-class DeviceMemStack:
+class _DeviceMemStack:
     def __init__(self) -> None:
         self.allocations = []
         self.current = 0
@@ -226,7 +226,7 @@ class DeviceMemStack:
         return size * ALLOCATION_UNIT_SIZE
 
 
-def _mypad(x: cp.ndarray, pad: Tuple[int, int, int, int], mem_stack: Optional[DeviceMemStack]) -> cp.ndarray:
+def _mypad(x: cp.ndarray, pad: Tuple[int, int, int, int], mem_stack: Optional[_DeviceMemStack]) -> cp.ndarray:
     """ Function to do numpy like padding on Arrays. Only works for 2-D
     padding.
 
@@ -256,7 +256,7 @@ def _mypad(x: cp.ndarray, pad: Tuple[int, int, int, int], mem_stack: Optional[De
         return x[:, :, :, xe]
 
 
-def _conv2d(x: cp.ndarray, w: np.ndarray, stride: Tuple[int, int], groups: int, mem_stack: Optional[DeviceMemStack]) -> cp.ndarray:
+def _conv2d(x: cp.ndarray, w: np.ndarray, stride: Tuple[int, int], groups: int, mem_stack: Optional[_DeviceMemStack]) -> cp.ndarray:
     """ Convolution (equivalent pytorch.conv2d)
     """
     b, ci, hi, wi = x.shape if not mem_stack else x
@@ -291,7 +291,7 @@ def _conv2d(x: cp.ndarray, w: np.ndarray, stride: Tuple[int, int], groups: int, 
     return out
 
 
-def _conv_transpose2d(x: cp.ndarray, w: np.ndarray, stride: Tuple[int, int], pad: Tuple[int, int], groups: int, mem_stack: Optional[DeviceMemStack]) -> cp.ndarray:
+def _conv_transpose2d(x: cp.ndarray, w: np.ndarray, stride: Tuple[int, int], pad: Tuple[int, int], groups: int, mem_stack: Optional[_DeviceMemStack]) -> cp.ndarray:
     """ Transposed convolution (equivalent pytorch.conv_transpose2d)
     """
     b,  co, ho, wo = x.shape if not mem_stack else x
@@ -326,7 +326,7 @@ def _conv_transpose2d(x: cp.ndarray, w: np.ndarray, stride: Tuple[int, int], pad
     return out, None
 
 
-def afb1d(x: cp.ndarray, h0: np.ndarray, h1: np.ndarray, dim: int, mem_stack: Optional[DeviceMemStack]) -> cp.ndarray:
+def _afb1d(x: cp.ndarray, h0: np.ndarray, h1: np.ndarray, dim: int, mem_stack: Optional[_DeviceMemStack]) -> cp.ndarray:
     """ 1D analysis filter bank (along one dimension only) of an image
 
     Parameters
@@ -367,7 +367,7 @@ def afb1d(x: cp.ndarray, h0: np.ndarray, h1: np.ndarray, dim: int, mem_stack: Op
     return lohi
 
 
-def sfb1d(lo: cp.ndarray, hi: cp.ndarray, g0: np.ndarray, g1: np.ndarray, dim: int, mem_stack: Optional[DeviceMemStack]) -> cp.ndarray:
+def _sfb1d(lo: cp.ndarray, hi: cp.ndarray, g0: np.ndarray, g1: np.ndarray, dim: int, mem_stack: Optional[_DeviceMemStack]) -> cp.ndarray:
     """ 1D synthesis filter bank of an image Array
     """
 
@@ -391,7 +391,7 @@ def sfb1d(lo: cp.ndarray, hi: cp.ndarray, g0: np.ndarray, g1: np.ndarray, dim: i
     return y_lo + y_hi
 
 
-class DWTForward():
+class _DWTForward():
     """ Performs a 2d DWT Forward decomposition of an image
 
     Args:
@@ -414,7 +414,7 @@ class DWTForward():
         self.h1_row = np.array(h1_row).astype('float32')[
             ::-1].reshape((1, 1, 1, -1))
 
-    def apply(self, x: cp.ndarray, mem_stack: Optional[DeviceMemStack] = None) -> Tuple[cp.ndarray, cp.ndarray]:
+    def apply(self, x: cp.ndarray, mem_stack: Optional[_DeviceMemStack] = None) -> Tuple[cp.ndarray, cp.ndarray]:
         """ Forward pass of the DWT.
 
         Args:
@@ -434,8 +434,8 @@ class DWTForward():
         """
         # Do a multilevel transform
         # Do 1 level of the transform
-        lohi = afb1d(x, self.h0_row, self.h1_row, dim=3, mem_stack=mem_stack)
-        y = afb1d(lohi, self.h0_col, self.h1_col, dim=2, mem_stack=mem_stack)
+        lohi = _afb1d(x, self.h0_row, self.h1_row, dim=3, mem_stack=mem_stack)
+        y = _afb1d(lohi, self.h0_col, self.h1_col, dim=2, mem_stack=mem_stack)
         if mem_stack:
             y_shape = [y[0], np.prod(y) // y[0] // 4 // y[-2] // y[-1], 4, y[-2], y[-1]]
             x_shape = [y_shape[0], y_shape[1], y_shape[3], y_shape[4]]
@@ -454,7 +454,7 @@ class DWTForward():
         return (x, yh)
 
 
-class DWTInverse():
+class _DWTInverse():
     """ Performs a 2d DWT Inverse reconstruction of an image
 
     Args:
@@ -472,7 +472,7 @@ class DWTInverse():
         self.g0_row = np.array(g0_row).astype('float32').reshape((1, 1, 1, -1))
         self.g1_row = np.array(g1_row).astype('float32').reshape((1, 1, 1, -1))
 
-    def apply(self, coeffs: Tuple[cp.ndarray, cp.ndarray], mem_stack: Optional[DeviceMemStack] = None) -> cp.ndarray:
+    def apply(self, coeffs: Tuple[cp.ndarray, cp.ndarray], mem_stack: Optional[_DeviceMemStack] = None) -> cp.ndarray:
         """
         Args:
             coeffs (yl, yh): tuple of lowpass and bandpass coefficients, where:
@@ -493,9 +493,9 @@ class DWTInverse():
         lh = yh[:, :, 0, :, :] if not mem_stack else [yh[0], yh[1], yh[3], yh[4]]
         hl = yh[:, :, 1, :, :] if not mem_stack else [yh[0], yh[1], yh[3], yh[4]]
         hh = yh[:, :, 2, :, :] if not mem_stack else [yh[0], yh[1], yh[3], yh[4]]
-        lo = sfb1d(yl, lh, self.g0_col, self.g1_col, dim=2, mem_stack=mem_stack)
-        hi = sfb1d(hl, hh, self.g0_col, self.g1_col, dim=2, mem_stack=mem_stack)
-        yl = sfb1d(lo, hi, self.g0_row, self.g1_row, dim=3, mem_stack=mem_stack)
+        lo = _sfb1d(yl, lh, self.g0_col, self.g1_col, dim=2, mem_stack=mem_stack)
+        hi = _sfb1d(hl, hh, self.g0_col, self.g1_col, dim=2, mem_stack=mem_stack)
+        yl = _sfb1d(lo, hi, self.g0_row, self.g1_row, dim=3, mem_stack=mem_stack)
         if mem_stack:
             mem_stack.free(np.prod(lo) * np.float32().itemsize)
             mem_stack.free(np.prod(hi) * np.float32().itemsize)
@@ -504,22 +504,23 @@ class DWTInverse():
         return yl
 
 
-def remove_stripe_fw(data: cp.ndarray, sigma: float=1, wname: str='sym16', level: int=7, mem_stack: Optional[DeviceMemStack] = None) -> cp.ndarray:
+def remove_stripe_fw(data, sigma: float=1, wname: str='sym16', level: int=7, calc_peak_gpu_mem: bool = False) -> cp.ndarray:
     """Remove stripes with wavelet filtering"""
 
-    [nproj, nz, ni] = data.shape if not mem_stack else data
+    [nproj, nz, ni] = data.shape if not calc_peak_gpu_mem else data
 
     nproj_pad = nproj + nproj // 8
 
     # Accepts all wave types available to PyWavelets
-    xfm = DWTForward(wave=wname)
-    ifm = DWTInverse(wave=wname)
+    xfm = _DWTForward(wave=wname)
+    ifm = _DWTInverse(wave=wname)
 
     # Wavelet decomposition.
     cc = []
     sli_shape = [nz, 1, nproj_pad, ni]
 
-    if mem_stack:
+    if calc_peak_gpu_mem:
+        mem_stack = _DeviceMemStack()
         # A data copy is assumed when invoking the function
         mem_stack.malloc(np.prod(data) * np.float32().itemsize)
         mem_stack.malloc(np.prod(sli_shape) * np.float32().itemsize)
@@ -556,7 +557,7 @@ def remove_stripe_fw(data: cp.ndarray, sigma: float=1, wname: str='sym16', level
             mem_stack.free(np.prod(c) * np.float32().itemsize)
         mem_stack.malloc(np.prod(data) * np.float32().itemsize)
         mem_stack.free(np.prod(sli_shape) * np.float32().itemsize)
-        return
+        return mem_stack.highwater
 
     sli = cp.zeros(sli_shape, dtype='float32')
     sli[:, 0, (nproj_pad - nproj)//2:(nproj_pad + nproj) // 2] = data.swapaxes(0, 1)

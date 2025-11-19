@@ -6,7 +6,6 @@ import pytest
 
 from httomolibgpu.prep.normalize import normalize
 from httomolibgpu.prep.stripe import (
-    DeviceMemStack,
     remove_stripe_based_sorting,
     remove_stripe_ti,
     remove_stripe_fw,
@@ -88,7 +87,7 @@ def ensure_clean_memory():
 @pytest.mark.parametrize("slices", [55, 80])
 @pytest.mark.parametrize("level", [1, 3, 7, 11])
 @pytest.mark.parametrize("dim_x", [128, 140])
-def test_remove_stripe_fw_mem_stack(slices, level, dim_x, ensure_clean_memory):
+def test_remove_stripe_fw_calc_mem(slices, level, dim_x, ensure_clean_memory):
     dim_y = 159
     data = cp.random.random_sample((slices, dim_x, dim_y), dtype=np.float32)
     hook = MaxMemoryHook()
@@ -97,13 +96,10 @@ def test_remove_stripe_fw_mem_stack(slices, level, dim_x, ensure_clean_memory):
     actual_mem_peak = hook.max_mem
 
     hook = MaxMemoryHook()
-    mem_stack = DeviceMemStack()
     with hook:
-        remove_stripe_fw(data.shape, level=level, mem_stack=mem_stack)
+        estimated_mem_peak = remove_stripe_fw(data.shape, level=level, calc_peak_gpu_mem=True)
     assert hook.max_mem == 0
-    estimated_mem_peak = mem_stack.highwater
 
-    # assert actual_mem_peak == estimated_mem_peak
     assert actual_mem_peak * 0.99 <= estimated_mem_peak
     assert estimated_mem_peak <= actual_mem_peak * 1.01
 
