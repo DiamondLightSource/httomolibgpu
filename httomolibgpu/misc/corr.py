@@ -41,6 +41,7 @@ __all__ = [
     "remove_outlier",
 ]
 
+
 def median_filter(
     data: cp.ndarray,
     kernel_size: int = 3,

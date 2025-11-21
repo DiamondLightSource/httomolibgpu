@@ -110,7 +110,12 @@ def find_center_vo(
         data = cp.expand_dims(data, 1)
         ind = 0
 
-    data = data_checker(data, infsnans_correct=True, zeros_warning = False, data_to_method_name="find_center_vo")
+    data = data_checker(
+        data,
+        infsnans_correct=True,
+        zeros_warning=False,
+        data_to_method_name="find_center_vo",
+    )
 
     angles_tot, detY_size, detX_size = data.shape
 
@@ -459,7 +464,12 @@ def find_center_360(
     if data.ndim != 3:
         raise ValueError("A 3D array must be provided")
 
-    data = data_checker(data, infsnans_correct=True, zeros_warning = False, data_to_method_name="find_center_360")
+    data = data_checker(
+        data,
+        infsnans_correct=True,
+        zeros_warning=False,
+        data_to_method_name="find_center_360",
+    )
 
     # this method works with a 360-degree sinogram.
     if ind is None:
@@ -740,6 +750,7 @@ def _calculate_curvature(list_metric):
 
     return curvature, np.float32(min_pos)
 
+
 ## %%%%%%%%%%%%%%%%%%%%%%find_center_pc%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 def find_center_pc(
     proj1: cp.ndarray,
@@ -771,8 +782,18 @@ def find_center_pc(
     np.float32
         Rotation axis location.
     """
-    proj1 = data_checker(proj1, infsnans_correct=True, zeros_warning = False, data_to_method_name="find_center_pc")
-    proj2 = data_checker(proj2, infsnans_correct=True, zeros_warning = False, data_to_method_name="find_center_pc")    
+    proj1 = data_checker(
+        proj1,
+        infsnans_correct=True,
+        zeros_warning=False,
+        data_to_method_name="find_center_pc",
+    )
+    proj2 = data_checker(
+        proj2,
+        infsnans_correct=True,
+        zeros_warning=False,
+        data_to_method_name="find_center_pc",
+    )
 
     imgshift = 0.0 if rotc_guess is None else rotc_guess - (proj1.shape[1] - 1.0) / 2.0
 

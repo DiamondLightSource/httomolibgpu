@@ -40,6 +40,7 @@ __all__ = [
     "data_resampler",
 ]
 
+
 def sino_360_to_180(
     data: cp.ndarray, overlap: float = 0, side: Literal["left", "right"] = "left"
 ) -> cp.ndarray:

@@ -39,7 +39,13 @@ __all__ = [
 ]
 
 
-def data_checker(data: cp.ndarray, infsnans_correct: bool= True, zeros_warning: bool = False, data_to_method_name: Optional[str] = None, verbosity: bool = True) -> cp.ndarray:
+def data_checker(
+    data: cp.ndarray,
+    infsnans_correct: bool = True,
+    zeros_warning: bool = False,
+    data_to_method_name: Optional[str] = None,
+    verbosity: bool = True,
+) -> cp.ndarray:
     """Function that performs checks on input data to ensure its validity, performs corrections and prints the warnings.
     Currently it checks for the presence of Infs and NaNs in the data and corrects them.
 
@@ -54,7 +60,7 @@ def data_checker(data: cp.ndarray, infsnans_correct: bool= True, zeros_warning: 
     verbosity : bool
         Print the warnings.
     data_to_method_name : str, optional.
-        Method's name for which the tested data is intended. This is for printing purposes when the method runs in HTTomo.
+        Method's name the output of which is tested. This is tailored for printing purposes when the method runs in HTTomo.
 
     Returns
     -------
@@ -67,11 +73,12 @@ def data_checker(data: cp.ndarray, infsnans_correct: bool= True, zeros_warning: 
         )
 
     if infsnans_correct:
-        data = __naninfs_check(data, verbosity=verbosity, method_name=data_to_method_name)\
-    
+        data = __naninfs_check(
+            data, verbosity=verbosity, method_name=data_to_method_name
+        )
     # TODO
     # if zeros_warning:
-        #__zeros_check(data, verbosity=verbosity, percentage_threshold = 50, method_name=data_to_method_name)
+    # __zeros_check(data, verbosity=verbosity, percentage_threshold = 50, method_name=data_to_method_name)
 
     return data
 
@@ -91,7 +98,7 @@ def __naninfs_check(
     verbosity : bool
         If enabled, then the printing of the warning happens when data contains infs or nans
     method_name : str, optional.
-        Method's name for which input data is tested.
+        Method's name for which the output data is tested.
 
     Returns
     -------
@@ -132,8 +139,8 @@ def __naninfs_check(
     if present_nans_infs_b:
         if verbosity:
             print(
-                f"Warning!!! Input data to method: {method_name} contains Inf's or/and NaN's. This will be corrected but it is recommended to check the validity of input to the method."
+                "Warning! Output data of the \033[31m{}\033[0m method contains Inf's or/and NaN's. Corrected to zeros.".format(
+                    method_name
+                )
             )
-
     return data
-

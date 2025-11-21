@@ -386,7 +386,6 @@ def raven_filter(
     if data.dtype != cp.float32:
         raise ValueError("The input data should be float32 data type")
 
-
     # Padding of the sinogram
     data = cp.pad(data, ((pad_y, pad_y), (0, 0), (pad_x, pad_x)), mode=pad_method)
 
