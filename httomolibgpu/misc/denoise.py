@@ -29,8 +29,6 @@ cupy_run = cupywrapper.cupy_run
 
 from unittest.mock import Mock
 
-from httomolibgpu.misc.supp_func import data_checker
-
 if cupy_run:
     from tomobar.regularisersCuPy import ROF_TV_cupy, PD_TV_cupy
 else:
@@ -84,8 +82,6 @@ def total_variation_ROF(
         If the input array is not float32 data type.
     """
 
-    data = data_checker(data, verbosity=True, method_name="total_variation_ROF")
-
     return ROF_TV_cupy(
         data,
         regularisation_parameter,
@@ -138,8 +134,6 @@ def total_variation_PD(
     ValueError
         If the input array is not float32 data type.
     """
-
-    data_checker(data, verbosity=True, method_name="total_variation_PD")
 
     methodTV = 0
     if not isotropic:

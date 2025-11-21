@@ -36,8 +36,6 @@ else:
 from numpy import float32
 from typing import Tuple
 
-from httomolibgpu.misc.supp_func import data_checker
-
 __all__ = ["normalize"]
 
 
@@ -145,7 +143,3 @@ def _check_valid_input_normalise(data, flats, darks) -> None:
         flats = flats[cp.newaxis, :, :]
     if darks.ndim == 2:
         darks = darks[cp.newaxis, :, :]
-
-    data_checker(data, verbosity=True, method_name="normalize_data")
-    data_checker(flats, verbosity=True, method_name="normalize_flats")
-    data_checker(darks, verbosity=True, method_name="normalize_darks")
