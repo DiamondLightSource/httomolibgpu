@@ -287,25 +287,35 @@ def _conv2d(
     w = cp.asarray(w)
     x = cp.expand_dims(x, axis=1)
     w = np.expand_dims(w, axis=0)
-    sum_out = cp.zeros(sum_out_shape, dtype="float32")
-    for g in range(groups):
-        for ii in range(hk):
-            for jj in range(wk):
-                x_windows = x[
-                    :,
-                    :,
-                    g * chunk : (g + 1) * chunk,
-                    ii : ho * stride[0] + ii : stride[0],
-                    jj : wo * stride[1] + jj : stride[1],
-                ]
-                cp.sum(
-                    x_windows
-                    * w[:, g * chunko : (g + 1) * chunko, :, ii : ii + 1, jj : jj + 1],
-                    axis=2,
-                    out=sum_out,
-                )
-                out[:, g * chunko : (g + 1) * chunko] += sum_out
-    del sum_out
+    symbol_names = [f"double_convolution_x<{max(hk, wk)}>", f"double_convolution_y<{max(hk, wk)}>"]
+    module = load_cuda_module("remove_stripe_fw", name_expressions=symbol_names)
+    dim_x = out.shape[-1]
+    dim_y = out.shape[-2]
+    dim_z = out.shape[0]
+    in_stride_x = stride[1]
+    in_stride_y = x.strides[-2] // x.dtype.itemsize
+    in_stride_z = x.strides[0] // x.dtype.itemsize
+    out_stride_z = out.strides[0] // x.dtype.itemsize
+    out_stride_group = out.strides[1] // x.dtype.itemsize
+
+    block_x = 128
+    block_dim = (block_x, 1, 1)
+    grid_x = (dim_x + block_x - 1) // block_x
+    grid_dim = (grid_x, dim_y, dim_z)
+
+    if groups == 1:
+        double_convolution_kernel_x = module.get_function(symbol_names[0])
+        double_convolution_kernel_x(grid_dim, block_dim,
+                                  (dim_x, dim_y, dim_z, x, in_stride_x, in_stride_y,
+                                   in_stride_z, out, out_stride_z, out_stride_group, w))
+        return out
+
+    double_convolution_kernel_y = module.get_function(symbol_names[1])
+    in_stride_group = x.strides[2] // x.dtype.itemsize
+    double_convolution_kernel_y(grid_dim, block_dim,
+                                (dim_x, dim_y, dim_z, x, in_stride_x, in_stride_y,
+                                in_stride_z, in_stride_group, out, out_stride_z,
+                                out_stride_group, w))
     del w
     return out
 
