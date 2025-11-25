@@ -259,6 +259,13 @@ def _mypad(
         return x[:, :, :, xe]
 
 
+def _next_power_of_two(x: int, max_val: int = 128) -> int:
+    n = 1
+    while n < x and n < max_val:
+        n *= 2
+    return n
+
+
 def _conv2d(
     x: cp.ndarray,
     w: np.ndarray,
@@ -271,23 +278,16 @@ def _conv2d(
     co, _, hk, wk = w.shape
     ho = int(np.floor(1 + (hi - hk) / stride[0]))
     wo = int(np.floor(1 + (wi - wk) / stride[1]))
-    chunk = ci // groups
-    chunko = co // groups
     out_shape = [b, co, ho, wo]
-    sum_out_shape = [b, chunko, ho * stride[0] // stride[0], wo]
     if mem_stack:
-        # sum_out shape is counted twice, because the size of the temporary multiplication result
-        mem_stack.malloc((2 * np.prod(sum_out_shape) + w.size) * np.float32().itemsize)
         mem_stack.malloc(np.prod(out_shape) * np.float32().itemsize)
-        # everything but out gets freed
-        mem_stack.free((2 * np.prod(sum_out_shape) + w.size) * np.float32().itemsize)
         return out_shape
 
     out = cp.zeros(out_shape, dtype="float32")
     w = cp.asarray(w)
     x = cp.expand_dims(x, axis=1)
     w = np.expand_dims(w, axis=0)
-    symbol_names = [f"double_convolution_x<{max(hk, wk)}>", f"double_convolution_y<{max(hk, wk)}>"]
+    symbol_names = [f"grouped_convolution_x<{wk}>", f"grouped_convolution_y<{hk}>"]
     module = load_cuda_module("remove_stripe_fw", name_expressions=symbol_names)
     dim_x = out.shape[-1]
     dim_y = out.shape[-2]
@@ -298,21 +298,21 @@ def _conv2d(
     out_stride_z = out.strides[0] // x.dtype.itemsize
     out_stride_group = out.strides[1] // x.dtype.itemsize
 
-    block_x = 128
+    block_x = _next_power_of_two(dim_x)
     block_dim = (block_x, 1, 1)
     grid_x = (dim_x + block_x - 1) // block_x
     grid_dim = (grid_x, dim_y, dim_z)
 
     if groups == 1:
-        double_convolution_kernel_x = module.get_function(symbol_names[0])
-        double_convolution_kernel_x(grid_dim, block_dim,
+        grouped_convolution_kernel_x = module.get_function(symbol_names[0])
+        grouped_convolution_kernel_x(grid_dim, block_dim,
                                   (dim_x, dim_y, dim_z, x, in_stride_x, in_stride_y,
                                    in_stride_z, out, out_stride_z, out_stride_group, w))
         return out
 
-    double_convolution_kernel_y = module.get_function(symbol_names[1])
+    grouped_convolution_kernel_y = module.get_function(symbol_names[1])
     in_stride_group = x.strides[2] // x.dtype.itemsize
-    double_convolution_kernel_y(grid_dim, block_dim,
+    grouped_convolution_kernel_y(grid_dim, block_dim,
                                 (dim_x, dim_y, dim_z, x, in_stride_x, in_stride_y,
                                 in_stride_z, in_stride_group, out, out_stride_z,
                                 out_stride_group, w))
@@ -334,15 +334,11 @@ def _conv_transpose2d(
 
     hi = (ho - 1) * stride[0] + hk
     wi = (wo - 1) * stride[1] + wk
-    chunk = ci // groups
-    chunko = co // groups
     out_shape = [b, ci, hi, wi]
     if mem_stack:
-        tmp_weighted_shape = (b, co, ho, wo)
         # The trouble here is that we allocate more than the returned size
-        mem_stack.malloc(np.prod(out_shape) * np.float32().itemsize)
-        mem_stack.malloc((np.prod(tmp_weighted_shape) + w.size) * np.float32().itemsize)
-        mem_stack.free((np.prod(tmp_weighted_shape) + w.size) * np.float32().itemsize)
+        out_actual_bytes = np.prod(out_shape) * np.float32().itemsize
+        mem_stack.malloc(out_actual_bytes)
         if pad != 0:
             new_out_shape = [
                 out_shape[0],
@@ -357,19 +353,35 @@ def _conv_transpose2d(
 
     out = cp.zeros(out_shape, dtype="float32")
     w = cp.asarray(w)
-    for g in range(groups):
-        for ii in range(hk):
-            for jj in range(wk):
-                x_windows = x[:, g * chunko : (g + 1) * chunko]
-                out[
-                    :,
-                    g * chunk : (g + 1) * chunk,
-                    ii : ho * stride[0] + ii : stride[0],
-                    jj : wo * stride[1] + jj : stride[1],
-                ] += (
-                    x_windows
-                    * w[g * chunko : (g + 1) * chunko, :, ii : ii + 1, jj : jj + 1]
-                )
+
+    symbol_names = [f"transposed_convolution_x<{wk}>", f"transposed_convolution_y<{hk}>"]
+    module = load_cuda_module("remove_stripe_fw", name_expressions=symbol_names)
+    dim_x = out.shape[-1]
+    dim_y = out.shape[-2]
+    dim_z = out.shape[0]
+    in_dim_x = x.shape[-1]
+    in_dim_y = x.shape[-2]
+    in_stride_y = x.strides[-2] // x.dtype.itemsize
+    in_stride_z = x.strides[0] // x.dtype.itemsize
+
+    block_x = _next_power_of_two(dim_x)
+    block_dim = (block_x, 1, 1)
+    grid_x = (dim_x + block_x - 1) // block_x
+    grid_dim = (grid_x, dim_y, dim_z)
+
+    if wk > 1:
+        transposed_convolution_kernel_x = module.get_function(symbol_names[0])
+        transposed_convolution_kernel_x(grid_dim, block_dim,
+                                        (dim_x, dim_y, dim_z, x,
+                                         in_dim_x, in_stride_y, in_stride_z, w, out))
+    elif hk > 1:
+        transposed_convolution_kernel_y = module.get_function(symbol_names[1])
+        transposed_convolution_kernel_y(grid_dim, block_dim,
+                                        (dim_x, dim_y, dim_z, x,
+                                         in_dim_y, in_stride_y, in_stride_z, w, out))
+    else:
+        assert(False)
+
     if pad != 0:
         out = out[:, :, pad[0] : out.shape[2] - pad[0], pad[1] : out.shape[3] - pad[1]]
     return cp.ascontiguousarray(out)
