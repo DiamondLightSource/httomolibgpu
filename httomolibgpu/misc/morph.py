@@ -35,8 +35,6 @@ else:
 
 from typing import Literal
 
-from httomolibgpu.misc.supp_func import data_checker
-
 __all__ = [
     "sino_360_to_180",
     "data_resampler",
@@ -67,8 +65,6 @@ def sino_360_to_180(
     """
     if data.ndim != 3:
         raise ValueError("only 3D data is supported")
-
-    data = data_checker(data, verbosity=True, method_name="sino_360_to_180")
 
     dx, dy, dz = data.shape
 
@@ -141,8 +137,6 @@ def data_resampler(
         expanded = True
         data = cp.expand_dims(data, 1)
         axis = 1
-
-    data = data_checker(data, verbosity=True, method_name="data_resampler")
 
     N, M, Z = cp.shape(data)
 
