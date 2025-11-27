@@ -330,18 +330,20 @@ def _conv_transpose2d(
     if mem_stack:
         tmp_weighted_shape = (b, co, ho, wo)
         # The trouble here is that we allocate more than the returned size
-        out_actual_bytes = np.prod(out_shape) * np.float32().itemsize
-        mem_stack.malloc(out_actual_bytes)
+        mem_stack.malloc(np.prod(out_shape) * np.float32().itemsize)
         mem_stack.malloc((np.prod(tmp_weighted_shape) + w.size) * np.float32().itemsize)
         mem_stack.free((np.prod(tmp_weighted_shape) + w.size) * np.float32().itemsize)
         if pad != 0:
-            return [
+            new_out_shape = [
                 out_shape[0],
                 out_shape[1],
                 out_shape[2] - 2 * pad[0],
                 out_shape[3] - 2 * pad[1],
-            ], out_actual_bytes
-        return out_shape, out_actual_bytes
+            ]
+            mem_stack.malloc(np.prod(new_out_shape) * np.float32().itemsize)
+            mem_stack.free(np.prod(out_shape) * np.float32().itemsize)
+            out_shape = new_out_shape
+        return out_shape
 
     out = cp.zeros(out_shape, dtype="float32")
     w = cp.asarray(w)
@@ -360,7 +362,7 @@ def _conv_transpose2d(
                 )
     if pad != 0:
         out = out[:, :, pad[0] : out.shape[2] - pad[0], pad[1] : out.shape[3] - pad[1]]
-    return out, None
+    return cp.ascontiguousarray(out)
 
 
 def _afb1d(
@@ -429,17 +431,17 @@ def _sfb1d(
     g0 = np.concatenate([g0.reshape(*shape)] * C, axis=0)
     g1 = np.concatenate([g1.reshape(*shape)] * C, axis=0)
     pad = (L - 2, 0) if d == 2 else (0, L - 2)
-    y_lo, y_lo_alloc_bytes = _conv_transpose2d(
+    y_lo = _conv_transpose2d(
         lo, g0, stride=s, pad=pad, groups=C, mem_stack=mem_stack
     )
-    y_hi, y_hi_alloc_bytes = _conv_transpose2d(
+    y_hi = _conv_transpose2d(
         hi, g1, stride=s, pad=pad, groups=C, mem_stack=mem_stack
     )
     if mem_stack:
         # Allocation of the sum
         mem_stack.malloc(np.prod(y_hi) * np.float32().itemsize)
-        mem_stack.free(y_lo_alloc_bytes)
-        mem_stack.free(y_hi_alloc_bytes)
+        mem_stack.free(np.prod(y_lo) * np.float32().itemsize)
+        mem_stack.free(np.prod(y_hi) * np.float32().itemsize)
         return y_lo
     return y_lo + y_hi
 
@@ -630,7 +632,10 @@ def remove_stripe_fw(
             # For the FFT
             mem_stack.malloc(2 * fcV_bytes)
             # This is "leaked" by the FFT
-            fcV_fft_bytes = fcV_shape[0] * fcV_shape[2] * np.complex64().itemsize
+            if fcV_shape[1] > 150:
+                fcV_fft_bytes = fcV_bytes
+            else:
+                fcV_fft_bytes = fcV_shape[0] * fcV_shape[2] * np.complex64().itemsize
             mem_stack.malloc(fcV_fft_bytes)
             mem_stack.free(2 * fcV_bytes)
 
