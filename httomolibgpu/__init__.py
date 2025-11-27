@@ -6,7 +6,7 @@ from httomolibgpu.misc.morph import sino_360_to_180, data_resampler
 from httomolibgpu.misc.rescale import rescale_to_int
 from httomolibgpu.prep.alignment import distortion_correction_proj_discorpy
 from httomolibgpu.prep.normalize import normalize
-from httomolibgpu.prep.phase import paganin_filter
+from httomolibgpu.prep.phase import paganin_filter, paganin_filter_savu_legacy
 from httomolibgpu.prep.stripe import (
     remove_stripe_based_sorting,
     remove_stripe_ti,
