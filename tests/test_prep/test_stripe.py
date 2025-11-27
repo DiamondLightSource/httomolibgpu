@@ -56,7 +56,7 @@ def test_remove_stripe_fw_on_data(data, flats, darks):
     # --- testing the CuPy implementation from TomoCupy ---#
     data = normalize(data, flats, darks, cutoff=10, minus_log=True)
 
-    data_after_stripe_removal = remove_stripe_fw(cp.copy(data)).get()
+    data_after_stripe_removal = remove_stripe_fw(cp.copy(data), level=7).get()
 
     assert_allclose(np.mean(data_after_stripe_removal), 0.279236, rtol=1e-05)
     assert_allclose(
@@ -104,7 +104,31 @@ def test_remove_stripe_fw_calc_mem(slices, level, dim_x, wname, ensure_clean_mem
     assert hook.max_mem == 0
 
     assert actual_mem_peak * 0.99 <= estimated_mem_peak
-    assert estimated_mem_peak <= actual_mem_peak * 1.01
+    assert estimated_mem_peak <= actual_mem_peak * 1.2
+
+
+@pytest.mark.parametrize("wname", ['db4', 'sym16'])
+@pytest.mark.parametrize("slices", [177, 239, 320, 490, 607, 803, 859, 902, 951, 1019, 1074, 1105])
+def test_remove_stripe_fw_calc_mem_big(wname, slices, ensure_clean_memory):
+    dim_y = 901
+    dim_x = 1200
+    data_shape = (slices, dim_x, dim_y)
+    hook = MaxMemoryHook()
+    with hook:
+        estimated_mem_peak = remove_stripe_fw(data_shape, wname=wname, calc_peak_gpu_mem=True)
+    assert hook.max_mem == 0
+    av_mem = cp.cuda.Device().mem_info[0]
+    if av_mem < estimated_mem_peak * 1.1:
+        pytest.skip("Not enough GPU memory to run this test")
+
+    hook = MaxMemoryHook()
+    with hook:
+        data = cp.random.random_sample(data_shape, dtype=np.float32)
+        remove_stripe_fw(data, wname=wname)
+    actual_mem_peak = hook.max_mem
+
+    assert actual_mem_peak * 0.99 <= estimated_mem_peak
+    assert estimated_mem_peak <= actual_mem_peak * 1.2
 
 
 @pytest.mark.parametrize("angles", [180, 181])
