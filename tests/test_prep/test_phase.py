@@ -46,7 +46,7 @@ def test_paganin_filter_dist3(data):
     filtered_data = paganin_filter(data, distance=3.0, ratio_delta_beta=500).get()
 
     assert_allclose(np.sum(np.mean(filtered_data, axis=(1, 2))), -1214.3943, rtol=1e-6)
-    assert_allclose(np.sum(filtered_data), -24870786.0, rtol=1e-6)    
+    assert_allclose(np.sum(filtered_data), -24870786.0, rtol=1e-6)
 
 
 @pytest.mark.perf
