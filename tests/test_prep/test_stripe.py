@@ -85,10 +85,11 @@ def ensure_clean_memory():
     cache.clear()
 
 
+@pytest.mark.parametrize("wname", ["haar", "db4", "sym5", "sym16", "bior4.4"])
 @pytest.mark.parametrize("slices", [55, 80])
 @pytest.mark.parametrize("level", [1, 3, 7, 11])
 @pytest.mark.parametrize("dim_x", [128, 140])
-def test_remove_stripe_fw_calc_mem(slices, level, dim_x, ensure_clean_memory):
+def test_remove_stripe_fw_calc_mem(slices, level, dim_x, wname, ensure_clean_memory):
     dim_y = 159
     data = cp.random.random_sample((slices, dim_x, dim_y), dtype=np.float32)
     hook = MaxMemoryHook()
@@ -98,7 +99,9 @@ def test_remove_stripe_fw_calc_mem(slices, level, dim_x, ensure_clean_memory):
 
     hook = MaxMemoryHook()
     with hook:
-        estimated_mem_peak = remove_stripe_fw(data.shape, level=level, calc_peak_gpu_mem=True)
+        estimated_mem_peak = remove_stripe_fw(
+            data.shape, level=level, wname=wname, calc_peak_gpu_mem=True
+        )
     assert hook.max_mem == 0
 
     assert actual_mem_peak * 0.99 <= estimated_mem_peak

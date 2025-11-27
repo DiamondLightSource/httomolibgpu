@@ -183,6 +183,7 @@ def remove_stripe_ti(
 #                                                                             #
 # *************************************************************************** #
 
+
 def _reflect(x: np.ndarray, minx: float, maxx: float) -> np.ndarray:
     """Reflect the values in matrix *x* about the scalar values *minx* and
     *maxx*.  Hence a vector *x* containing a long linearly increasing series is
@@ -226,19 +227,21 @@ class _DeviceMemStack:
         return size * ALLOCATION_UNIT_SIZE
 
 
-def _mypad(x: cp.ndarray, pad: Tuple[int, int, int, int], mem_stack: Optional[_DeviceMemStack]) -> cp.ndarray:
-    """ Function to do numpy like padding on Arrays. Only works for 2-D
+def _mypad(
+    x: cp.ndarray, pad: Tuple[int, int, int, int], mem_stack: Optional[_DeviceMemStack]
+) -> cp.ndarray:
+    """Function to do numpy like padding on Arrays. Only works for 2-D
     padding.
 
     Inputs:
         x (array): Array to pad
-        pad (tuple): tuple of (left, right, top, bottom) pad sizes        
+        pad (tuple): tuple of (left, right, top, bottom) pad sizes
     """
     # Vertical only
     if pad[0] == 0 and pad[1] == 0:
         m1, m2 = pad[2], pad[3]
         l = x.shape[-2] if not mem_stack else x[-2]
-        xe = _reflect(np.arange(-m1, l+m2, dtype='int32'), -0.5, l-0.5)
+        xe = _reflect(np.arange(-m1, l + m2, dtype="int32"), -0.5, l - 0.5)
         if mem_stack:
             ret_shape = [x[0], x[1], xe.size, x[3]]
             mem_stack.malloc(np.prod(ret_shape) * np.float32().itemsize)
@@ -248,7 +251,7 @@ def _mypad(x: cp.ndarray, pad: Tuple[int, int, int, int], mem_stack: Optional[_D
     elif pad[2] == 0 and pad[3] == 0:
         m1, m2 = pad[0], pad[1]
         l = x.shape[-1] if not mem_stack else x[-1]
-        xe = _reflect(np.arange(-m1, l+m2, dtype='int32'), -0.5, l-0.5)
+        xe = _reflect(np.arange(-m1, l + m2, dtype="int32"), -0.5, l - 0.5)
         if mem_stack:
             ret_shape = [x[0], x[1], x[2], xe.size]
             mem_stack.malloc(np.prod(ret_shape) * np.float32().itemsize)
@@ -256,51 +259,73 @@ def _mypad(x: cp.ndarray, pad: Tuple[int, int, int, int], mem_stack: Optional[_D
         return x[:, :, :, xe]
 
 
-def _conv2d(x: cp.ndarray, w: np.ndarray, stride: Tuple[int, int], groups: int, mem_stack: Optional[_DeviceMemStack]) -> cp.ndarray:
-    """ Convolution (equivalent pytorch.conv2d)
-    """
+def _conv2d(
+    x: cp.ndarray,
+    w: np.ndarray,
+    stride: Tuple[int, int],
+    groups: int,
+    mem_stack: Optional[_DeviceMemStack],
+) -> cp.ndarray:
+    """Convolution (equivalent pytorch.conv2d)"""
     b, ci, hi, wi = x.shape if not mem_stack else x
     co, _, hk, wk = w.shape
     ho = int(np.floor(1 + (hi - hk) / stride[0]))
     wo = int(np.floor(1 + (wi - wk) / stride[1]))
-    chunk = ci//groups
-    chunko = co//groups
+    chunk = ci // groups
+    chunko = co // groups
     out_shape = [b, co, ho, wo]
     sum_out_shape = [b, chunko, ho * stride[0] // stride[0], wo]
     if mem_stack:
         # sum_out shape is counted twice, because the size of the temporary multiplication result
-        mem_stack.malloc((2*np.prod(sum_out_shape) + w.size) * np.float32().itemsize)
+        mem_stack.malloc((2 * np.prod(sum_out_shape) + w.size) * np.float32().itemsize)
         mem_stack.malloc(np.prod(out_shape) * np.float32().itemsize)
         # everything but out gets freed
-        mem_stack.free((2*np.prod(sum_out_shape) + w.size) * np.float32().itemsize)
+        mem_stack.free((2 * np.prod(sum_out_shape) + w.size) * np.float32().itemsize)
         return out_shape
 
-    out = cp.zeros(out_shape, dtype='float32')
+    out = cp.zeros(out_shape, dtype="float32")
     w = cp.asarray(w)
     x = cp.expand_dims(x, axis=1)
     w = np.expand_dims(w, axis=0)
-    sum_out = cp.zeros(sum_out_shape, dtype='float32')
+    sum_out = cp.zeros(sum_out_shape, dtype="float32")
     for g in range(groups):
         for ii in range(hk):
             for jj in range(wk):
-                x_windows = x[:, :, g*chunk:(g+1)*chunk, ii:ho * stride[0]+ii:stride[0], jj:wo*stride[1]+jj:stride[1]]
-                cp.sum(x_windows * w[:, g*chunko:(g+1)*chunko, :, ii:ii+1, jj:jj+1], axis=2, out=sum_out)
-                out[:, g*chunko:(g+1)*chunko] += sum_out
+                x_windows = x[
+                    :,
+                    :,
+                    g * chunk : (g + 1) * chunk,
+                    ii : ho * stride[0] + ii : stride[0],
+                    jj : wo * stride[1] + jj : stride[1],
+                ]
+                cp.sum(
+                    x_windows
+                    * w[:, g * chunko : (g + 1) * chunko, :, ii : ii + 1, jj : jj + 1],
+                    axis=2,
+                    out=sum_out,
+                )
+                out[:, g * chunko : (g + 1) * chunko] += sum_out
     del sum_out
     del w
     return out
 
 
-def _conv_transpose2d(x: cp.ndarray, w: np.ndarray, stride: Tuple[int, int], pad: Tuple[int, int], groups: int, mem_stack: Optional[_DeviceMemStack]) -> cp.ndarray:
-    """ Transposed convolution (equivalent pytorch.conv_transpose2d)
-    """
-    b,  co, ho, wo = x.shape if not mem_stack else x
+def _conv_transpose2d(
+    x: cp.ndarray,
+    w: np.ndarray,
+    stride: Tuple[int, int],
+    pad: Tuple[int, int],
+    groups: int,
+    mem_stack: Optional[_DeviceMemStack],
+) -> cp.ndarray:
+    """Transposed convolution (equivalent pytorch.conv_transpose2d)"""
+    b, co, ho, wo = x.shape if not mem_stack else x
     co, ci, hk, wk = w.shape
 
-    hi = (ho-1)*stride[0]+hk
-    wi = (wo-1)*stride[1]+wk
-    chunk = ci//groups
-    chunko = co//groups
+    hi = (ho - 1) * stride[0] + hk
+    wi = (wo - 1) * stride[1] + wk
+    chunk = ci // groups
+    chunko = co // groups
     out_shape = [b, ci, hi, wi]
     if mem_stack:
         tmp_weighted_shape = (b, co, ho, wo)
@@ -310,24 +335,42 @@ def _conv_transpose2d(x: cp.ndarray, w: np.ndarray, stride: Tuple[int, int], pad
         mem_stack.malloc((np.prod(tmp_weighted_shape) + w.size) * np.float32().itemsize)
         mem_stack.free((np.prod(tmp_weighted_shape) + w.size) * np.float32().itemsize)
         if pad != 0:
-            return [out_shape[0], out_shape[1], out_shape[2] - 2*pad[0], out_shape[3] - 2*pad[1]], out_actual_bytes
+            return [
+                out_shape[0],
+                out_shape[1],
+                out_shape[2] - 2 * pad[0],
+                out_shape[3] - 2 * pad[1],
+            ], out_actual_bytes
         return out_shape, out_actual_bytes
 
-    out = cp.zeros(out_shape, dtype='float32')
+    out = cp.zeros(out_shape, dtype="float32")
     w = cp.asarray(w)
     for g in range(groups):
         for ii in range(hk):
             for jj in range(wk):
-                x_windows = x[:, g*chunko:(g+1)*chunko]
-                out[:, g*chunk:(g+1)*chunk, ii:ho*stride[0]+ii:stride[0], jj:wo*stride[1] +
-                    jj:stride[1]] += x_windows * w[g*chunko:(g+1)*chunko, :, ii:ii+1, jj:jj+1]
+                x_windows = x[:, g * chunko : (g + 1) * chunko]
+                out[
+                    :,
+                    g * chunk : (g + 1) * chunk,
+                    ii : ho * stride[0] + ii : stride[0],
+                    jj : wo * stride[1] + jj : stride[1],
+                ] += (
+                    x_windows
+                    * w[g * chunko : (g + 1) * chunko, :, ii : ii + 1, jj : jj + 1]
+                )
     if pad != 0:
-        out = out[:, :, pad[0]:out.shape[2]-pad[0], pad[1]:out.shape[3]-pad[1]]
+        out = out[:, :, pad[0] : out.shape[2] - pad[0], pad[1] : out.shape[3] - pad[1]]
     return out, None
 
 
-def _afb1d(x: cp.ndarray, h0: np.ndarray, h1: np.ndarray, dim: int, mem_stack: Optional[_DeviceMemStack]) -> cp.ndarray:
-    """ 1D analysis filter bank (along one dimension only) of an image
+def _afb1d(
+    x: cp.ndarray,
+    h0: np.ndarray,
+    h1: np.ndarray,
+    dim: int,
+    mem_stack: Optional[_DeviceMemStack],
+) -> cp.ndarray:
+    """1D analysis filter bank (along one dimension only) of an image
 
     Parameters
     ----------
@@ -354,11 +397,11 @@ def _afb1d(x: cp.ndarray, h0: np.ndarray, h1: np.ndarray, dim: int, mem_stack: O
     L = h0.size
     shape = [1, 1, 1, 1]
     shape[d] = L
-    h = np.concatenate([h0.reshape(*shape), h1.reshape(*shape)]*C, axis=0)
+    h = np.concatenate([h0.reshape(*shape), h1.reshape(*shape)] * C, axis=0)
     # Calculate the pad size
-    outsize = pywt.dwt_coeff_len(N, L, mode='symmetric')
+    outsize = pywt.dwt_coeff_len(N, L, mode="symmetric")
     p = 2 * (outsize - 1) - N + L
-    pad = (0, 0, p//2, (p+1)//2) if d == 2 else (p//2, (p+1)//2, 0, 0)
+    pad = (0, 0, p // 2, (p + 1) // 2) if d == 2 else (p // 2, (p + 1) // 2, 0, 0)
     padded_x = _mypad(x, pad=pad, mem_stack=mem_stack)
     lohi = _conv2d(padded_x, h, stride=s, groups=C, mem_stack=mem_stack)
     if mem_stack:
@@ -367,9 +410,15 @@ def _afb1d(x: cp.ndarray, h0: np.ndarray, h1: np.ndarray, dim: int, mem_stack: O
     return lohi
 
 
-def _sfb1d(lo: cp.ndarray, hi: cp.ndarray, g0: np.ndarray, g1: np.ndarray, dim: int, mem_stack: Optional[_DeviceMemStack]) -> cp.ndarray:
-    """ 1D synthesis filter bank of an image Array
-    """
+def _sfb1d(
+    lo: cp.ndarray,
+    hi: cp.ndarray,
+    g0: np.ndarray,
+    g1: np.ndarray,
+    dim: int,
+    mem_stack: Optional[_DeviceMemStack],
+) -> cp.ndarray:
+    """1D synthesis filter bank of an image Array"""
 
     C = lo.shape[1] if not mem_stack else lo[1]
     d = dim % 4
@@ -377,11 +426,15 @@ def _sfb1d(lo: cp.ndarray, hi: cp.ndarray, g0: np.ndarray, g1: np.ndarray, dim: 
     shape = [1, 1, 1, 1]
     shape[d] = L
     s = (2, 1) if d == 2 else (1, 2)
-    g0 = np.concatenate([g0.reshape(*shape)]*C, axis=0)
-    g1 = np.concatenate([g1.reshape(*shape)]*C, axis=0)
-    pad = (L-2, 0) if d == 2 else (0, L-2)
-    y_lo, y_lo_alloc_bytes = _conv_transpose2d(lo, g0, stride=s, pad=pad, groups=C, mem_stack=mem_stack)
-    y_hi, y_hi_alloc_bytes = _conv_transpose2d(hi, g1, stride=s, pad=pad, groups=C, mem_stack=mem_stack)
+    g0 = np.concatenate([g0.reshape(*shape)] * C, axis=0)
+    g1 = np.concatenate([g1.reshape(*shape)] * C, axis=0)
+    pad = (L - 2, 0) if d == 2 else (0, L - 2)
+    y_lo, y_lo_alloc_bytes = _conv_transpose2d(
+        lo, g0, stride=s, pad=pad, groups=C, mem_stack=mem_stack
+    )
+    y_hi, y_hi_alloc_bytes = _conv_transpose2d(
+        hi, g1, stride=s, pad=pad, groups=C, mem_stack=mem_stack
+    )
     if mem_stack:
         # Allocation of the sum
         mem_stack.malloc(np.prod(y_hi) * np.float32().itemsize)
@@ -391,12 +444,12 @@ def _sfb1d(lo: cp.ndarray, hi: cp.ndarray, g0: np.ndarray, g1: np.ndarray, dim: 
     return y_lo + y_hi
 
 
-class _DWTForward():
-    """ Performs a 2d DWT Forward decomposition of an image
+class _DWTForward:
+    """Performs a 2d DWT Forward decomposition of an image
 
     Args:
-        wave (str): Which wavelet to use.                    
-        """
+        wave (str): Which wavelet to use.
+    """
 
     def __init__(self, wave: str):
         super().__init__()
@@ -405,17 +458,15 @@ class _DWTForward():
         h0_col, h1_col = wave.dec_lo, wave.dec_hi
         h0_row, h1_row = h0_col, h1_col
 
-        self.h0_col = np.array(h0_col).astype('float32')[
-            ::-1].reshape((1, 1, -1, 1))
-        self.h1_col = np.array(h1_col).astype('float32')[
-            ::-1].reshape((1, 1, -1, 1))
-        self.h0_row = np.array(h0_row).astype('float32')[
-            ::-1].reshape((1, 1, 1, -1))
-        self.h1_row = np.array(h1_row).astype('float32')[
-            ::-1].reshape((1, 1, 1, -1))
+        self.h0_col = np.array(h0_col).astype("float32")[::-1].reshape((1, 1, -1, 1))
+        self.h1_col = np.array(h1_col).astype("float32")[::-1].reshape((1, 1, -1, 1))
+        self.h0_row = np.array(h0_row).astype("float32")[::-1].reshape((1, 1, 1, -1))
+        self.h1_row = np.array(h1_row).astype("float32")[::-1].reshape((1, 1, 1, -1))
 
-    def apply(self, x: cp.ndarray, mem_stack: Optional[_DeviceMemStack] = None) -> Tuple[cp.ndarray, cp.ndarray]:
-        """ Forward pass of the DWT.
+    def apply(
+        self, x: cp.ndarray, mem_stack: Optional[_DeviceMemStack] = None
+    ) -> Tuple[cp.ndarray, cp.ndarray]:
+        """Forward pass of the DWT.
 
         Args:
             x (array): Input of shape :math:`(N, C_{in}, H_{in}, W_{in})`
@@ -454,11 +505,11 @@ class _DWTForward():
         return (x, yh)
 
 
-class _DWTInverse():
-    """ Performs a 2d DWT Inverse reconstruction of an image
+class _DWTInverse:
+    """Performs a 2d DWT Inverse reconstruction of an image
 
     Args:
-        wave (str): Which wavelet to use.            
+        wave (str): Which wavelet to use.
     """
 
     def __init__(self, wave: str):
@@ -467,12 +518,16 @@ class _DWTInverse():
         g0_col, g1_col = wave.rec_lo, wave.rec_hi
         g0_row, g1_row = g0_col, g1_col
         # Prepare the filters
-        self.g0_col = np.array(g0_col).astype('float32').reshape((1, 1, -1, 1))
-        self.g1_col = np.array(g1_col).astype('float32').reshape((1, 1, -1, 1))
-        self.g0_row = np.array(g0_row).astype('float32').reshape((1, 1, 1, -1))
-        self.g1_row = np.array(g1_row).astype('float32').reshape((1, 1, 1, -1))
+        self.g0_col = np.array(g0_col).astype("float32").reshape((1, 1, -1, 1))
+        self.g1_col = np.array(g1_col).astype("float32").reshape((1, 1, -1, 1))
+        self.g0_row = np.array(g0_row).astype("float32").reshape((1, 1, 1, -1))
+        self.g1_row = np.array(g1_row).astype("float32").reshape((1, 1, 1, -1))
 
-    def apply(self, coeffs: Tuple[cp.ndarray, cp.ndarray], mem_stack: Optional[_DeviceMemStack] = None) -> cp.ndarray:
+    def apply(
+        self,
+        coeffs: Tuple[cp.ndarray, cp.ndarray],
+        mem_stack: Optional[_DeviceMemStack] = None,
+    ) -> cp.ndarray:
         """
         Args:
             coeffs (yl, yh): tuple of lowpass and bandpass coefficients, where:
@@ -504,8 +559,42 @@ class _DWTInverse():
         return yl
 
 
-def remove_stripe_fw(data, sigma: float=1, wname: str='sym16', level: int=7, calc_peak_gpu_mem: bool = False) -> cp.ndarray:
-    """Remove stripes with wavelet filtering"""
+def remove_stripe_fw(
+    data: cp.ndarray,
+    sigma: float = 1,
+    wname: str = "sym16",
+    level: Optional[int] = None,
+    calc_peak_gpu_mem: bool = False,
+) -> cp.ndarray:
+    """
+    Remove horizontal stripes from sinogram using the Fourier-Wavelet (FW) based method :cite:`munch2009stripe`. The original source code
+    taken from TomoCupy and NABU packages.
+
+    Parameters
+    ----------
+    data : ndarray
+        3D tomographic data as a CuPy array.
+    sigma : float
+        Damping parameter in Fourier space.
+    wname : str
+        Type of the wavelet filter. 'haar', 'db5', sym5', 'bior4.4', etc.
+    level : int, optional
+        Number of discrete wavelet transform levels.
+    calc_peak_gpu_mem: str:
+        Supporting parameter for memory calculation in HTTomo.
+
+    Returns
+    -------
+    ndarray
+        Stripe-corrected 3D tomographic data as a CuPy array.
+    """
+
+    if level is None:
+        if calc_peak_gpu_mem:
+            size = np.max(data)  # data is a tuple in this case
+        else:
+            size = np.max(data.shape)
+        level = int(np.ceil(np.log2(size)))
 
     [nproj, nz, ni] = data.shape if not calc_peak_gpu_mem else data
 
@@ -559,8 +648,8 @@ def remove_stripe_fw(data, sigma: float=1, wname: str='sym16', level: int=7, cal
         mem_stack.free(np.prod(sli_shape) * np.float32().itemsize)
         return mem_stack.highwater
 
-    sli = cp.zeros(sli_shape, dtype='float32')
-    sli[:, 0, (nproj_pad - nproj)//2:(nproj_pad + nproj) // 2] = data.swapaxes(0, 1)
+    sli = cp.zeros(sli_shape, dtype="float32")
+    sli[:, 0, (nproj_pad - nproj) // 2 : (nproj_pad + nproj) // 2] = data.swapaxes(0, 1)
     for k in range(level):
         sli, c = xfm.apply(sli)
         cc.append(c)
@@ -569,7 +658,7 @@ def remove_stripe_fw(data, sigma: float=1, wname: str='sym16', level: int=7, cal
         _, my, mx = fcV.shape
         # Damping of ring artifact information.
         y_hat = np.fft.ifftshift((np.arange(-my, my, 2) + 1) / 2)
-        damp = -np.expm1(-y_hat**2 / (2 * sigma**2))
+        damp = -np.expm1(-(y_hat**2) / (2 * sigma**2))
         fcV *= cp.tile(damp, (mx, 1)).swapaxes(0, 1)
         # Inverse FFT.
         cc[k][:, 0, 1] = cp.fft.ifft(fcV, my, axis=1).real
@@ -577,10 +666,10 @@ def remove_stripe_fw(data, sigma: float=1, wname: str='sym16', level: int=7, cal
     # Wavelet reconstruction.
     for k in range(level)[::-1]:
         shape0 = cc[k][0, 0, 1].shape
-        sli = sli[:, :, :shape0[0], :shape0[1]]
+        sli = sli[:, :, : shape0[0], : shape0[1]]
         sli = ifm.apply((sli, cc[k]))
 
-    data = sli[:, 0, (nproj_pad - nproj)//2:(nproj_pad + nproj) // 2, :ni]
+    data = sli[:, 0, (nproj_pad - nproj) // 2 : (nproj_pad + nproj) // 2, :ni]
     data = data.swapaxes(0, 1)
     return cp.ascontiguousarray(data)
 
