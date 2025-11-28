@@ -263,6 +263,6 @@ def paganin_filter_savu_legacy(
         The 3D array of Paganin phase-filtered projection images.
     """
 
-    ratio_delta_beta /= 4 * 2 * np.pi  # rescaling to conform Savu's ratio value
-
-    return paganin_filter(tomo, pixel_size, distance, energy, ratio_delta_beta)
+    return paganin_filter(
+        tomo, pixel_size, distance, energy, ratio_delta_beta / (4 * 2 * np.pi)
+    )
