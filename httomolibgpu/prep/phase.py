@@ -139,7 +139,7 @@ def paganin_filter(
 
 
 def _calculate_alpha(energy, distance, ratio_delta_beta):
-    return (_wavelength_micron(energy) * distance / (4 * math.pi)) * ratio_delta_beta
+    return _wavelength(energy) * distance * ratio_delta_beta / (4 * math.pi)
 
 
 # the scaling is different here and doesn't follow the original formula
@@ -212,7 +212,7 @@ def _pad_projections_to_second_power(
     return padded_tomo, tuple(pad_list)
 
 
-def _wavelength_micron(energy: float) -> float:
+def _wavelength(energy: float) -> float:
     # for photons: E = 1keV -> 1.23984193 nm
     return (1.23984193e-9) / energy
 
