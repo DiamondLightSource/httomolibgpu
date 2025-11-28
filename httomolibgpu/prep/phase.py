@@ -97,7 +97,9 @@ def paganin_filter(
     fft_tomo = fft2(padded_tomo, axes=(-2, -1), overwrite_x=True)
 
     # calculate alpha constant
-    alpha = _calculate_alpha(energy, distance / 1e-6, ratio_delta_beta)
+    micron = 10 ** (-6)
+    KeV = 1000.0
+    alpha = _calculate_alpha(energy * KeV, distance * micron, ratio_delta_beta)
 
     # Compute the reciprocal grid
     indx = _reciprocal_coord(pixel_size, dy)
@@ -263,6 +265,9 @@ def paganin_filter_savu_legacy(
         The 3D array of Paganin phase-filtered projection images.
     """
 
+    # the scaling is different here and doesn't follow the original formula
+    # ((1240.0 / energy) * 10.0 ** (-9)) * distance_micron * ratio_delta_beta * math.pi
+
     return paganin_filter(
-        tomo, pixel_size, distance, energy, ratio_delta_beta / (4 * 2 * np.pi)
+        tomo, pixel_size, distance * 1e-03, energy, ratio_delta_beta / (4 * 2 * np.pi)
     )
