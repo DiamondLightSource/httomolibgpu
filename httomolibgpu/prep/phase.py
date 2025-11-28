@@ -218,7 +218,7 @@ def _pad_projections_to_second_power(
 
 def _wavelength(energy: float) -> float:
     # for photons: E = 1keV -> 1.23984193 nm
-    return (1.23984193e-9) / energy
+    return (1.23984193e-6) / energy
 
 
 def _reciprocal_coord(pixel_size: float, num_grid: int) -> cp.ndarray:
