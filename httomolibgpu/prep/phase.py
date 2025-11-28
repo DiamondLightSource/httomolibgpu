@@ -100,13 +100,17 @@ def paganin_filter(
     alpha = _calculate_alpha(energy, distance, ratio_delta_beta)
 
     # Compute the reciprocal grid
-    pixel_size *= 1e6  # rescaling to meters
-    indx = _reciprocal_coord(pixel_size / (2 * math.pi), dy)
-    indy = _reciprocal_coord(pixel_size / (2 * math.pi), dx)
+    # pixel_size *= 1e6  # rescaling to meters
+    indx = _reciprocal_coord(pixel_size, dy)
+    indy = _reciprocal_coord(pixel_size, dx)
 
     # Build Lorentzian-type filter
     phase_filter = fftshift(
-        1.0 / (1.0 + alpha * (cp.add.outer(cp.square(indx), cp.square(indy))))
+        1.0
+        / (
+            1.0
+            + alpha * (cp.add.outer(cp.square(indx), cp.square(indy)) / (4 * math.pi))
+        )
     )
 
     phase_filter = phase_filter / phase_filter.max()  # normalisation
@@ -139,7 +143,7 @@ def paganin_filter(
 
 
 def _calculate_alpha(energy, distance, ratio_delta_beta):
-    return _wavelength(energy) * distance * ratio_delta_beta / (4 * math.pi)
+    return _wavelength(energy) * distance * ratio_delta_beta
 
 
 # the scaling is different here and doesn't follow the original formula
