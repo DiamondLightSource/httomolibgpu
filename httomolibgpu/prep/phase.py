@@ -97,13 +97,12 @@ def paganin_filter(
     fft_tomo = fft2(padded_tomo, axes=(-2, -1), overwrite_x=True)
 
     # calculate alpha constant
-    micron = 10 ** (-6)
-    KeV = 1000.0
-    alpha = _calculate_alpha(energy * KeV, distance * micron, ratio_delta_beta)
+    alpha = _calculate_alpha(energy, distance, ratio_delta_beta)
 
     # Compute the reciprocal grid
-    indx = _reciprocal_coord(pixel_size, dy)
-    indy = _reciprocal_coord(pixel_size, dx)
+    pixel_size *= 1e6  # rescaling to meters
+    indx = _reciprocal_coord(pixel_size / (2 * math.pi), dy)
+    indy = _reciprocal_coord(pixel_size / (2 * math.pi), dx)
 
     # Build Lorentzian-type filter
     phase_filter = fftshift(
@@ -139,10 +138,8 @@ def paganin_filter(
     return _log_kernel(tomo)
 
 
-def _calculate_alpha(energy, distance_micron, ratio_delta_beta):
-    return (
-        _wavelength_micron(energy) * distance_micron / (4 * math.pi)
-    ) * ratio_delta_beta
+def _calculate_alpha(energy, distance, ratio_delta_beta):
+    return (_wavelength_micron(energy) * distance / (4 * math.pi)) * ratio_delta_beta
 
 
 # the scaling is different here and doesn't follow the original formula
@@ -216,9 +213,8 @@ def _pad_projections_to_second_power(
 
 
 def _wavelength_micron(energy: float) -> float:
-    SPEED_OF_LIGHT = 299792458e2 * 10000.0  # [microns/s]
-    PLANCK_CONSTANT = 6.58211928e-19  # [keV*s]
-    return 2 * math.pi * PLANCK_CONSTANT * SPEED_OF_LIGHT / energy
+    # for photons: E = 1keV -> 1.23984193 nm
+    return (1.23984193e-9) / energy
 
 
 def _reciprocal_coord(pixel_size: float, num_grid: int) -> cp.ndarray:
