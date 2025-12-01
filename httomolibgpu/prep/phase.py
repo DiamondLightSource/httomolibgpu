@@ -41,6 +41,7 @@ import math
 
 __all__ = [
     "paganin_filter",
+    "paganin_filter_savu_legacy",
 ]
 
 
@@ -229,3 +230,37 @@ def _reciprocal_coord(pixel_size: float, num_grid: int) -> cp.ndarray:
     rc = cp.arange(-n, num_grid, 2, dtype=cp.float32)
     rc *= 2 * math.pi / (n * pixel_size)
     return rc
+
+
+def paganin_filter_savu_legacy(
+    tomo: cp.ndarray,
+    pixel_size: float = 1.28,
+    distance: float = 1.0,
+    energy: float = 53.0,
+    ratio_delta_beta: float = 250,
+) -> cp.ndarray:
+    """
+    Perform single-material phase retrieval from flats/darks corrected tomographic measurements. For more detailed information, see :ref:`phase_contrast_module`.
+    Also see :cite:`Paganin02` and :cite:`paganin2020boosting` for references. The ratio_delta_beta parameter here follows implementation in Savu software.
+    The module will be retired in future in favour of paganin_filter. One can rescale parameter ratio_delta_beta / 4 to achieve the same effect in paganin_filter.
+
+    Parameters
+    ----------
+    tomo : cp.ndarray
+        3D array of f/d corrected tomographic projections.
+    pixel_size : float
+        Detector pixel size (resolution) in micron units.
+    distance : float
+        Propagation distance of the wavefront from sample to detector in metre units.
+    energy : float
+        Beam energy in keV.
+    ratio_delta_beta : float
+        The ratio of delta/beta, where delta is the phase shift and real part of the complex material refractive index and beta is the absorption.
+
+    Returns
+    -------
+    cp.ndarray
+        The 3D array of Paganin phase-filtered projection images.
+    """
+
+    return paganin_filter(tomo, pixel_size, distance, energy, ratio_delta_beta / 4)
