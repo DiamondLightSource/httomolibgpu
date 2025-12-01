@@ -337,8 +337,7 @@ def _conv_transpose2d(
     out_shape = [b, ci, hi, wi]
     if mem_stack:
         # The trouble here is that we allocate more than the returned size
-        out_actual_bytes = np.prod(out_shape) * np.float32().itemsize
-        mem_stack.malloc(out_actual_bytes)
+        mem_stack.malloc((np.prod(out_shape) + w.size) * np.float32().itemsize)
         if pad != 0:
             new_out_shape = [
                 out_shape[0],
@@ -347,7 +346,7 @@ def _conv_transpose2d(
                 out_shape[3] - 2 * pad[1],
             ]
             mem_stack.malloc(np.prod(new_out_shape) * np.float32().itemsize)
-            mem_stack.free(np.prod(out_shape) * np.float32().itemsize)
+            mem_stack.free((np.prod(out_shape) + w.size) * np.float32().itemsize)
             out_shape = new_out_shape
         return out_shape
 
@@ -673,7 +672,7 @@ def remove_stripe_fw(
             mem_stack.free(np.prod(c) * np.float32().itemsize)
         mem_stack.malloc(np.prod(data) * np.float32().itemsize)
         mem_stack.free(np.prod(sli_shape) * np.float32().itemsize)
-        return mem_stack.highwater
+        return int(mem_stack.highwater * 1.1)
 
     sli = cp.zeros(sli_shape, dtype="float32")
     sli[:, 0, (nproj_pad - nproj) // 2 : (nproj_pad + nproj) // 2] = data.swapaxes(0, 1)
