@@ -305,17 +305,45 @@ def _conv2d(
 
     if groups == 1:
         grouped_convolution_kernel_x = module.get_function(symbol_names[0])
-        grouped_convolution_kernel_x(grid_dim, block_dim,
-                                  (dim_x, dim_y, dim_z, x, in_stride_x, in_stride_y,
-                                   in_stride_z, out, out_stride_z, out_stride_group, w))
+        grouped_convolution_kernel_x(
+            grid_dim,
+            block_dim,
+            (
+                dim_x,
+                dim_y,
+                dim_z,
+                x,
+                in_stride_x,
+                in_stride_y,
+                in_stride_z,
+                out,
+                out_stride_z,
+                out_stride_group,
+                w,
+            ),
+        )
         return out
 
     grouped_convolution_kernel_y = module.get_function(symbol_names[1])
     in_stride_group = x.strides[2] // x.dtype.itemsize
-    grouped_convolution_kernel_y(grid_dim, block_dim,
-                                (dim_x, dim_y, dim_z, x, in_stride_x, in_stride_y,
-                                in_stride_z, in_stride_group, out, out_stride_z,
-                                out_stride_group, w))
+    grouped_convolution_kernel_y(
+        grid_dim,
+        block_dim,
+        (
+            dim_x,
+            dim_y,
+            dim_z,
+            x,
+            in_stride_x,
+            in_stride_y,
+            in_stride_z,
+            in_stride_group,
+            out,
+            out_stride_z,
+            out_stride_group,
+            w,
+        ),
+    )
     del w
     return out
 
@@ -353,7 +381,10 @@ def _conv_transpose2d(
     out = cp.zeros(out_shape, dtype="float32")
     w = cp.asarray(w)
 
-    symbol_names = [f"transposed_convolution_x<{wk}>", f"transposed_convolution_y<{hk}>"]
+    symbol_names = [
+        f"transposed_convolution_x<{wk}>",
+        f"transposed_convolution_y<{hk}>",
+    ]
     module = load_cuda_module("remove_stripe_fw", name_expressions=symbol_names)
     dim_x = out.shape[-1]
     dim_y = out.shape[-2]
@@ -370,16 +401,20 @@ def _conv_transpose2d(
 
     if wk > 1:
         transposed_convolution_kernel_x = module.get_function(symbol_names[0])
-        transposed_convolution_kernel_x(grid_dim, block_dim,
-                                        (dim_x, dim_y, dim_z, x,
-                                         in_dim_x, in_stride_y, in_stride_z, w, out))
+        transposed_convolution_kernel_x(
+            grid_dim,
+            block_dim,
+            (dim_x, dim_y, dim_z, x, in_dim_x, in_stride_y, in_stride_z, w, out),
+        )
     elif hk > 1:
         transposed_convolution_kernel_y = module.get_function(symbol_names[1])
-        transposed_convolution_kernel_y(grid_dim, block_dim,
-                                        (dim_x, dim_y, dim_z, x,
-                                         in_dim_y, in_stride_y, in_stride_z, w, out))
+        transposed_convolution_kernel_y(
+            grid_dim,
+            block_dim,
+            (dim_x, dim_y, dim_z, x, in_dim_y, in_stride_y, in_stride_z, w, out),
+        )
     else:
-        assert(False)
+        assert False
 
     if pad != 0:
         out = out[:, :, pad[0] : out.shape[2] - pad[0], pad[1] : out.shape[3] - pad[1]]
@@ -452,12 +487,8 @@ def _sfb1d(
     g0 = np.concatenate([g0.reshape(*shape)] * C, axis=0)
     g1 = np.concatenate([g1.reshape(*shape)] * C, axis=0)
     pad = (L - 2, 0) if d == 2 else (0, L - 2)
-    y_lo = _conv_transpose2d(
-        lo, g0, stride=s, pad=pad, groups=C, mem_stack=mem_stack
-    )
-    y_hi = _conv_transpose2d(
-        hi, g1, stride=s, pad=pad, groups=C, mem_stack=mem_stack
-    )
+    y_lo = _conv_transpose2d(lo, g0, stride=s, pad=pad, groups=C, mem_stack=mem_stack)
+    y_hi = _conv_transpose2d(hi, g1, stride=s, pad=pad, groups=C, mem_stack=mem_stack)
     if mem_stack:
         # Allocation of the sum
         mem_stack.malloc(np.prod(y_hi) * np.float32().itemsize)
@@ -600,7 +631,7 @@ def remove_stripe_fw(
     sigma : float
         Damping parameter in Fourier space.
     wname : str
-        Type of the wavelet filter. 'haar', 'db5', sym5', 'bior4.4', etc.
+        Type of the wavelet filter: select from 'haar', 'db4', 'sym5', 'sym16' 'bior4.4'.
     level : int, optional
         Number of discrete wavelet transform levels.
     calc_peak_gpu_mem: str:

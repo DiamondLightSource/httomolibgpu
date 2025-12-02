@@ -109,7 +109,9 @@ def test_remove_stripe_fw_calc_mem(slices, level, dim_x, wname, ensure_clean_mem
 
 
 @pytest.mark.parametrize("wname", ["haar", "db4", "sym5", "sym16", "bior4.4"])
-@pytest.mark.parametrize("slices", [177, 239, 320, 490, 607, 803, 859, 902, 951, 1019, 1074, 1105])
+@pytest.mark.parametrize(
+    "slices", [177, 239, 320, 490, 607, 803, 859, 902, 951, 1019, 1074, 1105]
+)
 @pytest.mark.parametrize("level", [None, 7, 11])
 def test_remove_stripe_fw_calc_mem_big(wname, slices, level, ensure_clean_memory):
     dim_y = 901
@@ -117,7 +119,9 @@ def test_remove_stripe_fw_calc_mem_big(wname, slices, level, ensure_clean_memory
     data_shape = (slices, dim_x, dim_y)
     hook = MaxMemoryHook()
     with hook:
-        estimated_mem_peak = remove_stripe_fw(data_shape, wname=wname, level=level, calc_peak_gpu_mem=True)
+        estimated_mem_peak = remove_stripe_fw(
+            data_shape, wname=wname, level=level, calc_peak_gpu_mem=True
+        )
     assert hook.max_mem == 0
     av_mem = cp.cuda.Device().mem_info[0]
     if av_mem < estimated_mem_peak:
