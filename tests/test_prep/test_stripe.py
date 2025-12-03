@@ -110,12 +110,12 @@ def test_remove_stripe_fw_calc_mem(slices, level, dim_x, wname, ensure_clean_mem
 
 @pytest.mark.parametrize("wname", ["haar", "db4", "sym5", "sym16", "bior4.4"])
 @pytest.mark.parametrize(
-    "slices", [177, 239, 320, 490, 607, 803, 859, 902, 951, 1019, 1074, 1105]
+    "slices", [38, 177, 239, 320, 490, 607, 803, 859, 902, 951, 1019, 1074, 1105]
 )
 @pytest.mark.parametrize("level", [None, 7, 11])
-def test_remove_stripe_fw_calc_mem_big(wname, slices, level, ensure_clean_memory):
-    dim_y = 901
-    dim_x = 1200
+@pytest.mark.parametrize("dims", [(901, 1200), (1801, 2560)])
+def test_remove_stripe_fw_calc_mem_big(wname, slices, level, dims, ensure_clean_memory):
+    dim_y, dim_x = dims
     data_shape = (slices, dim_x, dim_y)
     try:
         estimated_mem_peak = remove_stripe_fw(
