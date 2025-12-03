@@ -615,6 +615,12 @@ class _DWTInverse:
         return yl
 
 
+def _repair_memory_fragmentation_if_needed(fragmentation_threshold: float = 0.2):
+    pool = cp.get_default_memory_pool()
+    total = pool.total_bytes()
+    if (total / pool.used_bytes()) - 1 > fragmentation_threshold:
+        pool.free_all_blocks()
+
 def remove_stripe_fw(
     data: cp.ndarray,
     sigma: float = 1,
@@ -710,7 +716,7 @@ def remove_stripe_fw(
         for c in cc:
             mem_stack.free(np.prod(c) * np.float32().itemsize)
         mem_stack.free(np.prod(sli_shape) * np.float32().itemsize)
-        return mem_stack.highwater
+        return int(mem_stack.highwater * 1.1)
 
     sli = cp.zeros(sli_shape, dtype="float32")
     sli[:, 0, (nproj_pad - nproj) // 2 : (nproj_pad + nproj) // 2] = data.swapaxes(0, 1)
@@ -736,12 +742,14 @@ def remove_stripe_fw(
             cc[k][:, 0, 1] = cp.fft.ifft(ifft_in, my, axis=1).real
         del ifft_plan
         del ifft_in
+        _repair_memory_fragmentation_if_needed()
 
     # Wavelet reconstruction.
     for k in range(level)[::-1]:
         shape0 = cc[k][0, 0, 1].shape
         sli = sli[:, :, : shape0[0], : shape0[1]]
         sli = ifm.apply((sli, cc[k]))
+        _repair_memory_fragmentation_if_needed()
 
     data = sli[:, 0, (nproj_pad - nproj) // 2 : (nproj_pad + nproj) // 2, :ni]
     data = data.swapaxes(0, 1)
