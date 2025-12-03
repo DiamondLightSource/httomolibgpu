@@ -97,11 +97,12 @@ def test_remove_stripe_fw_calc_mem(slices, level, dim_x, wname, ensure_clean_mem
         remove_stripe_fw(cp.copy(data), wname=wname, level=level)
     actual_mem_peak = hook.max_mem
 
-    hook = MaxMemoryHook()
-    with hook:
+    try:
         estimated_mem_peak = remove_stripe_fw(
             data.shape, level=level, wname=wname, calc_peak_gpu_mem=True
         )
+    except cp.cuda.memory.OutOfMemoryError:
+        pytest.skip("Not enough GPU memory to estimate memory peak")
 
     assert actual_mem_peak * 0.99 <= estimated_mem_peak
     assert estimated_mem_peak <= actual_mem_peak * 1.3
@@ -116,11 +117,12 @@ def test_remove_stripe_fw_calc_mem_big(wname, slices, level, ensure_clean_memory
     dim_y = 901
     dim_x = 1200
     data_shape = (slices, dim_x, dim_y)
-    hook = MaxMemoryHook()
-    with hook:
+    try:
         estimated_mem_peak = remove_stripe_fw(
             data_shape, wname=wname, level=level, calc_peak_gpu_mem=True
         )
+    except cp.cuda.memory.OutOfMemoryError:
+        pytest.skip("Not enough GPU memory to estimate memory peak")
     av_mem = cp.cuda.Device().mem_info[0]
     if av_mem < estimated_mem_peak:
         pytest.skip("Not enough GPU memory to run this test")
