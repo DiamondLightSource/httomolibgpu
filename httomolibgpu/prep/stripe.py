@@ -32,6 +32,7 @@ from unittest.mock import Mock
 if cupy_run:
     from cupyx.scipy.ndimage import median_filter, binary_dilation, uniform_filter1d
     from cupyx.scipy.fft import fft2, ifft2, fftshift
+    from cupyx.scipy.fftpack import get_fft_plan
     from httomolibgpu.cuda_kernels import load_cuda_module
 else:
     median_filter = Mock()
@@ -364,8 +365,8 @@ def _conv_transpose2d(
     wi = (wo - 1) * stride[1] + wk
     out_shape = [b, ci, hi, wi]
     if mem_stack:
-        # The trouble here is that we allocate more than the returned size
-        mem_stack.malloc((np.prod(out_shape) + w.size) * np.float32().itemsize)
+        mem_stack.malloc(np.prod(out_shape) * np.float32().itemsize)
+        mem_stack.malloc(w.size * np.float32().itemsize)
         if pad != 0:
             new_out_shape = [
                 out_shape[0],
@@ -374,8 +375,9 @@ def _conv_transpose2d(
                 out_shape[3] - 2 * pad[1],
             ]
             mem_stack.malloc(np.prod(new_out_shape) * np.float32().itemsize)
-            mem_stack.free((np.prod(out_shape) + w.size) * np.float32().itemsize)
+            mem_stack.free(np.prod(out_shape) * np.float32().itemsize)
             out_shape = new_out_shape
+        mem_stack.free(w.size * np.float32().itemsize)
         return out_shape
 
     out = cp.zeros(out_shape, dtype="float32")
@@ -682,13 +684,17 @@ def remove_stripe_fw(
             mem_stack.malloc(fcV_bytes)
 
             # For the FFT
+            mem_stack.malloc(2 * np.prod(fcV_shape) * np.float32().itemsize)
             mem_stack.malloc(2 * fcV_bytes)
-            # This is "leaked" by the FFT
-            if fcV_shape[1] > 150:
-                fcV_fft_bytes = fcV_bytes
-            else:
-                fcV_fft_bytes = fcV_shape[0] * fcV_shape[2] * np.complex64().itemsize
-            mem_stack.malloc(fcV_fft_bytes)
+
+            fft_dummy = cp.empty(fcV_shape, dtype='float32')
+            fft_plan = get_fft_plan(fft_dummy)
+            fft_plan_size = fft_plan.work_area.mem.size
+            del fft_dummy
+            del fft_plan
+            mem_stack.malloc(fft_plan_size)
+            mem_stack.free(2 * np.prod(fcV_shape) * np.float32().itemsize)
+            mem_stack.free(fft_plan_size)
             mem_stack.free(2 * fcV_bytes)
 
             # The rest of the iteration doesn't contribute to the peak
@@ -699,11 +705,12 @@ def remove_stripe_fw(
             new_sli_shape = ifm.apply((new_sli_shape, cc[k]), mem_stack)
             mem_stack.free(np.prod(sli_shape) * np.float32().itemsize)
             sli_shape = new_sli_shape
+
+        mem_stack.malloc(np.prod(data) * np.float32().itemsize)
         for c in cc:
             mem_stack.free(np.prod(c) * np.float32().itemsize)
-        mem_stack.malloc(np.prod(data) * np.float32().itemsize)
         mem_stack.free(np.prod(sli_shape) * np.float32().itemsize)
-        return int(mem_stack.highwater * 1.1)
+        return mem_stack.highwater
 
     sli = cp.zeros(sli_shape, dtype="float32")
     sli[:, 0, (nproj_pad - nproj) // 2 : (nproj_pad + nproj) // 2] = data.swapaxes(0, 1)
@@ -711,14 +718,24 @@ def remove_stripe_fw(
         sli, c = xfm.apply(sli)
         cc.append(c)
         # FFT
-        fcV = cp.fft.fft(cc[k][:, 0, 1], axis=1)
+        fft_in = cp.ascontiguousarray(cc[k][:, 0, 1])
+        fft_plan = get_fft_plan(fft_in, axes=1)
+        with fft_plan:
+            fcV = cp.fft.fft(fft_in, axis=1)
+        del fft_plan
+        del fft_in
         _, my, mx = fcV.shape
         # Damping of ring artifact information.
         y_hat = np.fft.ifftshift((np.arange(-my, my, 2) + 1) / 2)
         damp = -np.expm1(-(y_hat**2) / (2 * sigma**2))
         fcV *= cp.tile(damp, (mx, 1)).swapaxes(0, 1)
         # Inverse FFT.
-        cc[k][:, 0, 1] = cp.fft.ifft(fcV, my, axis=1).real
+        ifft_in = cp.ascontiguousarray(fcV)
+        ifft_plan = get_fft_plan(ifft_in, axes=1)
+        with ifft_plan:
+            cc[k][:, 0, 1] = cp.fft.ifft(ifft_in, my, axis=1).real
+        del ifft_plan
+        del ifft_in
 
     # Wavelet reconstruction.
     for k in range(level)[::-1]:
