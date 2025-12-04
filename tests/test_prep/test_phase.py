@@ -7,6 +7,8 @@ from cupy.cuda import nvtx
 from httomolibgpu.prep.phase import paganin_filter
 from numpy.testing import assert_allclose
 
+from ..conftest import MaxMemoryHook
+
 eps = 1e-6
 
 
@@ -81,3 +83,50 @@ def test_paganin_filter_performance(ensure_clean_memory):
     duration_ms = float(time.perf_counter_ns() - start) * 1e-6 / 10
 
     assert "performance in ms" == duration_ms
+
+@pytest.mark.parametrize("slices", [3, 7, 32, 61, 109, 120, 150])
+@pytest.mark.parametrize("dim_x", [128, 140])
+def test_paganin_filter_calc_mem(slices, dim_x, ensure_clean_memory):
+    dim_y = 159
+    data = cp.random.random_sample((slices, dim_x, dim_y), dtype=np.float32)
+    hook = MaxMemoryHook()
+    with hook:
+        paganin_filter(cp.copy(data))
+    actual_mem_peak = hook.max_mem
+
+    try:
+        estimated_mem_peak = paganin_filter(
+            data.shape, calc_peak_gpu_mem=True
+        )
+    except cp.cuda.memory.OutOfMemoryError:
+        pytest.skip("Not enough GPU memory to estimate memory peak")
+
+    assert actual_mem_peak * 0.99 <= estimated_mem_peak
+    assert estimated_mem_peak <= actual_mem_peak * 1.01
+
+
+@pytest.mark.parametrize(
+    "slices", [38, 177, 268, 320, 490, 607, 803, 859, 902, 951]
+)
+@pytest.mark.parametrize("dims", [(900, 1280), (1801, 1540), (1801, 2560)])
+def test_paganin_filter_calc_mem_big(slices, dims, ensure_clean_memory):
+    dim_y, dim_x = dims
+    data_shape = (slices, dim_x, dim_y)
+    try:
+        estimated_mem_peak = paganin_filter(
+            data_shape, calc_peak_gpu_mem=True
+        )
+    except cp.cuda.memory.OutOfMemoryError:
+        pytest.skip("Not enough GPU memory to estimate memory peak")
+    av_mem = cp.cuda.Device().mem_info[0]
+    if av_mem < estimated_mem_peak:
+        pytest.skip("Not enough GPU memory to run this test")
+
+    hook = MaxMemoryHook()
+    with hook:
+        data = cp.random.random_sample(data_shape, dtype=np.float32)
+        paganin_filter(data)
+    actual_mem_peak = hook.max_mem
+
+    assert actual_mem_peak * 0.99 <= estimated_mem_peak
+    assert estimated_mem_peak <= actual_mem_peak * 1.01
