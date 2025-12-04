@@ -13,6 +13,7 @@ from httomolibgpu.prep.stripe import (
     raven_filter,
 )
 from numpy.testing import assert_allclose
+from ..conftest import MaxMemoryHook
 from .stripe_cpu_reference import raven_filter_numpy
 
 
@@ -35,23 +36,6 @@ def test_remove_stripe_ti_on_data(data, flats, darks):
     assert data_after_stripe_removal.dtype == np.float32
 
 
-class MaxMemoryHook(cp.cuda.MemoryHook):
-    def __init__(self, initial=0):
-        self.max_mem = initial
-        self.current = initial
-
-    def malloc_postprocess(
-        self, device_id: int, size: int, mem_size: int, mem_ptr: int, pmem_id: int
-    ):
-        self.current += mem_size
-        self.max_mem = max(self.max_mem, self.current)
-
-    def free_postprocess(
-        self, device_id: int, mem_size: int, mem_ptr: int, pmem_id: int
-    ):
-        self.current -= mem_size
-
-
 def test_remove_stripe_fw_on_data(data, flats, darks):
     # --- testing the CuPy implementation from TomoCupy ---#
     data = normalize(data, flats, darks, cutoff=10, minus_log=True)
@@ -69,19 +53,6 @@ def test_remove_stripe_fw_on_data(data, flats, darks):
     data = None  #: free up GPU memory
     # make sure the output is float32
     assert data_after_stripe_removal.dtype == np.float32
-
-
-@pytest.fixture
-def ensure_clean_memory():
-    cp.get_default_memory_pool().free_all_blocks()
-    cp.get_default_pinned_memory_pool().free_all_blocks()
-    cache = cp.fft.config.get_plan_cache()
-    cache.clear()
-    yield None
-    cp.get_default_memory_pool().free_all_blocks()
-    cp.get_default_pinned_memory_pool().free_all_blocks()
-    cache = cp.fft.config.get_plan_cache()
-    cache.clear()
 
 
 @pytest.mark.parametrize("wname", ["haar", "db4", "sym5", "sym16", "bior4.4"])

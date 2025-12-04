@@ -23,6 +23,7 @@
 import numpy as np
 import pywt
 from httomolibgpu import cupywrapper
+from httomolibgpu.memory_estimator_helpers import _DeviceMemStack
 
 cp = cupywrapper.cp
 cupy_run = cupywrapper.cupy_run
@@ -202,30 +203,6 @@ def _reflect(x: np.ndarray, minx: float, maxx: float) -> np.ndarray:
     normed_mod = np.where(mod < 0, mod + rng_by_2, mod)
     out = np.where(normed_mod >= rng, rng_by_2 - normed_mod, normed_mod) + minx
     return np.array(out, dtype=x.dtype)
-
-
-class _DeviceMemStack:
-    def __init__(self) -> None:
-        self.allocations = []
-        self.current = 0
-        self.highwater = 0
-
-    def malloc(self, bytes):
-        self.allocations.append(bytes)
-        allocated = self._round_up(bytes)
-        self.current += allocated
-        self.highwater = max(self.current, self.highwater)
-
-    def free(self, bytes):
-        assert bytes in self.allocations
-        self.allocations.remove(bytes)
-        self.current -= self._round_up(bytes)
-        assert self.current >= 0
-
-    def _round_up(self, size):
-        ALLOCATION_UNIT_SIZE = 512
-        size = (size + ALLOCATION_UNIT_SIZE - 1) // ALLOCATION_UNIT_SIZE
-        return size * ALLOCATION_UNIT_SIZE
 
 
 def _mypad(
