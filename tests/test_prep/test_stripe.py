@@ -8,6 +8,7 @@ from httomolibgpu.prep.normalize import normalize
 from httomolibgpu.prep.stripe import (
     remove_stripe_based_sorting,
     remove_stripe_ti,
+    remove_stripe_fw,
     remove_all_stripe,
     raven_filter,
 )
@@ -32,6 +33,107 @@ def test_remove_stripe_ti_on_data(data, flats, darks):
     data = None  #: free up GPU memory
     # make sure the output is float32
     assert data_after_stripe_removal.dtype == np.float32
+
+
+class MaxMemoryHook(cp.cuda.MemoryHook):
+    def __init__(self, initial=0):
+        self.max_mem = initial
+        self.current = initial
+
+    def malloc_postprocess(
+        self, device_id: int, size: int, mem_size: int, mem_ptr: int, pmem_id: int
+    ):
+        self.current += mem_size
+        self.max_mem = max(self.max_mem, self.current)
+
+    def free_postprocess(
+        self, device_id: int, mem_size: int, mem_ptr: int, pmem_id: int
+    ):
+        self.current -= mem_size
+
+
+def test_remove_stripe_fw_on_data(data, flats, darks):
+    # --- testing the CuPy implementation from TomoCupy ---#
+    data = normalize(data, flats, darks, cutoff=10, minus_log=True)
+
+    data_after_stripe_removal = remove_stripe_fw(cp.copy(data), level=7).get()
+
+    assert_allclose(np.mean(data_after_stripe_removal), 0.279236, rtol=1e-05)
+    assert_allclose(
+        np.mean(data_after_stripe_removal, axis=(1, 2)).sum(), 50.2624, rtol=1e-06
+    )
+    assert_allclose(np.median(data_after_stripe_removal), 0.079203, rtol=1e-05)
+    assert_allclose(np.max(data_after_stripe_removal), 2.442347, rtol=1e-05)
+    assert data_after_stripe_removal.flags.c_contiguous
+
+    data = None  #: free up GPU memory
+    # make sure the output is float32
+    assert data_after_stripe_removal.dtype == np.float32
+
+
+@pytest.fixture
+def ensure_clean_memory():
+    cp.get_default_memory_pool().free_all_blocks()
+    cp.get_default_pinned_memory_pool().free_all_blocks()
+    cache = cp.fft.config.get_plan_cache()
+    cache.clear()
+    yield None
+    cp.get_default_memory_pool().free_all_blocks()
+    cp.get_default_pinned_memory_pool().free_all_blocks()
+    cache = cp.fft.config.get_plan_cache()
+    cache.clear()
+
+
+@pytest.mark.parametrize("wname", ["haar", "db4", "sym5", "sym16", "bior4.4"])
+@pytest.mark.parametrize("slices", [3, 7, 32, 61, 109, 120, 150])
+@pytest.mark.parametrize("level", [None, 1, 3, 11])
+@pytest.mark.parametrize("dim_x", [128, 140])
+def test_remove_stripe_fw_calc_mem(slices, level, dim_x, wname, ensure_clean_memory):
+    dim_y = 159
+    data = cp.random.random_sample((slices, dim_x, dim_y), dtype=np.float32)
+    hook = MaxMemoryHook()
+    with hook:
+        remove_stripe_fw(cp.copy(data), wname=wname, level=level)
+    actual_mem_peak = hook.max_mem
+
+    try:
+        estimated_mem_peak = remove_stripe_fw(
+            data.shape, level=level, wname=wname, calc_peak_gpu_mem=True
+        )
+    except cp.cuda.memory.OutOfMemoryError:
+        pytest.skip("Not enough GPU memory to estimate memory peak")
+
+    assert actual_mem_peak * 0.99 <= estimated_mem_peak
+    assert estimated_mem_peak <= actual_mem_peak * 1.3
+
+
+@pytest.mark.parametrize("wname", ["haar", "db4", "sym5", "sym16", "bior4.4"])
+@pytest.mark.parametrize(
+    "slices", [38, 177, 239, 320, 490, 607, 803, 859, 902, 951, 1019, 1074, 1105]
+)
+@pytest.mark.parametrize("level", [None, 7, 11])
+@pytest.mark.parametrize("dims", [(901, 1200), (1801, 2560)])
+def test_remove_stripe_fw_calc_mem_big(wname, slices, level, dims, ensure_clean_memory):
+    dim_y, dim_x = dims
+    data_shape = (slices, dim_x, dim_y)
+    try:
+        estimated_mem_peak = remove_stripe_fw(
+            data_shape, wname=wname, level=level, calc_peak_gpu_mem=True
+        )
+    except cp.cuda.memory.OutOfMemoryError:
+        pytest.skip("Not enough GPU memory to estimate memory peak")
+    av_mem = cp.cuda.Device().mem_info[0]
+    if av_mem < estimated_mem_peak:
+        pytest.skip("Not enough GPU memory to run this test")
+
+    hook = MaxMemoryHook()
+    with hook:
+        data = cp.random.random_sample(data_shape, dtype=np.float32)
+        remove_stripe_fw(data, wname=wname, level=level)
+    actual_mem_peak = hook.max_mem
+
+    assert actual_mem_peak * 0.99 <= estimated_mem_peak
+    assert estimated_mem_peak <= actual_mem_peak * 1.3
 
 
 @pytest.mark.parametrize("angles", [180, 181])
