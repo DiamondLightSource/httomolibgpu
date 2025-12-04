@@ -621,10 +621,11 @@ def _repair_memory_fragmentation_if_needed(fragmentation_threshold: float = 0.2)
     if (total / pool.used_bytes()) - 1 > fragmentation_threshold:
         pool.free_all_blocks()
 
+
 def remove_stripe_fw(
     data: cp.ndarray,
-    sigma: float = 1,
-    wname: str = "sym16",
+    sigma: float = 2,
+    wname: str = "db5",
     level: Optional[int] = None,
     calc_peak_gpu_mem: bool = False,
 ) -> cp.ndarray:
@@ -639,7 +640,7 @@ def remove_stripe_fw(
     sigma : float
         Damping parameter in Fourier space.
     wname : str
-        Type of the wavelet filter: select from 'haar', 'db4', 'sym5', 'sym16' 'bior4.4'.
+        Type of the wavelet filter: select from 'db5', 'db7', 'haar', 'sym5', 'sym16' 'bior4.4'.
     level : int, optional
         Number of discrete wavelet transform levels.
     calc_peak_gpu_mem: str:
@@ -693,7 +694,7 @@ def remove_stripe_fw(
             mem_stack.malloc(2 * np.prod(fcV_shape) * np.float32().itemsize)
             mem_stack.malloc(2 * fcV_bytes)
 
-            fft_dummy = cp.empty(fcV_shape, dtype='float32')
+            fft_dummy = cp.empty(fcV_shape, dtype="float32")
             fft_plan = get_fft_plan(fft_dummy)
             fft_plan_size = fft_plan.work_area.mem.size
             del fft_dummy
