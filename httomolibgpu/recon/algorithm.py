@@ -64,7 +64,7 @@ def FBP2d_astra(
     filter_d: Optional[float] = None,
     recon_size: Optional[int] = None,
     recon_mask_radius: float = 0.95,
-    neglog: bool = False,
+    neglog: bool = True,
     gpu_id: int = 0,
 ) -> np.ndarray:
     """
@@ -97,8 +97,8 @@ def FBP2d_astra(
         out some undesirable artifacts. The values outside the given diameter will be set to zero.
         To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.
     neglog: bool
-        Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Defaults to False,
-        assuming that the negative log is taken either in normalisation procedure on with Paganin filter application.
+        Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Set
+        to False if Paganin filter is used.
     gpu_id : int
         A GPU device index to perform operation on.
 
@@ -145,7 +145,7 @@ def FBP3d_tomobar(
     filter_freq_cutoff: float = 0.35,
     recon_size: Optional[int] = None,
     recon_mask_radius: Optional[float] = 0.95,
-    neglog: bool = False,
+    neglog: bool = True,
     gpu_id: int = 0,
 ) -> cp.ndarray:
     """
@@ -175,8 +175,8 @@ def FBP3d_tomobar(
         out some undesirable artifacts. The values outside the given diameter will be set to zero.
         To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.
     neglog: bool
-        Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Defaults to False,
-        assuming that the negative log is taken either in normalisation procedure on with Paganin filter application.
+        Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Set
+        to False if Paganin filter is used.
     gpu_id : int
         A GPU device index to perform operation on.
 
@@ -214,7 +214,7 @@ def LPRec3d_tomobar(
     power_of_2_cropping: Optional[bool] = False,
     min_mem_usage_filter: Optional[bool] = True,
     min_mem_usage_ifft2: Optional[bool] = True,
-    neglog: bool = False,
+    neglog: bool = True,
 ) -> cp.ndarray:
     """
     Fourier direct inversion in 3D on unequally spaced (also called as Log-Polar) grids using
@@ -244,8 +244,8 @@ def LPRec3d_tomobar(
         out some undesirable artifacts. The values outside the given diameter will be set to zero.
         To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.
     neglog: bool
-        Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Defaults to False,
-        assuming that the negative log is taken either in normalisation procedure on with Paganin filter application.
+        Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Set
+        to False if Paganin filter is used.
 
     Returns
     -------
@@ -282,7 +282,7 @@ def SIRT3d_tomobar(
     recon_mask_radius: float = 0.95,
     iterations: int = 300,
     nonnegativity: bool = True,
-    neglog: bool = False,
+    neglog: bool = True,
     gpu_id: int = 0,
 ) -> cp.ndarray:
     """
@@ -314,8 +314,8 @@ def SIRT3d_tomobar(
     nonnegativity : bool
         Impose nonnegativity constraint on reconstructed image.
     neglog: bool
-        Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Defaults to False,
-        assuming that the negative log is taken either in normalisation procedure on with Paganin filter application.
+        Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Set
+        to False if Paganin filter is used.
     gpu_id : int
         A GPU device index to perform operation on.
 
@@ -359,7 +359,7 @@ def CGLS3d_tomobar(
     recon_mask_radius: float = 0.95,
     iterations: int = 20,
     nonnegativity: bool = True,
-    neglog: bool = False,
+    neglog: bool = True,
     gpu_id: int = 0,
 ) -> cp.ndarray:
     """
@@ -391,8 +391,8 @@ def CGLS3d_tomobar(
     nonnegativity : bool
         Impose nonnegativity constraint on reconstructed image.
     neglog: bool
-        Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Defaults to False,
-        assuming that the negative log is taken either in normalisation procedure on with Paganin filter application.
+        Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Set
+        to False if Paganin filter is used.
     gpu_id : int, optional
         A GPU device index to perform operation on.
 
@@ -435,7 +435,7 @@ def FISTA3d_tomobar(
     regularisation_iterations: int = 50,
     regularisation_half_precision: bool = True,
     nonnegativity: bool = True,
-    neglog: bool = False,
+    neglog: bool = True,
     gpu_id: int = 0,
 ) -> cp.ndarray:
     """
@@ -475,8 +475,8 @@ def FISTA3d_tomobar(
     nonnegativity : bool
         Impose nonnegativity constraint on the reconstructed image.
     neglog: bool
-        Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Defaults to False,
-        assuming that the negative log is taken either in normalisation procedure on with Paganin filter application.
+        Take negative logarithm on input data to convert to attenuation coefficient or a density of the scanned object. Set
+        to False if Paganin filter is used.
     gpu_id : int
         A GPU device index to perform operation on.
 
