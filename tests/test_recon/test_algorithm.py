@@ -65,7 +65,8 @@ def test_reconstruct_FBP3d_tomobar_1(data, flats, darks, ensure_clean_memory):
     normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
     normalised_data = minus_log(normalised_data)
 
-    recon_data = FBP3d_tomobar(normalised_data,
+    recon_data = FBP3d_tomobar(
+        normalised_data,
         np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
         79.5,
         filter_freq_cutoff=1.1,
@@ -80,11 +81,13 @@ def test_reconstruct_FBP3d_tomobar_1(data, flats, darks, ensure_clean_memory):
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (160, 128, 160)
 
+
 def test_reconstruct_FBP3d_tomobar_2(data, flats, darks, ensure_clean_memory):
     normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
     normalised_data = minus_log(normalised_data)
 
-    recon_data = FBP3d_tomobar(normalised_data,
+    recon_data = FBP3d_tomobar(
+        normalised_data,
         np.linspace(5.0 * np.pi / 360.0, 180.0 * np.pi / 360.0, data.shape[0]),
         15.5,
         filter_freq_cutoff=1.1,
@@ -100,11 +103,14 @@ def test_reconstruct_FBP3d_tomobar_2(data, flats, darks, ensure_clean_memory):
     assert recon_data.dtype == np.float32
 
 
-def test_reconstruct_FBP3d_tomobar_3_detpad_true(data, flats, darks, ensure_clean_memory):
+def test_reconstruct_FBP3d_tomobar_3_detpad_true(
+    data, flats, darks, ensure_clean_memory
+):
     normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
     normalised_data = minus_log(normalised_data)
 
-    recon_data = FBP3d_tomobar(normalised_data,
+    recon_data = FBP3d_tomobar(
+        normalised_data,
         np.linspace(5.0 * np.pi / 360.0, 180.0 * np.pi / 360.0, data.shape[0]),
         79,  # center
         True,  # detector pad
@@ -126,7 +132,8 @@ def test_reconstruct_LPRec3d_tomobar_1(data, flats, darks, ensure_clean_memory):
     normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
     normalised_data = minus_log(normalised_data)
 
-    recon_data = LPRec3d_tomobar(normalised_data,
+    recon_data = LPRec3d_tomobar(
+        normalised_data,
         angles=np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
         center=79.5,
         detector_pad=0,
@@ -144,7 +151,8 @@ def test_reconstruct_LPRec3d_tomobar_1_pad(data, flats, darks, ensure_clean_memo
     normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
     normalised_data = minus_log(normalised_data)
 
-    recon_data = LPRec3d_tomobar(normalised_data,
+    recon_data = LPRec3d_tomobar(
+        normalised_data,
         angles=np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
         center=79.5,
         detector_pad=10,
@@ -163,7 +171,8 @@ def test_reconstruct_SIRT3d_tomobar(data, flats, darks, ensure_clean_memory):
     normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
     normalised_data = minus_log(normalised_data)
 
-    recon_data = SIRT3d_tomobar(normalised_data,
+    recon_data = SIRT3d_tomobar(
+        normalised_data,
         np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
         79.5,
         recon_size=objrecon_size,
@@ -182,7 +191,8 @@ def test_reconstruct_CGLS3d_tomobar(data, flats, darks, ensure_clean_memory):
     normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
     normalised_data = minus_log(normalised_data)
 
-    recon_data = CGLS3d_tomobar(normalised_data,
+    recon_data = CGLS3d_tomobar(
+        normalised_data,
         np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
         center=79.5,
         recon_size=objrecon_size,
@@ -203,7 +213,8 @@ def test_reconstruct_CGLS3d_tomobar_detpad_true(
     normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
     normalised_data = minus_log(normalised_data)
 
-    recon_data = CGLS3d_tomobar(normalised_data,
+    recon_data = CGLS3d_tomobar(
+        normalised_data,
         np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
         center=79.5,
         detector_pad=True,
@@ -218,12 +229,13 @@ def test_reconstruct_CGLS3d_tomobar_detpad_true(
     assert recon_data.dtype == np.float32
 
 
-def test_reconstruct_FISTA3d_tomobar_pd_tv(data, flats, darks, ensure_clean_memory):    
+def test_reconstruct_FISTA3d_tomobar_pd_tv(data, flats, darks, ensure_clean_memory):
     objrecon_size = data.shape[2]
     normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
     normalised_data = minus_log(normalised_data)
 
-    recon_data = FISTA3d_tomobar(normalised_data,
+    recon_data = FISTA3d_tomobar(
+        normalised_data,
         np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
         center=79.5,
         detector_pad=0,
@@ -250,7 +262,8 @@ def test_reconstruct_FISTA3d_tomobar_pd_tv_detpad_true(
     normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
     normalised_data = minus_log(normalised_data)
 
-    recon_data = FISTA3d_tomobar(normalised_data,
+    recon_data = FISTA3d_tomobar(
+        normalised_data,
         np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
         center=79.5,
         detector_pad=True,
@@ -276,7 +289,8 @@ def test_reconstruct_FISTA3d_tomobar_rof_tv(data, flats, darks, ensure_clean_mem
     normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
     normalised_data = minus_log(normalised_data)
 
-    recon_data = FISTA3d_tomobar(normalised_data,
+    recon_data = FISTA3d_tomobar(
+        normalised_data,
         np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
         79.5,
         recon_size=objrecon_size,

@@ -145,7 +145,7 @@ def test_find_center_360_performance(ensure_clean_memory):
     assert "performance in ms" == duration_ms
 
 
-def test_find_center_pc(data, flats, darks, ensure_clean_memory):    
+def test_find_center_pc(data, flats, darks, ensure_clean_memory):
     data_normalize = dark_flat_field_correction(cp.copy(data), flats, darks)
     proj1 = data_normalize[0, :, :]
     proj2 = data_normalize[179, :, :]

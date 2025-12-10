@@ -65,7 +65,7 @@ def test_stripe_raven_cupy(data, flats, darks):
     data_norm = minus_log(data_norm)
 
     data_after_raven_gpu = cp.asnumpy(raven_filter(data_norm))
-    
+
     data = None  #: free up GPU memory
     assert_allclose(np.mean(data_after_raven_gpu), 0.2892464, rtol=1e-06)
 
@@ -153,7 +153,6 @@ def test_remove_all_stripe_on_data(data, flats, darks):
     # --- testing the CuPy implementation from TomoCupy ---#
     data_norm = dark_flat_field_correction(cp.copy(data), flats, darks, cutoff=10)
     data_norm = minus_log(data_norm)
-
 
     data_after_stripe_removal = cp.asnumpy(remove_all_stripe(data_norm))
 

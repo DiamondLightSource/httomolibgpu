@@ -180,7 +180,8 @@ def FBP3d_tomobar(
         data, angles, center, detector_pad, recon_size, gpu_id
     )
 
-    reconstruction = RecToolsCP.FBP(data,
+    reconstruction = RecToolsCP.FBP(
+        data,
         cutoff_freq=filter_freq_cutoff,
         recon_mask_radius=recon_mask_radius,
         data_axes_labels_order=input_data_axis_labels,
@@ -242,7 +243,8 @@ def LPRec3d_tomobar(
         data, angles, center, detector_pad, recon_size, 0
     )
 
-    reconstruction = RecToolsCP.FOURIER_INV(data,
+    reconstruction = RecToolsCP.FOURIER_INV(
+        data,
         recon_mask_radius=recon_mask_radius,
         data_axes_labels_order=input_data_axis_labels,
         filter_type=filter_type,
@@ -619,6 +621,7 @@ def _instantiate_iterative_recon_class(
         device_projector=gpu_id,
     )
     return RecToolsCP
+
 
 def __estimate_detectorHoriz_padding(detX_size) -> int:
     det_half = detX_size // 2

@@ -32,7 +32,7 @@ def test_reconstruct_FBP2d_astra_i12_dataset1(i12_dataset1: tuple):
 
     data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
     data_normalised = minus_log(data_normalised)
-    
+
     del flats, darks, projdata
     force_clean_gpu_memory()
 
@@ -294,7 +294,7 @@ def test_reconstruct_LPRec3d_tomobar_i13_dataset2(i13_dataset2: tuple):
 
     data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
     data_normalised = minus_log(data_normalised)
-    
+
     del flats, darks, projdata
     force_clean_gpu_memory()
 
@@ -403,7 +403,7 @@ def test_reconstruct_FBP3d_tomobar_i12_dataset5(i12_dataset5: tuple):
 
     data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
     data_normalised = minus_log(data_normalised)
-    
+
     del flats, darks, projdata
     force_clean_gpu_memory()
 

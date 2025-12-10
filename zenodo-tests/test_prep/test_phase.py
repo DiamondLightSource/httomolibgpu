@@ -5,6 +5,7 @@ import pytest
 from httomolibgpu.prep.phase import paganin_filter
 from conftest import force_clean_gpu_memory
 
+
 # ----------------------------------------------------------#
 # appplying paganin filter to i12_dataset3
 def test_paganin_filter_i12_dataset3(i12_dataset3, ensure_clean_memory):

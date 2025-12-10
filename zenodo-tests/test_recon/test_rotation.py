@@ -9,6 +9,7 @@ from httomolibgpu.prep.normalize import dark_flat_field_correction, minus_log
 from httomolibgpu.recon.rotation import find_center_vo, find_center_pc, find_center_360
 from conftest import force_clean_gpu_memory
 
+
 # ----------------------------------------------------------#
 # i12_dataset1 tests
 def test_center_vo_i12_dataset1(i12_dataset1):
@@ -113,7 +114,7 @@ def test_center_pc_i12_dataset3(i12_dataset3, ensure_clean_memory):
     projdata = cp.empty((2, np.shape(proj1)[0], np.shape(proj1)[1]))
     projdata[0, :, :] = proj1
     projdata[1, :, :] = proj2
-    
+
     data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
     data_normalised = minus_log(data_normalised)
 
@@ -136,7 +137,7 @@ def test_center_vo_i13_dataset2(i13_dataset2, ensure_clean_memory):
     flats = i13_dataset2[2]
     darks = i13_dataset2[3]
     del i13_dataset2
-    
+
     data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
 
     del flats, darks, projdata

@@ -9,8 +9,8 @@ def test_sino_360_to_180_i13_dataset1(i13_dataset1):
     projdata = i13_dataset1[0]
     flats = i13_dataset1[2]
     darks = i13_dataset1[3]
-    del i13_dataset1    
-    
+    del i13_dataset1
+
     data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
 
     del flats, darks, projdata
