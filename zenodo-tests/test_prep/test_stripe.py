@@ -9,7 +9,7 @@ from httomolibgpu.prep.stripe import (
     remove_all_stripe,
     raven_filter,
 )
-from httomolibgpu.prep.normalize import normalize
+from httomolibgpu.prep.normalize import dark_flat_field_correction, minus_log
 from conftest import force_clean_gpu_memory
 from math import isclose
 
@@ -39,7 +39,8 @@ def test_remove_stripe_based_sorting_i12_dataset4(
     request, dataset_fixture, size_filt, norm_res_expected
 ):
     dataset = request.getfixturevalue(dataset_fixture)
-    data_normalised = normalize(dataset[0], dataset[2], dataset[3], minus_log=True)
+    data_normalised = dark_flat_field_correction(dataset[0], dataset[2], dataset[3], cutoff=10)
+    data_normalised = minus_log(data_normalised)
 
     del dataset
     force_clean_gpu_memory()
@@ -82,7 +83,8 @@ def test_remove_stripe_ti_i12_dataset4(
     request, dataset_fixture, beta_val, norm_res_expected
 ):
     dataset = request.getfixturevalue(dataset_fixture)
-    data_normalised = normalize(dataset[0], dataset[2], dataset[3], minus_log=True)
+    data_normalised = dark_flat_field_correction(dataset[0], dataset[2], dataset[3], cutoff=10)
+    data_normalised = minus_log(data_normalised)
 
     del dataset
     force_clean_gpu_memory()
@@ -112,7 +114,8 @@ def test_remove_all_stripe_i12_dataset4(
     request, dataset_fixture, snr_val, la_size_val, sm_size_val, norm_res_expected
 ):
     dataset = request.getfixturevalue(dataset_fixture)
-    data_normalised = normalize(dataset[0], dataset[2], dataset[3], minus_log=True)
+    data_normalised = dark_flat_field_correction(dataset[0], dataset[2], dataset[3], cutoff=10)
+    data_normalised = minus_log(data_normalised)
 
     del dataset
     force_clean_gpu_memory()
@@ -147,12 +150,13 @@ def test_raven_filter_i12_dataset4(
     request, dataset_fixture, nvalue_val, vvalue_val, norm_res_expected
 ):
     dataset = request.getfixturevalue(dataset_fixture)
-    data_normalised = normalize(
+    data_normalised = dark_flat_field_correction(
         dataset[0][:, 10:20, :],
         dataset[2][:, 10:20, :],
         dataset[3][:, 10:20, :],
-        minus_log=True,
-    )
+        cutoff=10)
+    data_normalised = minus_log(data_normalised)
+
 
     del dataset
     force_clean_gpu_memory()
