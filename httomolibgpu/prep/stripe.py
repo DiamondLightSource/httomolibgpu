@@ -211,14 +211,24 @@ def remove_all_stripe(
         Corrected 3D tomographic data as a CuPy or NumPy array.
 
     """
+    device = cp.cuda.Device()
+    streams = []
+    stream_count = 4
+
+    for _ in range(stream_count):
+        streams.append(cp.cuda.stream.Stream(non_blocking=True))
 
     matindex = _create_matindex(data.shape[2], data.shape[0])
-    for m in range(data.shape[1]):
-        sino = data[:, m, :]
-        sino = _rs_dead(sino, snr, la_size, matindex)
-        sino = _rs_sort(sino, sm_size, dim)
-        sino = cp.nan_to_num(sino)
-        data[:, m, :] = sino
+    for m in range(0, data.shape[1], stream_count):
+        for stream_index in range(stream_count):
+            sino = data[:, m + stream_index, :]
+            with streams[stream_index]:
+                sino = _rs_dead(sino, snr, la_size, matindex)
+                sino = _rs_sort(sino, sm_size, dim)
+                sino = cp.nan_to_num(sino)
+                data[:, m + stream_index, :] = sino
+
+    device.synchronize()
     return data
 
 
