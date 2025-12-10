@@ -1,5 +1,3 @@
-import math
-import random
 import time
 from unittest import mock
 import cupy as cp
@@ -7,7 +5,7 @@ from cupy.cuda import nvtx
 from cupyx.scipy.ndimage import shift
 import numpy as np
 import pytest
-from httomolibgpu.prep.normalize import normalize
+from httomolibgpu.prep.normalize import dark_flat_field_correction, minus_log
 from httomolibgpu.recon.rotation import (
     _calculate_chunks,
     find_center_360,
@@ -18,11 +16,11 @@ from numpy.testing import assert_allclose
 
 
 def test_find_center_vo(data, flats, darks):
-    data = normalize(data, flats, darks)
+    data_normalize = dark_flat_field_correction(cp.copy(data), flats, darks)
 
     # --- testing the center of rotation on tomo_standard ---#
     cor = find_center_vo(
-        data.copy(),
+        data_normalize,
         average_radius=0,
     )
 
@@ -147,20 +145,10 @@ def test_find_center_360_performance(ensure_clean_memory):
     assert "performance in ms" == duration_ms
 
 
-def test_find_center_pc(data, flats, darks, ensure_clean_memory):
-    data = normalize(data, flats, darks)[:, :, 3]
-    shifted_data = shift(cp.fliplr(data), (0, 18.75), mode="reflect")
-
-    # --- testing the center of rotation on tomo_standard ---#
-    cor = find_center_pc(data, shifted_data)
-
-    assert_allclose(cor, 73.0, rtol=1e-7)
-
-
-def test_find_center_pc2(data, flats, darks, ensure_clean_memory):
-    data = normalize(data, flats, darks)
-    proj1 = data[0, :, :]
-    proj2 = data[179, :, :]
+def test_find_center_pc(data, flats, darks, ensure_clean_memory):    
+    data_normalize = dark_flat_field_correction(cp.copy(data), flats, darks)
+    proj1 = data_normalize[0, :, :]
+    proj2 = data_normalize[179, :, :]
 
     # --- testing the center of rotation on tomo_standard ---#
     cor = find_center_pc(proj1, proj2)

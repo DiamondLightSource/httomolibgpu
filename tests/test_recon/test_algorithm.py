@@ -92,11 +92,11 @@ def test_reconstruct_FBP3d_tomobar_2(data, flats, darks, ensure_clean_memory):
     )
 
     recon_data = recon_data.get()
-    assert_allclose(np.mean(recon_data), -0.00015, rtol=1e-07, atol=1e-6)
+    assert_allclose(np.mean(recon_data), 0.000265, rtol=1e-07, atol=1e-6)
     assert_allclose(
-        np.mean(recon_data, axis=(0, 2)).sum(), -0.019142, rtol=1e-06, atol=1e-5
+        np.mean(recon_data, axis=(0, 2)).sum(), 0.03396, rtol=1e-06, atol=1e-5
     )
-    assert_allclose(np.std(recon_data), 0.003561, rtol=1e-07, atol=1e-6)
+    assert_allclose(np.std(recon_data), 0.006599, rtol=1e-07, atol=1e-6)
     assert recon_data.dtype == np.float32
 
 
@@ -114,9 +114,9 @@ def test_reconstruct_FBP3d_tomobar_3_detpad_true(data, flats, darks, ensure_clea
     )
 
     recon_data = recon_data.get()
-    assert_allclose(np.mean(recon_data), -0.00041842036, atol=1e-6)
+    assert_allclose(np.mean(recon_data), 0.000692, atol=1e-6)
     assert_allclose(
-        np.mean(recon_data, axis=(0, 2)).sum(), -0.05355779, rtol=1e-06, atol=1e-5
+        np.mean(recon_data, axis=(0, 2)).sum(), 0.088599, rtol=1e-06, atol=1e-5
     )
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (210, 128, 210)

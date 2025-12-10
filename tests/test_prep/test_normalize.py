@@ -74,7 +74,7 @@ def test_dark_flat_field_performance(ensure_clean_memory):
 
     # run code and time it
     # do a cold run for warmup
-    dark_flat_field(
+    dark_flat_field_correction(
         cp.copy(data),
         flats,
         darks,
@@ -85,7 +85,7 @@ def test_dark_flat_field_performance(ensure_clean_memory):
     start = time.perf_counter_ns()
     nvtx.RangePush("Core")
     for _ in range(10):
-        normalize(
+        dark_flat_field_correction(
             cp.copy(data),
             flats,
             darks,
