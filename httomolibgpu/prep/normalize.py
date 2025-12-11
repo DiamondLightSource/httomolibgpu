@@ -20,7 +20,6 @@
 # ---------------------------------------------------------------------------
 """Modules for raw projection data normalization"""
 
-import numpy as np
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
@@ -34,25 +33,21 @@ else:
     mean = Mock()
 
 from numpy import float32
-from typing import Tuple
-
-__all__ = ["normalize"]
 
 
-def normalize(
+__all__ = ["dark_flat_field_correction", "minus_log"]
+
+
+def dark_flat_field_correction(
     data: cp.ndarray,
     flats: cp.ndarray,
     darks: cp.ndarray,
     flats_multiplier: float = 1.0,
     darks_multiplier: float = 1.0,
     cutoff: float = 10.0,
-    minus_log: bool = True,
-    nonnegativity: bool = False,
-    remove_nans: bool = False,
 ) -> cp.ndarray:
     """
     Normalize raw projection data using the flat and dark field projections.
-    This is a raw CUDA kernel implementation with CuPy wrappers.
 
     Parameters
     ----------
@@ -68,17 +63,11 @@ def normalize(
         A multiplier to apply to darks, can work as an intensity compensation constant.
     cutoff : float
         Permitted maximum value for the normalised data.
-    minus_log : bool
-        Apply negative log to the normalised data.
-    nonnegativity : bool
-        Remove negative values in the normalised data.
-    remove_nans : bool
-        Remove NaN and Inf values in the normalised data.
 
-    Returns
+            Returns
     -------
     cp.ndarray
-        Normalised 3D tomographic data as a CuPy array.
+        Normalised by dark/flat fields 3D tomographic data as a CuPy array.
     """
     _check_valid_input_normalise(data, flats, darks)
 
@@ -99,16 +88,6 @@ def normalize(
         }
         float v = (float(data) - float(darks))/denom;
         """
-    if minus_log:
-        kernel += "v = -log(v);\n"
-        kernel_name += "_mlog"
-    if nonnegativity:
-        kernel += "if (v < 0.0f) v = 0.0f;\n"
-        kernel_name += "_nneg"
-    if remove_nans:
-        kernel += "if (isnan(v)) v = 0.0f;\n"
-        kernel += "if (isinf(v)) v = 0.0f;\n"
-        kernel_name += "_remnan"
     kernel += "if (v > cutoff) v = cutoff;\n"
     kernel += "if (v < -cutoff) v = cutoff;\n"
     kernel += "out = v;\n"
@@ -126,6 +105,24 @@ def normalize(
     normalisation_kernel(data, flat0, dark0, float32(cutoff), out)
 
     return out
+
+
+def minus_log(data: cp.ndarray) -> cp.ndarray:
+    """
+    Apply -log(data) operation
+
+    Parameters
+    ----------
+    data : cp.ndarray
+        Data as a CuPy array.
+
+    Returns
+    -------
+    cp.ndarray
+        data after -log(data)
+    """
+
+    return -cp.log(data)
 
 
 def _check_valid_input_normalise(data, flats, darks) -> None:

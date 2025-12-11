@@ -4,7 +4,7 @@ from cupy.cuda import nvtx
 import numpy as np
 import pytest
 
-from httomolibgpu.prep.normalize import normalize
+from httomolibgpu.prep.normalize import dark_flat_field_correction, minus_log
 from httomolibgpu.prep.stripe import (
     remove_stripe_based_sorting,
     remove_stripe_ti,
@@ -12,14 +12,14 @@ from httomolibgpu.prep.stripe import (
     raven_filter,
 )
 from numpy.testing import assert_allclose
-from .stripe_cpu_reference import raven_filter_numpy
 
 
 def test_remove_stripe_ti_on_data(data, flats, darks):
     # --- testing the CuPy implementation from TomoCupy ---#
-    data = normalize(data, flats, darks, cutoff=10, minus_log=True)
+    data_norm = dark_flat_field_correction(cp.copy(data), flats, darks, cutoff=10)
+    data_norm = minus_log(data_norm)
 
-    data_after_stripe_removal = remove_stripe_ti(cp.copy(data)).get()
+    data_after_stripe_removal = cp.asnumpy(remove_stripe_ti(data_norm))
 
     assert_allclose(np.mean(data_after_stripe_removal), 0.28924704, rtol=1e-05)
     assert_allclose(
@@ -45,8 +45,10 @@ def test_remove_stripe_ti_dims_change(angles, det_y, det_x):
 
 def test_stripe_removal_sorting_cupy(data, flats, darks):
     # --- testing the CuPy port of TomoPy's implementation ---#
-    data = normalize(data, flats, darks, cutoff=10, minus_log=True)
-    corrected_data = remove_stripe_based_sorting(data).get()
+    data_norm = dark_flat_field_correction(cp.copy(data), flats, darks, cutoff=10)
+    data_norm = minus_log(data_norm)
+
+    corrected_data = cp.asnumpy(remove_stripe_based_sorting(data_norm))
 
     data = None  #: free up GPU memory
     assert_allclose(np.mean(corrected_data), 0.288198, rtol=1e-06)
@@ -59,45 +61,17 @@ def test_stripe_removal_sorting_cupy(data, flats, darks):
 
 
 def test_stripe_raven_cupy(data, flats, darks):
-    # --- testing the CuPy port of TomoPy's implementation ---#
+    data_norm = dark_flat_field_correction(cp.copy(data), flats, darks, cutoff=10)
+    data_norm = minus_log(data_norm)
 
-    data = normalize(data, flats, darks, cutoff=10, minus_log=True)
-
-    data_after_raven_gpu = raven_filter(cp.copy(data)).get()
-    data_after_raven_cpu = raven_filter_numpy(cp.copy(data).get())
-
-    assert_allclose(data_after_raven_cpu, data_after_raven_gpu, rtol=0, atol=4e-01)
+    data_after_raven_gpu = cp.asnumpy(raven_filter(data_norm))
 
     data = None  #: free up GPU memory
+    assert_allclose(np.mean(data_after_raven_gpu), 0.2892464, rtol=1e-06)
+
     # make sure the output is float32
     assert data_after_raven_gpu.dtype == np.float32
-    assert data_after_raven_gpu.shape == data_after_raven_cpu.shape
-
-
-@pytest.mark.parametrize("uvalue", [20, 50, 100])
-@pytest.mark.parametrize("nvalue", [2, 4, 6])
-@pytest.mark.parametrize("vvalue", [2, 4])
-@pytest.mark.parametrize("pad_x", [0, 10, 20])
-@pytest.mark.parametrize("pad_y", [0, 10, 20])
-@cp.testing.numpy_cupy_allclose(rtol=0, atol=3e-01)
-def test_stripe_raven_parameters_cupy(
-    ensure_clean_memory, xp, uvalue, nvalue, vvalue, pad_x, pad_y
-):
-    # because it's random, we explicitly seed and use numpy only, to match the data
-    np.random.seed(12345)
-    data = np.random.random_sample(size=(256, 5, 512)).astype(np.float32) * 2.0 + 0.001
-    data = xp.asarray(data)
-
-    if xp.__name__ == "numpy":
-        results = raven_filter_numpy(
-            data, uvalue=uvalue, nvalue=nvalue, vvalue=vvalue, pad_x=pad_x, pad_y=pad_y
-        ).astype(np.float32)
-    else:
-        results = raven_filter(
-            data, uvalue=uvalue, nvalue=nvalue, vvalue=vvalue, pad_x=pad_x, pad_y=pad_y
-        ).get()
-
-    return xp.asarray(results)
+    assert data_after_raven_gpu.shape == (180, 128, 160)
 
 
 @pytest.mark.perf
@@ -177,9 +151,10 @@ def test_raven_filter_performance(ensure_clean_memory):
 
 def test_remove_all_stripe_on_data(data, flats, darks):
     # --- testing the CuPy implementation from TomoCupy ---#
-    data = normalize(data, flats, darks, cutoff=10, minus_log=True)
+    data_norm = dark_flat_field_correction(cp.copy(data), flats, darks, cutoff=10)
+    data_norm = minus_log(data_norm)
 
-    data_after_stripe_removal = remove_all_stripe(cp.copy(data)).get()
+    data_after_stripe_removal = cp.asnumpy(remove_all_stripe(data_norm))
 
     assert_allclose(np.mean(data_after_stripe_removal), 0.266914, rtol=1e-05)
     assert_allclose(

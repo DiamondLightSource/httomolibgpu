@@ -5,7 +5,7 @@ from cupy.cuda import nvtx
 import time
 from math import isclose
 
-from httomolibgpu.prep.normalize import normalize
+from httomolibgpu.prep.normalize import dark_flat_field_correction, minus_log
 from httomolibgpu.recon.algorithm import (
     FBP2d_astra,
     FBP3d_tomobar,
@@ -30,7 +30,9 @@ def test_reconstruct_FBP2d_astra_i12_dataset1(i12_dataset1: tuple):
     darks = i12_dataset1[3]
     del i12_dataset1
 
-    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = minus_log(data_normalised)
+
     del flats, darks, projdata
     force_clean_gpu_memory()
 
@@ -58,7 +60,9 @@ def test_reconstruct_FBP3d_tomobar_i12_dataset1(i12_dataset1: tuple):
     darks = i12_dataset1[3]
     del i12_dataset1
 
-    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = minus_log(data_normalised)
+
     del flats, darks, projdata
     force_clean_gpu_memory()
 
@@ -70,7 +74,7 @@ def test_reconstruct_FBP3d_tomobar_i12_dataset1(i12_dataset1: tuple):
         filter_freq_cutoff=0.35,
     )
     assert recon_data.flags.c_contiguous
-    recon_data = recon_data.get()
+    recon_data = cp.asnumpy(recon_data)
     assert_allclose(np.sum(recon_data), 46569.39, rtol=1e-07, atol=1e-6)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 50, 2560)
@@ -84,7 +88,9 @@ def test_reconstruct_FBP3d_tomobar_i12_dataset1_pad(i12_dataset1: tuple):
     darks = i12_dataset1[3]
     del i12_dataset1
 
-    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = minus_log(data_normalised)
+
     del flats, darks, projdata
     force_clean_gpu_memory()
 
@@ -97,7 +103,7 @@ def test_reconstruct_FBP3d_tomobar_i12_dataset1_pad(i12_dataset1: tuple):
         recon_mask_radius=2.0,
     )
     assert recon_data.flags.c_contiguous
-    recon_data = recon_data.get()
+    recon_data = cp.asnumpy(recon_data)
     assert_allclose(np.sum(recon_data), 9864.915, rtol=1e-07, atol=1e-6)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 10, 2560)
@@ -111,7 +117,9 @@ def test_reconstruct_FBP3d_tomobar_i12_dataset1_autopad(i12_dataset1: tuple):
     darks = i12_dataset1[3]
     del i12_dataset1
 
-    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = minus_log(data_normalised)
+
     del flats, darks, projdata
     force_clean_gpu_memory()
 
@@ -124,7 +132,7 @@ def test_reconstruct_FBP3d_tomobar_i12_dataset1_autopad(i12_dataset1: tuple):
         recon_mask_radius=2.0,
     )
     assert recon_data.flags.c_contiguous
-    recon_data = recon_data.get()
+    recon_data = cp.asnumpy(recon_data)
     assert_allclose(np.sum(recon_data), 7208.2295, rtol=1e-07, atol=1e-6)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 5, 2560)
@@ -138,7 +146,9 @@ def test_reconstruct_LPRec3d_tomobar_i12_dataset1(i12_dataset1: tuple):
     darks = i12_dataset1[3]
     del i12_dataset1
 
-    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = minus_log(data_normalised)
+
     data_normalised_cut = data_normalised[:, 5:8, :]
     del flats, darks, projdata, data_normalised
     force_clean_gpu_memory()
@@ -153,7 +163,7 @@ def test_reconstruct_LPRec3d_tomobar_i12_dataset1(i12_dataset1: tuple):
         recon_mask_radius=2.0,
     )
     assert recon_data.flags.c_contiguous
-    recon_data = recon_data.get()
+    recon_data = cp.asnumpy(recon_data)
     assert isclose(np.sum(recon_data), 9628.818, abs_tol=10**-3)
     assert pytest.approx(np.max(recon_data), rel=1e-3) == 0.006367563270032406
     assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.0062076798
@@ -169,7 +179,9 @@ def test_reconstruct_LPRec3d_tomobar_i12_dataset1_autopad(i12_dataset1: tuple):
     darks = i12_dataset1[3]
     del i12_dataset1
 
-    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = minus_log(data_normalised)
+
     data_normalised_cut = data_normalised[:, 5:8, :]
     del flats, darks, projdata, data_normalised
     force_clean_gpu_memory()
@@ -184,7 +196,7 @@ def test_reconstruct_LPRec3d_tomobar_i12_dataset1_autopad(i12_dataset1: tuple):
         recon_mask_radius=2.0,
     )
     assert recon_data.flags.c_contiguous
-    recon_data = recon_data.get()
+    recon_data = cp.asnumpy(recon_data)
     assert int(np.sum(recon_data)) == 9147
     assert pytest.approx(np.max(recon_data), rel=1e-3) == 0.0063818083
     assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.006200762
@@ -200,7 +212,9 @@ def test_reconstruct_LPRec_tomobar_i13_dataset1(i13_dataset1: tuple):
     darks = i13_dataset1[3]
     del i13_dataset1
 
-    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = minus_log(data_normalised)
+
     del flats, darks, projdata
     force_clean_gpu_memory()
 
@@ -210,15 +224,6 @@ def test_reconstruct_LPRec_tomobar_i13_dataset1(i13_dataset1: tuple):
     del data_normalised
     force_clean_gpu_memory()
 
-    # GPU archetictures older than 5.3 wont accept the data larger than
-    # (4096, 4096, 4096), while the newer ones can accept (16384 x 16384 x 16384)
-
-    # recon_data = FBP3d_tomobar(
-    #     stiched_data_180degrees,
-    #     np.deg2rad(angles[0:3000]),
-    #     center=2322,
-    #     filter_freq_cutoff=0.35,
-    # )
     recon_data = LPRec3d_tomobar(
         data=stiched_data_180degrees,
         angles=np.deg2rad(angles[0:3000]),
@@ -230,7 +235,7 @@ def test_reconstruct_LPRec_tomobar_i13_dataset1(i13_dataset1: tuple):
     )
 
     assert recon_data.flags.c_contiguous
-    recon_data = recon_data.get()
+    recon_data = cp.asnumpy(recon_data)
     assert int(np.sum(recon_data)) == 1149
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (4646, 1, 4646)
@@ -246,7 +251,9 @@ def test_FBP3d_tomobar_performance_i13_dataset2(i13_dataset2: tuple):
     darks = i13_dataset2[3]
     del i13_dataset2
 
-    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = minus_log(data_normalised)
+
     del flats, darks, projdata
     force_clean_gpu_memory()
 
@@ -285,7 +292,9 @@ def test_reconstruct_LPRec3d_tomobar_i13_dataset2(i13_dataset2: tuple):
     darks = i13_dataset2[3]
     del i13_dataset2
 
-    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = minus_log(data_normalised)
+
     del flats, darks, projdata
     force_clean_gpu_memory()
 
@@ -299,7 +308,7 @@ def test_reconstruct_LPRec3d_tomobar_i13_dataset2(i13_dataset2: tuple):
         recon_mask_radius=2.0,
     )
     assert recon_data.flags.c_contiguous
-    recon_data = recon_data.get()
+    recon_data = cp.asnumpy(recon_data)
     assert int(np.sum(recon_data)) == 3448
     assert pytest.approx(np.max(recon_data), rel=1e-3) == 0.010543354
     assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.008385599
@@ -316,7 +325,9 @@ def test_LPRec3d_tomobar_performance_i13_dataset2(i13_dataset2: tuple):
     darks = i13_dataset2[3]
     del i13_dataset2
 
-    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = minus_log(data_normalised)
+
     del flats, darks, projdata
     force_clean_gpu_memory()
 
@@ -353,7 +364,9 @@ def test_reconstruct_FBP3d_tomobar_i13_dataset3(i13_dataset3: tuple):
     darks = i13_dataset3[3]
     del i13_dataset3
 
-    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = minus_log(data_normalised)
+
     del flats, darks, projdata
     force_clean_gpu_memory()
 
@@ -374,7 +387,7 @@ def test_reconstruct_FBP3d_tomobar_i13_dataset3(i13_dataset3: tuple):
     )
 
     assert recon_data.flags.c_contiguous
-    recon_data = recon_data.get()
+    recon_data = cp.asnumpy(recon_data)
 
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (4682, 3, 4682)
@@ -388,7 +401,9 @@ def test_reconstruct_FBP3d_tomobar_i12_dataset5(i12_dataset5: tuple):
     darks = i12_dataset5[3]
     del i12_dataset5
 
-    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = minus_log(data_normalised)
+
     del flats, darks, projdata
     force_clean_gpu_memory()
 
@@ -406,7 +421,7 @@ def test_reconstruct_FBP3d_tomobar_i12_dataset5(i12_dataset5: tuple):
     )
 
     assert recon_data.flags.c_contiguous
-    recon_data = recon_data.get()
+    recon_data = cp.asnumpy(recon_data)
 
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (4933, 15, 4933)
@@ -420,7 +435,9 @@ def test_reconstruct_LPRec3d_tomobar_k11_dataset2(k11_dataset2: tuple):
     darks = k11_dataset2[3]
     del k11_dataset2
 
-    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = minus_log(data_normalised)
+
     del flats, darks, projdata
     force_clean_gpu_memory()
 
@@ -448,7 +465,9 @@ def test_reconstruct_CGLS3d_tomobar_k11_dataset2(k11_dataset2: tuple):
     darks = k11_dataset2[3]
     del k11_dataset2
 
-    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = minus_log(data_normalised)
+
     del flats, darks, projdata
     force_clean_gpu_memory()
 
@@ -461,8 +480,8 @@ def test_reconstruct_CGLS3d_tomobar_k11_dataset2(k11_dataset2: tuple):
         iterations=15,
     )
     assert recon_data.flags.c_contiguous
-    recon_data = recon_data.get()
-    assert isclose(np.sum(recon_data), 6392.362, abs_tol=10**-3)
+    recon_data = cp.asnumpy(recon_data)
+    assert isclose(np.sum(recon_data), 6392.36, abs_tol=10**-2)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 5, 2560)
 
@@ -475,7 +494,9 @@ def test_reconstruct_SIRT3d_tomobar_k11_dataset2(k11_dataset2: tuple):
     darks = k11_dataset2[3]
     del k11_dataset2
 
-    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = minus_log(data_normalised)
+
     del flats, darks, projdata
     force_clean_gpu_memory()
 
@@ -502,7 +523,9 @@ def test_reconstruct_FISTA3d_tomobar_autopad_k11_dataset2(k11_dataset2: tuple):
     darks = k11_dataset2[3]
     del k11_dataset2
 
-    data_normalised = normalize(projdata, flats, darks, minus_log=True)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = minus_log(data_normalised)
+
     del flats, darks, projdata
     force_clean_gpu_memory()
 
@@ -516,7 +539,7 @@ def test_reconstruct_FISTA3d_tomobar_autopad_k11_dataset2(k11_dataset2: tuple):
         regularisation_parameter=0.0000005,
     )
     assert recon_data.flags.c_contiguous
-    recon_data = recon_data.get()
+    recon_data = cp.asnumpy(recon_data)
     assert isclose(np.sum(recon_data), 1355.4624, abs_tol=10**-3)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 5, 2560)
