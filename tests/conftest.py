@@ -60,9 +60,13 @@ def data_file(test_data_path):
 def ensure_clean_memory():
     cp.get_default_memory_pool().free_all_blocks()
     cp.get_default_pinned_memory_pool().free_all_blocks()
+    cache = cp.fft.config.get_plan_cache()
+    cache.clear()
     yield None
     cp.get_default_memory_pool().free_all_blocks()
     cp.get_default_pinned_memory_pool().free_all_blocks()
+    cache = cp.fft.config.get_plan_cache()
+    cache.clear()
 
 
 @pytest.fixture
@@ -135,3 +139,20 @@ def host_detector_x(data_file):
 @pytest.fixture
 def detector_x(host_detector_x, ensure_clean_memory):
     return cp.asarray(host_detector_x)
+
+
+class MaxMemoryHook(cp.cuda.MemoryHook):
+    def __init__(self, initial=0):
+        self.max_mem = initial
+        self.current = initial
+
+    def malloc_postprocess(
+        self, device_id: int, size: int, mem_size: int, mem_ptr: int, pmem_id: int
+    ):
+        self.current += mem_size
+        self.max_mem = max(self.max_mem, self.current)
+
+    def free_postprocess(
+        self, device_id: int, mem_size: int, mem_ptr: int, pmem_id: int
+    ):
+        self.current -= mem_size
