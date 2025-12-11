@@ -137,6 +137,31 @@ def test_remove_stripe_fw_calc_mem_big(wname, slices, level, dims, ensure_clean_
     assert estimated_mem_peak <= actual_mem_peak * 1.3
 
 
+@pytest.mark.perf
+def test_remove_stripe_fw_performance(ensure_clean_memory):
+    data_host = (
+        np.random.random_sample(size=(1801, 5, 2560)).astype(np.float32) * 2.0 + 0.001
+    )
+    data = cp.asarray(data_host, dtype=np.float32)
+
+    # do a cold run first
+    remove_stripe_fw(cp.copy(data))
+
+    dev = cp.cuda.Device()
+    dev.synchronize()
+
+    start = time.perf_counter_ns()
+    nvtx.RangePush("Core")
+    for _ in range(10):
+        # have to take copy, as data is modified in-place
+        remove_stripe_fw(cp.copy(data))
+    nvtx.RangePop()
+    dev.synchronize()
+    duration_ms = float(time.perf_counter_ns() - start) * 1e-6 / 10
+
+    assert "performance in ms" == duration_ms
+
+
 @pytest.mark.parametrize("angles", [180, 181])
 @pytest.mark.parametrize("det_x", [11, 18])
 @pytest.mark.parametrize("det_y", [5, 7, 8])
