@@ -2,6 +2,7 @@ cupy_run = False
 try:
     import cupy as cp
     import nvtx
+    from cupyx.scipy.fft import next_fast_len
 
     try:
         cp.cuda.Device(0).compute_capability
@@ -15,5 +16,6 @@ except ImportError as e:
     )
     from unittest.mock import Mock
     import numpy as cp
+    from scipy.fft import next_fast_len
 
     nvtx = Mock()
