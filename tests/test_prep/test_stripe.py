@@ -57,7 +57,7 @@ def test_remove_stripe_fw_on_data(data, flats, darks):
     data_norm = dark_flat_field_correction(data, flats, darks, cutoff=10)
     data_norm = minus_log(data_norm)
 
-    data_after_stripe_removal = remove_stripe_fw(cp.copy(data_norm), level=7).get()
+    data_after_stripe_removal = remove_stripe_fw(cp.copy(data_norm), wname='sym16', sigma=1, level=7).get()
 
     assert_allclose(np.mean(data_after_stripe_removal), 0.279236, rtol=1e-05)
     assert_allclose(
