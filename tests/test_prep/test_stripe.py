@@ -40,7 +40,7 @@ def test_remove_stripe_fw_on_data(data, flats, darks):
     # --- testing the CuPy implementation from TomoCupy ---#
     data = normalize(data, flats, darks, cutoff=10, minus_log=True)
 
-    data_after_stripe_removal = remove_stripe_fw(cp.copy(data), level=7).get()
+    data_after_stripe_removal = remove_stripe_fw(cp.copy(data), wname='sym16', sigma=1, level=7).get()
 
     assert_allclose(np.mean(data_after_stripe_removal), 0.279236, rtol=1e-05)
     assert_allclose(
