@@ -32,7 +32,7 @@ from unittest.mock import Mock
 if cupy_run:
     from httomolibgpu.cuda_kernels import load_cuda_module
     from cupyx.scipy.ndimage import shift, gaussian_filter
-    from skimage.registration import phase_cross_correlation
+    from ._phase_cross_correlation import phase_cross_correlation
     from cupyx.scipy.fftpack import get_fft_plan
     from cupyx.scipy.fft import fft2, fftshift
 else:
@@ -805,7 +805,7 @@ def find_center_pc(
 
     # do phase cross correlation between two images
     shiftr = phase_cross_correlation(
-        reference_image=proj1.get(), moving_image=proj2.get(), upsample_factor=1.0 / tol
+        reference_image=proj1, moving_image=proj2, upsample_factor=1.0 / tol
     )
 
     # Compute center of rotation as the center of first image and the
