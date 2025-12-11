@@ -126,16 +126,19 @@ def paganin_filter(
 
     if mem_stack:
         mem_stack.malloc(indx.size * indx.dtype.itemsize) # cp.asarray(indx)
-        mem_stack.malloc(indx.size ** 2 * indx.dtype.itemsize) # cp.square
+        mem_stack.malloc(indx.size * indx.dtype.itemsize) # cp.square
+        mem_stack.free(indx.size * indx.dtype.itemsize) # cp.asarray(indx)
         mem_stack.malloc(indy.size * indy.dtype.itemsize)  # cp.asarray(indy)
-        mem_stack.malloc(indy.size ** 2 * indy.dtype.itemsize) # cp.square
+        mem_stack.malloc(indy.size * indy.dtype.itemsize) # cp.square
+        mem_stack.free(indy.size * indy.dtype.itemsize)  # cp.asarray(indy)
 
-        mem_stack.malloc(indx.size ** 2 * indx.dtype.itemsize) # phase_filter
+        mem_stack.malloc(indx.size * indy.size * indx.dtype.itemsize) # cp.add.outer
+        mem_stack.free(indx.size * indx.dtype.itemsize) # cp.square
+        mem_stack.free(indy.size * indy.dtype.itemsize) # cp.square
+        mem_stack.malloc(indx.size * indy.size * indx.dtype.itemsize) # phase_filter
+        mem_stack.free(indx.size * indy.size * indx.dtype.itemsize) # cp.add.outer
+        mem_stack.free(indx.size * indy.size * indx.dtype.itemsize) # phase_filter
 
-        mem_stack.free(indx.size * indx.dtype.itemsize)
-        mem_stack.free(indx.size ** 2 * indx.dtype.itemsize)
-        mem_stack.free(indy.size * indy.dtype.itemsize)
-        mem_stack.free(indy.size ** 2 * indy.dtype.itemsize)
     else:
         # Build Lorentzian-type filter
         phase_filter = fftshift(
@@ -146,6 +149,7 @@ def paganin_filter(
 
         # Filter projections
         fft_tomo *= phase_filter
+        del phase_filter
 
     # Apply filter and take inverse FFT
     ifft_input = fft_tomo if not mem_stack else cp.empty(padded_tomo, dtype=cp.complex64)
