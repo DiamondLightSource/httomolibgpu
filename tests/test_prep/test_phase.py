@@ -51,6 +51,28 @@ def test_paganin_filter_dist3(data):
     assert_allclose(np.sum(filtered_data), -24870786.0, rtol=1e-6)
 
 
+@pytest.mark.parametrize(
+    "test_case",
+    [
+        ("next_power_of_2", -6.725061, -6.367116),
+        ("next_fast_length", -6.677313, -6.096187),
+        (0, -6.677313, -6.096187),
+        (80, -6.73193, -6.405338),
+    ],
+)
+def test_paganin_filter_padding_options(data, test_case):
+    # --- testing the Paganin filter on tomo_standard ---#
+    filtered_data = paganin_filter(data, padding_method=test_case[0]).get()
+
+    assert filtered_data.ndim == 3
+    assert_allclose(np.mean(filtered_data), test_case[1], rtol=eps)
+    assert_allclose(np.max(filtered_data), test_case[2], rtol=eps)
+
+    #: make sure the output is float32
+    assert filtered_data.dtype == np.float32
+    assert filtered_data.flags.c_contiguous
+
+
 @pytest.mark.perf
 def test_paganin_filter_performance(ensure_clean_memory):
     # Note: low/high and size values taken from sample2_medium.yaml real run
@@ -87,30 +109,35 @@ def test_paganin_filter_performance(ensure_clean_memory):
 
 @pytest.mark.parametrize("slices", [3, 7, 32, 61, 109, 120, 150])
 @pytest.mark.parametrize("dim_x", [128, 140])
-def test_paganin_filter_calc_mem(slices, dim_x, ensure_clean_memory):
+@pytest.mark.parametrize("padding_method", ["next_power_of_2", "next_fast_length", 45])
+def test_paganin_filter_calc_mem(slices, dim_x, padding_method, ensure_clean_memory):
     dim_y = 159
     data = cp.random.random_sample((slices, dim_x, dim_y), dtype=np.float32)
     hook = MaxMemoryHook()
     with hook:
-        paganin_filter(cp.copy(data))
+        paganin_filter(cp.copy(data), padding_method=padding_method)
     actual_mem_peak = hook.max_mem
 
     try:
-        estimated_mem_peak = paganin_filter(data.shape, calc_peak_gpu_mem=True)
+        estimated_mem_peak = paganin_filter(
+            data.shape, padding_method=padding_method, calc_peak_gpu_mem=True
+        )
     except cp.cuda.memory.OutOfMemoryError:
         pytest.skip("Not enough GPU memory to estimate memory peak")
 
-    assert actual_mem_peak * 0.99 <= estimated_mem_peak
-    assert estimated_mem_peak <= actual_mem_peak * 1.01
+    assert actual_mem_peak == estimated_mem_peak
 
 
 @pytest.mark.parametrize("slices", [38, 177, 268, 320, 490, 607, 803, 859, 902, 951])
 @pytest.mark.parametrize("dims", [(900, 1280), (1801, 1540), (1801, 2560)])
-def test_paganin_filter_calc_mem_big(slices, dims, ensure_clean_memory):
+@pytest.mark.parametrize("padding_method", ["next_power_of_2", "next_fast_length", 145])
+def test_paganin_filter_calc_mem_big(slices, dims, padding_method, ensure_clean_memory):
     dim_y, dim_x = dims
     data_shape = (slices, dim_x, dim_y)
     try:
-        estimated_mem_peak = paganin_filter(data_shape, calc_peak_gpu_mem=True)
+        estimated_mem_peak = paganin_filter(
+            data_shape, padding_method=padding_method, calc_peak_gpu_mem=True
+        )
     except cp.cuda.memory.OutOfMemoryError:
         pytest.skip("Not enough GPU memory to estimate memory peak")
     av_mem = cp.cuda.Device().mem_info[0]
@@ -120,8 +147,7 @@ def test_paganin_filter_calc_mem_big(slices, dims, ensure_clean_memory):
     hook = MaxMemoryHook()
     with hook:
         data = cp.random.random_sample(data_shape, dtype=np.float32)
-        paganin_filter(data)
+        paganin_filter(data, padding_method=padding_method)
     actual_mem_peak = hook.max_mem
 
-    assert actual_mem_peak * 0.99 <= estimated_mem_peak
-    assert estimated_mem_peak <= actual_mem_peak * 1.01
+    assert actual_mem_peak == estimated_mem_peak

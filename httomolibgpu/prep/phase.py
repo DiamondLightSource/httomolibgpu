@@ -26,6 +26,7 @@ from httomolibgpu.memory_estimator_helpers import _DeviceMemStack
 
 cp = cupywrapper.cp
 cupy_run = cupywrapper.cupy_run
+next_fast_len = cupywrapper.next_fast_len
 
 from unittest.mock import Mock
 
@@ -38,7 +39,7 @@ else:
     fftshift = Mock()
 
 from numpy import float32
-from typing import Optional, Tuple
+from typing import Literal, Optional, Tuple, Union
 import math
 
 __all__ = [
@@ -56,6 +57,9 @@ def paganin_filter(
     distance: float = 1.0,
     energy: float = 53.0,
     ratio_delta_beta: float = 250,
+    padding_method: Union[
+        Literal["next_power_of_2", "next_fast_length"], int
+    ] = "next_power_of_2",
     calc_peak_gpu_mem: bool = False,
 ) -> cp.ndarray:
     """
@@ -74,6 +78,10 @@ def paganin_filter(
         Beam energy in keV.
     ratio_delta_beta : float
         The ratio of delta/beta, where delta is the phase shift and real part of the complex material refractive index and beta is the absorption.
+    padding_method: str | int
+        Method to calculate the padded size of the input data.
+        Accepted values are 'next_power_of_2', 'next_fast_length' or an integer specifying the
+        padding extent both horizontally and vertically, in both directions.
     calc_peak_gpu_mem: bool
         Parameter to support memory estimation in HTTomo. Irrelevant to the method itself and can be ignored by user.
 
@@ -93,9 +101,7 @@ def paganin_filter(
         mem_stack.malloc(np.prod(tomo) * np.float32().itemsize)
     dz_orig, dy_orig, dx_orig = tomo.shape if not mem_stack else tomo
 
-    # Perform padding to the power of 2 as FFT is O(n*log(n)) complexity
-    # TODO: adding other options of padding?
-    padded_tomo, pad_tup = _pad_projections_to_second_power(tomo, mem_stack)
+    padded_tomo, pad_tup = _pad_projections(tomo, padding_method, mem_stack)
 
     dz, dy, dx = padded_tomo.shape if not mem_stack else padded_tomo
 
@@ -219,21 +225,37 @@ def _shift_bit_length(x: int) -> int:
     return 1 << (x - 1).bit_length()
 
 
-def _calculate_pad_size(datashape: tuple) -> list:
+def _calculate_pad_size(
+    datashape: tuple,
+    padding_method: Union[Literal["next_power_of_2", "next_fast_length"], int],
+) -> list:
     """Calculating the padding size
 
     Args:
-        datashape (tuple): the shape of the 3D data
+        datashape (tuple):
+            the shape of the 3D data
+        padding_method: str | int
+            Method to calculate the padded size of the input data.
+            Accepted values are 'next_power_of_2', 'next_fast_length' or an integer specifying the
+            padding extent both horizontally and vertically, in both directions.
 
     Returns:
         list: the padded dimensions
     """
+    if padding_method == "next_power_of_2":
+        calculate_padded_dim = lambda dim: _shift_bit_length(dim + 1)
+    elif padding_method == "next_fast_length":
+        calculate_padded_dim = lambda dim: next_fast_len(dim)
+    elif type(padding_method) == int:
+        calculate_padded_dim = lambda dim: dim + padding_method * 2
+    else:
+        raise ValueError(f'Unexpected padding_method: "{padding_method}"')
     pad_list = []
     for index, element in enumerate(datashape):
         if index == 0:
             pad_width = (0, 0)  # do not pad the slicing dim
         else:
-            diff = _shift_bit_length(element + 1) - element
+            diff = calculate_padded_dim(element) - element
             if element % 2 == 0:
                 pad_width_scalar = diff // 2
                 pad_width = (pad_width_scalar, pad_width_scalar)
@@ -248,17 +270,24 @@ def _calculate_pad_size(datashape: tuple) -> list:
     return pad_list
 
 
-def _pad_projections_to_second_power(
-    tomo: cp.ndarray, mem_stack: Optional[_DeviceMemStack]
+def _pad_projections(
+    tomo: cp.ndarray,
+    padding_method: Union[Literal["next_power_of_2", "next_fast_length"], int],
+    mem_stack: Optional[_DeviceMemStack],
 ) -> Tuple[cp.ndarray, Tuple[int, int]]:
     """
-    Performs padding of each projection to the next power of 2.
+    Performs padding of each projection to a size optimal for FFT.
     If the shape is not even we also care of that before padding.
 
     Parameters
     ----------
     tomo : cp.ndarray
         3d projection data
+    padding_method: str | int
+        Method to calculate the padded size of the input data.
+        Accepted values are 'next_power_of_2', 'next_fast_length' or an integer specifying the
+        padding extent both horizontally and vertically, in both directions.
+
 
     Returns
     -------
@@ -268,7 +297,7 @@ def _pad_projections_to_second_power(
     """
     full_shape_tomo = cp.shape(tomo) if not mem_stack else tomo
 
-    pad_list = _calculate_pad_size(full_shape_tomo)
+    pad_list = _calculate_pad_size(full_shape_tomo, padding_method)
 
     if mem_stack:
         padded_tomo = [
