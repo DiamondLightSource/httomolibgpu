@@ -26,6 +26,7 @@ from httomolibgpu.memory_estimator_helpers import _DeviceMemStack
 
 cp = cupywrapper.cp
 cupy_run = cupywrapper.cupy_run
+next_fast_len = cupywrapper.next_fast_len
 
 from unittest.mock import Mock
 
@@ -93,7 +94,7 @@ def paganin_filter(
 
     # Perform padding to the power of 2 as FFT is O(n*log(n)) complexity
     # TODO: adding other options of padding?
-    padded_tomo, pad_tup = _pad_projections_to_second_power(tomo, mem_stack)
+    padded_tomo, pad_tup = _pad_projections(tomo, mem_stack)
 
     dz, dy, dx = padded_tomo.shape if not mem_stack else padded_tomo
 
@@ -198,10 +199,6 @@ def _calculate_alpha(energy, distance_micron, ratio_delta_beta):
     ) * ratio_delta_beta
 
 
-def _shift_bit_length(x: int) -> int:
-    return 1 << (x - 1).bit_length()
-
-
 def _calculate_pad_size(datashape: tuple) -> list:
     """Calculating the padding size
 
@@ -216,7 +213,7 @@ def _calculate_pad_size(datashape: tuple) -> list:
         if index == 0:
             pad_width = (0, 0)  # do not pad the slicing dim
         else:
-            diff = _shift_bit_length(element + 1) - element
+            diff = next_fast_len(element) - element
             if element % 2 == 0:
                 pad_width_scalar = diff // 2
                 pad_width = (pad_width_scalar, pad_width_scalar)
@@ -231,12 +228,12 @@ def _calculate_pad_size(datashape: tuple) -> list:
     return pad_list
 
 
-def _pad_projections_to_second_power(
+def _pad_projections(
     tomo: cp.ndarray,
     mem_stack: Optional[_DeviceMemStack]
 ) -> Tuple[cp.ndarray, Tuple[int, int]]:
     """
-    Performs padding of each projection to the next power of 2.
+    Performs padding of each projection to a size optimal for FFT.
     If the shape is not even we also care of that before padding.
 
     Parameters
