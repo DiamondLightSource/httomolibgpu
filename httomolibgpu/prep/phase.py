@@ -74,6 +74,8 @@ def paganin_filter(
         Beam energy in keV.
     ratio_delta_beta : float
         The ratio of delta/beta, where delta is the phase shift and real part of the complex material refractive index and beta is the absorption.
+    calc_peak_gpu_mem: bool
+        Parameter to support memory estimation in HTTomo. Irrelevant to the method itself and can be ignored by user.
 
     Returns
     -------
@@ -125,24 +127,33 @@ def paganin_filter(
     indy = _reciprocal_coord(pixel_size, dx)
 
     if mem_stack:
-        mem_stack.malloc(indx.size * indx.dtype.itemsize) # cp.asarray(indx)
-        mem_stack.malloc(indx.size * indx.dtype.itemsize) # cp.square
-        mem_stack.free(indx.size * indx.dtype.itemsize) # cp.asarray(indx)
+        mem_stack.malloc(indx.size * indx.dtype.itemsize)  # cp.asarray(indx)
+        mem_stack.malloc(indx.size * indx.dtype.itemsize)  # cp.square
+        mem_stack.free(indx.size * indx.dtype.itemsize)  # cp.asarray(indx)
         mem_stack.malloc(indy.size * indy.dtype.itemsize)  # cp.asarray(indy)
-        mem_stack.malloc(indy.size * indy.dtype.itemsize) # cp.square
+        mem_stack.malloc(indy.size * indy.dtype.itemsize)  # cp.square
         mem_stack.free(indy.size * indy.dtype.itemsize)  # cp.asarray(indy)
 
-        mem_stack.malloc(indx.size * indy.size * indx.dtype.itemsize) # cp.add.outer
-        mem_stack.free(indx.size * indx.dtype.itemsize) # cp.square
-        mem_stack.free(indy.size * indy.dtype.itemsize) # cp.square
-        mem_stack.malloc(indx.size * indy.size * indx.dtype.itemsize) # phase_filter
-        mem_stack.free(indx.size * indy.size * indx.dtype.itemsize) # cp.add.outer
-        mem_stack.free(indx.size * indy.size * indx.dtype.itemsize) # phase_filter
+        mem_stack.malloc(indx.size * indy.size * indx.dtype.itemsize)  # cp.add.outer
+        mem_stack.free(indx.size * indx.dtype.itemsize)  # cp.square
+        mem_stack.free(indy.size * indy.dtype.itemsize)  # cp.square
+        mem_stack.malloc(indx.size * indy.size * indx.dtype.itemsize)  # phase_filter
+        mem_stack.free(indx.size * indy.size * indx.dtype.itemsize)  # cp.add.outer
+        mem_stack.free(indx.size * indy.size * indx.dtype.itemsize)  # phase_filter
 
     else:
         # Build Lorentzian-type filter
         phase_filter = fftshift(
-            1.0 / (1.0 + alpha * (cp.add.outer(cp.square(cp.asarray(indx)), cp.square(cp.asarray(indy)))))
+            1.0
+            / (
+                1.0
+                + alpha
+                * (
+                    cp.add.outer(
+                        cp.square(cp.asarray(indx)), cp.square(cp.asarray(indy))
+                    )
+                )
+            )
         )
 
         phase_filter = phase_filter / phase_filter.max()  # normalisation
@@ -152,7 +163,9 @@ def paganin_filter(
         del phase_filter
 
     # Apply filter and take inverse FFT
-    ifft_input = fft_tomo if not mem_stack else cp.empty(padded_tomo, dtype=cp.complex64)
+    ifft_input = (
+        fft_tomo if not mem_stack else cp.empty(padded_tomo, dtype=cp.complex64)
+    )
     ifft_plan = get_fft_plan(ifft_input, axes=(-2, -1))
     if mem_stack:
         mem_stack.malloc(ifft_plan.work_area.mem.size)
@@ -160,7 +173,7 @@ def paganin_filter(
     else:
         with ifft_plan:
             ifft_filtered_tomo = ifft2(fft_tomo, axes=(-2, -1), overwrite_x=True).real
-        del fft_tomo    
+        del fft_tomo
     del ifft_plan
     del ifft_input
 
@@ -172,9 +185,13 @@ def paganin_filter(
     )
 
     if mem_stack:
-        mem_stack.malloc(np.prod(tomo) * np.float32().itemsize) # astype(cp.float32)
-        mem_stack.free(np.prod(padded_tomo) * np.complex64().itemsize) # ifft_filtered_tomo
-        mem_stack.malloc(np.prod(tomo) * np.float32().itemsize) # return _log_kernel(tomo)
+        mem_stack.malloc(np.prod(tomo) * np.float32().itemsize)  # astype(cp.float32)
+        mem_stack.free(
+            np.prod(padded_tomo) * np.complex64().itemsize
+        )  # ifft_filtered_tomo
+        mem_stack.malloc(
+            np.prod(tomo) * np.float32().itemsize
+        )  # return _log_kernel(tomo)
         return mem_stack.highwater
 
     # crop the padded filtered data:
@@ -232,8 +249,7 @@ def _calculate_pad_size(datashape: tuple) -> list:
 
 
 def _pad_projections_to_second_power(
-    tomo: cp.ndarray,
-    mem_stack: Optional[_DeviceMemStack]
+    tomo: cp.ndarray, mem_stack: Optional[_DeviceMemStack]
 ) -> Tuple[cp.ndarray, Tuple[int, int]]:
     """
     Performs padding of each projection to the next power of 2.
@@ -255,7 +271,9 @@ def _pad_projections_to_second_power(
     pad_list = _calculate_pad_size(full_shape_tomo)
 
     if mem_stack:
-        padded_tomo = [sh + pad[0] + pad[1] for sh, pad in zip(full_shape_tomo, pad_list)]
+        padded_tomo = [
+            sh + pad[0] + pad[1] for sh, pad in zip(full_shape_tomo, pad_list)
+        ]
         mem_stack.malloc(np.prod(padded_tomo) * np.float32().itemsize)
     else:
         padded_tomo = cp.pad(tomo, tuple(pad_list), "edge")
@@ -317,6 +335,8 @@ def paganin_filter_savu_legacy(
         Beam energy in keV.
     ratio_delta_beta : float
         The ratio of delta/beta, where delta is the phase shift and real part of the complex material refractive index and beta is the absorption.
+    calc_peak_gpu_mem: bool
+        Parameter to support memory estimation in HTTomo. Irrelevant to the method itself and can be ignored by user.
 
     Returns
     -------
@@ -324,4 +344,11 @@ def paganin_filter_savu_legacy(
         The 3D array of Paganin phase-filtered projection images.
     """
 
-    return paganin_filter(tomo, pixel_size, distance, energy, ratio_delta_beta / 4, calc_peak_gpu_mem=calc_peak_gpu_mem)
+    return paganin_filter(
+        tomo,
+        pixel_size,
+        distance,
+        energy,
+        ratio_delta_beta / 4,
+        calc_peak_gpu_mem=calc_peak_gpu_mem,
+    )

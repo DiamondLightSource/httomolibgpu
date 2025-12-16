@@ -84,6 +84,7 @@ def test_paganin_filter_performance(ensure_clean_memory):
 
     assert "performance in ms" == duration_ms
 
+
 @pytest.mark.parametrize("slices", [3, 7, 32, 61, 109, 120, 150])
 @pytest.mark.parametrize("dim_x", [128, 140])
 def test_paganin_filter_calc_mem(slices, dim_x, ensure_clean_memory):
@@ -95,9 +96,7 @@ def test_paganin_filter_calc_mem(slices, dim_x, ensure_clean_memory):
     actual_mem_peak = hook.max_mem
 
     try:
-        estimated_mem_peak = paganin_filter(
-            data.shape, calc_peak_gpu_mem=True
-        )
+        estimated_mem_peak = paganin_filter(data.shape, calc_peak_gpu_mem=True)
     except cp.cuda.memory.OutOfMemoryError:
         pytest.skip("Not enough GPU memory to estimate memory peak")
 
@@ -105,17 +104,13 @@ def test_paganin_filter_calc_mem(slices, dim_x, ensure_clean_memory):
     assert estimated_mem_peak <= actual_mem_peak * 1.01
 
 
-@pytest.mark.parametrize(
-    "slices", [38, 177, 268, 320, 490, 607, 803, 859, 902, 951]
-)
+@pytest.mark.parametrize("slices", [38, 177, 268, 320, 490, 607, 803, 859, 902, 951])
 @pytest.mark.parametrize("dims", [(900, 1280), (1801, 1540), (1801, 2560)])
 def test_paganin_filter_calc_mem_big(slices, dims, ensure_clean_memory):
     dim_y, dim_x = dims
     data_shape = (slices, dim_x, dim_y)
     try:
-        estimated_mem_peak = paganin_filter(
-            data_shape, calc_peak_gpu_mem=True
-        )
+        estimated_mem_peak = paganin_filter(data_shape, calc_peak_gpu_mem=True)
     except cp.cuda.memory.OutOfMemoryError:
         pytest.skip("Not enough GPU memory to estimate memory peak")
     av_mem = cp.cuda.Device().mem_info[0]
