@@ -298,6 +298,7 @@ def paganin_filter_savu_legacy(
     distance: float = 1.0,
     energy: float = 53.0,
     ratio_delta_beta: float = 250,
+    calc_peak_gpu_mem: bool = False,
 ) -> cp.ndarray:
     """
     Perform single-material phase retrieval from flats/darks corrected tomographic measurements. For more detailed information, see :ref:`phase_contrast_module`.
@@ -323,4 +324,4 @@ def paganin_filter_savu_legacy(
         The 3D array of Paganin phase-filtered projection images.
     """
 
-    return paganin_filter(tomo, pixel_size, distance, energy, ratio_delta_beta / 4)
+    return paganin_filter(tomo, pixel_size, distance, energy, ratio_delta_beta / 4, calc_peak_gpu_mem=calc_peak_gpu_mem)
