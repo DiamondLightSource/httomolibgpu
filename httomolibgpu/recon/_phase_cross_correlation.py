@@ -36,9 +36,8 @@ import cupy as cp
 import cupyx.scipy.ndimage as ndi
 import numpy as np
 
-def _upsampled_dft(
-    data, upsampled_region_size, upsample_factor=1, axis_offsets=None
-):
+
+def _upsampled_dft(data, upsampled_region_size, upsample_factor=1, axis_offsets=None):
     """
     Upsampled DFT by matrix multiplication.
 
@@ -148,9 +147,7 @@ def _compute_error(cross_correlation_max, src_amp, target_amp):
         )
 
     with np.errstate(invalid="ignore"):
-        error = 1.0 - cross_correlation_max * cross_correlation_max.conj() / (
-            amp
-        )
+        error = 1.0 - cross_correlation_max * cross_correlation_max.conj() / (amp)
 
     return cp.sqrt(cp.abs(error))
 
@@ -192,9 +189,7 @@ def _disambiguate_shift(reference_image, moving_image, shift):
     negative_shift = [shift_i - s for shift_i, s in zip(positive_shift, shape)]
     subpixel = any(s % 1 != 0 for s in shift)
     interp_order = 3 if subpixel else 0
-    shifted = ndi.shift(
-        moving_image, shift, mode="grid-wrap", order=interp_order
-    )
+    shifted = ndi.shift(moving_image, shift, mode="grid-wrap", order=interp_order)
     indices = tuple(round(s) for s in positive_shift)
     splits_per_dim = [(slice(0, i), slice(i, None)) for i in indices]
     max_corr = -1.0
@@ -217,9 +212,7 @@ def _disambiguate_shift(reference_image, moving_image, shift):
         )
         return shift
     real_shift_acc = []
-    for sl, pos_shift, neg_shift in zip(
-        max_slice, positive_shift, negative_shift
-    ):
+    for sl, pos_shift, neg_shift in zip(max_slice, positive_shift, negative_shift):
         real_shift_acc.append(pos_shift if sl.stop is None else neg_shift)
     if not subpixel:
         real_shift = tuple(map(int, real_shift_acc))
@@ -359,16 +352,12 @@ def phase_cross_correlation(
         # Initial shift estimate in upsampled grid
         # shift = cp.around(shift * upsample_factor) / upsample_factor
         upsample_factor = float(upsample_factor)
-        shift = tuple(
-            round(s * upsample_factor) / upsample_factor for s in shift
-        )
+        shift = tuple(round(s * upsample_factor) / upsample_factor for s in shift)
         upsampled_region_size = math.ceil(upsample_factor * 1.5)
         # Center of output array at dftshift + 1
         dftshift = float(upsampled_region_size // 2)
         # Matrix multiply DFT around the current shift estimate
-        sample_region_offset = tuple(
-            dftshift - s * upsample_factor for s in shift
-        )
+        sample_region_offset = tuple(dftshift - s * upsample_factor for s in shift)
         cross_correlation = _upsampled_dft(
             image_product.conj(),
             upsampled_region_size,
@@ -394,9 +383,7 @@ def phase_cross_correlation(
 
     # If its only one row or column the shift along that dimension has no
     # effect. We set to zero.
-    shift = tuple(
-        s if axis_size != 1 else 0 for s, axis_size in zip(shift, shape)
-    )
+    shift = tuple(s if axis_size != 1 else 0 for s, axis_size in zip(shift, shape))
 
     if disambiguate:
         if space.lower() != "real":
@@ -406,10 +393,7 @@ def phase_cross_correlation(
 
     # Redirect user to masked_phase_cross_correlation if NaNs are observed
     if cp.isnan(CCmax) or cp.isnan(src_amp) or cp.isnan(target_amp):
-        raise ValueError(
-            "NaN values found, please remove NaNs from your "
-            "input data"
-        )
+        raise ValueError("NaN values found, please remove NaNs from your " "input data")
 
     return (
         shift,

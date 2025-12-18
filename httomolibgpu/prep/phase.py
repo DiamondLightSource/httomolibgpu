@@ -22,6 +22,7 @@
 
 import numpy as np
 from httomolibgpu import cupywrapper
+from httomolibgpu.memory_estimator_helpers import _DeviceMemStack
 
 cp = cupywrapper.cp
 cupy_run = cupywrapper.cupy_run
@@ -30,13 +31,14 @@ from unittest.mock import Mock
 
 if cupy_run:
     from cupyx.scipy.fft import fft2, ifft2, fftshift
+    from cupyx.scipy.fftpack import get_fft_plan
 else:
     fft2 = Mock()
     ifft2 = Mock()
     fftshift = Mock()
 
 from numpy import float32
-from typing import Tuple
+from typing import Optional, Tuple
 import math
 
 __all__ = [
@@ -54,6 +56,7 @@ def paganin_filter(
     distance: float = 1.0,
     energy: float = 53.0,
     ratio_delta_beta: float = 250,
+    calc_peak_gpu_mem: bool = False,
 ) -> cp.ndarray:
     """
     Perform single-material phase retrieval from flats/darks corrected tomographic measurements. For more detailed information, see :ref:`phase_contrast_module`.
@@ -71,30 +74,50 @@ def paganin_filter(
         Beam energy in keV.
     ratio_delta_beta : float
         The ratio of delta/beta, where delta is the phase shift and real part of the complex material refractive index and beta is the absorption.
+    calc_peak_gpu_mem: bool
+        Parameter to support memory estimation in HTTomo. Irrelevant to the method itself and can be ignored by user.
 
     Returns
     -------
     cp.ndarray
         The 3D array of Paganin phase-filtered projection images.
     """
+    mem_stack = _DeviceMemStack() if calc_peak_gpu_mem else None
     # Check the input data is valid
-    if tomo.ndim != 3:
+    if not mem_stack and tomo.ndim != 3:
         raise ValueError(
             f"Invalid number of dimensions in data: {tomo.ndim},"
             " please provide a stack of 2D projections."
         )
-
-    dz_orig, dy_orig, dx_orig = tomo.shape
+    if mem_stack:
+        mem_stack.malloc(np.prod(tomo) * np.float32().itemsize)
+    dz_orig, dy_orig, dx_orig = tomo.shape if not mem_stack else tomo
 
     # Perform padding to the power of 2 as FFT is O(n*log(n)) complexity
     # TODO: adding other options of padding?
-    padded_tomo, pad_tup = _pad_projections_to_second_power(tomo)
+    padded_tomo, pad_tup = _pad_projections_to_second_power(tomo, mem_stack)
 
-    dz, dy, dx = padded_tomo.shape
+    dz, dy, dx = padded_tomo.shape if not mem_stack else padded_tomo
 
     # 3D FFT of tomo data
-    padded_tomo = cp.asarray(padded_tomo, dtype=cp.complex64)
-    fft_tomo = fft2(padded_tomo, axes=(-2, -1), overwrite_x=True)
+    if mem_stack:
+        mem_stack.malloc(np.prod(padded_tomo) * np.complex64().itemsize)
+        mem_stack.free(np.prod(padded_tomo) * np.float32().itemsize)
+        fft_input = cp.empty(padded_tomo, dtype=cp.complex64)
+    else:
+        padded_tomo = cp.asarray(padded_tomo, dtype=cp.complex64)
+        fft_input = padded_tomo
+
+    fft_plan = get_fft_plan(fft_input, axes=(-2, -1))
+    if mem_stack:
+        mem_stack.malloc(fft_plan.work_area.mem.size)
+        mem_stack.free(fft_plan.work_area.mem.size)
+    else:
+        with fft_plan:
+            fft_tomo = fft2(padded_tomo, axes=(-2, -1), overwrite_x=True)
+        del padded_tomo
+    del fft_input
+    del fft_plan
 
     # calculate alpha constant
     alpha = _calculate_alpha(energy, distance / 1e-6, ratio_delta_beta)
@@ -103,18 +126,56 @@ def paganin_filter(
     indx = _reciprocal_coord(pixel_size, dy)
     indy = _reciprocal_coord(pixel_size, dx)
 
-    # Build Lorentzian-type filter
-    phase_filter = fftshift(
-        1.0 / (1.0 + alpha * (cp.add.outer(cp.square(indx), cp.square(indy))))
-    )
+    if mem_stack:
+        mem_stack.malloc(indx.size * indx.dtype.itemsize)  # cp.asarray(indx)
+        mem_stack.malloc(indx.size * indx.dtype.itemsize)  # cp.square
+        mem_stack.free(indx.size * indx.dtype.itemsize)  # cp.asarray(indx)
+        mem_stack.malloc(indy.size * indy.dtype.itemsize)  # cp.asarray(indy)
+        mem_stack.malloc(indy.size * indy.dtype.itemsize)  # cp.square
+        mem_stack.free(indy.size * indy.dtype.itemsize)  # cp.asarray(indy)
 
-    phase_filter = phase_filter / phase_filter.max()  # normalisation
+        mem_stack.malloc(indx.size * indy.size * indx.dtype.itemsize)  # cp.add.outer
+        mem_stack.free(indx.size * indx.dtype.itemsize)  # cp.square
+        mem_stack.free(indy.size * indy.dtype.itemsize)  # cp.square
+        mem_stack.malloc(indx.size * indy.size * indx.dtype.itemsize)  # phase_filter
+        mem_stack.free(indx.size * indy.size * indx.dtype.itemsize)  # cp.add.outer
+        mem_stack.free(indx.size * indy.size * indx.dtype.itemsize)  # phase_filter
 
-    # Filter projections
-    fft_tomo *= phase_filter
+    else:
+        # Build Lorentzian-type filter
+        phase_filter = fftshift(
+            1.0
+            / (
+                1.0
+                + alpha
+                * (
+                    cp.add.outer(
+                        cp.square(cp.asarray(indx)), cp.square(cp.asarray(indy))
+                    )
+                )
+            )
+        )
+
+        phase_filter = phase_filter / phase_filter.max()  # normalisation
+
+        # Filter projections
+        fft_tomo *= phase_filter
+        del phase_filter
 
     # Apply filter and take inverse FFT
-    ifft_filtered_tomo = ifft2(fft_tomo, axes=(-2, -1), overwrite_x=True).real
+    ifft_input = (
+        fft_tomo if not mem_stack else cp.empty(padded_tomo, dtype=cp.complex64)
+    )
+    ifft_plan = get_fft_plan(ifft_input, axes=(-2, -1))
+    if mem_stack:
+        mem_stack.malloc(ifft_plan.work_area.mem.size)
+        mem_stack.free(ifft_plan.work_area.mem.size)
+    else:
+        with ifft_plan:
+            ifft_filtered_tomo = ifft2(fft_tomo, axes=(-2, -1), overwrite_x=True).real
+        del fft_tomo
+    del ifft_plan
+    del ifft_input
 
     # slicing indices for cropping
     slc_indices = (
@@ -123,8 +184,19 @@ def paganin_filter(
         slice(pad_tup[2][0], pad_tup[2][0] + dx_orig, 1),
     )
 
+    if mem_stack:
+        mem_stack.malloc(np.prod(tomo) * np.float32().itemsize)  # astype(cp.float32)
+        mem_stack.free(
+            np.prod(padded_tomo) * np.complex64().itemsize
+        )  # ifft_filtered_tomo
+        mem_stack.malloc(
+            np.prod(tomo) * np.float32().itemsize
+        )  # return _log_kernel(tomo)
+        return mem_stack.highwater
+
     # crop the padded filtered data:
     tomo = ifft_filtered_tomo[slc_indices].astype(cp.float32)
+    del ifft_filtered_tomo
 
     # taking the negative log
     _log_kernel = cp.ElementwiseKernel(
@@ -177,7 +249,7 @@ def _calculate_pad_size(datashape: tuple) -> list:
 
 
 def _pad_projections_to_second_power(
-    tomo: cp.ndarray,
+    tomo: cp.ndarray, mem_stack: Optional[_DeviceMemStack]
 ) -> Tuple[cp.ndarray, Tuple[int, int]]:
     """
     Performs padding of each projection to the next power of 2.
@@ -194,11 +266,17 @@ def _pad_projections_to_second_power(
     ndarray: padded 3d projection data
     tuple: a tuple with padding dimensions
     """
-    full_shape_tomo = cp.shape(tomo)
+    full_shape_tomo = cp.shape(tomo) if not mem_stack else tomo
 
     pad_list = _calculate_pad_size(full_shape_tomo)
 
-    padded_tomo = cp.pad(tomo, tuple(pad_list), "edge")
+    if mem_stack:
+        padded_tomo = [
+            sh + pad[0] + pad[1] for sh, pad in zip(full_shape_tomo, pad_list)
+        ]
+        mem_stack.malloc(np.prod(padded_tomo) * np.float32().itemsize)
+    else:
+        padded_tomo = cp.pad(tomo, tuple(pad_list), "edge")
 
     return padded_tomo, tuple(pad_list)
 
@@ -209,7 +287,7 @@ def _wavelength_micron(energy: float) -> float:
     return 2 * math.pi * PLANCK_CONSTANT * SPEED_OF_LIGHT / energy
 
 
-def _reciprocal_coord(pixel_size: float, num_grid: int) -> cp.ndarray:
+def _reciprocal_coord(pixel_size: float, num_grid: int) -> np.ndarray:
     """
     Calculate reciprocal grid coordinates for a given pixel size
     and discretization.
@@ -227,7 +305,7 @@ def _reciprocal_coord(pixel_size: float, num_grid: int) -> cp.ndarray:
         Grid coordinates.
     """
     n = num_grid - 1
-    rc = cp.arange(-n, num_grid, 2, dtype=cp.float32)
+    rc = np.arange(-n, num_grid, 2, dtype=cp.float32)
     rc *= 2 * math.pi / (n * pixel_size)
     return rc
 
@@ -238,6 +316,7 @@ def paganin_filter_savu_legacy(
     distance: float = 1.0,
     energy: float = 53.0,
     ratio_delta_beta: float = 250,
+    calc_peak_gpu_mem: bool = False,
 ) -> cp.ndarray:
     """
     Perform single-material phase retrieval from flats/darks corrected tomographic measurements. For more detailed information, see :ref:`phase_contrast_module`.
@@ -256,6 +335,8 @@ def paganin_filter_savu_legacy(
         Beam energy in keV.
     ratio_delta_beta : float
         The ratio of delta/beta, where delta is the phase shift and real part of the complex material refractive index and beta is the absorption.
+    calc_peak_gpu_mem: bool
+        Parameter to support memory estimation in HTTomo. Irrelevant to the method itself and can be ignored by user.
 
     Returns
     -------
@@ -263,4 +344,11 @@ def paganin_filter_savu_legacy(
         The 3D array of Paganin phase-filtered projection images.
     """
 
-    return paganin_filter(tomo, pixel_size, distance, energy, ratio_delta_beta / 4)
+    return paganin_filter(
+        tomo,
+        pixel_size,
+        distance,
+        energy,
+        ratio_delta_beta / 4,
+        calc_peak_gpu_mem=calc_peak_gpu_mem,
+    )
