@@ -33,6 +33,7 @@ MOCK_MODULES = [
     "scipy",
     "scipy.fft",
     "scipy.ndimage",
+    "pywt",
 ]
 
 for mod_name in MOCK_MODULES:
@@ -46,6 +47,7 @@ class CustomMock(mock.Mock):
 
 sys.modules["ccpi.filters.regularisersCuPy"] = CustomMock()
 sys.modules["cupy"] = CustomMock()
+sys.modules["pywt"] = CustomMock()
 sys.modules["numpy"] = CustomMock()
 sys.modules["numpy.polynomial"] = CustomMock()
 sys.modules["cupyx.scipy.interpolate"] = CustomMock()
