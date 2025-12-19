@@ -644,7 +644,7 @@ def remove_stripe_fw(
     level : int, optional
         Number of discrete wavelet transform levels.
     calc_peak_gpu_mem: str:
-        Supporting parameter for memory calculation in HTTomo.
+        Parameter to support memory estimation in HTTomo. Irrelevant to the method itself and can be ignored by user.
 
     Returns
     -------
