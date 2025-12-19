@@ -44,6 +44,7 @@ dependencies = [
     "pillow",
     "scikit-image",
     "tomobar",
+    "PyWavelets",
 ]
 
 [project.optional-dependencies]
