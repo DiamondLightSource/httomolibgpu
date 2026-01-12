@@ -60,7 +60,7 @@ def paganin_filter(
     calculate_padding_value_method: Literal[
         "next_power_of_2", "next_fast_length", "use_pad_x_y"
     ] = "next_power_of_2",
-    pad_x_y: Optional[Tuple[int, int]] = None,
+    pad_x_y: Optional[list] = None,
     calc_peak_gpu_mem: bool = False,
 ) -> cp.ndarray:
     """
@@ -81,7 +81,7 @@ def paganin_filter(
         The ratio of delta/beta, where delta is the phase shift and real part of the complex material refractive index and beta is the absorption.
     calculate_padding_value_method: str
         Method to calculate the padded size of the input data. Accepted values are 'next_power_of_2', 'next_fast_length' and 'use_pad_x_y`.
-    pad_x_y (int, int) | None:
+    pad_x_y list | None:
         Padding values in pixels horizontally and vertically. Must be None, unless `calculate_padding_value_method` is 'use_pad_x_y'.
     calc_peak_gpu_mem: bool
         Parameter to support memory estimation in HTTomo. Irrelevant to the method itself and can be ignored by user.
@@ -233,7 +233,7 @@ def _calculate_pad_size(
     calculate_padding_value_method: Literal[
         "next_power_of_2", "next_fast_length", "use_pad_x_y"
     ],
-    pad_x_y: Optional[Tuple[int, int]],
+    pad_x_y: Optional[list],
 ) -> list:
     """Calculating the padding size
 
@@ -252,10 +252,18 @@ def _calculate_pad_size(
         raise ValueError(
             'calculate_padding_value_method must be "use_pad_x_y" when pad_x_y is specified'
         )
-    elif calculate_padding_value_method == "use_pad_x_y" and pad_x_y is None:
-        raise ValueError(
-            'pad_x_y must be provided when calculate_padding_value_method is "use_pad_x_y"'
-        )
+    elif calculate_padding_value_method == "use_pad_x_y":
+        if pad_x_y is None:
+            raise ValueError(
+                'pad_x_y must be provided when calculate_padding_value_method is "use_pad_x_y"'
+            )
+        elif (
+            not isinstance(pad_x_y, list)
+            or len(pad_x_y) != 2
+            or not isinstance(pad_x_y[0], int)
+            or not isinstance(pad_x_y[1], int)
+        ):
+            raise ValueError("pad_x_y must be a list of two integers")
 
     if calculate_padding_value_method == "next_power_of_2":
         calculate_padded_dim = lambda _, size: _shift_bit_length(size + 1)
@@ -292,7 +300,7 @@ def _pad_projections(
     calculate_padding_value_method: Literal[
         "next_power_of_2", "next_fast_length", "use_pad_x_y"
     ],
-    pad_x_y: Optional[Tuple[int, int]],
+    pad_x_y: Optional[list],
     mem_stack: Optional[_DeviceMemStack],
 ) -> Tuple[cp.ndarray, Tuple[int, int]]:
     """
@@ -305,7 +313,7 @@ def _pad_projections(
         3d projection data
     calculate_padding_value_method: str
         Method to calculate the padded size of the input data. Accepted values are 'next_power_of_2', 'next_fast_length' and 'use_pad_x_y`.
-    pad_x_y (int, int) | None:
+    pad_x_y: list | None:
         Padding values in pixels horizontally and vertically. Must be None, unless `calculate_padding_value_method` is 'use_pad_x_y'.
 
 

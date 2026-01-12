@@ -13,7 +13,7 @@ from conftest import force_clean_gpu_memory
     [
         ("next_power_of_2", None, -6.2188172, -10.92260456),
         ("next_fast_length", None, -6.867182, -10.92272),
-        ("use_pad_x_y", (80, 80), -6.32930, -10.92270),
+        ("use_pad_x_y", [80, 80], -6.32930, -10.92270),
     ],
 )
 def test_paganin_filter_i12_dataset3(i12_dataset3, test_case, ensure_clean_memory):

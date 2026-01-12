@@ -21,6 +21,29 @@ def test_paganin_filter_1D_raises(ensure_clean_memory):
     _data = None  #: free up GPU memory
 
 
+@pytest.mark.parametrize(
+    "padding",
+    [
+        ("something", None),
+        ("something", [122, 133]),
+        ("next_power_of_2", [0, 0]),
+        ("next_fast_length", [20, 20]),
+        ("use_pad_x_y", [20, "20"]),
+        ("use_pad_x_y", [10, 20, 30]),
+        ("use_pad_x_y", [20, 20, 30]),
+        ("use_pad_x_y", (20, 20)),
+        ("use_pad_x_y", None),
+    ],
+)
+def test_paganin_filter_invalid_padding_raises(padding, ensure_clean_memory):
+    _data = cp.ones(10)
+    padding_method, pad_x_y = padding
+    with pytest.raises(ValueError):
+        paganin_filter(
+            _data, calculate_padding_value_method=padding_method, pad_x_y=pad_x_y
+        )
+
+
 def test_paganin_filter(data):
     # --- testing the Paganin filter on tomo_standard ---#
     filtered_data = paganin_filter(data).get()
@@ -56,9 +79,9 @@ def test_paganin_filter_dist3(data):
     [
         ("next_power_of_2", None, -6.725061, -6.367116),
         ("next_fast_length", None, -6.677313, -6.096187),
-        ("use_pad_x_y", (0, 0), -6.677313, -6.096187),
-        ("use_pad_x_y", (80, 80), -6.73193, -6.405338),
-        ("use_pad_x_y", (45, 75), -6.726483, -6.37466),
+        ("use_pad_x_y", [0, 0], -6.677313, -6.096187),
+        ("use_pad_x_y", [80, 80], -6.73193, -6.405338),
+        ("use_pad_x_y", [45, 75], -6.726483, -6.37466),
     ],
 )
 def test_paganin_filter_padding_options(data, test_case):
@@ -117,7 +140,7 @@ def test_paganin_filter_performance(ensure_clean_memory):
 @pytest.mark.parametrize("dim_x", [128, 140])
 @pytest.mark.parametrize(
     "padding",
-    [("next_power_of_2", None), ("next_fast_length", None), ("use_pad_x_y", (45, 45))],
+    [("next_power_of_2", None), ("next_fast_length", None), ("use_pad_x_y", [45, 45])],
 )
 def test_paganin_filter_calc_mem(slices, dim_x, padding, ensure_clean_memory):
     dim_y = 159
@@ -153,7 +176,7 @@ def test_paganin_filter_calc_mem(slices, dim_x, padding, ensure_clean_memory):
     [
         ("next_power_of_2", None),
         ("next_fast_length", None),
-        ("use_pad_x_y", (145, 122)),
+        ("use_pad_x_y", [145, 122]),
     ],
 )
 def test_paganin_filter_calc_mem_big(slices, dims, padding, ensure_clean_memory):
