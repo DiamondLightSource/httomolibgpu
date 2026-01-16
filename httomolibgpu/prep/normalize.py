@@ -47,7 +47,7 @@ def dark_flat_field_correction(
     cutoff: float = 10.0,
 ) -> cp.ndarray:
     """
-    Normalize raw projection data using the flat and dark field projections.
+    Perform dark/flat field correction of raw projection data.
 
     Parameters
     ----------
@@ -67,7 +67,7 @@ def dark_flat_field_correction(
             Returns
     -------
     cp.ndarray
-        Normalised by dark/flat fields 3D tomographic data as a CuPy array.
+        dark/flat field corrected 3D tomographic data as a CuPy array.
     """
     _check_valid_input_normalise(data, flats, darks)
 
