@@ -489,6 +489,95 @@ def FISTA3d_tomobar(
     return cp.require(cp.swapaxes(reconstruction, 0, 1), requirements="C")
 
 
+## %%%%%%%%%%%%%%%%%%%%%%% ADMM reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+def ADMM3d_tomobar(
+    data: cp.ndarray,
+    angles: np.ndarray,
+    center: Optional[float] = None,
+    detector_pad: Union[bool, int] = False,
+    recon_size: Optional[int] = None,
+    recon_mask_radius: float = 0.95,
+    iterations: int = 20,
+    subsets_number: int = 6,
+    regularisation_type: str = "PD_TV",
+    regularisation_parameter: float = 0.000001,
+    regularisation_iterations: int = 50,
+    regularisation_half_precision: bool = True,
+    nonnegativity: bool = True,
+    gpu_id: int = 0,
+) -> cp.ndarray:
+    """
+    An Alternating Direction Method of Multipliers method with various types of regularisation or
+    denoising operations :cite:`kazantsev2019ccpi` (currently accepts ROF_TV and PD_TV regularisations only).
+
+    Parameters
+    ----------
+    data : cp.ndarray
+        Projection data as a CuPy array.
+    angles : np.ndarray
+        An array of angles given in radians.
+    center : float, optional
+        The center of rotation (CoR).
+    detector_pad : bool, int
+        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction. Set to True to perform
+        an automated padding or specify a certain value as an integer.
+    recon_size : int, optional
+        The [recon_size, recon_size] shape of the reconstructed slice in pixels.
+        By default (None), the reconstructed size will be the dimension of the horizontal detector.
+    recon_mask_radius: float
+        The radius of the circular mask that applies to the reconstructed slice in order to crop
+        out some undesirable artifacts. The values outside the given diameter will be set to zero.
+        To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.
+    iterations : int
+        The number of ADMM algorithm iterations.
+    subsets_number: int
+        The number of the ordered subsets to accelerate convergence. Keep the value bellow 10 to avoid divergence.
+    regularisation_type: str
+        A method to use for regularisation. Currently PD_TV and ROF_TV are available.
+    regularisation_parameter: float
+        The main regularisation parameter to control the amount of smoothing/noise removal. Larger values lead to stronger smoothing.
+    regularisation_iterations: int
+        The number of iterations for regularisers (aka INNER iterations).
+    regularisation_half_precision: bool
+        Perform faster regularisation computation in half-precision with a very minimal sacrifice in quality.
+    nonnegativity : bool
+        Impose nonnegativity constraint on the reconstructed image.
+    gpu_id : int
+        A GPU device index to perform operation on.
+
+    Returns
+    -------
+    cp.ndarray
+        The ADMM reconstructed volume as a CuPy array.
+    """
+    RecToolsCP = _instantiate_iterative_recon_class(
+        data, angles, center, detector_pad, recon_size, gpu_id, datafidelity="LS"
+    )
+
+    _data_ = {
+        "projection_norm_data": data,
+        "OS_number": subsets_number,
+        "data_axes_labels_order": input_data_axis_labels,
+    }
+
+    _algorithm_ = {
+        "iterations": iterations,
+        "nonnegativity": nonnegativity,
+        "recon_mask_radius": recon_mask_radius,
+    }
+
+    _regularisation_ = {
+        "method": regularisation_type,  # Selected regularisation method
+        "regul_param": regularisation_parameter,  # Regularisation parameter
+        "iterations": regularisation_iterations,  # The number of regularisation iterations
+        "half_precision": regularisation_half_precision,  # enabling half-precision calculation
+    }
+
+    reconstruction = RecToolsCP.ADMM(_data_, _algorithm_, _regularisation_)
+    cp._default_memory_pool.free_all_blocks()
+    return cp.require(cp.swapaxes(reconstruction, 0, 1), requirements="C")
+
+
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 def _instantiate_direct_recon_class(
     data: cp.ndarray,
