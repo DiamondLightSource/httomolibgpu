@@ -8,7 +8,8 @@ FISTA 3D (ToMoBAR)
 FISTA stands for A Fast Iterative Shrinkage-Thresholding Algorithm :cite:`beck2009fast`. One of the major benefits of FISTA is the ability
 to build complex optimisation functionals that can handle a variety of problematic data. For instance, the amplification of the noise
 in iterations which is common for classical iterative methods, such as, :ref:`method_CGLS3d_tomobar` and :ref:`method_SIRT3d_tomobar`,
-can be resolved by using regularisation. There are many different types of regularisation that can be used, see some are listed here :cite:`kazantsev2019ccpi`.
+can be resolved by using regularisation :cite:`kazantsev2019ccpi`. There are few types of regularisation that can be used, please see method's
+API :mod:`httomolibgpu.recon.algorithm.FISTA3d_tomobar`.
 
 
 **Where and how to use it:**

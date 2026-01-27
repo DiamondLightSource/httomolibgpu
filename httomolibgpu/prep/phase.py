@@ -22,7 +22,7 @@
 
 import numpy as np
 from httomolibgpu import cupywrapper
-from httomolibgpu.memory_estimator_helpers import _DeviceMemStack
+from tomobar.supp.memory_estimator_helpers import DeviceMemStack
 
 cp = cupywrapper.cp
 cupy_run = cupywrapper.cupy_run
@@ -91,7 +91,7 @@ def paganin_filter(
     cp.ndarray
         The 3D array of Paganin phase-filtered projection images.
     """
-    mem_stack = _DeviceMemStack() if calc_peak_gpu_mem else None
+    mem_stack = DeviceMemStack() if calc_peak_gpu_mem else None
     # Check the input data is valid
     if not mem_stack and tomo.ndim != 3:
         raise ValueError(
@@ -301,7 +301,7 @@ def _pad_projections(
         "next_power_of_2", "next_fast_length", "use_pad_x_y"
     ],
     pad_x_y: Optional[list],
-    mem_stack: Optional[_DeviceMemStack],
+    mem_stack: Optional[DeviceMemStack],
 ) -> Tuple[cp.ndarray, Tuple[int, int]]:
     """
     Performs padding of each projection to a size optimal for FFT.

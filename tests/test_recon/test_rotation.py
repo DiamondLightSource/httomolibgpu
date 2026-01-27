@@ -92,7 +92,7 @@ def test_find_center_vo_performance():
 
 def test_find_center_360_data(data):
     eps = 1e-5
-    (cor, overlap, side, overlap_pos) = find_center_360(data, norm=True, denoise=False)
+    cor, overlap, side, overlap_pos = find_center_360(data, norm=True, denoise=False)
 
     assert_allclose(cor, 133.453167, rtol=eps)
     assert_allclose(overlap, 53.093666, rtol=eps)

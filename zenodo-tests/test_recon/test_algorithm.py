@@ -13,13 +13,14 @@ from httomolibgpu.recon.algorithm import (
     CGLS3d_tomobar,
     SIRT3d_tomobar,
     FISTA3d_tomobar,
+    ADMM3d_tomobar,
 )
 from httomolibgpu.misc.morph import sino_360_to_180
 from numpy.testing import assert_allclose
 import time
 import pytest
 from cupy.cuda import nvtx
-from conftest import force_clean_gpu_memory
+from conftest import force_clean_gpu_memory, MaxMemoryHook
 
 
 def test_reconstruct_FBP2d_astra_i12_dataset1(i12_dataset1: tuple):
@@ -541,5 +542,48 @@ def test_reconstruct_FISTA3d_tomobar_autopad_k11_dataset2(k11_dataset2: tuple):
     assert recon_data.flags.c_contiguous
     recon_data = cp.asnumpy(recon_data)
     assert isclose(np.sum(recon_data), 1355.4624, abs_tol=10**-3)
+    assert recon_data.dtype == np.float32
+    assert recon_data.shape == (2560, 5, 2560)
+
+
+def test_reconstruct_ADMM3d_tomobar_autopad_k11_dataset2(k11_dataset2: tuple):
+    force_clean_gpu_memory()
+    projdata = k11_dataset2[0]
+    angles = k11_dataset2[1]
+    flats = k11_dataset2[2]
+    darks = k11_dataset2[3]
+    del k11_dataset2
+
+    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = minus_log(data_normalised)
+
+    del flats, darks, projdata
+    force_clean_gpu_memory()
+    data = data_normalised[:, 5:10, :]
+
+    args = {
+        "angles": np.deg2rad(angles),
+        "center": 1280.25,
+        "detector_pad": True,
+        "recon_mask_radius": 2.0,
+        "iterations": 7,
+        "regularisation_parameter": 0.0000005,
+    }
+
+    peak_mem = ADMM3d_tomobar(data=data.shape, calc_peak_gpu_mem=True, **args)
+    av_mem = cp.cuda.Device().mem_info[0]
+    if av_mem < peak_mem:
+        pytest.skip("Not enough GPU memory to run this test")
+
+    hook = MaxMemoryHook()
+    with hook:
+        recon_data = ADMM3d_tomobar(data=data, **args)
+
+    assert (hook.max_mem * 1.03) > peak_mem
+    assert (hook.max_mem * 0.99) < peak_mem
+
+    assert recon_data.flags.c_contiguous
+    recon_data = cp.asnumpy(recon_data)
+    assert isclose(np.sum(recon_data), 1228.5009, abs_tol=10**-3)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 5, 2560)

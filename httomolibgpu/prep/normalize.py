@@ -34,7 +34,6 @@ else:
 
 from numpy import float32
 
-
 __all__ = ["dark_flat_field_correction", "minus_log"]
 
 
