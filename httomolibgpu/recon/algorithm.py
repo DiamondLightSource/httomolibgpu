@@ -204,6 +204,7 @@ def LPRec3d_tomobar(
     power_of_2_cropping: Optional[bool] = False,
     min_mem_usage_filter: Optional[bool] = True,
     min_mem_usage_ifft2: Optional[bool] = True,
+    calc_peak_gpu_mem: bool = False,
 ) -> cp.ndarray:
     """
     Fourier direct inversion in 3D on unequally spaced (also called as Log-Polar) grids using
@@ -232,6 +233,8 @@ def LPRec3d_tomobar(
         The radius of the circular mask that applies to the reconstructed slice in order to crop
         out some undesirable artifacts. The values outside the given diameter will be set to zero.
         To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.
+    calc_peak_gpu_mem: bool
+        Parameter to support memory estimation in HTTomo. Irrelevant to the method itself and can be ignored by user.
 
     Returns
     -------
@@ -253,6 +256,7 @@ def LPRec3d_tomobar(
         power_of_2_cropping=power_of_2_cropping,
         min_mem_usage_filter=min_mem_usage_filter,
         min_mem_usage_ifft2=min_mem_usage_ifft2,
+        calc_peak_gpu_mem=calc_peak_gpu_mem,
     )
     cp._default_memory_pool.free_all_blocks()
     return cp.require(cp.swapaxes(reconstruction, 0, 1), requirements="C")
