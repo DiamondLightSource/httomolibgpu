@@ -333,8 +333,8 @@ def test_reconstruct_ADMM3d_tomobar_pd_tv(data, flats, darks, ensure_clean_memor
 
     assert recon_data.flags.c_contiguous
     recon_data = cp.asnumpy(recon_data)
-    assert_allclose(np.mean(recon_data), 0.0018342441, rtol=1e-07, atol=1e-6)
-    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.23478305, rtol=1e-04)
+    assert_allclose(np.mean(recon_data), 0.0020834974, rtol=1e-06, atol=1e-6)
+    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.26668757, rtol=1e-04)
     assert recon_data.dtype == np.float32
 
 
@@ -391,8 +391,39 @@ def test_reconstruct_ADMM3d_tomobar_pd_tv_detpad_true(
 
     assert recon_data.flags.c_contiguous
     recon_data = cp.asnumpy(recon_data)
-    assert_allclose(np.mean(recon_data), 0.001836153, rtol=1e-07, atol=1e-6)
-    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.23502758, rtol=1e-04)
+    assert_allclose(np.mean(recon_data), 0.0022284647, rtol=1e-06, atol=1e-6)
+    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.28524357, rtol=1e-04)
+    assert recon_data.dtype == np.float32
+
+
+def test_reconstruct_ADMM3d_warm_tomobar_pd_tv_detpad_true(
+    data, flats, darks, ensure_clean_memory
+):
+    objrecon_size = data.shape[2]
+    normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
+    normalised_data = minus_log(normalised_data)
+
+    recon_data = ADMM3d_tomobar(
+        data=normalised_data,
+        angles=np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
+        center=79.5,
+        detector_pad=True,
+        recon_size=objrecon_size,
+        recon_mask_radius=2.0,
+        initialisation="FBP",
+        iterations=2,
+        subsets_number=24,
+        regularisation_type="PD_TV",
+        regularisation_parameter=0.004,
+        regularisation_iterations=50,
+        regularisation_half_precision=True,
+        nonnegativity=True,
+    )
+
+    assert recon_data.flags.c_contiguous
+    recon_data = cp.asnumpy(recon_data)
+    assert_allclose(np.mean(recon_data), 0.0019717081, rtol=1e-07, atol=1e-6)
+    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.25237864, rtol=1e-04)
     assert recon_data.dtype == np.float32
 
 
@@ -406,10 +437,10 @@ def test_reconstruct_ADMM3d_tomobar_rof_tv(data, flats, darks, ensure_clean_memo
         angles=np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
         center=79.5,
         recon_size=objrecon_size,
-        iterations=15,
-        subsets_number=6,
+        iterations=3,
+        subsets_number=24,
         regularisation_type="ROF_TV",
-        regularisation_parameter=0.00001,
+        regularisation_parameter=0.01,
         regularisation_iterations=50,
         regularisation_half_precision=True,
         nonnegativity=True,
@@ -417,8 +448,8 @@ def test_reconstruct_ADMM3d_tomobar_rof_tv(data, flats, darks, ensure_clean_memo
 
     assert recon_data.flags.c_contiguous
     recon_data = cp.asnumpy(recon_data)
-    assert_allclose(np.mean(recon_data), 0.0018153301, rtol=1e-07, atol=1e-6)
-    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.23236233, rtol=1e-04)
+    assert_allclose(np.mean(recon_data), 0.0017946999, rtol=1e-07, atol=1e-6)
+    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.22972171, rtol=1e-04)
     assert recon_data.dtype == np.float32
 
 
