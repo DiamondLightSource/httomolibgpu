@@ -48,6 +48,7 @@ __all__ = [
     "SIRT3d_tomobar",
     "CGLS3d_tomobar",
     "FISTA3d_tomobar",
+    "ADMM3d_tomobar",
 ]
 
 input_data_axis_labels = ["angles", "detY", "detX"]  # set the labels of the input data
@@ -497,13 +498,16 @@ def ADMM3d_tomobar(
     detector_pad: Union[bool, int] = False,
     recon_size: Optional[int] = None,
     recon_mask_radius: float = 0.95,
-    iterations: int = 20,
-    subsets_number: int = 6,
+    iterations: int = 3,
+    subsets_number: int = 24,
+    initialisation: Optional[str] = "FBP",
+    ADMM_rho_const: float = 1.0,
+    ADMM_relax_par: float = 1.7,
     regularisation_type: str = "PD_TV",
-    regularisation_parameter: float = 0.000001,
-    regularisation_iterations: int = 50,
+    regularisation_parameter: float = 0.0001,
+    regularisation_iterations: int = 40,
     regularisation_half_precision: bool = True,
-    nonnegativity: bool = True,
+    nonnegativity: bool = False,
     gpu_id: int = 0,
 ) -> cp.ndarray:
     """
@@ -529,10 +533,16 @@ def ADMM3d_tomobar(
         out some undesirable artifacts. The values outside the given diameter will be set to zero.
         To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.
     iterations : int
-        The number of ADMM algorithm iterations.
+        The number of ADMM algorithm iterations. The recommended range is between 3 to 5 with initialisation and
+        more than 10 without. Assuming that the subsets_number is reasonably large (>12).
     subsets_number: int
-        The number of the ordered subsets to accelerate convergence. Keep the value bellow 10 to avoid divergence.
-    regularisation_type: str
+        The number of the ordered subsets to accelerate convergence. The recommended range is between 12 to 24.
+    initialisation: str, optional
+        Initialise ADMM with the reconstructed image to reduce the number of iterations and accelerate. FBP initialisation is the default one.
+    ADMM_rho_const: float
+        Convergence related parameter for ADMM, higher values lead to slower convergence, but too small values can destabilise the iterations.
+        Recommended range is between 0.9 and 2.0.
+    ADMM_relax_par: Relaxation parameter which can lead to acceleration of the algorithm, keep it in the range between 1.5 and 1.8 to avoid divergence.     regularisation_type: str
         A method to use for regularisation. Currently PD_TV and ROF_TV are available.
     regularisation_parameter: float
         The main regularisation parameter to control the amount of smoothing/noise removal. Larger values lead to stronger smoothing.
@@ -550,6 +560,45 @@ def ADMM3d_tomobar(
     cp.ndarray
         The ADMM reconstructed volume as a CuPy array.
     """
+    if initialisation == "FBP":
+        if detector_pad == True:
+            detector_pad = __estimate_detectorHoriz_padding(data.shape[2])
+
+        if detector_pad > 0:
+            # if detector_pad is not zero we need to reconstruct the image on the recon+2*detector_pad size
+            initialisation_vol = cp.require(
+                cp.swapaxes(
+                    FBP3d_tomobar(
+                        data,
+                        angles=angles,
+                        center=center,
+                        detector_pad=detector_pad,
+                        recon_size=data.shape[2] + 2 * detector_pad,
+                    ),
+                    0,
+                    1,
+                ),
+                requirements="C",
+            )
+
+        else:
+            initialisation_vol = cp.require(
+                cp.swapaxes(
+                    FBP3d_tomobar(
+                        data,
+                        angles=angles,
+                        center=center,
+                        detector_pad=detector_pad,
+                        recon_size=recon_size,
+                    ),
+                    0,
+                    1,
+                ),
+                requirements="C",
+            )
+    else:
+        initialisation_vol = None
+
     RecToolsCP = _instantiate_iterative_recon_class(
         data, angles, center, detector_pad, recon_size, gpu_id, datafidelity="LS"
     )
@@ -561,9 +610,12 @@ def ADMM3d_tomobar(
     }
 
     _algorithm_ = {
+        "initialise": initialisation_vol,
         "iterations": iterations,
         "nonnegativity": nonnegativity,
         "recon_mask_radius": recon_mask_radius,
+        "ADMM_rho_const": ADMM_rho_const,
+        "ADMM_relax_par": ADMM_relax_par,
     }
 
     _regularisation_ = {
