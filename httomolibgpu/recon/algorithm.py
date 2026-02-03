@@ -503,7 +503,7 @@ def ADMM3d_tomobar(
     ADMM_rho_const: float = 1.0,
     ADMM_relax_par: float = 1.7,
     regularisation_type: str = "PD_TV",
-    regularisation_parameter: float = 0.0001,
+    regularisation_parameter: float = 0.0035,
     regularisation_iterations: int = 40,
     regularisation_half_precision: bool = True,
     nonnegativity: bool = False,
