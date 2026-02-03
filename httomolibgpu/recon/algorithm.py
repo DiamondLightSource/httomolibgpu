@@ -29,6 +29,7 @@ cupy_run = cupywrapper.cupy_run
 from unittest.mock import Mock
 
 if cupy_run:
+    from tomobar.supp.memory_estimator_helpers import DeviceMemStack
     from tomobar.methodsDIR import RecToolsDIR
     from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
     from tomobar.methodsIR_CuPy import RecToolsIRCuPy
@@ -204,7 +205,6 @@ def LPRec3d_tomobar(
     power_of_2_cropping: Optional[bool] = False,
     min_mem_usage_filter: Optional[bool] = True,
     min_mem_usage_ifft2: Optional[bool] = True,
-    calc_peak_gpu_mem: bool = False,
 ) -> cp.ndarray:
     """
     Fourier direct inversion in 3D on unequally spaced (also called as Log-Polar) grids using
@@ -256,11 +256,10 @@ def LPRec3d_tomobar(
         power_of_2_cropping=power_of_2_cropping,
         min_mem_usage_filter=min_mem_usage_filter,
         min_mem_usage_ifft2=min_mem_usage_ifft2,
-        calc_peak_gpu_mem=calc_peak_gpu_mem,
     )
     cp._default_memory_pool.free_all_blocks()
 
-    if calc_peak_gpu_mem:
+    if DeviceMemStack.instance():
         return result
 
     return cp.require(cp.swapaxes(result, 0, 1), requirements="C")
