@@ -40,7 +40,6 @@ else:
 from numpy import float32
 from typing import Optional, Type, Union
 
-
 __all__ = [
     "FBP2d_astra",
     "FBP3d_tomobar",
