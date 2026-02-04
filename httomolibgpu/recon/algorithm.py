@@ -39,7 +39,7 @@ else:
     RecToolsIRCuPy = Mock()
 
 from numpy import float32
-from typing import Optional, Type, Union
+from typing import Optional, Tuple, Type, Union
 
 
 __all__ = [
@@ -193,7 +193,7 @@ def FBP3d_tomobar(
 
 ## %%%%%%%%%%%%%%%%%%%%%%% LPRec  %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 def LPRec3d_tomobar(
-    data: cp.ndarray,
+    data: cp.ndarray | Tuple[int, int, int],
     angles: np.ndarray,
     center: Optional[float] = None,
     detector_pad: Union[bool, int] = False,
@@ -205,6 +205,7 @@ def LPRec3d_tomobar(
     power_of_2_cropping: Optional[bool] = False,
     min_mem_usage_filter: Optional[bool] = True,
     min_mem_usage_ifft2: Optional[bool] = True,
+    **kwargs,
 ) -> cp.ndarray:
     """
     Fourier direct inversion in 3D on unequally spaced (also called as Log-Polar) grids using
@@ -256,6 +257,7 @@ def LPRec3d_tomobar(
         power_of_2_cropping=power_of_2_cropping,
         min_mem_usage_filter=min_mem_usage_filter,
         min_mem_usage_ifft2=min_mem_usage_ifft2,
+        **kwargs,
     )
     cp._default_memory_pool.free_all_blocks()
 
@@ -498,7 +500,7 @@ def FISTA3d_tomobar(
 
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 def _instantiate_direct_recon_class(
-    data: cp.ndarray,
+    data: cp.ndarray | Tuple[int, int, int],
     angles: np.ndarray,
     center: Optional[float] = None,
     detector_pad: Union[bool, int] = False,
@@ -518,19 +520,22 @@ def _instantiate_direct_recon_class(
     Returns:
         Type[RecToolsDIRCuPy]: an instance of the direct recon class
     """
+
+    data_shape = data if isinstance(data, tuple) else data.shape
+
     if center is None:
-        center = data.shape[2] // 2  # making a crude guess
+        center = data_shape[2] // 2  # making a crude guess
     if recon_size is None:
-        recon_size = data.shape[2]
+        recon_size = data_shape[2]
     if detector_pad is True:
-        detector_pad = __estimate_detectorHoriz_padding(data.shape[2])
+        detector_pad = __estimate_detectorHoriz_padding(data_shape[2])
     elif detector_pad is False:
         detector_pad = 0
     RecToolsCP = RecToolsDIRCuPy(
-        DetectorsDimH=data.shape[2],  # Horizontal detector dimension
+        DetectorsDimH=data_shape[2],  # Horizontal detector dimension
         DetectorsDimH_pad=detector_pad,  # padding for horizontal detector
-        DetectorsDimV=data.shape[1],  # Vertical detector dimension (3D case)
-        CenterRotOffset=data.shape[2] / 2
+        DetectorsDimV=data_shape[1],  # Vertical detector dimension (3D case)
+        CenterRotOffset=data_shape[2] / 2
         - center
         - 0.5,  # Center of Rotation scalar or a vector
         AnglesVec=-angles,  # A vector of projection angles in radians
