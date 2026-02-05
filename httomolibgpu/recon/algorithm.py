@@ -503,7 +503,7 @@ def ADMM3d_tomobar(
     ADMM_rho_const: float = 1.0,
     ADMM_relax_par: float = 1.7,
     regularisation_type: str = "PD_TV",
-    regularisation_parameter: float = 0.0035,
+    regularisation_parameter: float = 0.0025,
     regularisation_iterations: int = 40,
     regularisation_half_precision: bool = True,
     nonnegativity: bool = False,
@@ -537,7 +537,8 @@ def ADMM3d_tomobar(
     subsets_number: int
         The number of the ordered subsets to accelerate convergence. The recommended range is between 12 to 24.
     initialisation: str, optional
-        Initialise ADMM with the reconstructed image to reduce the number of iterations and accelerate. FBP initialisation is the default one.
+        Initialise ADMM with the reconstructed image to reduce the number of iterations and accelerate. Choose between 'CGLS' when data
+        is noisy and undersampled, 'FBP' when data is of better quality (default) or None.
     ADMM_rho_const: float
         Convergence related parameter for ADMM, higher values lead to slower convergence, but too small values can destabilise the iterations.
         Recommended range is between 0.9 and 2.0.
@@ -550,7 +551,7 @@ def ADMM3d_tomobar(
     regularisation_half_precision: bool
         Perform faster regularisation computation in half-precision with a very minimal sacrifice in quality.
     nonnegativity : bool
-        Impose nonnegativity constraint on the reconstructed image.
+        Impose nonnegativity constraint (set to True) on the reconstructed image. Default False.
     gpu_id : int
         A GPU device index to perform operation on.
 
@@ -559,28 +560,20 @@ def ADMM3d_tomobar(
     cp.ndarray
         The ADMM reconstructed volume as a CuPy array.
     """
-    if initialisation == "FBP":
+    if initialisation not in ["FBP", "CGLS", None]:
+        raise ValueError(
+            "The acceptable values for initialisation are 'FBP','CGLS' and None"
+        )
+
+    if initialisation is not None:
         if detector_pad == True:
             detector_pad = __estimate_detectorHoriz_padding(data.shape[2])
 
         if detector_pad > 0:
             # if detector_pad is not zero we need to reconstruct the image on the recon+2*detector_pad size
-            initialisation_vol = cp.require(
-                cp.swapaxes(
-                    FBP3d_tomobar(
-                        data,
-                        angles=angles,
-                        center=center,
-                        detector_pad=detector_pad,
-                        recon_size=data.shape[2] + 2 * detector_pad,
-                    ),
-                    0,
-                    1,
-                ),
-                requirements="C",
-            )
+            recon_size = data.shape[2] + 2 * detector_pad
 
-        else:
+        if initialisation == "FBP":
             initialisation_vol = cp.require(
                 cp.swapaxes(
                     FBP3d_tomobar(
@@ -589,6 +582,24 @@ def ADMM3d_tomobar(
                         center=center,
                         detector_pad=detector_pad,
                         recon_size=recon_size,
+                        recon_mask_radius=recon_mask_radius,
+                    ),
+                    0,
+                    1,
+                ),
+                requirements="C",
+            )
+        elif initialisation == "CGLS":
+            initialisation_vol = cp.require(
+                cp.swapaxes(
+                    CGLS3d_tomobar(
+                        data,
+                        angles=angles,
+                        center=center,
+                        detector_pad=detector_pad,
+                        recon_size=recon_size,
+                        recon_mask_radius=recon_mask_radius,
+                        iterations=10,
                     ),
                     0,
                     1,
