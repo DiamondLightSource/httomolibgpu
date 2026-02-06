@@ -599,7 +599,7 @@ def ADMM3d_tomobar(
                         detector_pad=detector_pad,
                         recon_size=recon_size,
                         recon_mask_radius=recon_mask_radius,
-                        iterations=10,
+                        iterations=15,
                     ),
                     0,
                     1,

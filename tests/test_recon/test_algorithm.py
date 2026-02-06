@@ -393,7 +393,7 @@ def test_reconstruct_ADMM3d_warm2_tomobar_pd_tv(
     assert recon_data.flags.c_contiguous
     recon_data = cp.asnumpy(recon_data)
     assert_allclose(np.mean(recon_data), 0.001847589, rtol=1e-07, atol=1e-6)
-    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.23649156, rtol=1e-04)
+    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.236588, rtol=1e-04)
     assert recon_data.dtype == np.float32
 
 
