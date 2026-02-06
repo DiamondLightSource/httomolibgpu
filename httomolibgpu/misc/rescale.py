@@ -27,7 +27,6 @@ cp = cupywrapper.cp
 
 from typing import Literal, Optional, Tuple, Union
 
-
 __all__ = [
     "rescale_to_int",
 ]

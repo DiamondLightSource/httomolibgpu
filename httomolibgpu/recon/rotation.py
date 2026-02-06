@@ -171,7 +171,7 @@ def find_center_vo(
 
 
 def _search_coarse(sino, smin, smax, ratio, drop):
-    (nrow, ncol) = sino.shape
+    nrow, ncol = sino.shape
     flip_sino = cp.ascontiguousarray(cp.fliplr(sino))
     comp_sino = cp.ascontiguousarray(cp.flipud(sino))
 
@@ -206,7 +206,7 @@ def _search_coarse(sino, smin, smax, ratio, drop):
 
 
 def _search_fine(sino, srad, step, init_cen, ratio, drop):
-    (nrow, ncol) = sino.shape
+    nrow, ncol = sino.shape
 
     flip_sino = cp.ascontiguousarray(cp.fliplr(sino))
     comp_sino = cp.ascontiguousarray(cp.flipud(sino))
@@ -397,7 +397,7 @@ def _downsample(image, dsp_fact0, dsp_fact1):
     ---------
         image_dsp : Downsampled image.
     """
-    (height, width) = image.shape
+    height, width = image.shape
     dsp_fact0 = cp.clip(cp.int16(dsp_fact0), 1, height // 2)
     dsp_fact1 = cp.clip(cp.int16(dsp_fact1), 1, width // 2)
     height_dsp = height // dsp_fact0
@@ -477,11 +477,11 @@ def find_center_360(
     else:
         _sino = data[:, ind, :]
 
-    (nrow, ncol) = _sino.shape
+    nrow, ncol = _sino.shape
     nrow_180 = nrow // 2 + 1
     sino_top = _sino[0:nrow_180, :]
     sino_bot = cp.fliplr(_sino[-nrow_180:, :])
-    (overlap, side, overlap_position) = _find_overlap(
+    overlap, side, overlap_position = _find_overlap(
         sino_top, sino_bot, win_width, side, denoise, norm, use_overlap
     )
     cor = ncol - overlap / 2
@@ -531,7 +531,7 @@ def _find_overlap(
     win_width = int(np.clip(win_width, 6, min(ncol1, ncol2) // 2))
 
     if side == "right":
-        (list_metric, offset) = _search_overlap(
+        list_metric, offset = _search_overlap(
             mat1,
             mat2,
             win_width,
@@ -544,7 +544,7 @@ def _find_overlap(
         overlap_position += offset
         overlap = ncol1 - overlap_position + win_width // 2
     elif side == "left":
-        (list_metric, offset) = _search_overlap(
+        list_metric, offset = _search_overlap(
             mat1,
             mat2,
             win_width,
@@ -557,7 +557,7 @@ def _find_overlap(
         overlap_position += offset
         overlap = overlap_position + win_width // 2
     else:
-        (list_metric1, offset1) = _search_overlap(
+        list_metric1, offset1 = _search_overlap(
             mat1,
             mat2,
             win_width,
@@ -566,7 +566,7 @@ def _find_overlap(
             norm=norm,
             use_overlap=use_overlap,
         )
-        (list_metric2, offset2) = _search_overlap(
+        list_metric2, offset2 = _search_overlap(
             mat1,
             mat2,
             win_width,
@@ -576,9 +576,9 @@ def _find_overlap(
             use_overlap=use_overlap,
         )
 
-        (curvature1, overlap_position1) = _calculate_curvature(list_metric1)
+        curvature1, overlap_position1 = _calculate_curvature(list_metric1)
         overlap_position1 += offset1
-        (curvature2, overlap_position2) = _calculate_curvature(list_metric2)
+        curvature2, overlap_position2 = _calculate_curvature(list_metric2)
         overlap_position2 += offset2
 
         if curvature1 > curvature2:
@@ -638,8 +638,8 @@ def _search_overlap(
         mat1 = cp.ascontiguousarray(mat1, dtype=cp.float32)
         mat2 = cp.ascontiguousarray(mat2, dtype=cp.float32)
 
-    (nrow1, ncol1) = mat1.shape
-    (nrow2, ncol2) = mat2.shape
+    nrow1, ncol1 = mat1.shape
+    nrow2, ncol2 = mat2.shape
 
     if nrow1 != nrow2:
         raise ValueError("Two images are not at the same height!!!")
