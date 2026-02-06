@@ -272,9 +272,7 @@ def SIRT3d_tomobar(
 ) -> cp.ndarray:
     """
     Perform Simultaneous Iterative Recostruction Technique (SIRT) using ASTRA toolbox :cite:`van2016fast` and
-    ToMoBAR :cite:`kazantsev2020tomographic` wrappers.
-    This is 3D recon directly from a CuPy array while using ASTRA GPUlink capability to avoid host-device
-    transactions for projection and backprojection.
+    ToMoBAR :cite:`kazantsev2020tomographic` wrappers. For more information see :ref:`method_SIRT3d_tomobar`.
 
     Parameters
     ----------
@@ -345,9 +343,7 @@ def CGLS3d_tomobar(
 ) -> cp.ndarray:
     """
     Perform Conjugate Gradient Least Squares (CGLS) using ASTRA toolbox :cite:`van2016fast` and
-    ToMoBAR :cite:`kazantsev2020tomographic` wrappers.
-    This is 3D recon directly from a CuPy array while using ASTRA GPUlink capability to avoid host-device
-    transactions for projection and backprojection.
+    ToMoBAR :cite:`kazantsev2020tomographic` wrappers. For more information see :ref:`method_CGLS3d_tomobar`.
 
     Parameters
     ----------
@@ -418,6 +414,7 @@ def FISTA3d_tomobar(
     """
     A Fast Iterative Shrinkage-Thresholding Algorithm :cite:`beck2009fast` with various types of regularisation or
     denoising operations :cite:`kazantsev2019ccpi` (currently accepts ROF_TV and PD_TV regularisations only).
+    For more information see :ref:`method_FISTA3d_tomobar`.
 
     Parameters
     ----------
@@ -512,6 +509,7 @@ def ADMM3d_tomobar(
     """
     An Alternating Direction Method of Multipliers method with various types of regularisation or
     denoising operations :cite:`kazantsev2019ccpi` (currently accepts ROF_TV and PD_TV regularisations only).
+    For more information see :ref:`_method_ADMM3d_tomobar`.
 
     Parameters
     ----------
