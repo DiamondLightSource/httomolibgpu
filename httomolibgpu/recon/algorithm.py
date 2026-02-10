@@ -247,7 +247,7 @@ def LPRec3d_tomobar(
         data, angles, center, detector_pad, recon_size, 0
     )
 
-    result = RecToolsCP.FOURIER_INV(
+    reconstruction = RecToolsCP.FOURIER_INV(
         data,
         recon_mask_radius=recon_mask_radius,
         data_axes_labels_order=input_data_axis_labels,
@@ -261,10 +261,11 @@ def LPRec3d_tomobar(
     )
     cp._default_memory_pool.free_all_blocks()
 
-    if DeviceMemStack.instance():
-        return result
+    mem_stack = DeviceMemStack.instance()
+    if mem_stack:
+        return mem_stack.highwater
 
-    return cp.require(cp.swapaxes(result, 0, 1), requirements="C")
+    return cp.require(cp.swapaxes(reconstruction, 0, 1), requirements="C")
 
 
 ## %%%%%%%%%%%%%%%%%%%%%%% SIRT reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
