@@ -263,7 +263,7 @@ def LPRec3d_tomobar(
 
     mem_stack = DeviceMemStack.instance()
     if mem_stack:
-        return mem_stack.highwater
+        return mem_stack.highwater * 1.00625
 
     return cp.require(cp.swapaxes(reconstruction, 0, 1), requirements="C")
 
