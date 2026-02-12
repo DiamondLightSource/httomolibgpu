@@ -321,7 +321,7 @@ __device__ void _calc_metrics_overlap(const float *mat1, int mat1_nx,
  * the compiler (rather than at runtime), which reduces the register count.
  */
 template <bool norm, bool use_overlap>
-__global__ void calc_metrics_kernel(const float *mat1, int mat1_nx,
+__device__ __forceinline__ void calc_metrics_kernel_impl(const float *mat1, int mat1_nx,
                                     const float *mat2, int mat2_nx,
                                     int win_width, int rows, int side,
                                     float *list_metric)
@@ -331,4 +331,28 @@ __global__ void calc_metrics_kernel(const float *mat1, int mat1_nx,
     } else {
         _calc_metrics_no_overlap<norm>(mat1, mat1_nx, mat2, mat2_nx, win_width, rows, side, list_metric);
     }
+}
+
+extern "C" __global__ void calc_metrics_kernel(const float *mat1, int mat1_nx, const float *mat2, int mat2_nx,
+                                               int win_width, int rows, int side, float *list_metric)
+{
+    calc_metrics_kernel_impl<false, false>(mat1, mat1_nx, mat2, mat2_nx, win_width, rows, side, list_metric);
+}
+
+extern "C" __global__ void calc_metrics_kernel_norm(const float *mat1, int mat1_nx, const float *mat2, int mat2_nx,
+                                                    int win_width, int rows, int side, float *list_metric)
+{
+    calc_metrics_kernel_impl<true, false>(mat1, mat1_nx, mat2, mat2_nx, win_width, rows, side, list_metric);
+}
+
+extern "C" __global__ void calc_metrics_kernel_use_overlap(const float *mat1, int mat1_nx, const float *mat2, int mat2_nx,
+                                                           int win_width, int rows, int side, float *list_metric)
+{
+    calc_metrics_kernel_impl<false, true>(mat1, mat1_nx, mat2, mat2_nx, win_width, rows, side, list_metric);
+}
+
+extern "C" __global__ void calc_metrics_kernel_norm_use_overlap(const float *mat1, int mat1_nx, const float *mat2, int mat2_nx,
+                                                                int win_width, int rows, int side, float *list_metric)
+{
+    calc_metrics_kernel_impl<true, true>(mat1, mat1_nx, mat2, mat2_nx, win_width, rows, side, list_metric);
 }
