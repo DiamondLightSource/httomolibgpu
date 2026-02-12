@@ -1001,7 +1001,7 @@ def raven_filter(
     height, images, width = data.shape
 
     # Set the input type of the kernel
-    kernel_args = "raven_filter<{0}>".format(
+    kernel_name = "raven_filter_{0}".format(
         "float" if calc_type == "complex64" else "double"
     )
 
@@ -1014,8 +1014,8 @@ def raven_filter(
     grid_dims = (grid_x, grid_y, grid_z)
     params = (fft_data_shifted, fft_data, width, images, height, uvalue, nvalue, vvalue)
 
-    raven_module = load_cuda_module("raven_filter", name_expressions=[kernel_args])
-    raven_filt = raven_module.get_function(kernel_args)
+    raven_module = load_cuda_module("raven_filter")
+    raven_filt = raven_module.get_function(kernel_name)
 
     raven_filt(grid_dims, block_dims, params)
     del fft_data_shifted
