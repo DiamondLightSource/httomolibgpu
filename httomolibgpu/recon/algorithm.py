@@ -39,7 +39,7 @@ else:
     RecToolsIRCuPy = Mock()
 
 from numpy import float32
-from typing import Optional, Tuple, Type, Union
+from typing import Literal, Optional, Tuple, Type, Union
 
 __all__ = [
     "FBP2d_astra",
@@ -244,7 +244,7 @@ def LPRec3d_tomobar(
     """
 
     RecToolsCP = _instantiate_direct_recon_class(
-        data, angles, center, detector_pad, recon_size, 0
+        data, angles, center, detector_pad, recon_size, "fourier", 0
     )
 
     reconstruction = RecToolsCP.FOURIER_INV(
@@ -655,6 +655,7 @@ def _instantiate_direct_recon_class(
     center: Optional[float] = None,
     detector_pad: Union[bool, int] = False,
     recon_size: Optional[int] = None,
+    projector: Literal["fourier", "astra"] = "astra",
     gpu_id: int = 0,
 ) -> Type:
     """instantiate ToMoBAR's direct recon class
@@ -690,6 +691,7 @@ def _instantiate_direct_recon_class(
         - 0.5,  # Center of Rotation scalar or a vector
         AnglesVec=-angles,  # A vector of projection angles in radians
         ObjSize=recon_size,  # Reconstructed object dimensions (scalar)
+        projector=projector,
         device_projector=gpu_id,
     )
     return RecToolsCP
