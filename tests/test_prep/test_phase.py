@@ -197,9 +197,17 @@ def test_paganin_filter_calc_mem_big(slices, dims, padding, ensure_clean_memory)
             pytest.skip("Not usable FFT size")
         else:
             raise
-    av_mem = cp.cuda.Device().mem_info[0]
+
+    # the estimation may have reserved blocks in the pool
+    cp.get_default_memory_pool().free_all_blocks()
+
+    av_mem = int(
+        cp.cuda.Device().mem_info[0] * 0.9
+    )  # margin is applied to counter fragmentation and OS reservations
     if av_mem < estimated_mem_peak:
-        pytest.skip("Not enough GPU memory to run this test")
+        pytest.skip(
+            f"Not enough GPU memory ({av_mem/1024**3:.2f} GB) to run this test: {estimated_mem_peak/1024**3:.2f} GB needed"
+        )
 
     hook = MaxMemoryHook()
     with hook:
