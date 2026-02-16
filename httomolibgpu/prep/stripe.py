@@ -822,7 +822,7 @@ def _detect_stripe(listdata, snr):
     listsorted = cp.sort(listdata)[::-1]
     xlist = cp.arange(0, numdata, 1.0)
     ndrop = cp.int16(0.25 * numdata)
-    (_slope, _intercept) = _mpolyfit(
+    _slope, _intercept = _mpolyfit(
         xlist[ndrop : -ndrop - 1], listsorted[ndrop : -ndrop - 1]
     )
 
@@ -846,7 +846,7 @@ def _rs_large(sinogram, snr, size, matindex, drop_ratio=0.1, norm=True):
     Remove large stripes.
     """
     drop_ratio = max(min(drop_ratio, 0.8), 0)  # = cp.clip(drop_ratio, 0.0, 0.8)
-    (nrow, ncol) = sinogram.shape
+    nrow, ncol = sinogram.shape
     ndrop = int(0.5 * drop_ratio * nrow)
     sinosort = cp.sort(sinogram, axis=0)
     sinosmooth = median_filter(sinosort, (1, size))
@@ -884,7 +884,7 @@ def _rs_large(sinogram, snr, size, matindex, drop_ratio=0.1, norm=True):
 def _rs_dead(sinogram, snr, size, matindex, norm=True):
     """remove unresponsive and fluctuating stripes"""
     sinogram = cp.copy(sinogram)  # Make it mutable
-    (nrow, _) = sinogram.shape
+    nrow, _ = sinogram.shape
     sinosmooth = uniform_filter1d(sinogram, 10, axis=0)
 
     listdiff = cp.sum(cp.abs(sinogram - sinosmooth), axis=0)

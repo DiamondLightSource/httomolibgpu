@@ -231,3 +231,20 @@ def force_clean_gpu_memory():
     gc.collect()
     cp.get_default_memory_pool().free_all_blocks()
     cp.get_default_pinned_memory_pool().free_all_blocks()
+
+
+class MaxMemoryHook(cp.cuda.MemoryHook):
+    def __init__(self, initial=0):
+        self.max_mem = initial
+        self.current = initial
+
+    def malloc_postprocess(
+        self, device_id: int, size: int, mem_size: int, mem_ptr: int, pmem_id: int
+    ):
+        self.current += mem_size
+        self.max_mem = max(self.max_mem, self.current)
+
+    def free_postprocess(
+        self, device_id: int, mem_size: int, mem_ptr: int, pmem_id: int
+    ):
+        self.current -= mem_size
