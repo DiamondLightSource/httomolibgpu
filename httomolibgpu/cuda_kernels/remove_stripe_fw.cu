@@ -1,5 +1,4 @@
-template<int WSize>
-__global__ void grouped_convolution_x(
+extern "C" __global__ void grouped_convolution_x(
     int dim_x,
     int dim_y,
     int dim_z,
@@ -10,7 +9,8 @@ __global__ void grouped_convolution_x(
     float* out,
     int out_stride_z,
     int out_stride_group,
-    const float* w
+    const float* w,
+    int wk
 )
 {
     const int g_thd_x = blockDim.x * blockIdx.x + threadIdx.x;
@@ -25,9 +25,9 @@ __global__ void grouped_convolution_x(
     for (int i = 0; i < out_groups; ++i)
     {
         float acc = 0.F;
-        for (int j = 0; j < WSize; ++j)
+        for (int j = 0; j < wk; ++j)
         {
-            const int w_idx = i * WSize + j;
+            const int w_idx = i * wk + j;
             const int in_idx = (g_thd_x * in_stride_x + j) + g_thd_y * in_stride_y + g_thd_z * in_stride_z;
             acc += w[w_idx] * in[in_idx];
         }
@@ -36,8 +36,7 @@ __global__ void grouped_convolution_x(
     }
 }
 
-template<int WSize>
-__global__ void grouped_convolution_y(
+extern "C" __global__ void grouped_convolution_y(
     int dim_x,
     int dim_y,
     int dim_z,
@@ -49,7 +48,8 @@ __global__ void grouped_convolution_y(
     float* out,
     int out_stride_z,
     int out_stride_group,
-    const float* w
+    const float* w,
+    int hk
 )
 {
     const int g_thd_x = blockDim.x * blockIdx.x + threadIdx.x;
@@ -68,9 +68,9 @@ __global__ void grouped_convolution_y(
         for (int i = 0; i < out_groups; ++i)
         {
             float acc = 0.F;
-            for (int j = 0; j < WSize; ++j)
+            for (int j = 0; j < hk; ++j)
             {
-                const int w_idx = (out_groups * group + i) * WSize + j;
+                const int w_idx = (out_groups * group + i) * hk + j;
                 const int in_idx = g_thd_x * in_stride_x + (item_stride_y * g_thd_y + j) * in_stride_y + group * in_stride_group + g_thd_z * in_stride_z;
                 acc += w[w_idx] * in[in_idx];
             }
@@ -80,8 +80,7 @@ __global__ void grouped_convolution_y(
     }
 }
 
-template<int WSize>
-__global__ void transposed_convolution_x(
+extern "C" __global__ void transposed_convolution_x(
     int dim_x,
     int dim_y,
     int dim_z,
@@ -90,6 +89,7 @@ __global__ void transposed_convolution_x(
     int in_stride_y,
     int in_stride_z,
     const float* w,
+    int wk,
     float* out
 )
 {
@@ -103,7 +103,7 @@ __global__ void transposed_convolution_x(
 
     constexpr int item_out_stride = 2;
     float acc = 0.F;
-    for (int i = 0; i < WSize; ++i)
+    for (int i = 0; i < wk; ++i)
     {
         const int in_x = (g_thd_x - i) / item_out_stride;
         const int in_x_mod = (g_thd_x - i) % item_out_stride;
@@ -117,8 +117,7 @@ __global__ void transposed_convolution_x(
     out[out_idx] = acc;
 }
 
-template<int WSize>
-__global__ void transposed_convolution_y(
+extern "C" __global__ void transposed_convolution_y(
     int dim_x,
     int dim_y,
     int dim_z,
@@ -127,6 +126,7 @@ __global__ void transposed_convolution_y(
     int in_stride_y,
     int in_stride_z,
     const float* w,
+    int hk,
     float* out
 )
 {
@@ -140,7 +140,7 @@ __global__ void transposed_convolution_y(
 
     constexpr int item_out_stride = 2;
     float acc = 0.F;
-    for (int i = 0; i < WSize; ++i)
+    for (int i = 0; i < hk; ++i)
     {
         const int in_y = (g_thd_y - i) / item_out_stride;
         const int in_y_mod = (g_thd_y - i) % item_out_stride;

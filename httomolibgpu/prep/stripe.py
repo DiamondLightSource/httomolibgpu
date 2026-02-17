@@ -288,8 +288,7 @@ def _conv2d(
     w = cp.asarray(w)
     x = cp.expand_dims(x, axis=1)
     w = np.expand_dims(w, axis=0)
-    symbol_names = [f"grouped_convolution_x<{wk}>", f"grouped_convolution_y<{hk}>"]
-    module = load_cuda_module("remove_stripe_fw", name_expressions=symbol_names)
+    module = load_cuda_module("remove_stripe_fw")
     dim_x = out.shape[-1]
     dim_y = out.shape[-2]
     dim_z = out.shape[0]
@@ -305,7 +304,7 @@ def _conv2d(
     grid_dim = (grid_x, dim_y, dim_z)
 
     if groups == 1:
-        grouped_convolution_kernel_x = module.get_function(symbol_names[0])
+        grouped_convolution_kernel_x = module.get_function("grouped_convolution_x")
         grouped_convolution_kernel_x(
             grid_dim,
             block_dim,
@@ -321,11 +320,12 @@ def _conv2d(
                 out_stride_z,
                 out_stride_group,
                 w,
+                wk,
             ),
         )
         return out
 
-    grouped_convolution_kernel_y = module.get_function(symbol_names[1])
+    grouped_convolution_kernel_y = module.get_function("grouped_convolution_y")
     in_stride_group = x.strides[2] // x.dtype.itemsize
     grouped_convolution_kernel_y(
         grid_dim,
@@ -343,6 +343,7 @@ def _conv2d(
             out_stride_z,
             out_stride_group,
             w,
+            hk,
         ),
     )
     del w
@@ -383,11 +384,7 @@ def _conv_transpose2d(
     out = cp.zeros(out_shape, dtype="float32")
     w = cp.asarray(w)
 
-    symbol_names = [
-        f"transposed_convolution_x<{wk}>",
-        f"transposed_convolution_y<{hk}>",
-    ]
-    module = load_cuda_module("remove_stripe_fw", name_expressions=symbol_names)
+    module = load_cuda_module("remove_stripe_fw")
     dim_x = out.shape[-1]
     dim_y = out.shape[-2]
     dim_z = out.shape[0]
@@ -402,18 +399,44 @@ def _conv_transpose2d(
     grid_dim = (grid_x, dim_y, dim_z)
 
     if wk > 1:
-        transposed_convolution_kernel_x = module.get_function(symbol_names[0])
+        transposed_convolution_kernel_x = module.get_function(
+            "transposed_convolution_x"
+        )
         transposed_convolution_kernel_x(
             grid_dim,
             block_dim,
-            (dim_x, dim_y, dim_z, x, in_dim_x, in_stride_y, in_stride_z, w, out),
+            (
+                dim_x,
+                dim_y,
+                dim_z,
+                x,
+                in_dim_x,
+                in_stride_y,
+                in_stride_z,
+                w,
+                wk,
+                out,
+            ),
         )
     elif hk > 1:
-        transposed_convolution_kernel_y = module.get_function(symbol_names[1])
+        transposed_convolution_kernel_y = module.get_function(
+            "transposed_convolution_y"
+        )
         transposed_convolution_kernel_y(
             grid_dim,
             block_dim,
-            (dim_x, dim_y, dim_z, x, in_dim_y, in_stride_y, in_stride_z, w, out),
+            (
+                dim_x,
+                dim_y,
+                dim_z,
+                x,
+                in_dim_y,
+                in_stride_y,
+                in_stride_z,
+                w,
+                hk,
+                out,
+            ),
         )
     else:
         assert False
