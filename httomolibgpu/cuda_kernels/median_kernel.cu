@@ -1,6 +1,6 @@
 template <typename Type, int diameter>
-__global__ void median_general_kernel3d(const Type *in, Type *out, float dif,
-                                      int Z, int M, int N) {
+__device__ __forceinline__ void median_general_kernel3d_impl(const Type *in, Type *out, float dif,
+                                                             int Z, int M, int N) {
   constexpr int radius = diameter / 2;
   constexpr int d3 = diameter * diameter * diameter;
   constexpr int midpoint = d3 / 2;
@@ -51,4 +51,64 @@ __global__ void median_general_kernel3d(const Type *in, Type *out, float dif,
         fabsf(in[index] - ValVec[midpoint]) >= dif ? ValVec[midpoint] : in[index];
   }
   else out[index] = ValVec[midpoint]; /* median filtering */
+}
+
+extern "C" __global__ void median_general_kernel3d_float_3(const float *in, float *out, float dif, int Z, int M, int N)
+{
+  median_general_kernel3d_impl<float, 3>(in, out, dif, Z, M, N);
+}
+
+extern "C" __global__ void median_general_kernel3d_float_5(const float *in, float *out, float dif, int Z, int M, int N)
+{
+  median_general_kernel3d_impl<float, 5>(in, out, dif, Z, M, N);
+}
+
+extern "C" __global__ void median_general_kernel3d_float_7(const float *in, float *out, float dif, int Z, int M, int N)
+{
+  median_general_kernel3d_impl<float, 7>(in, out, dif, Z, M, N);
+}
+
+extern "C" __global__ void median_general_kernel3d_float_9(const float *in, float *out, float dif, int Z, int M, int N)
+{
+  median_general_kernel3d_impl<float, 9>(in, out, dif, Z, M, N);
+}
+
+extern "C" __global__ void median_general_kernel3d_float_11(const float *in, float *out, float dif, int Z, int M, int N)
+{
+  median_general_kernel3d_impl<float, 11>(in, out, dif, Z, M, N);
+}
+
+extern "C" __global__ void median_general_kernel3d_float_13(const float *in, float *out, float dif, int Z, int M, int N)
+{
+  median_general_kernel3d_impl<float, 13>(in, out, dif, Z, M, N);
+}
+
+extern "C" __global__ void median_general_kernel3d_unsigned_short_3(const unsigned short *in, unsigned short *out, float dif, int Z, int M, int N)
+{
+  median_general_kernel3d_impl<unsigned short, 3>(in, out, dif, Z, M, N);
+}
+
+extern "C" __global__ void median_general_kernel3d_unsigned_short_5(const unsigned short *in, unsigned short *out, float dif, int Z, int M, int N)
+{
+  median_general_kernel3d_impl<unsigned short, 5>(in, out, dif, Z, M, N);
+}
+
+extern "C" __global__ void median_general_kernel3d_unsigned_short_7(const unsigned short *in, unsigned short *out, float dif, int Z, int M, int N)
+{
+  median_general_kernel3d_impl<unsigned short, 7>(in, out, dif, Z, M, N);
+}
+
+extern "C" __global__ void median_general_kernel3d_unsigned_short_9(const unsigned short *in, unsigned short *out, float dif, int Z, int M, int N)
+{
+  median_general_kernel3d_impl<unsigned short, 9>(in, out, dif, Z, M, N);
+}
+
+extern "C" __global__ void median_general_kernel3d_unsigned_short_11(const unsigned short *in, unsigned short *out, float dif, int Z, int M, int N)
+{
+  median_general_kernel3d_impl<unsigned short, 11>(in, out, dif, Z, M, N);
+}
+
+extern "C" __global__ void median_general_kernel3d_unsigned_short_13(const unsigned short *in, unsigned short *out, float dif, int Z, int M, int N)
+{
+  median_general_kernel3d_impl<unsigned short, 13>(in, out, dif, Z, M, N);
 }

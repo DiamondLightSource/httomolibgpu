@@ -87,8 +87,8 @@ def median_filter(
     output = cp.copy(data, order="C")
 
     # 3d median or dezinger
-    kernel_args = "median_general_kernel3d<{0}, {1}>".format(
-        "float" if input_type == "float32" else "unsigned short", kernel_size
+    kernel_name = "median_general_kernel3d_{0}_{1}".format(
+        "float" if input_type == "float32" else "unsigned_short", kernel_size
     )
     block_x = 128
     # setting grid/block parameters
@@ -99,8 +99,8 @@ def median_filter(
     grid_dims = (grid_x, grid_y, grid_z)
     params = (data, output, cp.float32(dif), dz, dy, dx)
 
-    median_module = load_cuda_module("median_kernel", name_expressions=[kernel_args])
-    median_filt = median_module.get_function(kernel_args)
+    median_module = load_cuda_module("median_kernel")
+    median_filt = median_module.get_function(kernel_name)
 
     median_filt(grid_dims, block_dims, params)
 
