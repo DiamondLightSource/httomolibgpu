@@ -1,8 +1,8 @@
 #include <cupy/complex.cuh>
 
 template <typename Type>
-__global__ void 
-raven_filter(
+__device__ __forceinline__ void 
+raven_filter_impl(
   complex<Type> *input,
   complex<Type> *output,
   int width, int images, int height, 
@@ -46,4 +46,20 @@ raven_filter(
                        width * images * static_cast<long long>(outZ);
 
   output[outIndex] = value;
+}
+
+extern "C" __global__ void raven_filter_float(complex<float> *input,
+                                              complex<float> *output,
+                                              int width, int images, int height, 
+                                              int u0, int n, int v0)
+{
+  raven_filter_impl<float>(input, output, width, images, height, u0, n, v0);
+}
+
+extern "C" __global__ void raven_filter_double(complex<double> *input,
+                                               complex<double> *output,
+                                               int width, int images, int height, 
+                                               int u0, int n, int v0)
+{
+  raven_filter_impl<double>(input, output, width, images, height, u0, n, v0);
 }

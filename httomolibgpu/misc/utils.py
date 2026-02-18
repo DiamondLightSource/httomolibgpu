@@ -125,12 +125,12 @@ def __naninfs_check(
     grid_dims = (grid_x, grid_y, grid_z)
     params = (data, dz, dy, dx, present_nans_infs)
 
-    kernel_args = "remove_nan_inf<{0}>".format(
-        "float" if input_type == "float32" else "unsigned short"
+    kernel_name = "remove_nan_inf_{0}".format(
+        "float" if input_type == "float32" else "unsigned_short"
     )
 
-    module = load_cuda_module("remove_nan_inf", name_expressions=[kernel_args])
-    remove_nan_inf_kernel = module.get_function(kernel_args)
+    module = load_cuda_module("remove_nan_inf")
+    remove_nan_inf_kernel = module.get_function(kernel_name)
     remove_nan_inf_kernel(grid_dims, block_dims, params)
 
     if present_nans_infs[0].get() == 1:

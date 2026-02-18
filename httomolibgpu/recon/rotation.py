@@ -666,12 +666,6 @@ def _calc_metrics(mat1, mat2, win_width, side, use_overlap, norm):
 
     _calc_metrics_module = load_cuda_module(
         "calc_metrics",
-        name_expressions=[
-            "calc_metrics_kernel<false, false>",
-            "calc_metrics_kernel<true, false>",
-            "calc_metrics_kernel<false, true>",
-            "calc_metrics_kernel<true, true>",
-        ],
         options=("--maxrregcount=32",),
     )
 
@@ -691,10 +685,12 @@ def _calc_metrics(mat1, mat2, win_width, side, use_overlap, norm):
     block = (128, 1, 1)
     grid = (1, np.int32(num_pos), 1)
     smem = block[0] * 4 * 6 if use_overlap else block[0] * 4 * 3
-    bool2str = lambda x: "true" if x is True else "false"
-    calc_metrics = _calc_metrics_module.get_function(
-        f"calc_metrics_kernel<{bool2str(norm)}, {bool2str(use_overlap)}>"
-    )
+    calc_metrics_kernel_name = "calc_metrics_kernel"
+    if norm:
+        calc_metrics_kernel_name += "_norm"
+    if use_overlap:
+        calc_metrics_kernel_name += "_use_overlap"
+    calc_metrics = _calc_metrics_module.get_function(calc_metrics_kernel_name)
     calc_metrics(grid=grid, block=block, args=args, shared_mem=smem)
 
     return list_metric
