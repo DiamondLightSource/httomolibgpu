@@ -1,0 +1,738 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>httomolibgpu.recon.algorithm &#8212; HTTomolibgpu Documentation page</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/general.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=e5a98fca"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api/httomolibgpu.recon.algorithm';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="httomolibgpu.recon.rotation" href="httomolibgpu.recon.rotation.html" />
+    <link rel="prev" title="httomolibgpu.prep.stripe" href="httomolibgpu.prep.stripe.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Feb 18, 2026"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">HTTomolibgpu Documentation page</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../introduction/about.html">HTTomolibGPU</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Reference guides</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../reference/methods.html">Methods Description</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/methods_list/correction_methods.html">Data correction methods</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../reference/methods_list/correction/median_filter.html">Median filter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/methods_list/correction/outlier_removal.html">Outliers removal filter</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/methods_list/stripe_removal_methods.html">Stripe Removal methods</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../reference/methods_list/stripe_removal/remove_stripe_based_sorting.html">Remove stripes by sorting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/methods_list/stripe_removal/remove_all_stripe.html">Remove stripes combo</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/methods_list/stripe_removal/raven_filter.html">Raven filter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/methods_list/stripe_removal/remove_stripe_ti.html">Remove stripes Titarenko</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="../reference/methods_list/phase_contrast_methods.html">Phase-contrast enhancement</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/methods_list/reconstruction_methods.html">Image reconstruction methods</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../reference/methods_list/reconstruction/LPRec3d_tomobar.html">Log-Polar 3D (ToMoBAR)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/methods_list/reconstruction/FBP3d_tomobar.html">FBP3D (ToMoBAR)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/methods_list/reconstruction/FBP2d_astra.html">FBP2D (ASTRA-Toolbox)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/methods_list/reconstruction/FISTA3d_tomobar.html">FISTA 3D (ToMoBAR)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/methods_list/reconstruction/ADMM3d_tomobar.html">ADMM 3D (ToMoBAR)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/methods_list/reconstruction/CGLS3d_tomobar.html">CGLS 3D (ToMoBAR)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/methods_list/reconstruction/SIRT3d_tomobar.html">SIRT 3D (ToMoBAR)</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/methods_list/denoising_methods.html">Denoising methods</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../reference/methods_list/denoising/total_variation_ROF.html">Total Variation denoising (ROF)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/methods_list/denoising/total_variation_PD.html">Total Variation denoising (PD)</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../reference/methods_list/rescale_methods.html">Data rescale methods</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../reference/methods_list/rescale/rescale_to_int.html">Rescale to integers</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../reference/api.html">API reference</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="httomolibgpu.misc.corr.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.misc.corr</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="httomolibgpu.misc.denoise.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.misc.denoise</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="httomolibgpu.misc.morph.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.misc.morph</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="httomolibgpu.misc.rescale.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.misc.rescale</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="httomolibgpu.prep.alignment.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.prep.alignment</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="httomolibgpu.prep.normalize.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.prep.normalize</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="httomolibgpu.prep.phase.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.prep.phase</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="httomolibgpu.prep.stripe.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.prep.stripe</span></code></a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.recon.algorithm</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="httomolibgpu.recon.rotation.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.recon.rotation</span></code></a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../bibliography/biblio.html">Bibliography</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/api/httomolibgpu.recon.algorithm.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>httomolibgpu.recon.algorithm</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#httomolibgpu.recon.algorithm.ADMM3d_tomobar"><code class="docutils literal notranslate"><span class="pre">ADMM3d_tomobar()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#httomolibgpu.recon.algorithm.CGLS3d_tomobar"><code class="docutils literal notranslate"><span class="pre">CGLS3d_tomobar()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#httomolibgpu.recon.algorithm.FBP2d_astra"><code class="docutils literal notranslate"><span class="pre">FBP2d_astra()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#httomolibgpu.recon.algorithm.FBP3d_tomobar"><code class="docutils literal notranslate"><span class="pre">FBP3d_tomobar()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#httomolibgpu.recon.algorithm.FISTA3d_tomobar"><code class="docutils literal notranslate"><span class="pre">FISTA3d_tomobar()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#httomolibgpu.recon.algorithm.LPRec3d_tomobar"><code class="docutils literal notranslate"><span class="pre">LPRec3d_tomobar()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#httomolibgpu.recon.algorithm.SIRT3d_tomobar"><code class="docutils literal notranslate"><span class="pre">SIRT3d_tomobar()</span></code></a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="module-httomolibgpu.recon.algorithm">
+<span id="httomolibgpu-recon-algorithm"></span><h1><a class="reference internal" href="#module-httomolibgpu.recon.algorithm" title="httomolibgpu.recon.algorithm"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.recon.algorithm</span></code></a><a class="headerlink" href="#module-httomolibgpu.recon.algorithm" title="Link to this heading">#</a></h1>
+<p>Module for tomographic reconstruction. For more detailed information, see <a class="reference internal" href="../reference/methods_list/reconstruction_methods.html#image-reconstruction-module"><span class="std std-ref">Image reconstruction methods</span></a></p>
+<dl class="py function">
+<dt class="sig sig-object py" id="httomolibgpu.recon.algorithm.ADMM3d_tomobar">
+<span class="sig-prename descclassname"><span class="pre">httomolibgpu.recon.algorithm.</span></span><span class="sig-name descname"><span class="pre">ADMM3d_tomobar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data:</span> <span class="pre">&lt;cp.ndarray&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angles:</span> <span class="pre">&lt;cp.ndarray&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">center:</span> <span class="pre">float</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector_pad:</span> <span class="pre">bool</span> <span class="pre">|</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recon_size:</span> <span class="pre">int</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recon_mask_radius:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.95</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iterations:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subsets_number:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initialisation:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">'FBP'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ADMM_rho_const:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ADMM_relax_par:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">1.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regularisation_type:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'PD_TV'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regularisation_parameter:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.0025</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regularisation_iterations:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regularisation_half_precision:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nonnegativity:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gpu_id:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">&lt;cp.ndarray&gt;</span></span></span><a class="reference internal" href="../_modules/httomolibgpu/recon/algorithm.html#ADMM3d_tomobar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#httomolibgpu.recon.algorithm.ADMM3d_tomobar" title="Link to this definition">#</a></dt>
+<dd><p>An Alternating Direction Method of Multipliers method with various types of regularisation or
+denoising operations <span id="id1">[<a class="reference internal" href="../bibliography/biblio.html#id15" title="Daniil Kazantsev, Edoardo Pasca, Martin J Turner, and Philip J Withers. Ccpi-regularisation toolkit for computed tomographic image reconstruction with proximal splitting algorithms. SoftwareX, 9:317–323, 2019.">6</a>]</span> (currently accepts ROF_TV and PD_TV regularisations only).
+For more information see <span class="xref std std-ref">_method_ADMM3d_tomobar</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>cp.ndarray</em>) – Projection data as a CuPy array.</p></li>
+<li><p><strong>angles</strong> (<em>np.ndarray</em>) – An array of angles given in radians.</p></li>
+<li><p><strong>center</strong> (<em>float</em><em>, </em><em>optional</em>) – The center of rotation (CoR).</p></li>
+<li><p><strong>detector_pad</strong> (<em>bool</em><em>, </em><em>int</em>) – Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction. Set to True to perform
+an automated padding or specify a certain value as an integer.</p></li>
+<li><p><strong>recon_size</strong> (<em>int</em><em>, </em><em>optional</em>) – The [recon_size, recon_size] shape of the reconstructed slice in pixels.
+By default (None), the reconstructed size will be the dimension of the horizontal detector.</p></li>
+<li><p><strong>recon_mask_radius</strong> (<em>float</em>) – The radius of the circular mask that applies to the reconstructed slice in order to crop
+out some undesirable artifacts. The values outside the given diameter will be set to zero.
+To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.</p></li>
+<li><p><strong>iterations</strong> (<em>int</em>) – The number of ADMM algorithm iterations. The recommended range is between 3 to 5 with initialisation and
+more than 10 without. Assuming that the subsets_number is reasonably large (&gt;12).</p></li>
+<li><p><strong>subsets_number</strong> (<em>int</em>) – The number of the ordered subsets to accelerate convergence. The recommended range is between 12 to 24.</p></li>
+<li><p><strong>initialisation</strong> (<em>str</em><em>, </em><em>optional</em>) – Initialise ADMM with the reconstructed image to reduce the number of iterations and accelerate. Choose between ‘CGLS’ when data
+is noisy and undersampled, ‘FBP’ when data is of better quality (default) or None.</p></li>
+<li><p><strong>ADMM_rho_const</strong> (<em>float</em>) – Convergence related parameter for ADMM, higher values lead to slower convergence, but too small values can destabilise the iterations.
+Recommended range is between 0.9 and 2.0.</p></li>
+<li><p><strong>ADMM_relax_par</strong> (<em>Relaxation parameter which can lead to acceleration</em><em> of </em><em>the algorithm</em><em>, </em><em>keep it in the range between 1.5 and 1.8 to avoid divergence.     regularisation_type: str</em>) – A method to use for regularisation. Currently PD_TV and ROF_TV are available.</p></li>
+<li><p><strong>regularisation_parameter</strong> (<em>float</em>) – The main regularisation parameter to control the amount of smoothing/noise removal. Larger values lead to stronger smoothing.</p></li>
+<li><p><strong>regularisation_iterations</strong> (<em>int</em>) – The number of iterations for regularisers (aka INNER iterations).</p></li>
+<li><p><strong>regularisation_half_precision</strong> (<em>bool</em>) – Perform faster regularisation computation in half-precision with a very minimal sacrifice in quality.</p></li>
+<li><p><strong>nonnegativity</strong> (<em>bool</em>) – Impose nonnegativity constraint (set to True) on the reconstructed image. Default False.</p></li>
+<li><p><strong>gpu_id</strong> (<em>int</em>) – A GPU device index to perform operation on.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The ADMM reconstructed volume as a CuPy array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>cp.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="httomolibgpu.recon.algorithm.CGLS3d_tomobar">
+<span class="sig-prename descclassname"><span class="pre">httomolibgpu.recon.algorithm.</span></span><span class="sig-name descname"><span class="pre">CGLS3d_tomobar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data:</span> <span class="pre">&lt;cp.ndarray&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angles:</span> <span class="pre">&lt;cp.ndarray&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">center:</span> <span class="pre">float</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector_pad:</span> <span class="pre">bool</span> <span class="pre">|</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recon_size:</span> <span class="pre">int</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recon_mask_radius:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.95</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iterations:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nonnegativity:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gpu_id:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">&lt;cp.ndarray&gt;</span></span></span><a class="reference internal" href="../_modules/httomolibgpu/recon/algorithm.html#CGLS3d_tomobar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#httomolibgpu.recon.algorithm.CGLS3d_tomobar" title="Link to this definition">#</a></dt>
+<dd><p>Perform Conjugate Gradient Least Squares (CGLS) using ASTRA toolbox <span id="id2">[<a class="reference internal" href="../bibliography/biblio.html#id11" title="Wim Van Aarle, Willem Jan Palenstijn, Jeroen Cant, Eline Janssens, Folkert Bleichrodt, Andrei Dabravolski, Jan De Beenhouwer, K Joost Batenburg, and Jan Sijbers. Fast and flexible x-ray tomography using the astra toolbox. Optics express, 24(22):25129–25147, 2016.">14</a>]</span> and
+ToMoBAR <span id="id3">[<a class="reference internal" href="../bibliography/biblio.html#id12" title="Daniil Kazantsev and Nicola Wadeson. Tomographic model-based reconstruction (tomobar) software for high resolution synchrotron x-ray tomography. In CT Meeting, volume 2020. 2020.">7</a>]</span> wrappers. For more information see <a class="reference internal" href="../reference/methods_list/reconstruction/CGLS3d_tomobar.html#method-cgls3d-tomobar"><span class="std std-ref">CGLS 3D (ToMoBAR)</span></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>cp.ndarray</em>) – Projection data as a CuPy array.</p></li>
+<li><p><strong>angles</strong> (<em>np.ndarray</em>) – An array of angles given in radians.</p></li>
+<li><p><strong>center</strong> (<em>float</em><em>, </em><em>optional</em>) – The center of rotation (CoR).</p></li>
+<li><p><strong>detector_pad</strong> (<em>bool</em><em>, </em><em>int</em>) – Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction. Set to True to perform
+an automated padding or specify a certain value as an integer.</p></li>
+<li><p><strong>recon_size</strong> (<em>int</em><em>, </em><em>optional</em>) – The [recon_size, recon_size] shape of the reconstructed slice in pixels.
+By default (None), the reconstructed size will be the dimension of the horizontal detector.</p></li>
+<li><p><strong>recon_mask_radius</strong> (<em>float</em>) – The radius of the circular mask that applies to the reconstructed slice in order to crop
+out some undesirable artifacts. The values outside the given diameter will be set to zero.
+To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.</p></li>
+<li><p><strong>iterations</strong> (<em>int</em>) – The number of CGLS iterations.</p></li>
+<li><p><strong>nonnegativity</strong> (<em>bool</em>) – Impose nonnegativity constraint on reconstructed image.</p></li>
+<li><p><strong>gpu_id</strong> (<em>int</em><em>, </em><em>optional</em>) – A GPU device index to perform operation on.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The CGLS reconstructed volume as a CuPy array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>cp.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="httomolibgpu.recon.algorithm.FBP2d_astra">
+<span class="sig-prename descclassname"><span class="pre">httomolibgpu.recon.algorithm.</span></span><span class="sig-name descname"><span class="pre">FBP2d_astra</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data:</span> <span class="pre">&lt;cp.ndarray&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angles:</span> <span class="pre">&lt;cp.ndarray&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">center:</span> <span class="pre">float</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector_pad:</span> <span class="pre">bool</span> <span class="pre">|</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_type:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'ram-lak'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_parameter:</span> <span class="pre">float</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_d:</span> <span class="pre">float</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recon_size:</span> <span class="pre">int</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recon_mask_radius:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.95</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gpu_id:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">&lt;cp.ndarray&gt;</span></span></span><a class="reference internal" href="../_modules/httomolibgpu/recon/algorithm.html#FBP2d_astra"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#httomolibgpu.recon.algorithm.FBP2d_astra" title="Link to this definition">#</a></dt>
+<dd><p>Perform Filtered Backprojection (FBP) reconstruction slice-by-slice (2d) using ASTRA toolbox <span id="id4">[<a class="reference internal" href="../bibliography/biblio.html#id11" title="Wim Van Aarle, Willem Jan Palenstijn, Jeroen Cant, Eline Janssens, Folkert Bleichrodt, Andrei Dabravolski, Jan De Beenhouwer, K Joost Batenburg, and Jan Sijbers. Fast and flexible x-ray tomography using the astra toolbox. Optics express, 24(22):25129–25147, 2016.">14</a>]</span> and
+ToMoBAR <span id="id5">[<a class="reference internal" href="../bibliography/biblio.html#id12" title="Daniil Kazantsev and Nicola Wadeson. Tomographic model-based reconstruction (tomobar) software for high resolution synchrotron x-ray tomography. In CT Meeting, volume 2020. 2020.">7</a>]</span> wrappers.
+This is a 2D recon using ASTRA’s API for the FBP_CUDA method, see more in <a class="reference internal" href="../reference/methods_list/reconstruction/FBP2d_astra.html#method-fbp2d-astra"><span class="std std-ref">FBP2D (ASTRA-Toolbox)</span></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>np.ndarray</em>) – Projection data as a 3d numpy array.</p></li>
+<li><p><strong>angles</strong> (<em>np.ndarray</em>) – An array of angles given in radians.</p></li>
+<li><p><strong>center</strong> (<em>float</em><em>, </em><em>optional</em>) – The center of rotation (CoR).</p></li>
+<li><p><strong>detector_pad</strong> (<em>bool</em><em>, </em><em>int</em>) – Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction. Set to True to perform
+an automated padding or specify a certain value as an integer.</p></li>
+<li><p><strong>filter_type</strong> (<em>str</em>) – Type of projection filter, see ASTRA’s API for all available options for filters.</p></li>
+<li><p><strong>filter_parameter</strong> (<em>float</em><em>, </em><em>optional</em>) – Parameter value for the ‘tukey’, ‘gaussian’, ‘blackman’ and ‘kaiser’ filter types.</p></li>
+<li><p><strong>filter_d</strong> (<em>float</em><em>, </em><em>optional</em>) – D parameter value for ‘shepp-logan’, ‘cosine’, ‘hamming’ and ‘hann’ filter types.</p></li>
+<li><p><strong>recon_size</strong> (<em>int</em><em>, </em><em>optional</em>) – The [recon_size, recon_size] shape of the reconstructed slice in pixels.
+By default (None), the reconstructed size will be the dimension of the horizontal detector.</p></li>
+<li><p><strong>recon_mask_radius</strong> (<em>float</em>) – The radius of the circular mask that applies to the reconstructed slice in order to crop
+out some undesirable artifacts. The values outside the given diameter will be set to zero.
+To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.</p></li>
+<li><p><strong>gpu_id</strong> (<em>int</em>) – A GPU device index to perform operation on.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The FBP reconstructed volume as a numpy array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="httomolibgpu.recon.algorithm.FBP3d_tomobar">
+<span class="sig-prename descclassname"><span class="pre">httomolibgpu.recon.algorithm.</span></span><span class="sig-name descname"><span class="pre">FBP3d_tomobar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data:</span> <span class="pre">&lt;cp.ndarray&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angles:</span> <span class="pre">&lt;cp.ndarray&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">center:</span> <span class="pre">float</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector_pad:</span> <span class="pre">bool</span> <span class="pre">|</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_freq_cutoff:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.35</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recon_size:</span> <span class="pre">int</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recon_mask_radius:</span> <span class="pre">float</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">0.95</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gpu_id:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">&lt;cp.ndarray&gt;</span></span></span><a class="reference internal" href="../_modules/httomolibgpu/recon/algorithm.html#FBP3d_tomobar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#httomolibgpu.recon.algorithm.FBP3d_tomobar" title="Link to this definition">#</a></dt>
+<dd><p>Perform Filtered Backprojection (FBP) reconstruction using ASTRA toolbox <span id="id6">[<a class="reference internal" href="../bibliography/biblio.html#id11" title="Wim Van Aarle, Willem Jan Palenstijn, Jeroen Cant, Eline Janssens, Folkert Bleichrodt, Andrei Dabravolski, Jan De Beenhouwer, K Joost Batenburg, and Jan Sijbers. Fast and flexible x-ray tomography using the astra toolbox. Optics express, 24(22):25129–25147, 2016.">14</a>]</span> and
+ToMoBAR <span id="id7">[<a class="reference internal" href="../bibliography/biblio.html#id12" title="Daniil Kazantsev and Nicola Wadeson. Tomographic model-based reconstruction (tomobar) software for high resolution synchrotron x-ray tomography. In CT Meeting, volume 2020. 2020.">7</a>]</span> wrappers.
+This is a 3D recon from the CuPy array directly and using a custom built SINC filter for filtration in Fourier space,
+see more in <a class="reference internal" href="../reference/methods_list/reconstruction/FBP3d_tomobar.html#method-fbp3d-tomobar"><span class="std std-ref">FBP3D (ToMoBAR)</span></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>cp.ndarray</em>) – Projection data as a 3d CuPy array.</p></li>
+<li><p><strong>angles</strong> (<em>np.ndarray</em>) – An array of angles given in radians.</p></li>
+<li><p><strong>center</strong> (<em>float</em><em>, </em><em>optional</em>) – The center of rotation (CoR).</p></li>
+<li><p><strong>detector_pad</strong> (<em>bool</em><em>, </em><em>int</em>) – Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction. Set to True to perform
+an automated padding or specify a certain value as an integer.</p></li>
+<li><p><strong>filter_freq_cutoff</strong> (<em>float</em>) – Cutoff frequency parameter for the SINC filter, the lower values may produce better contrast but noisy reconstruction. The filter change will also affect the dynamic range of the reconstructed image.</p></li>
+<li><p><strong>recon_size</strong> (<em>int</em><em>, </em><em>optional</em>) – The [recon_size, recon_size] shape of the reconstructed slice in pixels.
+By default (None), the reconstructed size will be the dimension of the horizontal detector.</p></li>
+<li><p><strong>recon_mask_radius</strong> (<em>float</em><em>, </em><em>optional</em>) – The radius of the circular mask that applies to the reconstructed slice in order to crop
+out some undesirable artifacts. The values outside the given diameter will be set to zero.
+To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.</p></li>
+<li><p><strong>gpu_id</strong> (<em>int</em>) – A GPU device index to perform operation on.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>FBP reconstructed volume as a CuPy array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>cp.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="httomolibgpu.recon.algorithm.FISTA3d_tomobar">
+<span class="sig-prename descclassname"><span class="pre">httomolibgpu.recon.algorithm.</span></span><span class="sig-name descname"><span class="pre">FISTA3d_tomobar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data:</span> <span class="pre">&lt;cp.ndarray&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angles:</span> <span class="pre">&lt;cp.ndarray&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">center:</span> <span class="pre">float</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector_pad:</span> <span class="pre">bool</span> <span class="pre">|</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recon_size:</span> <span class="pre">int</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recon_mask_radius:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.95</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iterations:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subsets_number:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regularisation_type:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'PD_TV'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regularisation_parameter:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">1e-06</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regularisation_iterations:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regularisation_half_precision:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nonnegativity:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gpu_id:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">&lt;cp.ndarray&gt;</span></span></span><a class="reference internal" href="../_modules/httomolibgpu/recon/algorithm.html#FISTA3d_tomobar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#httomolibgpu.recon.algorithm.FISTA3d_tomobar" title="Link to this definition">#</a></dt>
+<dd><p>A Fast Iterative Shrinkage-Thresholding Algorithm <span id="id8">[<a class="reference internal" href="../bibliography/biblio.html#id17" title="Amir Beck and Marc Teboulle. A fast iterative shrinkage-thresholding algorithm for linear inverse problems. SIAM journal on imaging sciences, 2(1):183–202, 2009.">2</a>]</span> with various types of regularisation or
+denoising operations <span id="id9">[<a class="reference internal" href="../bibliography/biblio.html#id15" title="Daniil Kazantsev, Edoardo Pasca, Martin J Turner, and Philip J Withers. Ccpi-regularisation toolkit for computed tomographic image reconstruction with proximal splitting algorithms. SoftwareX, 9:317–323, 2019.">6</a>]</span> (currently accepts ROF_TV and PD_TV regularisations only).
+For more information see <a class="reference internal" href="../reference/methods_list/reconstruction/FISTA3d_tomobar.html#method-fista3d-tomobar"><span class="std std-ref">FISTA 3D (ToMoBAR)</span></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>cp.ndarray</em>) – Projection data as a CuPy array.</p></li>
+<li><p><strong>angles</strong> (<em>np.ndarray</em>) – An array of angles given in radians.</p></li>
+<li><p><strong>center</strong> (<em>float</em><em>, </em><em>optional</em>) – The center of rotation (CoR).</p></li>
+<li><p><strong>detector_pad</strong> (<em>bool</em><em>, </em><em>int</em>) – Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction. Set to True to perform
+an automated padding or specify a certain value as an integer.</p></li>
+<li><p><strong>recon_size</strong> (<em>int</em><em>, </em><em>optional</em>) – The [recon_size, recon_size] shape of the reconstructed slice in pixels.
+By default (None), the reconstructed size will be the dimension of the horizontal detector.</p></li>
+<li><p><strong>recon_mask_radius</strong> (<em>float</em>) – The radius of the circular mask that applies to the reconstructed slice in order to crop
+out some undesirable artifacts. The values outside the given diameter will be set to zero.
+To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.</p></li>
+<li><p><strong>iterations</strong> (<em>int</em>) – The number of FISTA algorithm iterations.</p></li>
+<li><p><strong>subsets_number</strong> (<em>int</em>) – The number of the ordered subsets to accelerate convergence. Keep the value bellow 10 to avoid divergence.</p></li>
+<li><p><strong>regularisation_type</strong> (<em>str</em>) – A method to use for regularisation. Currently PD_TV and ROF_TV are available.</p></li>
+<li><p><strong>regularisation_parameter</strong> (<em>float</em>) – The main regularisation parameter to control the amount of smoothing/noise removal. Larger values lead to stronger smoothing.</p></li>
+<li><p><strong>regularisation_iterations</strong> (<em>int</em>) – The number of iterations for regularisers (aka INNER iterations).</p></li>
+<li><p><strong>regularisation_half_precision</strong> (<em>bool</em>) – Perform faster regularisation computation in half-precision with a very minimal sacrifice in quality.</p></li>
+<li><p><strong>nonnegativity</strong> (<em>bool</em>) – Impose nonnegativity constraint on the reconstructed image.</p></li>
+<li><p><strong>gpu_id</strong> (<em>int</em>) – A GPU device index to perform operation on.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The FISTA reconstructed volume as a CuPy array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>cp.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="httomolibgpu.recon.algorithm.LPRec3d_tomobar">
+<span class="sig-prename descclassname"><span class="pre">httomolibgpu.recon.algorithm.</span></span><span class="sig-name descname"><span class="pre">LPRec3d_tomobar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data:</span> <span class="pre">&lt;cp.ndarray&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angles:</span> <span class="pre">&lt;cp.ndarray&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">center:</span> <span class="pre">float</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector_pad:</span> <span class="pre">bool</span> <span class="pre">|</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_type:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'shepp'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_freq_cutoff:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recon_size:</span> <span class="pre">int</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recon_mask_radius:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.95</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">power_of_2_oversampling:</span> <span class="pre">bool</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">power_of_2_cropping:</span> <span class="pre">bool</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_mem_usage_filter:</span> <span class="pre">bool</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_mem_usage_ifft2:</span> <span class="pre">bool</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">&lt;cp.ndarray&gt;</span></span></span><a class="reference internal" href="../_modules/httomolibgpu/recon/algorithm.html#LPRec3d_tomobar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#httomolibgpu.recon.algorithm.LPRec3d_tomobar" title="Link to this definition">#</a></dt>
+<dd><p>Fourier direct inversion in 3D on unequally spaced (also called as Log-Polar) grids using
+CuPy array as an input. This implementation follows V. Nikitin’s CUDA-C implementation and TomoCuPy package.
+<span id="id10">[<a class="reference internal" href="../bibliography/biblio.html#id13" title="Fredrik Andersson, Marcus Carlsson, and Viktor V Nikitin. Fast algorithms and efficient gpu implementations for the radon transform and the back-projection operator represented as convolution operators. SIAM Journal on Imaging Sciences, 9(2):637–664, 2016.">1</a>]</span>, see more in <a class="reference internal" href="../reference/methods_list/reconstruction/LPRec3d_tomobar.html#method-lprec3d-tomobar"><span class="std std-ref">Log-Polar 3D (ToMoBAR)</span></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>cp.ndarray</em>) – Projection data as a 3d CuPy array.</p></li>
+<li><p><strong>angles</strong> (<em>np.ndarray</em>) – An array of angles given in radians.</p></li>
+<li><p><strong>center</strong> (<em>float</em><em>, </em><em>optional</em>) – The center of rotation (CoR).</p></li>
+<li><p><strong>detector_pad</strong> (<em>bool</em><em>, </em><em>int</em>) – Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction. Set to True to perform
+an automated padding or specify a certain value as an integer.</p></li>
+<li><p><strong>filter_type</strong> (<em>str</em>) – Filter type, the accepted strings are: none, ramp, shepp, cosine, cosine2, hamming, hann, parzen.</p></li>
+<li><p><strong>filter_freq_cutoff</strong> (<em>float</em>) – Cutoff frequency parameter for a filter.</p></li>
+<li><p><strong>recon_size</strong> (<em>int</em><em>, </em><em>optional</em>) – The [recon_size, recon_size] shape of the reconstructed slice in pixels.
+By default (None), the reconstructed size will be the dimension of the horizontal detector.</p></li>
+<li><p><strong>recon_mask_radius</strong> (<em>float</em>) – The radius of the circular mask that applies to the reconstructed slice in order to crop
+out some undesirable artifacts. The values outside the given diameter will be set to zero.
+To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The Log-polar Fourier reconstructed volume as a CuPy array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>cp.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="httomolibgpu.recon.algorithm.SIRT3d_tomobar">
+<span class="sig-prename descclassname"><span class="pre">httomolibgpu.recon.algorithm.</span></span><span class="sig-name descname"><span class="pre">SIRT3d_tomobar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data:</span> <span class="pre">&lt;cp.ndarray&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angles:</span> <span class="pre">&lt;cp.ndarray&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">center:</span> <span class="pre">float</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector_pad:</span> <span class="pre">bool</span> <span class="pre">|</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recon_size:</span> <span class="pre">int</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recon_mask_radius:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.95</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iterations:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">300</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nonnegativity:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gpu_id:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">&lt;cp.ndarray&gt;</span></span></span><a class="reference internal" href="../_modules/httomolibgpu/recon/algorithm.html#SIRT3d_tomobar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#httomolibgpu.recon.algorithm.SIRT3d_tomobar" title="Link to this definition">#</a></dt>
+<dd><p>Perform Simultaneous Iterative Recostruction Technique (SIRT) using ASTRA toolbox <span id="id11">[<a class="reference internal" href="../bibliography/biblio.html#id11" title="Wim Van Aarle, Willem Jan Palenstijn, Jeroen Cant, Eline Janssens, Folkert Bleichrodt, Andrei Dabravolski, Jan De Beenhouwer, K Joost Batenburg, and Jan Sijbers. Fast and flexible x-ray tomography using the astra toolbox. Optics express, 24(22):25129–25147, 2016.">14</a>]</span> and
+ToMoBAR <span id="id12">[<a class="reference internal" href="../bibliography/biblio.html#id12" title="Daniil Kazantsev and Nicola Wadeson. Tomographic model-based reconstruction (tomobar) software for high resolution synchrotron x-ray tomography. In CT Meeting, volume 2020. 2020.">7</a>]</span> wrappers. For more information see <a class="reference internal" href="../reference/methods_list/reconstruction/SIRT3d_tomobar.html#method-sirt3d-tomobar"><span class="std std-ref">SIRT 3D (ToMoBAR)</span></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>cp.ndarray</em>) – Projection data as a CuPy array.</p></li>
+<li><p><strong>angles</strong> (<em>np.ndarray</em>) – An array of angles given in radians.</p></li>
+<li><p><strong>center</strong> (<em>float</em><em>, </em><em>optional</em>) – The center of rotation (CoR).</p></li>
+<li><p><strong>detector_pad</strong> (<em>bool</em><em>, </em><em>int</em>) – Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction. Set to True to perform
+an automated padding or specify a certain value as an integer.</p></li>
+<li><p><strong>recon_size</strong> (<em>int</em><em>, </em><em>optional</em>) – The [recon_size, recon_size] shape of the reconstructed slice in pixels.
+By default (None), the reconstructed size will be the dimension of the horizontal detector.</p></li>
+<li><p><strong>recon_mask_radius</strong> (<em>float</em>) – The radius of the circular mask that applies to the reconstructed slice in order to crop
+out some undesirable artifacts. The values outside the given diameter will be set to zero.
+To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.</p></li>
+<li><p><strong>iterations</strong> (<em>int</em>) – The number of SIRT iterations.</p></li>
+<li><p><strong>nonnegativity</strong> (<em>bool</em>) – Impose nonnegativity constraint on the reconstructed image.</p></li>
+<li><p><strong>gpu_id</strong> (<em>int</em>) – A GPU device index to perform operation on.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The SIRT reconstructed volume as a CuPy array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>cp.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="httomolibgpu.prep.stripe.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.prep.stripe</span></code></p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="httomolibgpu.recon.rotation.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.recon.rotation</span></code></p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#httomolibgpu.recon.algorithm.ADMM3d_tomobar"><code class="docutils literal notranslate"><span class="pre">ADMM3d_tomobar()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#httomolibgpu.recon.algorithm.CGLS3d_tomobar"><code class="docutils literal notranslate"><span class="pre">CGLS3d_tomobar()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#httomolibgpu.recon.algorithm.FBP2d_astra"><code class="docutils literal notranslate"><span class="pre">FBP2d_astra()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#httomolibgpu.recon.algorithm.FBP3d_tomobar"><code class="docutils literal notranslate"><span class="pre">FBP3d_tomobar()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#httomolibgpu.recon.algorithm.FISTA3d_tomobar"><code class="docutils literal notranslate"><span class="pre">FISTA3d_tomobar()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#httomolibgpu.recon.algorithm.LPRec3d_tomobar"><code class="docutils literal notranslate"><span class="pre">LPRec3d_tomobar()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#httomolibgpu.recon.algorithm.SIRT3d_tomobar"><code class="docutils literal notranslate"><span class="pre">SIRT3d_tomobar()</span></code></a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Imaging Team
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2026, Diamond Light Source.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    <p class="last-updated">
+  Last updated on Feb 18, 2026.
+  <br/>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

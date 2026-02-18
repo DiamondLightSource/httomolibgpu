@@ -1,0 +1,806 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>httomolibgpu.prep.phase &#8212; HTTomolibgpu Documentation page</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/general.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../_static/documentation_options.js?v=e5a98fca"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/httomolibgpu/prep/phase';</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Feb 18, 2026"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">HTTomolibgpu Documentation page</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction/about.html">HTTomolibGPU</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Reference guides</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../reference/methods.html">Methods Description</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../reference/methods_list/correction_methods.html">Data correction methods</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/correction/median_filter.html">Median filter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/correction/outlier_removal.html">Outliers removal filter</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../reference/methods_list/stripe_removal_methods.html">Stripe Removal methods</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/stripe_removal/remove_stripe_based_sorting.html">Remove stripes by sorting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/stripe_removal/remove_all_stripe.html">Remove stripes combo</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/stripe_removal/raven_filter.html">Raven filter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/stripe_removal/remove_stripe_ti.html">Remove stripes Titarenko</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../reference/methods_list/phase_contrast_methods.html">Phase-contrast enhancement</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../reference/methods_list/reconstruction_methods.html">Image reconstruction methods</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/reconstruction/LPRec3d_tomobar.html">Log-Polar 3D (ToMoBAR)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/reconstruction/FBP3d_tomobar.html">FBP3D (ToMoBAR)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/reconstruction/FBP2d_astra.html">FBP2D (ASTRA-Toolbox)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/reconstruction/FISTA3d_tomobar.html">FISTA 3D (ToMoBAR)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/reconstruction/ADMM3d_tomobar.html">ADMM 3D (ToMoBAR)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/reconstruction/CGLS3d_tomobar.html">CGLS 3D (ToMoBAR)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/reconstruction/SIRT3d_tomobar.html">SIRT 3D (ToMoBAR)</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../reference/methods_list/denoising_methods.html">Denoising methods</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/denoising/total_variation_ROF.html">Total Variation denoising (ROF)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/denoising/total_variation_PD.html">Total Variation denoising (PD)</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../reference/methods_list/rescale_methods.html">Data rescale methods</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/rescale/rescale_to_int.html">Rescale to integers</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../reference/api.html">API reference</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/httomolibgpu.misc.corr.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.misc.corr</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/httomolibgpu.misc.denoise.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.misc.denoise</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/httomolibgpu.misc.morph.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.misc.morph</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/httomolibgpu.misc.rescale.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.misc.rescale</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/httomolibgpu.prep.alignment.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.prep.alignment</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/httomolibgpu.prep.normalize.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.prep.normalize</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/httomolibgpu.prep.phase.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.prep.phase</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/httomolibgpu.prep.stripe.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.prep.stripe</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/httomolibgpu.recon.algorithm.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.recon.algorithm</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/httomolibgpu.recon.rotation.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.recon.rotation</span></code></a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../bibliography/biblio.html">Bibliography</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for httomolibgpu.prep.phase</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Copyright 2022 Diamond Light Source Ltd.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Created By  : Tomography Team at DLS &lt;scientificsoftware@diamond.ac.uk&gt;</span>
+<span class="c1"># Created Date: 01 November 2022</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="sd">&quot;&quot;&quot;Modules for phase retrieval and phase-contrast enhancement. For more detailed information, see :ref:`phase_contrast_module`.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">httomolibgpu</span><span class="w"> </span><span class="kn">import</span> <span class="n">cupywrapper</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">httomolibgpu.memory_estimator_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">_DeviceMemStack</span>
+
+<span class="n">cp</span> <span class="o">=</span> <span class="n">cupywrapper</span><span class="o">.</span><span class="n">cp</span>
+<span class="n">cupy_run</span> <span class="o">=</span> <span class="n">cupywrapper</span><span class="o">.</span><span class="n">cupy_run</span>
+<span class="n">next_fast_len</span> <span class="o">=</span> <span class="n">cupywrapper</span><span class="o">.</span><span class="n">next_fast_len</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">unittest.mock</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mock</span>
+
+<span class="k">if</span> <span class="n">cupy_run</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">cupyx.scipy.fft</span><span class="w"> </span><span class="kn">import</span> <span class="n">fft2</span><span class="p">,</span> <span class="n">ifft2</span><span class="p">,</span> <span class="n">fftshift</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">cupyx.scipy.fftpack</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_fft_plan</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">fft2</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+    <span class="n">ifft2</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+    <span class="n">fftshift</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">float32</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;paganin_filter&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;paganin_filter_savu_legacy&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<span class="c1"># This implementation originated from the TomoPy version. It has been modified to conform</span>
+<span class="c1"># different unit standards and also control of the filter driven by &#39;delta/beta&#39; ratio</span>
+<span class="c1"># as opposed to &#39;alpha&#39; in the TomoPy&#39;s implementation.</span>
+<div class="viewcode-block" id="paganin_filter">
+<a class="viewcode-back" href="../../../api/httomolibgpu.prep.phase.html#httomolibgpu.prep.phase.paganin_filter">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">paganin_filter</span><span class="p">(</span>
+    <span class="n">tomo</span><span class="p">:</span> <span class="n">cp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">pixel_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.28</span><span class="p">,</span>
+    <span class="n">distance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">energy</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">53.0</span><span class="p">,</span>
+    <span class="n">ratio_delta_beta</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">250</span><span class="p">,</span>
+    <span class="n">calculate_padding_value_method</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span>
+        <span class="s2">&quot;next_power_of_2&quot;</span><span class="p">,</span> <span class="s2">&quot;next_fast_length&quot;</span><span class="p">,</span> <span class="s2">&quot;use_pad_x_y&quot;</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;next_power_of_2&quot;</span><span class="p">,</span>
+    <span class="n">pad_x_y</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">calc_peak_gpu_mem</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">cp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Perform single-material phase retrieval from flats/darks corrected tomographic measurements. For more detailed information, see :ref:`phase_contrast_module`.</span>
+<span class="sd">    Also see :cite:`Paganin02` and :cite:`paganin2020boosting` for references.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tomo : cp.ndarray</span>
+<span class="sd">        3D array of f/d corrected tomographic projections.</span>
+<span class="sd">    pixel_size : float</span>
+<span class="sd">        Detector pixel size (resolution) in micron units.</span>
+<span class="sd">    distance : float</span>
+<span class="sd">        Propagation distance of the wavefront from sample to detector in metre units.</span>
+<span class="sd">    energy : float</span>
+<span class="sd">        Beam energy in keV.</span>
+<span class="sd">    ratio_delta_beta : float</span>
+<span class="sd">        The ratio of delta/beta, where delta is the phase shift and real part of the complex material refractive index and beta is the absorption.</span>
+<span class="sd">    calculate_padding_value_method: str</span>
+<span class="sd">        Method to calculate the padded size of the input data. Accepted values are &#39;next_power_of_2&#39;, &#39;next_fast_length&#39; and &#39;use_pad_x_y`.</span>
+<span class="sd">    pad_x_y list | None:</span>
+<span class="sd">        Padding values in pixels horizontally and vertically. Must be None, unless `calculate_padding_value_method` is &#39;use_pad_x_y&#39;.</span>
+<span class="sd">    calc_peak_gpu_mem: bool</span>
+<span class="sd">        Parameter to support memory estimation in HTTomo. Irrelevant to the method itself and can be ignored by user.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cp.ndarray</span>
+<span class="sd">        The 3D array of Paganin phase-filtered projection images.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mem_stack</span> <span class="o">=</span> <span class="n">_DeviceMemStack</span><span class="p">()</span> <span class="k">if</span> <span class="n">calc_peak_gpu_mem</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="c1"># Check the input data is valid</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">mem_stack</span> <span class="ow">and</span> <span class="n">tomo</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Invalid number of dimensions in data: </span><span class="si">{</span><span class="n">tomo</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2">,&quot;</span>
+            <span class="s2">&quot; please provide a stack of 2D projections.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">mem_stack</span><span class="p">:</span>
+        <span class="n">mem_stack</span><span class="o">.</span><span class="n">malloc</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">tomo</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">()</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>
+    <span class="n">dz_orig</span><span class="p">,</span> <span class="n">dy_orig</span><span class="p">,</span> <span class="n">dx_orig</span> <span class="o">=</span> <span class="n">tomo</span><span class="o">.</span><span class="n">shape</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">mem_stack</span> <span class="k">else</span> <span class="n">tomo</span>
+
+    <span class="n">padded_tomo</span><span class="p">,</span> <span class="n">pad_tup</span> <span class="o">=</span> <span class="n">_pad_projections</span><span class="p">(</span>
+        <span class="n">tomo</span><span class="p">,</span> <span class="n">calculate_padding_value_method</span><span class="p">,</span> <span class="n">pad_x_y</span><span class="p">,</span> <span class="n">mem_stack</span>
+    <span class="p">)</span>
+
+    <span class="n">dz</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">padded_tomo</span><span class="o">.</span><span class="n">shape</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">mem_stack</span> <span class="k">else</span> <span class="n">padded_tomo</span>
+
+    <span class="c1"># 3D FFT of tomo data</span>
+    <span class="k">if</span> <span class="n">mem_stack</span><span class="p">:</span>
+        <span class="n">mem_stack</span><span class="o">.</span><span class="n">malloc</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">padded_tomo</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">complex64</span><span class="p">()</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>
+        <span class="n">mem_stack</span><span class="o">.</span><span class="n">free</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">padded_tomo</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">()</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>
+        <span class="n">fft_input</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">padded_tomo</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">cp</span><span class="o">.</span><span class="n">complex64</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">padded_tomo</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">padded_tomo</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">cp</span><span class="o">.</span><span class="n">complex64</span><span class="p">)</span>
+        <span class="n">fft_input</span> <span class="o">=</span> <span class="n">padded_tomo</span>
+
+    <span class="n">fft_plan</span> <span class="o">=</span> <span class="n">get_fft_plan</span><span class="p">(</span><span class="n">fft_input</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">mem_stack</span><span class="p">:</span>
+        <span class="n">mem_stack</span><span class="o">.</span><span class="n">malloc</span><span class="p">(</span><span class="n">fft_plan</span><span class="o">.</span><span class="n">work_area</span><span class="o">.</span><span class="n">mem</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">mem_stack</span><span class="o">.</span><span class="n">free</span><span class="p">(</span><span class="n">fft_plan</span><span class="o">.</span><span class="n">work_area</span><span class="o">.</span><span class="n">mem</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">fft_plan</span><span class="p">:</span>
+            <span class="n">fft_tomo</span> <span class="o">=</span> <span class="n">fft2</span><span class="p">(</span><span class="n">padded_tomo</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">overwrite_x</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">del</span> <span class="n">padded_tomo</span>
+    <span class="k">del</span> <span class="n">fft_input</span>
+    <span class="k">del</span> <span class="n">fft_plan</span>
+
+    <span class="c1"># calculate alpha constant</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">_calculate_alpha</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">distance</span> <span class="o">/</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="n">ratio_delta_beta</span><span class="p">)</span>
+
+    <span class="c1"># Compute the reciprocal grid</span>
+    <span class="n">indx</span> <span class="o">=</span> <span class="n">_reciprocal_coord</span><span class="p">(</span><span class="n">pixel_size</span><span class="p">,</span> <span class="n">dy</span><span class="p">)</span>
+    <span class="n">indy</span> <span class="o">=</span> <span class="n">_reciprocal_coord</span><span class="p">(</span><span class="n">pixel_size</span><span class="p">,</span> <span class="n">dx</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">mem_stack</span><span class="p">:</span>
+        <span class="n">mem_stack</span><span class="o">.</span><span class="n">malloc</span><span class="p">(</span><span class="n">indx</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="n">indx</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>  <span class="c1"># cp.asarray(indx)</span>
+        <span class="n">mem_stack</span><span class="o">.</span><span class="n">malloc</span><span class="p">(</span><span class="n">indx</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="n">indx</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>  <span class="c1"># cp.square</span>
+        <span class="n">mem_stack</span><span class="o">.</span><span class="n">free</span><span class="p">(</span><span class="n">indx</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="n">indx</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>  <span class="c1"># cp.asarray(indx)</span>
+        <span class="n">mem_stack</span><span class="o">.</span><span class="n">malloc</span><span class="p">(</span><span class="n">indy</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="n">indy</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>  <span class="c1"># cp.asarray(indy)</span>
+        <span class="n">mem_stack</span><span class="o">.</span><span class="n">malloc</span><span class="p">(</span><span class="n">indy</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="n">indy</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>  <span class="c1"># cp.square</span>
+        <span class="n">mem_stack</span><span class="o">.</span><span class="n">free</span><span class="p">(</span><span class="n">indy</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="n">indy</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>  <span class="c1"># cp.asarray(indy)</span>
+
+        <span class="n">mem_stack</span><span class="o">.</span><span class="n">malloc</span><span class="p">(</span><span class="n">indx</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="n">indy</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="n">indx</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>  <span class="c1"># cp.add.outer</span>
+        <span class="n">mem_stack</span><span class="o">.</span><span class="n">free</span><span class="p">(</span><span class="n">indx</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="n">indx</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>  <span class="c1"># cp.square</span>
+        <span class="n">mem_stack</span><span class="o">.</span><span class="n">free</span><span class="p">(</span><span class="n">indy</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="n">indy</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>  <span class="c1"># cp.square</span>
+        <span class="n">mem_stack</span><span class="o">.</span><span class="n">malloc</span><span class="p">(</span><span class="n">indx</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="n">indy</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="n">indx</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>  <span class="c1"># phase_filter</span>
+        <span class="n">mem_stack</span><span class="o">.</span><span class="n">free</span><span class="p">(</span><span class="n">indx</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="n">indy</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="n">indx</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>  <span class="c1"># cp.add.outer</span>
+        <span class="n">mem_stack</span><span class="o">.</span><span class="n">free</span><span class="p">(</span><span class="n">indx</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="n">indy</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="n">indx</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>  <span class="c1"># phase_filter</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Build Lorentzian-type filter</span>
+        <span class="n">phase_filter</span> <span class="o">=</span> <span class="n">fftshift</span><span class="p">(</span>
+            <span class="mf">1.0</span>
+            <span class="o">/</span> <span class="p">(</span>
+                <span class="mf">1.0</span>
+                <span class="o">+</span> <span class="n">alpha</span>
+                <span class="o">*</span> <span class="p">(</span>
+                    <span class="n">cp</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span>
+                        <span class="n">cp</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">indx</span><span class="p">)),</span> <span class="n">cp</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">indy</span><span class="p">))</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">phase_filter</span> <span class="o">=</span> <span class="n">phase_filter</span> <span class="o">/</span> <span class="n">phase_filter</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>  <span class="c1"># normalisation</span>
+
+        <span class="c1"># Filter projections</span>
+        <span class="n">fft_tomo</span> <span class="o">*=</span> <span class="n">phase_filter</span>
+        <span class="k">del</span> <span class="n">phase_filter</span>
+
+    <span class="c1"># Apply filter and take inverse FFT</span>
+    <span class="n">ifft_input</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">fft_tomo</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">mem_stack</span> <span class="k">else</span> <span class="n">cp</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">padded_tomo</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">cp</span><span class="o">.</span><span class="n">complex64</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">ifft_plan</span> <span class="o">=</span> <span class="n">get_fft_plan</span><span class="p">(</span><span class="n">ifft_input</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">mem_stack</span><span class="p">:</span>
+        <span class="n">mem_stack</span><span class="o">.</span><span class="n">malloc</span><span class="p">(</span><span class="n">ifft_plan</span><span class="o">.</span><span class="n">work_area</span><span class="o">.</span><span class="n">mem</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">mem_stack</span><span class="o">.</span><span class="n">free</span><span class="p">(</span><span class="n">ifft_plan</span><span class="o">.</span><span class="n">work_area</span><span class="o">.</span><span class="n">mem</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">ifft_plan</span><span class="p">:</span>
+            <span class="n">ifft_filtered_tomo</span> <span class="o">=</span> <span class="n">ifft2</span><span class="p">(</span><span class="n">fft_tomo</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">overwrite_x</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">real</span>
+        <span class="k">del</span> <span class="n">fft_tomo</span>
+    <span class="k">del</span> <span class="n">ifft_plan</span>
+    <span class="k">del</span> <span class="n">ifft_input</span>
+
+    <span class="c1"># slicing indices for cropping</span>
+    <span class="n">slc_indices</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">slice</span><span class="p">(</span><span class="n">pad_tup</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">pad_tup</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">dz_orig</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="nb">slice</span><span class="p">(</span><span class="n">pad_tup</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">pad_tup</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">dy_orig</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="nb">slice</span><span class="p">(</span><span class="n">pad_tup</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">pad_tup</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">dx_orig</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">mem_stack</span><span class="p">:</span>
+        <span class="n">mem_stack</span><span class="o">.</span><span class="n">malloc</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">tomo</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">()</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>  <span class="c1"># astype(cp.float32)</span>
+        <span class="n">mem_stack</span><span class="o">.</span><span class="n">free</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">padded_tomo</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">complex64</span><span class="p">()</span><span class="o">.</span><span class="n">itemsize</span>
+        <span class="p">)</span>  <span class="c1"># ifft_filtered_tomo</span>
+        <span class="n">mem_stack</span><span class="o">.</span><span class="n">malloc</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">tomo</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">()</span><span class="o">.</span><span class="n">itemsize</span>
+        <span class="p">)</span>  <span class="c1"># return _log_kernel(tomo)</span>
+        <span class="k">return</span> <span class="n">mem_stack</span><span class="o">.</span><span class="n">highwater</span>
+
+    <span class="c1"># crop the padded filtered data:</span>
+    <span class="n">tomo</span> <span class="o">=</span> <span class="n">ifft_filtered_tomo</span><span class="p">[</span><span class="n">slc_indices</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="k">del</span> <span class="n">ifft_filtered_tomo</span>
+
+    <span class="c1"># taking the negative log</span>
+    <span class="n">_log_kernel</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">ElementwiseKernel</span><span class="p">(</span>
+        <span class="s2">&quot;C tomo&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;C out&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;out = -log(tomo)&quot;</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;log_kernel&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_log_kernel</span><span class="p">(</span><span class="n">tomo</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_calculate_alpha</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">distance_micron</span><span class="p">,</span> <span class="n">ratio_delta_beta</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">_wavelength_micron</span><span class="p">(</span><span class="n">energy</span><span class="p">)</span> <span class="o">*</span> <span class="n">distance_micron</span> <span class="o">/</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+    <span class="p">)</span> <span class="o">*</span> <span class="n">ratio_delta_beta</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_shift_bit_length</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">return</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">bit_length</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_calculate_pad_size</span><span class="p">(</span>
+    <span class="n">datashape</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
+    <span class="n">calculate_padding_value_method</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span>
+        <span class="s2">&quot;next_power_of_2&quot;</span><span class="p">,</span> <span class="s2">&quot;next_fast_length&quot;</span><span class="p">,</span> <span class="s2">&quot;use_pad_x_y&quot;</span>
+    <span class="p">],</span>
+    <span class="n">pad_x_y</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculating the padding size</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        datashape (tuple):</span>
+<span class="sd">            the shape of the 3D data</span>
+<span class="sd">        calculate_padding_value_method: str</span>
+<span class="sd">            Method to calculate the padded size of the input data. Accepted values are &#39;next_power_of_2&#39;, &#39;next_fast_length&#39; and &#39;use_pad_x_y`.</span>
+<span class="sd">        pad_x_y (int, int) | None:</span>
+<span class="sd">            Padding values in pixels horizontally and vertically. Must be None, unless `calculate_padding_value_method` is &#39;use_pad_x_y&#39;.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list: the padded dimensions</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">pad_x_y</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">calculate_padding_value_method</span> <span class="o">!=</span> <span class="s2">&quot;use_pad_x_y&quot;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s1">&#39;calculate_padding_value_method must be &quot;use_pad_x_y&quot; when pad_x_y is specified&#39;</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">calculate_padding_value_method</span> <span class="o">==</span> <span class="s2">&quot;use_pad_x_y&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">pad_x_y</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;pad_x_y must be provided when calculate_padding_value_method is &quot;use_pad_x_y&quot;&#39;</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span>
+            <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pad_x_y</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">pad_x_y</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span>
+            <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pad_x_y</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">int</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pad_x_y</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">int</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;pad_x_y must be a list of two integers&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">calculate_padding_value_method</span> <span class="o">==</span> <span class="s2">&quot;next_power_of_2&quot;</span><span class="p">:</span>
+        <span class="n">calculate_padded_dim</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">_</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">_shift_bit_length</span><span class="p">(</span><span class="n">size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">calculate_padding_value_method</span> <span class="o">==</span> <span class="s2">&quot;next_fast_length&quot;</span><span class="p">:</span>
+        <span class="n">calculate_padded_dim</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">_</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">next_fast_len</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">calculate_padding_value_method</span> <span class="o">==</span> <span class="s2">&quot;use_pad_x_y&quot;</span><span class="p">:</span>
+        <span class="n">calculate_padded_dim</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">dim</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">size</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">pad_x_y</span><span class="p">[</span><span class="mi">2</span> <span class="o">-</span> <span class="n">dim</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;Unexpected calculate_padding_value_method: &quot;</span><span class="si">{</span><span class="n">calculate_padding_value_method</span><span class="si">}</span><span class="s1">&quot;&#39;</span>
+        <span class="p">)</span>
+    <span class="n">pad_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">element</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">datashape</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">pad_width</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># do not pad the slicing dim</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">diff</span> <span class="o">=</span> <span class="n">calculate_padded_dim</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">element</span><span class="p">)</span> <span class="o">-</span> <span class="n">element</span>
+            <span class="k">if</span> <span class="n">element</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">pad_width_scalar</span> <span class="o">=</span> <span class="n">diff</span> <span class="o">//</span> <span class="mi">2</span>
+                <span class="n">pad_width</span> <span class="o">=</span> <span class="p">(</span><span class="n">pad_width_scalar</span><span class="p">,</span> <span class="n">pad_width_scalar</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># need an uneven padding for odd-number lengths</span>
+                <span class="n">left_pad</span> <span class="o">=</span> <span class="n">diff</span> <span class="o">//</span> <span class="mi">2</span>
+                <span class="n">right_pad</span> <span class="o">=</span> <span class="n">diff</span> <span class="o">-</span> <span class="n">left_pad</span>
+                <span class="n">pad_width</span> <span class="o">=</span> <span class="p">(</span><span class="n">left_pad</span><span class="p">,</span> <span class="n">right_pad</span><span class="p">)</span>
+
+        <span class="n">pad_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pad_width</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pad_list</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_pad_projections</span><span class="p">(</span>
+    <span class="n">tomo</span><span class="p">:</span> <span class="n">cp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">calculate_padding_value_method</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span>
+        <span class="s2">&quot;next_power_of_2&quot;</span><span class="p">,</span> <span class="s2">&quot;next_fast_length&quot;</span><span class="p">,</span> <span class="s2">&quot;use_pad_x_y&quot;</span>
+    <span class="p">],</span>
+    <span class="n">pad_x_y</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">],</span>
+    <span class="n">mem_stack</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">_DeviceMemStack</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">cp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Performs padding of each projection to a size optimal for FFT.</span>
+<span class="sd">    If the shape is not even we also care of that before padding.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tomo : cp.ndarray</span>
+<span class="sd">        3d projection data</span>
+<span class="sd">    calculate_padding_value_method: str</span>
+<span class="sd">        Method to calculate the padded size of the input data. Accepted values are &#39;next_power_of_2&#39;, &#39;next_fast_length&#39; and &#39;use_pad_x_y`.</span>
+<span class="sd">    pad_x_y: list | None:</span>
+<span class="sd">        Padding values in pixels horizontally and vertically. Must be None, unless `calculate_padding_value_method` is &#39;use_pad_x_y&#39;.</span>
+
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tuple consisting of:</span>
+<span class="sd">    ndarray: padded 3d projection data</span>
+<span class="sd">    tuple: a tuple with padding dimensions</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">full_shape_tomo</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">tomo</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">mem_stack</span> <span class="k">else</span> <span class="n">tomo</span>
+
+    <span class="n">pad_list</span> <span class="o">=</span> <span class="n">_calculate_pad_size</span><span class="p">(</span>
+        <span class="n">full_shape_tomo</span><span class="p">,</span> <span class="n">calculate_padding_value_method</span><span class="p">,</span> <span class="n">pad_x_y</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">mem_stack</span><span class="p">:</span>
+        <span class="n">padded_tomo</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">sh</span> <span class="o">+</span> <span class="n">pad</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">pad</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">sh</span><span class="p">,</span> <span class="n">pad</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">full_shape_tomo</span><span class="p">,</span> <span class="n">pad_list</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="n">mem_stack</span><span class="o">.</span><span class="n">malloc</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">padded_tomo</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">()</span><span class="o">.</span><span class="n">itemsize</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">padded_tomo</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">tomo</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">pad_list</span><span class="p">),</span> <span class="s2">&quot;edge&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">padded_tomo</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">pad_list</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_wavelength_micron</span><span class="p">(</span><span class="n">energy</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="n">SPEED_OF_LIGHT</span> <span class="o">=</span> <span class="mf">299792458e2</span> <span class="o">*</span> <span class="mf">10000.0</span>  <span class="c1"># [microns/s]</span>
+    <span class="n">PLANCK_CONSTANT</span> <span class="o">=</span> <span class="mf">6.58211928e-19</span>  <span class="c1"># [keV*s]</span>
+    <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">PLANCK_CONSTANT</span> <span class="o">*</span> <span class="n">SPEED_OF_LIGHT</span> <span class="o">/</span> <span class="n">energy</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_reciprocal_coord</span><span class="p">(</span><span class="n">pixel_size</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">num_grid</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate reciprocal grid coordinates for a given pixel size</span>
+<span class="sd">    and discretization.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pixel_size : float</span>
+<span class="sd">        Detector pixel size in microns.</span>
+<span class="sd">    num_grid : int</span>
+<span class="sd">        Size of the reciprocal grid.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ndarray</span>
+<span class="sd">        Grid coordinates.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">num_grid</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">rc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="n">n</span><span class="p">,</span> <span class="n">num_grid</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">cp</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">rc</span> <span class="o">*=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">*</span> <span class="n">pixel_size</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">rc</span>
+
+
+<div class="viewcode-block" id="paganin_filter_savu_legacy">
+<a class="viewcode-back" href="../../../api/httomolibgpu.prep.phase.html#httomolibgpu.prep.phase.paganin_filter_savu_legacy">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">paganin_filter_savu_legacy</span><span class="p">(</span>
+    <span class="n">tomo</span><span class="p">:</span> <span class="n">cp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">pixel_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.28</span><span class="p">,</span>
+    <span class="n">distance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">energy</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">53.0</span><span class="p">,</span>
+    <span class="n">ratio_delta_beta</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">250</span><span class="p">,</span>
+    <span class="n">calc_peak_gpu_mem</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">cp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Perform single-material phase retrieval from flats/darks corrected tomographic measurements. For more detailed information, see :ref:`phase_contrast_module`.</span>
+<span class="sd">    Also see :cite:`Paganin02` and :cite:`paganin2020boosting` for references. The ratio_delta_beta parameter here follows implementation in Savu software.</span>
+<span class="sd">    The module will be retired in future in favour of paganin_filter. One can rescale parameter ratio_delta_beta / 4 to achieve the same effect in paganin_filter.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tomo : cp.ndarray</span>
+<span class="sd">        3D array of f/d corrected tomographic projections.</span>
+<span class="sd">    pixel_size : float</span>
+<span class="sd">        Detector pixel size (resolution) in micron units.</span>
+<span class="sd">    distance : float</span>
+<span class="sd">        Propagation distance of the wavefront from sample to detector in metre units.</span>
+<span class="sd">    energy : float</span>
+<span class="sd">        Beam energy in keV.</span>
+<span class="sd">    ratio_delta_beta : float</span>
+<span class="sd">        The ratio of delta/beta, where delta is the phase shift and real part of the complex material refractive index and beta is the absorption.</span>
+<span class="sd">    calc_peak_gpu_mem: bool</span>
+<span class="sd">        Parameter to support memory estimation in HTTomo. Irrelevant to the method itself and can be ignored by user.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cp.ndarray</span>
+<span class="sd">        The 3D array of Paganin phase-filtered projection images.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="n">paganin_filter</span><span class="p">(</span>
+        <span class="n">tomo</span><span class="p">,</span>
+        <span class="n">pixel_size</span><span class="p">,</span>
+        <span class="n">distance</span><span class="p">,</span>
+        <span class="n">energy</span><span class="p">,</span>
+        <span class="n">ratio_delta_beta</span> <span class="o">/</span> <span class="mi">4</span><span class="p">,</span>
+        <span class="n">calc_peak_gpu_mem</span><span class="o">=</span><span class="n">calc_peak_gpu_mem</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Imaging Team
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2026, Diamond Light Source.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    <p class="last-updated">
+  Last updated on Feb 18, 2026.
+  <br/>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

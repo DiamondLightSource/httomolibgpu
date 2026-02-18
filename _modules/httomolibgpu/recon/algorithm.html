@@ -1,0 +1,1187 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>httomolibgpu.recon.algorithm &#8212; HTTomolibgpu Documentation page</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/general.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../_static/documentation_options.js?v=e5a98fca"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/httomolibgpu/recon/algorithm';</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Feb 18, 2026"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">HTTomolibgpu Documentation page</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction/about.html">HTTomolibGPU</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Reference guides</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../reference/methods.html">Methods Description</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../reference/methods_list/correction_methods.html">Data correction methods</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/correction/median_filter.html">Median filter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/correction/outlier_removal.html">Outliers removal filter</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../reference/methods_list/stripe_removal_methods.html">Stripe Removal methods</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/stripe_removal/remove_stripe_based_sorting.html">Remove stripes by sorting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/stripe_removal/remove_all_stripe.html">Remove stripes combo</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/stripe_removal/raven_filter.html">Raven filter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/stripe_removal/remove_stripe_ti.html">Remove stripes Titarenko</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../reference/methods_list/phase_contrast_methods.html">Phase-contrast enhancement</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../reference/methods_list/reconstruction_methods.html">Image reconstruction methods</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/reconstruction/LPRec3d_tomobar.html">Log-Polar 3D (ToMoBAR)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/reconstruction/FBP3d_tomobar.html">FBP3D (ToMoBAR)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/reconstruction/FBP2d_astra.html">FBP2D (ASTRA-Toolbox)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/reconstruction/FISTA3d_tomobar.html">FISTA 3D (ToMoBAR)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/reconstruction/ADMM3d_tomobar.html">ADMM 3D (ToMoBAR)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/reconstruction/CGLS3d_tomobar.html">CGLS 3D (ToMoBAR)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/reconstruction/SIRT3d_tomobar.html">SIRT 3D (ToMoBAR)</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../reference/methods_list/denoising_methods.html">Denoising methods</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/denoising/total_variation_ROF.html">Total Variation denoising (ROF)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/denoising/total_variation_PD.html">Total Variation denoising (PD)</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../reference/methods_list/rescale_methods.html">Data rescale methods</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../reference/methods_list/rescale/rescale_to_int.html">Rescale to integers</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../reference/api.html">API reference</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/httomolibgpu.misc.corr.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.misc.corr</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/httomolibgpu.misc.denoise.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.misc.denoise</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/httomolibgpu.misc.morph.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.misc.morph</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/httomolibgpu.misc.rescale.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.misc.rescale</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/httomolibgpu.prep.alignment.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.prep.alignment</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/httomolibgpu.prep.normalize.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.prep.normalize</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/httomolibgpu.prep.phase.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.prep.phase</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/httomolibgpu.prep.stripe.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.prep.stripe</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/httomolibgpu.recon.algorithm.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.recon.algorithm</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/httomolibgpu.recon.rotation.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">httomolibgpu.recon.rotation</span></code></a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../bibliography/biblio.html">Bibliography</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for httomolibgpu.recon.algorithm</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Copyright 2022 Diamond Light Source Ltd.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Created By  : Tomography Team at DLS &lt;scientificsoftware@diamond.ac.uk&gt;</span>
+<span class="c1"># Changes relative to ToMoBAR 2024.01 version</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="sd">&quot;&quot;&quot;Module for tomographic reconstruction. For more detailed information, see :ref:`image_reconstruction_module`&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">httomolibgpu</span><span class="w"> </span><span class="kn">import</span> <span class="n">cupywrapper</span>
+
+<span class="n">cp</span> <span class="o">=</span> <span class="n">cupywrapper</span><span class="o">.</span><span class="n">cp</span>
+<span class="n">cupy_run</span> <span class="o">=</span> <span class="n">cupywrapper</span><span class="o">.</span><span class="n">cupy_run</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">unittest.mock</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mock</span>
+
+<span class="k">if</span> <span class="n">cupy_run</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">tomobar.methodsDIR</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecToolsDIR</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">tomobar.methodsDIR_CuPy</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecToolsDIRCuPy</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">tomobar.methodsIR_CuPy</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecToolsIRCuPy</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">RecToolsDIR</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+    <span class="n">RecToolsDIRCuPy</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+    <span class="n">RecToolsIRCuPy</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">float32</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;FBP2d_astra&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;FBP3d_tomobar&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;LPRec3d_tomobar&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;SIRT3d_tomobar&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;CGLS3d_tomobar&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;FISTA3d_tomobar&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ADMM3d_tomobar&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="n">input_data_axis_labels</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;angles&quot;</span><span class="p">,</span> <span class="s2">&quot;detY&quot;</span><span class="p">,</span> <span class="s2">&quot;detX&quot;</span><span class="p">]</span>  <span class="c1"># set the labels of the input data</span>
+
+
+<span class="c1">## %%%%%%%%%%%%%%%%%%%%%%% FBP2d_astra reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##</span>
+<div class="viewcode-block" id="FBP2d_astra">
+<a class="viewcode-back" href="../../../api/httomolibgpu.recon.algorithm.html#httomolibgpu.recon.algorithm.FBP2d_astra">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">FBP2d_astra</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">angles</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">center</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">detector_pad</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">filter_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;ram-lak&quot;</span><span class="p">,</span>
+    <span class="n">filter_parameter</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">filter_d</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">recon_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">recon_mask_radius</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.95</span><span class="p">,</span>
+    <span class="n">gpu_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Perform Filtered Backprojection (FBP) reconstruction slice-by-slice (2d) using ASTRA toolbox :cite:`van2016fast` and</span>
+<span class="sd">    ToMoBAR :cite:`kazantsev2020tomographic` wrappers.</span>
+<span class="sd">    This is a 2D recon using ASTRA&#39;s API for the FBP_CUDA method, see more in :ref:`method_FBP2d_astra`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : np.ndarray</span>
+<span class="sd">        Projection data as a 3d numpy array.</span>
+<span class="sd">    angles : np.ndarray</span>
+<span class="sd">        An array of angles given in radians.</span>
+<span class="sd">    center : float, optional</span>
+<span class="sd">        The center of rotation (CoR).</span>
+<span class="sd">    detector_pad : bool, int</span>
+<span class="sd">        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction. Set to True to perform</span>
+<span class="sd">        an automated padding or specify a certain value as an integer.</span>
+<span class="sd">    filter_type: str</span>
+<span class="sd">        Type of projection filter, see ASTRA&#39;s API for all available options for filters.</span>
+<span class="sd">    filter_parameter: float, optional</span>
+<span class="sd">        Parameter value for the &#39;tukey&#39;, &#39;gaussian&#39;, &#39;blackman&#39; and &#39;kaiser&#39; filter types.</span>
+<span class="sd">    filter_d: float, optional</span>
+<span class="sd">        D parameter value for &#39;shepp-logan&#39;, &#39;cosine&#39;, &#39;hamming&#39; and &#39;hann&#39; filter types.</span>
+<span class="sd">    recon_size : int, optional</span>
+<span class="sd">        The [recon_size, recon_size] shape of the reconstructed slice in pixels.</span>
+<span class="sd">        By default (None), the reconstructed size will be the dimension of the horizontal detector.</span>
+<span class="sd">    recon_mask_radius: float</span>
+<span class="sd">        The radius of the circular mask that applies to the reconstructed slice in order to crop</span>
+<span class="sd">        out some undesirable artifacts. The values outside the given diameter will be set to zero.</span>
+<span class="sd">        To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.</span>
+<span class="sd">    gpu_id : int</span>
+<span class="sd">        A GPU device index to perform operation on.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    np.ndarray</span>
+<span class="sd">        The FBP reconstructed volume as a numpy array.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">data_shape</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">recon_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">recon_size</span> <span class="o">=</span> <span class="n">data_shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+    <span class="n">RecTools</span> <span class="o">=</span> <span class="n">_instantiate_direct_recon2d_class</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">,</span> <span class="n">angles</span><span class="p">,</span> <span class="n">center</span><span class="p">,</span> <span class="n">detector_pad</span><span class="p">,</span> <span class="n">recon_size</span><span class="p">,</span> <span class="n">gpu_id</span>
+    <span class="p">)</span>
+
+    <span class="n">detY_size</span> <span class="o">=</span> <span class="n">data_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">reconstruction</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">recon_size</span><span class="p">,</span> <span class="n">detY_size</span><span class="p">,</span> <span class="n">recon_size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="s2">&quot;C&quot;</span>
+    <span class="p">)</span>
+    <span class="c1"># loop over detY slices</span>
+    <span class="k">for</span> <span class="n">slice_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">detY_size</span><span class="p">):</span>
+        <span class="n">reconstruction</span><span class="p">[:,</span> <span class="n">slice_index</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flipud</span><span class="p">(</span>
+            <span class="n">RecTools</span><span class="o">.</span><span class="n">FBP</span><span class="p">(</span>
+                <span class="n">data</span><span class="p">[:,</span> <span class="n">slice_index</span><span class="p">,</span> <span class="p">:],</span>
+                <span class="n">filter_type</span><span class="o">=</span><span class="n">filter_type</span><span class="p">,</span>
+                <span class="n">filter_parameter</span><span class="o">=</span><span class="n">filter_parameter</span><span class="p">,</span>
+                <span class="n">filter_d</span><span class="o">=</span><span class="n">filter_d</span><span class="p">,</span>
+                <span class="n">recon_mask_radius</span><span class="o">=</span><span class="n">recon_mask_radius</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">reconstruction</span></div>
+
+
+
+<span class="c1">## %%%%%%%%%%%%%%%%%%%%%%% FBP reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##</span>
+<div class="viewcode-block" id="FBP3d_tomobar">
+<a class="viewcode-back" href="../../../api/httomolibgpu.recon.algorithm.html#httomolibgpu.recon.algorithm.FBP3d_tomobar">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">FBP3d_tomobar</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">cp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">angles</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">center</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">detector_pad</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">filter_freq_cutoff</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.35</span><span class="p">,</span>
+    <span class="n">recon_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">recon_mask_radius</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.95</span><span class="p">,</span>
+    <span class="n">gpu_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">cp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Perform Filtered Backprojection (FBP) reconstruction using ASTRA toolbox :cite:`van2016fast` and</span>
+<span class="sd">    ToMoBAR :cite:`kazantsev2020tomographic` wrappers.</span>
+<span class="sd">    This is a 3D recon from the CuPy array directly and using a custom built SINC filter for filtration in Fourier space,</span>
+<span class="sd">    see more in :ref:`method_FBP3d_tomobar`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : cp.ndarray</span>
+<span class="sd">        Projection data as a 3d CuPy array.</span>
+<span class="sd">    angles : np.ndarray</span>
+<span class="sd">        An array of angles given in radians.</span>
+<span class="sd">    center : float, optional</span>
+<span class="sd">        The center of rotation (CoR).</span>
+<span class="sd">    detector_pad : bool, int</span>
+<span class="sd">        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction. Set to True to perform</span>
+<span class="sd">        an automated padding or specify a certain value as an integer.</span>
+<span class="sd">    filter_freq_cutoff : float</span>
+<span class="sd">        Cutoff frequency parameter for the SINC filter, the lower values may produce better contrast but noisy reconstruction. The filter change will also affect the dynamic range of the reconstructed image.</span>
+<span class="sd">    recon_size : int, optional</span>
+<span class="sd">        The [recon_size, recon_size] shape of the reconstructed slice in pixels.</span>
+<span class="sd">        By default (None), the reconstructed size will be the dimension of the horizontal detector.</span>
+<span class="sd">    recon_mask_radius: float, optional</span>
+<span class="sd">        The radius of the circular mask that applies to the reconstructed slice in order to crop</span>
+<span class="sd">        out some undesirable artifacts. The values outside the given diameter will be set to zero.</span>
+<span class="sd">        To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.</span>
+<span class="sd">    gpu_id : int</span>
+<span class="sd">        A GPU device index to perform operation on.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cp.ndarray</span>
+<span class="sd">        FBP reconstructed volume as a CuPy array.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">RecToolsCP</span> <span class="o">=</span> <span class="n">_instantiate_direct_recon_class</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">,</span> <span class="n">angles</span><span class="p">,</span> <span class="n">center</span><span class="p">,</span> <span class="n">detector_pad</span><span class="p">,</span> <span class="n">recon_size</span><span class="p">,</span> <span class="n">gpu_id</span>
+    <span class="p">)</span>
+
+    <span class="n">reconstruction</span> <span class="o">=</span> <span class="n">RecToolsCP</span><span class="o">.</span><span class="n">FBP</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">,</span>
+        <span class="n">cutoff_freq</span><span class="o">=</span><span class="n">filter_freq_cutoff</span><span class="p">,</span>
+        <span class="n">recon_mask_radius</span><span class="o">=</span><span class="n">recon_mask_radius</span><span class="p">,</span>
+        <span class="n">data_axes_labels_order</span><span class="o">=</span><span class="n">input_data_axis_labels</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">cp</span><span class="o">.</span><span class="n">_default_memory_pool</span><span class="o">.</span><span class="n">free_all_blocks</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">cp</span><span class="o">.</span><span class="n">require</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="n">reconstruction</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">requirements</span><span class="o">=</span><span class="s2">&quot;C&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="c1">## %%%%%%%%%%%%%%%%%%%%%%% LPRec  %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##</span>
+<div class="viewcode-block" id="LPRec3d_tomobar">
+<a class="viewcode-back" href="../../../api/httomolibgpu.recon.algorithm.html#httomolibgpu.recon.algorithm.LPRec3d_tomobar">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">LPRec3d_tomobar</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">cp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">angles</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">center</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">detector_pad</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">filter_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;shepp&quot;</span><span class="p">,</span>
+    <span class="n">filter_freq_cutoff</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">recon_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">recon_mask_radius</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.95</span><span class="p">,</span>
+    <span class="n">power_of_2_oversampling</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">power_of_2_cropping</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">min_mem_usage_filter</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">min_mem_usage_ifft2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">cp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Fourier direct inversion in 3D on unequally spaced (also called as Log-Polar) grids using</span>
+<span class="sd">    CuPy array as an input. This implementation follows V. Nikitin&#39;s CUDA-C implementation and TomoCuPy package.</span>
+<span class="sd">    :cite:`andersson2016fast`, see more in :ref:`method_LPRec3d_tomobar`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : cp.ndarray</span>
+<span class="sd">        Projection data as a 3d CuPy array.</span>
+<span class="sd">    angles : np.ndarray</span>
+<span class="sd">        An array of angles given in radians.</span>
+<span class="sd">    center : float, optional</span>
+<span class="sd">        The center of rotation (CoR).</span>
+<span class="sd">    detector_pad : bool, int</span>
+<span class="sd">        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction. Set to True to perform</span>
+<span class="sd">        an automated padding or specify a certain value as an integer.</span>
+<span class="sd">    filter_type : str</span>
+<span class="sd">        Filter type, the accepted strings are: none, ramp, shepp, cosine, cosine2, hamming, hann, parzen.</span>
+<span class="sd">    filter_freq_cutoff : float</span>
+<span class="sd">        Cutoff frequency parameter for a filter.</span>
+<span class="sd">    recon_size : int, optional</span>
+<span class="sd">        The [recon_size, recon_size] shape of the reconstructed slice in pixels.</span>
+<span class="sd">        By default (None), the reconstructed size will be the dimension of the horizontal detector.</span>
+<span class="sd">    recon_mask_radius: float</span>
+<span class="sd">        The radius of the circular mask that applies to the reconstructed slice in order to crop</span>
+<span class="sd">        out some undesirable artifacts. The values outside the given diameter will be set to zero.</span>
+<span class="sd">        To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cp.ndarray</span>
+<span class="sd">        The Log-polar Fourier reconstructed volume as a CuPy array.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">RecToolsCP</span> <span class="o">=</span> <span class="n">_instantiate_direct_recon_class</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">,</span> <span class="n">angles</span><span class="p">,</span> <span class="n">center</span><span class="p">,</span> <span class="n">detector_pad</span><span class="p">,</span> <span class="n">recon_size</span><span class="p">,</span> <span class="mi">0</span>
+    <span class="p">)</span>
+
+    <span class="n">reconstruction</span> <span class="o">=</span> <span class="n">RecToolsCP</span><span class="o">.</span><span class="n">FOURIER_INV</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">,</span>
+        <span class="n">recon_mask_radius</span><span class="o">=</span><span class="n">recon_mask_radius</span><span class="p">,</span>
+        <span class="n">data_axes_labels_order</span><span class="o">=</span><span class="n">input_data_axis_labels</span><span class="p">,</span>
+        <span class="n">filter_type</span><span class="o">=</span><span class="n">filter_type</span><span class="p">,</span>
+        <span class="n">cutoff_freq</span><span class="o">=</span><span class="n">filter_freq_cutoff</span><span class="p">,</span>
+        <span class="n">power_of_2_oversampling</span><span class="o">=</span><span class="n">power_of_2_oversampling</span><span class="p">,</span>
+        <span class="n">power_of_2_cropping</span><span class="o">=</span><span class="n">power_of_2_cropping</span><span class="p">,</span>
+        <span class="n">min_mem_usage_filter</span><span class="o">=</span><span class="n">min_mem_usage_filter</span><span class="p">,</span>
+        <span class="n">min_mem_usage_ifft2</span><span class="o">=</span><span class="n">min_mem_usage_ifft2</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">cp</span><span class="o">.</span><span class="n">_default_memory_pool</span><span class="o">.</span><span class="n">free_all_blocks</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">cp</span><span class="o">.</span><span class="n">require</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="n">reconstruction</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">requirements</span><span class="o">=</span><span class="s2">&quot;C&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="c1">## %%%%%%%%%%%%%%%%%%%%%%% SIRT reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##</span>
+<div class="viewcode-block" id="SIRT3d_tomobar">
+<a class="viewcode-back" href="../../../api/httomolibgpu.recon.algorithm.html#httomolibgpu.recon.algorithm.SIRT3d_tomobar">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">SIRT3d_tomobar</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">cp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">angles</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">center</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">detector_pad</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">recon_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">recon_mask_radius</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.95</span><span class="p">,</span>
+    <span class="n">iterations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">300</span><span class="p">,</span>
+    <span class="n">nonnegativity</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">gpu_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">cp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Perform Simultaneous Iterative Recostruction Technique (SIRT) using ASTRA toolbox :cite:`van2016fast` and</span>
+<span class="sd">    ToMoBAR :cite:`kazantsev2020tomographic` wrappers. For more information see :ref:`method_SIRT3d_tomobar`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : cp.ndarray</span>
+<span class="sd">        Projection data as a CuPy array.</span>
+<span class="sd">    angles : np.ndarray</span>
+<span class="sd">        An array of angles given in radians.</span>
+<span class="sd">    center : float, optional</span>
+<span class="sd">        The center of rotation (CoR).</span>
+<span class="sd">    detector_pad : bool, int</span>
+<span class="sd">        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction. Set to True to perform</span>
+<span class="sd">        an automated padding or specify a certain value as an integer.</span>
+<span class="sd">    recon_size : int, optional</span>
+<span class="sd">        The [recon_size, recon_size] shape of the reconstructed slice in pixels.</span>
+<span class="sd">        By default (None), the reconstructed size will be the dimension of the horizontal detector.</span>
+<span class="sd">    recon_mask_radius: float</span>
+<span class="sd">        The radius of the circular mask that applies to the reconstructed slice in order to crop</span>
+<span class="sd">        out some undesirable artifacts. The values outside the given diameter will be set to zero.</span>
+<span class="sd">        To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.</span>
+<span class="sd">    iterations : int</span>
+<span class="sd">        The number of SIRT iterations.</span>
+<span class="sd">    nonnegativity : bool</span>
+<span class="sd">        Impose nonnegativity constraint on the reconstructed image.</span>
+<span class="sd">    gpu_id : int</span>
+<span class="sd">        A GPU device index to perform operation on.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cp.ndarray</span>
+<span class="sd">        The SIRT reconstructed volume as a CuPy array.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">RecToolsCP</span> <span class="o">=</span> <span class="n">_instantiate_iterative_recon_class</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">,</span>
+        <span class="n">angles</span><span class="p">,</span>
+        <span class="n">center</span><span class="p">,</span>
+        <span class="n">detector_pad</span><span class="p">,</span>
+        <span class="n">recon_size</span><span class="p">,</span>
+        <span class="n">gpu_id</span><span class="p">,</span>
+        <span class="n">datafidelity</span><span class="o">=</span><span class="s2">&quot;LS&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">_data_</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;projection_norm_data&quot;</span><span class="p">:</span> <span class="n">data</span><span class="p">,</span>
+        <span class="s2">&quot;data_axes_labels_order&quot;</span><span class="p">:</span> <span class="n">input_data_axis_labels</span><span class="p">,</span>
+    <span class="p">}</span>  <span class="c1"># data dictionary</span>
+    <span class="n">_algorithm_</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;iterations&quot;</span><span class="p">:</span> <span class="n">iterations</span><span class="p">,</span>
+        <span class="s2">&quot;nonnegativity&quot;</span><span class="p">:</span> <span class="n">nonnegativity</span><span class="p">,</span>
+        <span class="s2">&quot;recon_mask_radius&quot;</span><span class="p">:</span> <span class="n">recon_mask_radius</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">reconstruction</span> <span class="o">=</span> <span class="n">RecToolsCP</span><span class="o">.</span><span class="n">SIRT</span><span class="p">(</span><span class="n">_data_</span><span class="p">,</span> <span class="n">_algorithm_</span><span class="p">)</span>
+    <span class="n">cp</span><span class="o">.</span><span class="n">_default_memory_pool</span><span class="o">.</span><span class="n">free_all_blocks</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">cp</span><span class="o">.</span><span class="n">require</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="n">reconstruction</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">requirements</span><span class="o">=</span><span class="s2">&quot;C&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="c1">## %%%%%%%%%%%%%%%%%%%%%%% CGLS reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##</span>
+<div class="viewcode-block" id="CGLS3d_tomobar">
+<a class="viewcode-back" href="../../../api/httomolibgpu.recon.algorithm.html#httomolibgpu.recon.algorithm.CGLS3d_tomobar">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">CGLS3d_tomobar</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">cp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">angles</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">center</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">detector_pad</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">recon_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">recon_mask_radius</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.95</span><span class="p">,</span>
+    <span class="n">iterations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
+    <span class="n">nonnegativity</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">gpu_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">cp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Perform Conjugate Gradient Least Squares (CGLS) using ASTRA toolbox :cite:`van2016fast` and</span>
+<span class="sd">    ToMoBAR :cite:`kazantsev2020tomographic` wrappers. For more information see :ref:`method_CGLS3d_tomobar`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : cp.ndarray</span>
+<span class="sd">        Projection data as a CuPy array.</span>
+<span class="sd">    angles : np.ndarray</span>
+<span class="sd">        An array of angles given in radians.</span>
+<span class="sd">    center : float, optional</span>
+<span class="sd">        The center of rotation (CoR).</span>
+<span class="sd">    detector_pad : bool, int</span>
+<span class="sd">        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction. Set to True to perform</span>
+<span class="sd">        an automated padding or specify a certain value as an integer.</span>
+<span class="sd">    recon_size : int, optional</span>
+<span class="sd">        The [recon_size, recon_size] shape of the reconstructed slice in pixels.</span>
+<span class="sd">        By default (None), the reconstructed size will be the dimension of the horizontal detector.</span>
+<span class="sd">    recon_mask_radius: float</span>
+<span class="sd">        The radius of the circular mask that applies to the reconstructed slice in order to crop</span>
+<span class="sd">        out some undesirable artifacts. The values outside the given diameter will be set to zero.</span>
+<span class="sd">        To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.</span>
+<span class="sd">    iterations : int</span>
+<span class="sd">        The number of CGLS iterations.</span>
+<span class="sd">    nonnegativity : bool</span>
+<span class="sd">        Impose nonnegativity constraint on reconstructed image.</span>
+<span class="sd">    gpu_id : int, optional</span>
+<span class="sd">        A GPU device index to perform operation on.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cp.ndarray</span>
+<span class="sd">        The CGLS reconstructed volume as a CuPy array.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">RecToolsCP</span> <span class="o">=</span> <span class="n">_instantiate_iterative_recon_class</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">,</span> <span class="n">angles</span><span class="p">,</span> <span class="n">center</span><span class="p">,</span> <span class="n">detector_pad</span><span class="p">,</span> <span class="n">recon_size</span><span class="p">,</span> <span class="n">gpu_id</span><span class="p">,</span> <span class="n">datafidelity</span><span class="o">=</span><span class="s2">&quot;LS&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">_data_</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;projection_norm_data&quot;</span><span class="p">:</span> <span class="n">data</span><span class="p">,</span>
+        <span class="s2">&quot;data_axes_labels_order&quot;</span><span class="p">:</span> <span class="n">input_data_axis_labels</span><span class="p">,</span>
+    <span class="p">}</span>  <span class="c1"># data dictionary</span>
+    <span class="n">_algorithm_</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;iterations&quot;</span><span class="p">:</span> <span class="n">iterations</span><span class="p">,</span>
+        <span class="s2">&quot;nonnegativity&quot;</span><span class="p">:</span> <span class="n">nonnegativity</span><span class="p">,</span>
+        <span class="s2">&quot;recon_mask_radius&quot;</span><span class="p">:</span> <span class="n">recon_mask_radius</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">reconstruction</span> <span class="o">=</span> <span class="n">RecToolsCP</span><span class="o">.</span><span class="n">CGLS</span><span class="p">(</span><span class="n">_data_</span><span class="p">,</span> <span class="n">_algorithm_</span><span class="p">)</span>
+    <span class="n">cp</span><span class="o">.</span><span class="n">_default_memory_pool</span><span class="o">.</span><span class="n">free_all_blocks</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">cp</span><span class="o">.</span><span class="n">require</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="n">reconstruction</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">requirements</span><span class="o">=</span><span class="s2">&quot;C&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="c1">## %%%%%%%%%%%%%%%%%%%%%%% FISTA reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##</span>
+<div class="viewcode-block" id="FISTA3d_tomobar">
+<a class="viewcode-back" href="../../../api/httomolibgpu.recon.algorithm.html#httomolibgpu.recon.algorithm.FISTA3d_tomobar">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">FISTA3d_tomobar</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">cp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">angles</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">center</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">detector_pad</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">recon_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">recon_mask_radius</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.95</span><span class="p">,</span>
+    <span class="n">iterations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
+    <span class="n">subsets_number</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span><span class="p">,</span>
+    <span class="n">regularisation_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;PD_TV&quot;</span><span class="p">,</span>
+    <span class="n">regularisation_parameter</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.000001</span><span class="p">,</span>
+    <span class="n">regularisation_iterations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
+    <span class="n">regularisation_half_precision</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">nonnegativity</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">gpu_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">cp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A Fast Iterative Shrinkage-Thresholding Algorithm :cite:`beck2009fast` with various types of regularisation or</span>
+<span class="sd">    denoising operations :cite:`kazantsev2019ccpi` (currently accepts ROF_TV and PD_TV regularisations only).</span>
+<span class="sd">    For more information see :ref:`method_FISTA3d_tomobar`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : cp.ndarray</span>
+<span class="sd">        Projection data as a CuPy array.</span>
+<span class="sd">    angles : np.ndarray</span>
+<span class="sd">        An array of angles given in radians.</span>
+<span class="sd">    center : float, optional</span>
+<span class="sd">        The center of rotation (CoR).</span>
+<span class="sd">    detector_pad : bool, int</span>
+<span class="sd">        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction. Set to True to perform</span>
+<span class="sd">        an automated padding or specify a certain value as an integer.</span>
+<span class="sd">    recon_size : int, optional</span>
+<span class="sd">        The [recon_size, recon_size] shape of the reconstructed slice in pixels.</span>
+<span class="sd">        By default (None), the reconstructed size will be the dimension of the horizontal detector.</span>
+<span class="sd">    recon_mask_radius: float</span>
+<span class="sd">        The radius of the circular mask that applies to the reconstructed slice in order to crop</span>
+<span class="sd">        out some undesirable artifacts. The values outside the given diameter will be set to zero.</span>
+<span class="sd">        To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.</span>
+<span class="sd">    iterations : int</span>
+<span class="sd">        The number of FISTA algorithm iterations.</span>
+<span class="sd">    subsets_number: int</span>
+<span class="sd">        The number of the ordered subsets to accelerate convergence. Keep the value bellow 10 to avoid divergence.</span>
+<span class="sd">    regularisation_type: str</span>
+<span class="sd">        A method to use for regularisation. Currently PD_TV and ROF_TV are available.</span>
+<span class="sd">    regularisation_parameter: float</span>
+<span class="sd">        The main regularisation parameter to control the amount of smoothing/noise removal. Larger values lead to stronger smoothing.</span>
+<span class="sd">    regularisation_iterations: int</span>
+<span class="sd">        The number of iterations for regularisers (aka INNER iterations).</span>
+<span class="sd">    regularisation_half_precision: bool</span>
+<span class="sd">        Perform faster regularisation computation in half-precision with a very minimal sacrifice in quality.</span>
+<span class="sd">    nonnegativity : bool</span>
+<span class="sd">        Impose nonnegativity constraint on the reconstructed image.</span>
+<span class="sd">    gpu_id : int</span>
+<span class="sd">        A GPU device index to perform operation on.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cp.ndarray</span>
+<span class="sd">        The FISTA reconstructed volume as a CuPy array.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">RecToolsCP</span> <span class="o">=</span> <span class="n">_instantiate_iterative_recon_class</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">,</span> <span class="n">angles</span><span class="p">,</span> <span class="n">center</span><span class="p">,</span> <span class="n">detector_pad</span><span class="p">,</span> <span class="n">recon_size</span><span class="p">,</span> <span class="n">gpu_id</span><span class="p">,</span> <span class="n">datafidelity</span><span class="o">=</span><span class="s2">&quot;LS&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">_data_</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;projection_norm_data&quot;</span><span class="p">:</span> <span class="n">data</span><span class="p">,</span>
+        <span class="s2">&quot;OS_number&quot;</span><span class="p">:</span> <span class="n">subsets_number</span><span class="p">,</span>
+        <span class="s2">&quot;data_axes_labels_order&quot;</span><span class="p">:</span> <span class="n">input_data_axis_labels</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">lc</span> <span class="o">=</span> <span class="n">RecToolsCP</span><span class="o">.</span><span class="n">powermethod</span><span class="p">(</span><span class="n">_data_</span><span class="p">)</span>  <span class="c1"># calculate Lipschitz constant (run once)</span>
+
+    <span class="n">_algorithm_</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;iterations&quot;</span><span class="p">:</span> <span class="n">iterations</span><span class="p">,</span>
+        <span class="s2">&quot;lipschitz_const&quot;</span><span class="p">:</span> <span class="n">lc</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span>
+        <span class="s2">&quot;nonnegativity&quot;</span><span class="p">:</span> <span class="n">nonnegativity</span><span class="p">,</span>
+        <span class="s2">&quot;recon_mask_radius&quot;</span><span class="p">:</span> <span class="n">recon_mask_radius</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">_regularisation_</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="n">regularisation_type</span><span class="p">,</span>  <span class="c1"># Selected regularisation method</span>
+        <span class="s2">&quot;regul_param&quot;</span><span class="p">:</span> <span class="n">regularisation_parameter</span><span class="p">,</span>  <span class="c1"># Regularisation parameter</span>
+        <span class="s2">&quot;iterations&quot;</span><span class="p">:</span> <span class="n">regularisation_iterations</span><span class="p">,</span>  <span class="c1"># The number of regularisation iterations</span>
+        <span class="s2">&quot;half_precision&quot;</span><span class="p">:</span> <span class="n">regularisation_half_precision</span><span class="p">,</span>  <span class="c1"># enabling half-precision calculation</span>
+    <span class="p">}</span>
+
+    <span class="n">reconstruction</span> <span class="o">=</span> <span class="n">RecToolsCP</span><span class="o">.</span><span class="n">FISTA</span><span class="p">(</span><span class="n">_data_</span><span class="p">,</span> <span class="n">_algorithm_</span><span class="p">,</span> <span class="n">_regularisation_</span><span class="p">)</span>
+    <span class="n">cp</span><span class="o">.</span><span class="n">_default_memory_pool</span><span class="o">.</span><span class="n">free_all_blocks</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">cp</span><span class="o">.</span><span class="n">require</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="n">reconstruction</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">requirements</span><span class="o">=</span><span class="s2">&quot;C&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="c1">## %%%%%%%%%%%%%%%%%%%%%%% ADMM reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##</span>
+<div class="viewcode-block" id="ADMM3d_tomobar">
+<a class="viewcode-back" href="../../../api/httomolibgpu.recon.algorithm.html#httomolibgpu.recon.algorithm.ADMM3d_tomobar">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ADMM3d_tomobar</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">cp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">angles</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">center</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">detector_pad</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">recon_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">recon_mask_radius</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.95</span><span class="p">,</span>
+    <span class="n">iterations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="n">subsets_number</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">24</span><span class="p">,</span>
+    <span class="n">initialisation</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;FBP&quot;</span><span class="p">,</span>
+    <span class="n">ADMM_rho_const</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">ADMM_relax_par</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.7</span><span class="p">,</span>
+    <span class="n">regularisation_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;PD_TV&quot;</span><span class="p">,</span>
+    <span class="n">regularisation_parameter</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0025</span><span class="p">,</span>
+    <span class="n">regularisation_iterations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">40</span><span class="p">,</span>
+    <span class="n">regularisation_half_precision</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">nonnegativity</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">gpu_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">cp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An Alternating Direction Method of Multipliers method with various types of regularisation or</span>
+<span class="sd">    denoising operations :cite:`kazantsev2019ccpi` (currently accepts ROF_TV and PD_TV regularisations only).</span>
+<span class="sd">    For more information see :ref:`_method_ADMM3d_tomobar`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : cp.ndarray</span>
+<span class="sd">        Projection data as a CuPy array.</span>
+<span class="sd">    angles : np.ndarray</span>
+<span class="sd">        An array of angles given in radians.</span>
+<span class="sd">    center : float, optional</span>
+<span class="sd">        The center of rotation (CoR).</span>
+<span class="sd">    detector_pad : bool, int</span>
+<span class="sd">        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction. Set to True to perform</span>
+<span class="sd">        an automated padding or specify a certain value as an integer.</span>
+<span class="sd">    recon_size : int, optional</span>
+<span class="sd">        The [recon_size, recon_size] shape of the reconstructed slice in pixels.</span>
+<span class="sd">        By default (None), the reconstructed size will be the dimension of the horizontal detector.</span>
+<span class="sd">    recon_mask_radius: float</span>
+<span class="sd">        The radius of the circular mask that applies to the reconstructed slice in order to crop</span>
+<span class="sd">        out some undesirable artifacts. The values outside the given diameter will be set to zero.</span>
+<span class="sd">        To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.</span>
+<span class="sd">    iterations : int</span>
+<span class="sd">        The number of ADMM algorithm iterations. The recommended range is between 3 to 5 with initialisation and</span>
+<span class="sd">        more than 10 without. Assuming that the subsets_number is reasonably large (&gt;12).</span>
+<span class="sd">    subsets_number: int</span>
+<span class="sd">        The number of the ordered subsets to accelerate convergence. The recommended range is between 12 to 24.</span>
+<span class="sd">    initialisation: str, optional</span>
+<span class="sd">        Initialise ADMM with the reconstructed image to reduce the number of iterations and accelerate. Choose between &#39;CGLS&#39; when data</span>
+<span class="sd">        is noisy and undersampled, &#39;FBP&#39; when data is of better quality (default) or None.</span>
+<span class="sd">    ADMM_rho_const: float</span>
+<span class="sd">        Convergence related parameter for ADMM, higher values lead to slower convergence, but too small values can destabilise the iterations.</span>
+<span class="sd">        Recommended range is between 0.9 and 2.0.</span>
+<span class="sd">    ADMM_relax_par: Relaxation parameter which can lead to acceleration of the algorithm, keep it in the range between 1.5 and 1.8 to avoid divergence.     regularisation_type: str</span>
+<span class="sd">        A method to use for regularisation. Currently PD_TV and ROF_TV are available.</span>
+<span class="sd">    regularisation_parameter: float</span>
+<span class="sd">        The main regularisation parameter to control the amount of smoothing/noise removal. Larger values lead to stronger smoothing.</span>
+<span class="sd">    regularisation_iterations: int</span>
+<span class="sd">        The number of iterations for regularisers (aka INNER iterations).</span>
+<span class="sd">    regularisation_half_precision: bool</span>
+<span class="sd">        Perform faster regularisation computation in half-precision with a very minimal sacrifice in quality.</span>
+<span class="sd">    nonnegativity : bool</span>
+<span class="sd">        Impose nonnegativity constraint (set to True) on the reconstructed image. Default False.</span>
+<span class="sd">    gpu_id : int</span>
+<span class="sd">        A GPU device index to perform operation on.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cp.ndarray</span>
+<span class="sd">        The ADMM reconstructed volume as a CuPy array.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">initialisation</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;FBP&quot;</span><span class="p">,</span> <span class="s2">&quot;CGLS&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;The acceptable values for initialisation are &#39;FBP&#39;,&#39;CGLS&#39; and None&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">initialisation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">detector_pad</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">detector_pad</span> <span class="o">=</span> <span class="n">__estimate_detectorHoriz_padding</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">detector_pad</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># if detector_pad is not zero we need to reconstruct the image on the recon+2*detector_pad size</span>
+            <span class="n">recon_size</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">detector_pad</span>
+
+        <span class="k">if</span> <span class="n">initialisation</span> <span class="o">==</span> <span class="s2">&quot;FBP&quot;</span><span class="p">:</span>
+            <span class="n">initialisation_vol</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">require</span><span class="p">(</span>
+                <span class="n">cp</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span>
+                    <span class="n">FBP3d_tomobar</span><span class="p">(</span>
+                        <span class="n">data</span><span class="p">,</span>
+                        <span class="n">angles</span><span class="o">=</span><span class="n">angles</span><span class="p">,</span>
+                        <span class="n">center</span><span class="o">=</span><span class="n">center</span><span class="p">,</span>
+                        <span class="n">detector_pad</span><span class="o">=</span><span class="n">detector_pad</span><span class="p">,</span>
+                        <span class="n">recon_size</span><span class="o">=</span><span class="n">recon_size</span><span class="p">,</span>
+                        <span class="n">recon_mask_radius</span><span class="o">=</span><span class="n">recon_mask_radius</span><span class="p">,</span>
+                    <span class="p">),</span>
+                    <span class="mi">0</span><span class="p">,</span>
+                    <span class="mi">1</span><span class="p">,</span>
+                <span class="p">),</span>
+                <span class="n">requirements</span><span class="o">=</span><span class="s2">&quot;C&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">initialisation</span> <span class="o">==</span> <span class="s2">&quot;CGLS&quot;</span><span class="p">:</span>
+            <span class="n">initialisation_vol</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">require</span><span class="p">(</span>
+                <span class="n">cp</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span>
+                    <span class="n">CGLS3d_tomobar</span><span class="p">(</span>
+                        <span class="n">data</span><span class="p">,</span>
+                        <span class="n">angles</span><span class="o">=</span><span class="n">angles</span><span class="p">,</span>
+                        <span class="n">center</span><span class="o">=</span><span class="n">center</span><span class="p">,</span>
+                        <span class="n">detector_pad</span><span class="o">=</span><span class="n">detector_pad</span><span class="p">,</span>
+                        <span class="n">recon_size</span><span class="o">=</span><span class="n">recon_size</span><span class="p">,</span>
+                        <span class="n">recon_mask_radius</span><span class="o">=</span><span class="n">recon_mask_radius</span><span class="p">,</span>
+                        <span class="n">iterations</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
+                    <span class="p">),</span>
+                    <span class="mi">0</span><span class="p">,</span>
+                    <span class="mi">1</span><span class="p">,</span>
+                <span class="p">),</span>
+                <span class="n">requirements</span><span class="o">=</span><span class="s2">&quot;C&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">initialisation_vol</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">RecToolsCP</span> <span class="o">=</span> <span class="n">_instantiate_iterative_recon_class</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">,</span> <span class="n">angles</span><span class="p">,</span> <span class="n">center</span><span class="p">,</span> <span class="n">detector_pad</span><span class="p">,</span> <span class="n">recon_size</span><span class="p">,</span> <span class="n">gpu_id</span><span class="p">,</span> <span class="n">datafidelity</span><span class="o">=</span><span class="s2">&quot;LS&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">_data_</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;projection_norm_data&quot;</span><span class="p">:</span> <span class="n">data</span><span class="p">,</span>
+        <span class="s2">&quot;OS_number&quot;</span><span class="p">:</span> <span class="n">subsets_number</span><span class="p">,</span>
+        <span class="s2">&quot;data_axes_labels_order&quot;</span><span class="p">:</span> <span class="n">input_data_axis_labels</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">_algorithm_</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;initialise&quot;</span><span class="p">:</span> <span class="n">initialisation_vol</span><span class="p">,</span>
+        <span class="s2">&quot;iterations&quot;</span><span class="p">:</span> <span class="n">iterations</span><span class="p">,</span>
+        <span class="s2">&quot;nonnegativity&quot;</span><span class="p">:</span> <span class="n">nonnegativity</span><span class="p">,</span>
+        <span class="s2">&quot;recon_mask_radius&quot;</span><span class="p">:</span> <span class="n">recon_mask_radius</span><span class="p">,</span>
+        <span class="s2">&quot;ADMM_rho_const&quot;</span><span class="p">:</span> <span class="n">ADMM_rho_const</span><span class="p">,</span>
+        <span class="s2">&quot;ADMM_relax_par&quot;</span><span class="p">:</span> <span class="n">ADMM_relax_par</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">_regularisation_</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="n">regularisation_type</span><span class="p">,</span>  <span class="c1"># Selected regularisation method</span>
+        <span class="s2">&quot;regul_param&quot;</span><span class="p">:</span> <span class="n">regularisation_parameter</span><span class="p">,</span>  <span class="c1"># Regularisation parameter</span>
+        <span class="s2">&quot;iterations&quot;</span><span class="p">:</span> <span class="n">regularisation_iterations</span><span class="p">,</span>  <span class="c1"># The number of regularisation iterations</span>
+        <span class="s2">&quot;half_precision&quot;</span><span class="p">:</span> <span class="n">regularisation_half_precision</span><span class="p">,</span>  <span class="c1"># enabling half-precision calculation</span>
+    <span class="p">}</span>
+
+    <span class="n">reconstruction</span> <span class="o">=</span> <span class="n">RecToolsCP</span><span class="o">.</span><span class="n">ADMM</span><span class="p">(</span><span class="n">_data_</span><span class="p">,</span> <span class="n">_algorithm_</span><span class="p">,</span> <span class="n">_regularisation_</span><span class="p">)</span>
+    <span class="n">cp</span><span class="o">.</span><span class="n">_default_memory_pool</span><span class="o">.</span><span class="n">free_all_blocks</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">cp</span><span class="o">.</span><span class="n">require</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="n">reconstruction</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">requirements</span><span class="o">=</span><span class="s2">&quot;C&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="c1">## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_instantiate_direct_recon_class</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">cp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">angles</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">center</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">detector_pad</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">recon_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">gpu_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;instantiate ToMoBAR&#39;s direct recon class</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data (cp.ndarray): data array</span>
+<span class="sd">        angles (np.ndarray): angles</span>
+<span class="sd">        center (Optional[float], optional): center of recon. Defaults to None.</span>
+<span class="sd">        detector_pad : (Union[bool, int]) : Detector width padding. Defaults to False.</span>
+<span class="sd">        recon_size (Optional[int], optional): recon_size. Defaults to None.</span>
+<span class="sd">        gpu_id (int, optional): gpu ID. Defaults to 0.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Type[RecToolsDIRCuPy]: an instance of the direct recon class</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">center</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">center</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span>  <span class="c1"># making a crude guess</span>
+    <span class="k">if</span> <span class="n">recon_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">recon_size</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">detector_pad</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">detector_pad</span> <span class="o">=</span> <span class="n">__estimate_detectorHoriz_padding</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="n">detector_pad</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">detector_pad</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">RecToolsCP</span> <span class="o">=</span> <span class="n">RecToolsDIRCuPy</span><span class="p">(</span>
+        <span class="n">DetectorsDimH</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>  <span class="c1"># Horizontal detector dimension</span>
+        <span class="n">DetectorsDimH_pad</span><span class="o">=</span><span class="n">detector_pad</span><span class="p">,</span>  <span class="c1"># padding for horizontal detector</span>
+        <span class="n">DetectorsDimV</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>  <span class="c1"># Vertical detector dimension (3D case)</span>
+        <span class="n">CenterRotOffset</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="o">-</span> <span class="n">center</span>
+        <span class="o">-</span> <span class="mf">0.5</span><span class="p">,</span>  <span class="c1"># Center of Rotation scalar or a vector</span>
+        <span class="n">AnglesVec</span><span class="o">=-</span><span class="n">angles</span><span class="p">,</span>  <span class="c1"># A vector of projection angles in radians</span>
+        <span class="n">ObjSize</span><span class="o">=</span><span class="n">recon_size</span><span class="p">,</span>  <span class="c1"># Reconstructed object dimensions (scalar)</span>
+        <span class="n">device_projector</span><span class="o">=</span><span class="n">gpu_id</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">RecToolsCP</span>
+
+
+<span class="c1">## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_instantiate_direct_recon2d_class</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">angles</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">center</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">detector_pad</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">recon_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">gpu_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;instantiate ToMoBAR&#39;s direct recon class for 2d reconstruction</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data (cp.ndarray): data array</span>
+<span class="sd">        angles (np.ndarray): angles</span>
+<span class="sd">        center (Optional[float], optional): center of recon. Defaults to None.</span>
+<span class="sd">        detector_pad : (Union[bool, int]) : Detector width padding. Defaults to False.</span>
+<span class="sd">        recon_size (Optional[int], optional): recon_size. Defaults to None.</span>
+<span class="sd">        gpu_id (int, optional): gpu ID. Defaults to 0.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Type[RecToolsDIR]: an instance of the direct recon class</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">center</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">center</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span>  <span class="c1"># making a crude guess</span>
+    <span class="k">if</span> <span class="n">recon_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">recon_size</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">detector_pad</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">detector_pad</span> <span class="o">=</span> <span class="n">__estimate_detectorHoriz_padding</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="n">detector_pad</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">detector_pad</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">RecTools</span> <span class="o">=</span> <span class="n">RecToolsDIR</span><span class="p">(</span>
+        <span class="n">DetectorsDimH</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>  <span class="c1"># Horizontal detector dimension</span>
+        <span class="n">DetectorsDimH_pad</span><span class="o">=</span><span class="n">detector_pad</span><span class="p">,</span>  <span class="c1"># padding for horizontal detector</span>
+        <span class="n">DetectorsDimV</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># 2d case</span>
+        <span class="n">CenterRotOffset</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="o">-</span> <span class="n">center</span>
+        <span class="o">-</span> <span class="mf">0.5</span><span class="p">,</span>  <span class="c1"># Center of Rotation scalar or a vector</span>
+        <span class="n">AnglesVec</span><span class="o">=-</span><span class="n">angles</span><span class="p">,</span>  <span class="c1"># A vector of projection angles in radians</span>
+        <span class="n">ObjSize</span><span class="o">=</span><span class="n">recon_size</span><span class="p">,</span>  <span class="c1"># Reconstructed object dimensions (scalar)</span>
+        <span class="n">device_projector</span><span class="o">=</span><span class="n">gpu_id</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">RecTools</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_instantiate_iterative_recon_class</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">cp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">angles</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">center</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">detector_pad</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">recon_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">gpu_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">datafidelity</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;LS&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;instantiate ToMoBAR&#39;s iterative recon class</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data (cp.ndarray): data array</span>
+<span class="sd">        angles (np.ndarray): angles</span>
+<span class="sd">        center (Optional[float], optional): center of recon. Defaults to None.</span>
+<span class="sd">        detector_pad : (Union[bool, int]) : Detector width padding. Defaults to False.</span>
+<span class="sd">        recon_size (Optional[int], optional): recon_size. Defaults to None.</span>
+<span class="sd">        datafidelity (str, optional): Data fidelity</span>
+<span class="sd">        gpu_id (int, optional): gpu ID. Defaults to 0.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Type[RecToolsIRCuPy]: an instance of the iterative class</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">center</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">center</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span>  <span class="c1"># making a crude guess</span>
+    <span class="k">if</span> <span class="n">recon_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">recon_size</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">detector_pad</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">detector_pad</span> <span class="o">=</span> <span class="n">__estimate_detectorHoriz_padding</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="n">detector_pad</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">detector_pad</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">RecToolsCP</span> <span class="o">=</span> <span class="n">RecToolsIRCuPy</span><span class="p">(</span>
+        <span class="n">DetectorsDimH</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>  <span class="c1"># Horizontal detector dimension</span>
+        <span class="n">DetectorsDimH_pad</span><span class="o">=</span><span class="n">detector_pad</span><span class="p">,</span>  <span class="c1"># padding for horizontal detector</span>
+        <span class="n">DetectorsDimV</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>  <span class="c1"># Vertical detector dimension (3D case)</span>
+        <span class="n">CenterRotOffset</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="o">-</span> <span class="n">center</span>
+        <span class="o">-</span> <span class="mf">0.5</span><span class="p">,</span>  <span class="c1"># Center of Rotation scalar or a vector</span>
+        <span class="n">AnglesVec</span><span class="o">=-</span><span class="n">angles</span><span class="p">,</span>  <span class="c1"># A vector of projection angles in radians</span>
+        <span class="n">ObjSize</span><span class="o">=</span><span class="n">recon_size</span><span class="p">,</span>  <span class="c1"># Reconstructed object dimensions (scalar)</span>
+        <span class="n">datafidelity</span><span class="o">=</span><span class="n">datafidelity</span><span class="p">,</span>
+        <span class="n">device_projector</span><span class="o">=</span><span class="n">gpu_id</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">RecToolsCP</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">__estimate_detectorHoriz_padding</span><span class="p">(</span><span class="n">detX_size</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="n">det_half</span> <span class="o">=</span> <span class="n">detX_size</span> <span class="o">//</span> <span class="mi">2</span>
+    <span class="n">padded_value_exact</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">det_half</span><span class="o">**</span><span class="mi">2</span><span class="p">)))</span> <span class="o">-</span> <span class="n">det_half</span>
+    <span class="n">padded_add_margin</span> <span class="o">=</span> <span class="n">padded_value_exact</span> <span class="o">//</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">padded_value_exact</span> <span class="o">+</span> <span class="n">padded_add_margin</span>
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Imaging Team
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2026, Diamond Light Source.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    <p class="last-updated">
+  Last updated on Feb 18, 2026.
+  <br/>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
