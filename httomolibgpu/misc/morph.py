@@ -99,8 +99,16 @@ def sino_360_to_180(
             weights * data[:n, :, -overlap:]
             + (weights * data[n : 2 * n, :, -overlap:])[:, :, ::-1]
         )
-
-    return out
+    return cp.pad(
+        out,
+        pad_width=(
+            (0, 0),
+            (0, 0),
+            (overlap // 2, overlap // 2),
+        ),
+        mode="edge",
+    )
+    # return out
 
 
 def data_resampler(

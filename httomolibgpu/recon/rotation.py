@@ -484,7 +484,8 @@ def find_center_360(
     overlap, side, overlap_position = _find_overlap(
         sino_top, sino_bot, win_width, side, denoise, norm, use_overlap
     )
-    cor = ncol - overlap / 2
+    # cor = ncol - overlap / 2
+    cor = ncol
 
     return cor, overlap, side, overlap_position
 
