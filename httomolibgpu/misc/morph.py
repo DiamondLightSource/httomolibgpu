@@ -71,8 +71,8 @@ def sino_360_to_180(
     overlap = int(np.round(overlap))
     if overlap >= dz - 1:
         raise ValueError("Overlap must be less than size of the horizontal detector")
-    if overlap < 0:
-        raise ValueError("Only positive overlaps are allowed.")
+    if overlap <= 0:
+        raise ValueError("Only positive non-zero overlaps are allowed.")
     if overlap % 2 != 0:
         overlap += 1
 
