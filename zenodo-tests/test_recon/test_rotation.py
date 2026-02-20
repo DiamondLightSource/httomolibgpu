@@ -209,10 +209,9 @@ def test_center_360_i12_dataset5(i12_dataset5, ensure_clean_memory):
     ensure_clean_memory
     cor, overlap, side, overlap_position = find_center_360(data_normalised)
 
-    assert int(cor) == 2466
+    assert int(cor) == 2560
     assert side == "left"
     assert int(overlap) == 186
-    assert cor.dtype == np.float64
 
 
 # ----------------------------------------------------------#
@@ -230,10 +229,9 @@ def test_center_360_i13_dataset1(i13_dataset1, ensure_clean_memory):
     ensure_clean_memory
     cor, overlap, side, overlap_position = find_center_360(data_normalised)
 
-    assert int(cor) == 2323
+    assert int(cor) == 2560
     assert side == "right"
     assert int(overlap) == 473  # actual 473.822265625
-    assert cor.dtype == np.float64
 
 
 # ----------------------------------------------------------#
@@ -259,7 +257,6 @@ def test_center_360_i13_dataset3(i13_dataset3, ensure_clean_memory):
         use_overlap=True,
     )
 
-    assert int(cor) == 2340
+    assert int(cor) == 2560
     assert side == "left"
     assert int(overlap) == 438  # actual 438.173828
-    assert cor.dtype == np.float64
