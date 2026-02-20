@@ -244,7 +244,7 @@ def LPRec3d_tomobar(
     """
 
     RecToolsCP = _instantiate_direct_recon_class(
-        data, angles, center, detector_pad, recon_size, "fourier", 0
+        data, angles, center, detector_pad, recon_size, 0, "fourier"
     )
 
     reconstruction = RecToolsCP.FOURIER_INV(
@@ -655,8 +655,8 @@ def _instantiate_direct_recon_class(
     center: Optional[float] = None,
     detector_pad: Union[bool, int] = False,
     recon_size: Optional[int] = None,
-    projector: Literal["fourier", "astra"] = "astra",
     gpu_id: int = 0,
+    projector: Literal["fourier", "astra"] = "astra",
 ) -> Type:
     """instantiate ToMoBAR's direct recon class
 
