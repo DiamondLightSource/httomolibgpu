@@ -29,6 +29,7 @@ cupy_run = cupywrapper.cupy_run
 from unittest.mock import Mock
 
 if cupy_run:
+    from tomobar.supp.memory_estimator_helpers import DeviceMemStack
     from tomobar.methodsDIR import RecToolsDIR
     from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
     from tomobar.methodsIR_CuPy import RecToolsIRCuPy
@@ -38,7 +39,7 @@ else:
     RecToolsIRCuPy = Mock()
 
 from numpy import float32
-from typing import Optional, Type, Union
+from typing import Literal, Optional, Tuple, Type, Union
 
 __all__ = [
     "FBP2d_astra",
@@ -192,7 +193,7 @@ def FBP3d_tomobar(
 
 ## %%%%%%%%%%%%%%%%%%%%%%% LPRec  %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 def LPRec3d_tomobar(
-    data: cp.ndarray,
+    data: cp.ndarray | Tuple[int, int, int],
     angles: np.ndarray,
     center: Optional[float] = None,
     detector_pad: Union[bool, int] = False,
@@ -204,6 +205,7 @@ def LPRec3d_tomobar(
     power_of_2_cropping: Optional[bool] = False,
     min_mem_usage_filter: Optional[bool] = True,
     min_mem_usage_ifft2: Optional[bool] = True,
+    **kwargs,
 ) -> cp.ndarray:
     """
     Fourier direct inversion in 3D on unequally spaced (also called as Log-Polar) grids using
@@ -232,6 +234,8 @@ def LPRec3d_tomobar(
         The radius of the circular mask that applies to the reconstructed slice in order to crop
         out some undesirable artifacts. The values outside the given diameter will be set to zero.
         To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.
+    calc_peak_gpu_mem: bool
+        Parameter to support memory estimation in HTTomo. Irrelevant to the method itself and can be ignored by user.
 
     Returns
     -------
@@ -240,7 +244,7 @@ def LPRec3d_tomobar(
     """
 
     RecToolsCP = _instantiate_direct_recon_class(
-        data, angles, center, detector_pad, recon_size, 0
+        data, angles, center, detector_pad, recon_size, 0, "fourier"
     )
 
     reconstruction = RecToolsCP.FOURIER_INV(
@@ -253,8 +257,14 @@ def LPRec3d_tomobar(
         power_of_2_cropping=power_of_2_cropping,
         min_mem_usage_filter=min_mem_usage_filter,
         min_mem_usage_ifft2=min_mem_usage_ifft2,
+        **kwargs,
     )
     cp._default_memory_pool.free_all_blocks()
+
+    mem_stack = DeviceMemStack.instance()
+    if mem_stack:
+        return mem_stack.highwater * 1.00625
+
     return cp.require(cp.swapaxes(reconstruction, 0, 1), requirements="C")
 
 
@@ -640,12 +650,13 @@ def ADMM3d_tomobar(
 
 ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 def _instantiate_direct_recon_class(
-    data: cp.ndarray,
+    data: cp.ndarray | Tuple[int, int, int],
     angles: np.ndarray,
     center: Optional[float] = None,
     detector_pad: Union[bool, int] = False,
     recon_size: Optional[int] = None,
     gpu_id: int = 0,
+    projector: Literal["fourier", "astra"] = "astra",
 ) -> Type:
     """instantiate ToMoBAR's direct recon class
 
@@ -660,23 +671,27 @@ def _instantiate_direct_recon_class(
     Returns:
         Type[RecToolsDIRCuPy]: an instance of the direct recon class
     """
+
+    data_shape = data if isinstance(data, tuple) else data.shape
+
     if center is None:
-        center = data.shape[2] // 2  # making a crude guess
+        center = data_shape[2] // 2  # making a crude guess
     if recon_size is None:
-        recon_size = data.shape[2]
+        recon_size = data_shape[2]
     if detector_pad is True:
-        detector_pad = __estimate_detectorHoriz_padding(data.shape[2])
+        detector_pad = __estimate_detectorHoriz_padding(data_shape[2])
     elif detector_pad is False:
         detector_pad = 0
     RecToolsCP = RecToolsDIRCuPy(
-        DetectorsDimH=data.shape[2],  # Horizontal detector dimension
+        DetectorsDimH=data_shape[2],  # Horizontal detector dimension
         DetectorsDimH_pad=detector_pad,  # padding for horizontal detector
-        DetectorsDimV=data.shape[1],  # Vertical detector dimension (3D case)
-        CenterRotOffset=data.shape[2] / 2
+        DetectorsDimV=data_shape[1],  # Vertical detector dimension (3D case)
+        CenterRotOffset=data_shape[2] / 2
         - center
         - 0.5,  # Center of Rotation scalar or a vector
         AnglesVec=-angles,  # A vector of projection angles in radians
         ObjSize=recon_size,  # Reconstructed object dimensions (scalar)
+        projector=projector,
         device_projector=gpu_id,
     )
     return RecToolsCP

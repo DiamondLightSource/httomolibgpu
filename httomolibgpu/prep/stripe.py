@@ -30,6 +30,7 @@ cupy_run = cupywrapper.cupy_run
 from unittest.mock import Mock
 
 if cupy_run:
+    from tomobar.supp.memory_estimator_helpers import DeviceMemStack
     from cupyx.scipy.ndimage import median_filter, binary_dilation, uniform_filter1d
     from cupyx.scipy.fft import fft2, ifft2, fftshift
     from cupyx.scipy.fftpack import get_fft_plan
@@ -204,32 +205,8 @@ def _reflect(x: np.ndarray, minx: float, maxx: float) -> np.ndarray:
     return np.array(out, dtype=x.dtype)
 
 
-class _DeviceMemStack:
-    def __init__(self) -> None:
-        self.allocations = []
-        self.current = 0
-        self.highwater = 0
-
-    def malloc(self, bytes):
-        self.allocations.append(bytes)
-        allocated = self._round_up(bytes)
-        self.current += allocated
-        self.highwater = max(self.current, self.highwater)
-
-    def free(self, bytes):
-        assert bytes in self.allocations
-        self.allocations.remove(bytes)
-        self.current -= self._round_up(bytes)
-        assert self.current >= 0
-
-    def _round_up(self, size):
-        ALLOCATION_UNIT_SIZE = 512
-        size = (size + ALLOCATION_UNIT_SIZE - 1) // ALLOCATION_UNIT_SIZE
-        return size * ALLOCATION_UNIT_SIZE
-
-
 def _mypad(
-    x: cp.ndarray, pad: Tuple[int, int, int, int], mem_stack: Optional[_DeviceMemStack]
+    x: cp.ndarray, pad: Tuple[int, int, int, int], mem_stack: Optional[DeviceMemStack]
 ) -> cp.ndarray:
     """Function to do numpy like padding on Arrays. Only works for 2-D
     padding.
@@ -272,7 +249,7 @@ def _conv2d(
     w: np.ndarray,
     stride: Tuple[int, int],
     groups: int,
-    mem_stack: Optional[_DeviceMemStack],
+    mem_stack: Optional[DeviceMemStack],
 ) -> cp.ndarray:
     """Convolution (equivalent pytorch.conv2d)"""
     b, ci, hi, wi = x.shape if not mem_stack else x
@@ -355,7 +332,7 @@ def _conv_transpose2d(
     stride: Tuple[int, int],
     pad: Tuple[int, int],
     groups: int,
-    mem_stack: Optional[_DeviceMemStack],
+    mem_stack: Optional[DeviceMemStack],
 ) -> cp.ndarray:
     """Transposed convolution (equivalent pytorch.conv_transpose2d)"""
     b, co, ho, wo = x.shape if not mem_stack else x
@@ -428,7 +405,7 @@ def _afb1d(
     h0: np.ndarray,
     h1: np.ndarray,
     dim: int,
-    mem_stack: Optional[_DeviceMemStack],
+    mem_stack: Optional[DeviceMemStack],
 ) -> cp.ndarray:
     """1D analysis filter bank (along one dimension only) of an image
 
@@ -476,7 +453,7 @@ def _sfb1d(
     g0: np.ndarray,
     g1: np.ndarray,
     dim: int,
-    mem_stack: Optional[_DeviceMemStack],
+    mem_stack: Optional[DeviceMemStack],
 ) -> cp.ndarray:
     """1D synthesis filter bank of an image Array"""
 
@@ -520,7 +497,7 @@ class _DWTForward:
         self.h1_row = np.array(h1_row).astype("float32")[::-1].reshape((1, 1, 1, -1))
 
     def apply(
-        self, x: cp.ndarray, mem_stack: Optional[_DeviceMemStack] = None
+        self, x: cp.ndarray, mem_stack: Optional[DeviceMemStack] = None
     ) -> Tuple[cp.ndarray, cp.ndarray]:
         """Forward pass of the DWT.
 
@@ -582,7 +559,7 @@ class _DWTInverse:
     def apply(
         self,
         coeffs: Tuple[cp.ndarray, cp.ndarray],
-        mem_stack: Optional[_DeviceMemStack] = None,
+        mem_stack: Optional[DeviceMemStack] = None,
     ) -> cp.ndarray:
         """
         Args:
@@ -672,7 +649,7 @@ def remove_stripe_fw(
     sli_shape = [nz, 1, nproj_pad, ni]
 
     if calc_peak_gpu_mem:
-        mem_stack = _DeviceMemStack()
+        mem_stack = DeviceMemStack()
         # A data copy is assumed when invoking the function
         mem_stack.malloc(np.prod(data) * np.float32().itemsize)
         mem_stack.malloc(np.prod(sli_shape) * np.float32().itemsize)
