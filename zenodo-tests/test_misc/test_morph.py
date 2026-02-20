@@ -21,7 +21,7 @@ def test_sino_360_to_180_i13_dataset1(i13_dataset1):
     )
     stiched_data_180degrees = cp.asnumpy(stiched_data_180degrees)
 
-    assert stiched_data_180degrees.shape == (3000, 10, 4646)
+    assert stiched_data_180degrees.shape == (3000, 10, 5120)
     assert stiched_data_180degrees.dtype == np.float32
     assert stiched_data_180degrees.flags.c_contiguous
 
@@ -41,7 +41,7 @@ def test_sino_360_to_180_i13_dataset3(i13_dataset3):
     )
     stiched_data_180degrees = cp.asnumpy(stiched_data_180degrees)
 
-    assert stiched_data_180degrees.shape == (3000, 3, 4682)
+    assert stiched_data_180degrees.shape == (3000, 3, 5120)
     assert stiched_data_180degrees.dtype == np.float32
     assert stiched_data_180degrees.flags.c_contiguous
 
@@ -61,6 +61,6 @@ def test_sino_360_to_180_i12_dataset5(i12_dataset5):
     )
     stiched_data_180degrees = cp.asnumpy(stiched_data_180degrees)
 
-    assert stiched_data_180degrees.shape == (1800, 15, 4933)
+    assert stiched_data_180degrees.shape == (1800, 15, 5120)
     assert stiched_data_180degrees.dtype == np.float32
     assert stiched_data_180degrees.flags.c_contiguous

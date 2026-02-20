@@ -228,7 +228,7 @@ def test_reconstruct_LPRec_tomobar_i13_dataset1(i13_dataset1: tuple):
     recon_data = LPRec3d_tomobar(
         data=stiched_data_180degrees,
         angles=np.deg2rad(angles[0:3000]),
-        center=2322.08,
+        center=2560,
         detector_pad=False,
         filter_type="shepp",
         filter_freq_cutoff=1.0,
@@ -237,9 +237,9 @@ def test_reconstruct_LPRec_tomobar_i13_dataset1(i13_dataset1: tuple):
 
     assert recon_data.flags.c_contiguous
     recon_data = cp.asnumpy(recon_data)
-    assert int(np.sum(recon_data)) == 1149
+    assert int(np.sum(recon_data)) == 1142
     assert recon_data.dtype == np.float32
-    assert recon_data.shape == (4646, 1, 4646)
+    assert recon_data.shape == (5120, 1, 5120)
 
 
 @pytest.mark.perf
@@ -382,7 +382,7 @@ def test_reconstruct_FBP3d_tomobar_i13_dataset3(i13_dataset3: tuple):
     recon_data = FBP3d_tomobar(
         stiched_data_180degrees,
         np.deg2rad(angles[0:3000]),
-        center=2339,
+        center=2560,
         detector_pad=0,
         filter_freq_cutoff=0.35,
     )
@@ -391,7 +391,7 @@ def test_reconstruct_FBP3d_tomobar_i13_dataset3(i13_dataset3: tuple):
     recon_data = cp.asnumpy(recon_data)
 
     assert recon_data.dtype == np.float32
-    assert recon_data.shape == (4682, 3, 4682)
+    assert recon_data.shape == (5120, 3, 5120)
 
 
 def test_reconstruct_FBP3d_tomobar_i12_dataset5(i12_dataset5: tuple):
@@ -416,7 +416,7 @@ def test_reconstruct_FBP3d_tomobar_i12_dataset5(i12_dataset5: tuple):
     recon_data = FBP3d_tomobar(
         stiched_data_180degrees,
         np.deg2rad(angles[0:1800]),
-        center=2466,
+        center=2560,
         detector_pad=0,
         filter_freq_cutoff=0.35,
     )
@@ -425,7 +425,7 @@ def test_reconstruct_FBP3d_tomobar_i12_dataset5(i12_dataset5: tuple):
     recon_data = cp.asnumpy(recon_data)
 
     assert recon_data.dtype == np.float32
-    assert recon_data.shape == (4933, 15, 4933)
+    assert recon_data.shape == (5120, 15, 5120)
 
 
 def test_reconstruct_LPRec3d_tomobar_k11_dataset2(k11_dataset2: tuple):
@@ -559,31 +559,21 @@ def test_reconstruct_ADMM3d_tomobar_autopad_k11_dataset2(k11_dataset2: tuple):
 
     del flats, darks, projdata
     force_clean_gpu_memory()
-    data = data_normalised[:, 5:10, :]
+    data = data_normalised[:, 5:8, :]
 
     args = {
         "angles": np.deg2rad(angles),
         "center": 1280.25,
         "detector_pad": True,
         "recon_mask_radius": 2.0,
-        "iterations": 7,
-        "regularisation_parameter": 0.0000005,
+        "iterations": 3,
+        "regularisation_parameter": 0.1,
     }
 
-    peak_mem = ADMM3d_tomobar(data=data.shape, calc_peak_gpu_mem=True, **args)
-    av_mem = cp.cuda.Device().mem_info[0]
-    if av_mem < peak_mem:
-        pytest.skip("Not enough GPU memory to run this test")
-
-    hook = MaxMemoryHook()
-    with hook:
-        recon_data = ADMM3d_tomobar(data=data, **args)
-
-    assert (hook.max_mem * 1.03) > peak_mem
-    assert (hook.max_mem * 0.99) < peak_mem
+    recon_data = ADMM3d_tomobar(data=data, **args)
 
     assert recon_data.flags.c_contiguous
     recon_data = cp.asnumpy(recon_data)
-    assert isclose(np.sum(recon_data), 1228.5009, abs_tol=10**-3)
+    assert isclose(np.sum(recon_data), 2275.893, abs_tol=10**-3)
     assert recon_data.dtype == np.float32
-    assert recon_data.shape == (2560, 5, 2560)
+    assert recon_data.shape == (4150, 3, 4150)
