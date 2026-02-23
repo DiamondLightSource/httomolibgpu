@@ -69,10 +69,12 @@ def sino_360_to_180(
     dx, dy, dz = data.shape
 
     overlap = int(np.round(overlap))
-    if overlap >= dz:
-        raise ValueError("Overlap must be less than data.shape[2]")
-    if overlap < 0:
-        raise ValueError("Only positive overlaps are allowed.")
+    if overlap >= dz - 1:
+        raise ValueError("Overlap must be less than size of the horizontal detector")
+    if overlap <= 0:
+        raise ValueError("Only positive non-zero overlaps are allowed.")
+    if overlap % 2 != 0:
+        overlap += 1
 
     if side not in ["left", "right"]:
         raise ValueError(
@@ -100,7 +102,15 @@ def sino_360_to_180(
             + (weights * data[n : 2 * n, :, -overlap:])[:, :, ::-1]
         )
 
-    return out
+    return cp.pad(
+        out,
+        pad_width=(
+            (0, 0),
+            (0, 0),
+            (overlap // 2, overlap // 2),
+        ),
+        mode="edge",
+    )
 
 
 def data_resampler(
