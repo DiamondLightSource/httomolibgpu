@@ -108,6 +108,33 @@ def test_find_center_360_1D_raises(data):
     with pytest.raises(ValueError):
         find_center_360(cp.ones(10))
 
+def test_find_center_360_raises_win_width(data):
+    #  wrong win_width passed
+    with pytest.raises(ValueError):
+        find_center_360(data, win_width = True)
+
+def test_find_center_360_raises_ind(data):
+    #  wrong ind passed
+    with pytest.raises(ValueError):
+        find_center_360(data, ind = 'mid')
+
+@pytest.mark.parametrize(
+    "side",
+    [
+        ("side", 1),
+        ("side", 'lefft'),
+        ("side", 'rightt'),
+    ],
+)
+def test_find_center_360_raises_side(data,side):
+    #  wrong side passed
+    with pytest.raises(ValueError):
+        find_center_360(data, win_width=10, side=side)
+
+def test_find_center_360_raises_denoise(data):
+    #  wrong denoise passed
+    with pytest.raises(ValueError):
+        find_center_360(data, denoise='str')
 
 def test_find_center_360_NaN_infs_raises(data, flats, darks):
     #: find_center_360 raises if the data with NaNs or Infs given

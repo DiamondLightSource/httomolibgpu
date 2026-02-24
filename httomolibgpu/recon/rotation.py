@@ -49,7 +49,7 @@ else:
 import math
 from typing import List, Literal, Optional, Tuple, Union
 
-from httomolibgpu.misc.utils import data_checker
+from httomolibgpu.misc.utils import data_checker, __check_type_consistency
 
 __all__ = [
     "find_center_vo",
@@ -463,6 +463,12 @@ def find_center_360(
     """
     if data.ndim != 3:
         raise ValueError("A 3D array must be provided")
+    __check_type_consistency(win_width, int, 'win_width')
+    __check_type_consistency(denoise, bool, 'denoise')
+    __check_type_consistency(norm, bool, 'norm')
+    __check_type_consistency(use_overlap, bool, 'use_overlap')
+    if side not in ['left','right', None]:
+        raise ValueError("side must be provided as 'left','right' or None for automatic determination")
 
     data = data_checker(
         data,

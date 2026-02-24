@@ -144,3 +144,10 @@ def __naninfs_check(
                 )
             )
     return data
+
+def __check_type_consistency(variable, expected_datatype: type, variable_name:str):
+    """compare variable types and raise error"""
+    if type(variable) != expected_datatype:
+        err_str = (f"{variable_name} given as {variable} must be provided as {expected_datatype.__name__}"
+            )
+        raise ValueError(err_str)
