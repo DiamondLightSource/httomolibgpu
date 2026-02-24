@@ -40,7 +40,6 @@ else:
 from numpy import float32
 from typing import Optional, Type, Union
 
-
 __all__ = [
     "FBP2d_astra",
     "FBP3d_tomobar",
@@ -48,6 +47,7 @@ __all__ = [
     "SIRT3d_tomobar",
     "CGLS3d_tomobar",
     "FISTA3d_tomobar",
+    "ADMM3d_tomobar",
 ]
 
 input_data_axis_labels = ["angles", "detY", "detX"]  # set the labels of the input data
@@ -272,9 +272,7 @@ def SIRT3d_tomobar(
 ) -> cp.ndarray:
     """
     Perform Simultaneous Iterative Recostruction Technique (SIRT) using ASTRA toolbox :cite:`van2016fast` and
-    ToMoBAR :cite:`kazantsev2020tomographic` wrappers.
-    This is 3D recon directly from a CuPy array while using ASTRA GPUlink capability to avoid host-device
-    transactions for projection and backprojection.
+    ToMoBAR :cite:`kazantsev2020tomographic` wrappers. For more information see :ref:`method_SIRT3d_tomobar`.
 
     Parameters
     ----------
@@ -345,9 +343,7 @@ def CGLS3d_tomobar(
 ) -> cp.ndarray:
     """
     Perform Conjugate Gradient Least Squares (CGLS) using ASTRA toolbox :cite:`van2016fast` and
-    ToMoBAR :cite:`kazantsev2020tomographic` wrappers.
-    This is 3D recon directly from a CuPy array while using ASTRA GPUlink capability to avoid host-device
-    transactions for projection and backprojection.
+    ToMoBAR :cite:`kazantsev2020tomographic` wrappers. For more information see :ref:`method_CGLS3d_tomobar`.
 
     Parameters
     ----------
@@ -418,6 +414,7 @@ def FISTA3d_tomobar(
     """
     A Fast Iterative Shrinkage-Thresholding Algorithm :cite:`beck2009fast` with various types of regularisation or
     denoising operations :cite:`kazantsev2019ccpi` (currently accepts ROF_TV and PD_TV regularisations only).
+    For more information see :ref:`method_FISTA3d_tomobar`.
 
     Parameters
     ----------
@@ -485,6 +482,158 @@ def FISTA3d_tomobar(
     }
 
     reconstruction = RecToolsCP.FISTA(_data_, _algorithm_, _regularisation_)
+    cp._default_memory_pool.free_all_blocks()
+    return cp.require(cp.swapaxes(reconstruction, 0, 1), requirements="C")
+
+
+## %%%%%%%%%%%%%%%%%%%%%%% ADMM reconstruction %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+def ADMM3d_tomobar(
+    data: cp.ndarray,
+    angles: np.ndarray,
+    center: Optional[float] = None,
+    detector_pad: Union[bool, int] = False,
+    recon_size: Optional[int] = None,
+    recon_mask_radius: float = 0.95,
+    iterations: int = 3,
+    subsets_number: int = 24,
+    initialisation: Optional[str] = "FBP",
+    ADMM_rho_const: float = 1.0,
+    ADMM_relax_par: float = 1.7,
+    regularisation_type: str = "PD_TV",
+    regularisation_parameter: float = 0.0025,
+    regularisation_iterations: int = 40,
+    regularisation_half_precision: bool = True,
+    nonnegativity: bool = False,
+    gpu_id: int = 0,
+) -> cp.ndarray:
+    """
+    An Alternating Direction Method of Multipliers method with various types of regularisation or
+    denoising operations :cite:`kazantsev2019ccpi` (currently accepts ROF_TV and PD_TV regularisations only).
+    For more information see :ref:`_method_ADMM3d_tomobar`.
+
+    Parameters
+    ----------
+    data : cp.ndarray
+        Projection data as a CuPy array.
+    angles : np.ndarray
+        An array of angles given in radians.
+    center : float, optional
+        The center of rotation (CoR).
+    detector_pad : bool, int
+        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction. Set to True to perform
+        an automated padding or specify a certain value as an integer.
+    recon_size : int, optional
+        The [recon_size, recon_size] shape of the reconstructed slice in pixels.
+        By default (None), the reconstructed size will be the dimension of the horizontal detector.
+    recon_mask_radius: float
+        The radius of the circular mask that applies to the reconstructed slice in order to crop
+        out some undesirable artifacts. The values outside the given diameter will be set to zero.
+        To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.
+    iterations : int
+        The number of ADMM algorithm iterations. The recommended range is between 3 to 5 with initialisation and
+        more than 10 without. Assuming that the subsets_number is reasonably large (>12).
+    subsets_number: int
+        The number of the ordered subsets to accelerate convergence. The recommended range is between 12 to 24.
+    initialisation: str, optional
+        Initialise ADMM with the reconstructed image to reduce the number of iterations and accelerate. Choose between 'CGLS' when data
+        is noisy and undersampled, 'FBP' when data is of better quality (default) or None.
+    ADMM_rho_const: float
+        Convergence related parameter for ADMM, higher values lead to slower convergence, but too small values can destabilise the iterations.
+        Recommended range is between 0.9 and 2.0.
+    ADMM_relax_par: Relaxation parameter which can lead to acceleration of the algorithm, keep it in the range between 1.5 and 1.8 to avoid divergence.     regularisation_type: str
+        A method to use for regularisation. Currently PD_TV and ROF_TV are available.
+    regularisation_parameter: float
+        The main regularisation parameter to control the amount of smoothing/noise removal. Larger values lead to stronger smoothing.
+    regularisation_iterations: int
+        The number of iterations for regularisers (aka INNER iterations).
+    regularisation_half_precision: bool
+        Perform faster regularisation computation in half-precision with a very minimal sacrifice in quality.
+    nonnegativity : bool
+        Impose nonnegativity constraint (set to True) on the reconstructed image. Default False.
+    gpu_id : int
+        A GPU device index to perform operation on.
+
+    Returns
+    -------
+    cp.ndarray
+        The ADMM reconstructed volume as a CuPy array.
+    """
+    if initialisation not in ["FBP", "CGLS", None]:
+        raise ValueError(
+            "The acceptable values for initialisation are 'FBP','CGLS' and None"
+        )
+
+    if initialisation is not None:
+        if detector_pad == True:
+            detector_pad = __estimate_detectorHoriz_padding(data.shape[2])
+
+        if detector_pad > 0:
+            # if detector_pad is not zero we need to reconstruct the image on the recon+2*detector_pad size
+            recon_size = data.shape[2] + 2 * detector_pad
+
+        if initialisation == "FBP":
+            initialisation_vol = cp.require(
+                cp.swapaxes(
+                    FBP3d_tomobar(
+                        data,
+                        angles=angles,
+                        center=center,
+                        detector_pad=detector_pad,
+                        recon_size=recon_size,
+                        recon_mask_radius=recon_mask_radius,
+                    ),
+                    0,
+                    1,
+                ),
+                requirements="C",
+            )
+        elif initialisation == "CGLS":
+            initialisation_vol = cp.require(
+                cp.swapaxes(
+                    CGLS3d_tomobar(
+                        data,
+                        angles=angles,
+                        center=center,
+                        detector_pad=detector_pad,
+                        recon_size=recon_size,
+                        recon_mask_radius=recon_mask_radius,
+                        iterations=15,
+                    ),
+                    0,
+                    1,
+                ),
+                requirements="C",
+            )
+    else:
+        initialisation_vol = None
+
+    RecToolsCP = _instantiate_iterative_recon_class(
+        data, angles, center, detector_pad, recon_size, gpu_id, datafidelity="LS"
+    )
+
+    _data_ = {
+        "projection_norm_data": data,
+        "OS_number": subsets_number,
+        "data_axes_labels_order": input_data_axis_labels,
+    }
+
+    _algorithm_ = {
+        "initialise": initialisation_vol,
+        "iterations": iterations,
+        "nonnegativity": nonnegativity,
+        "recon_mask_radius": recon_mask_radius,
+        "ADMM_rho_const": ADMM_rho_const,
+        "ADMM_relax_par": ADMM_relax_par,
+    }
+
+    _regularisation_ = {
+        "method": regularisation_type,  # Selected regularisation method
+        "regul_param": regularisation_parameter,  # Regularisation parameter
+        "iterations": regularisation_iterations,  # The number of regularisation iterations
+        "half_precision": regularisation_half_precision,  # enabling half-precision calculation
+    }
+
+    reconstruction = RecToolsCP.ADMM(_data_, _algorithm_, _regularisation_)
     cp._default_memory_pool.free_all_blocks()
     return cp.require(cp.swapaxes(reconstruction, 0, 1), requirements="C")
 

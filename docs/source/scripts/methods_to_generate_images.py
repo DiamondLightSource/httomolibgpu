@@ -21,10 +21,8 @@ import sys
 import argparse
 from typing import Union
 import numpy as np
-import cupy
 import cupy as cp
 from PIL import Image
-
 
 # usage : python -m methods_to_generate_images -i /home/algol/Documents/DEV/httomolibgpu/tests/test_data/synthdata_nxtomo1.npz -o /home/algol/Documents/DEV/httomolibgpu/docs/source/_static/auto_images_methods
 
@@ -106,11 +104,13 @@ def run_methods(path_to_data: str, output_folder: str) -> int:
     ## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods_name = "normalisation"
     print("___{}___".format(methods_name))
-    from httomolibgpu.prep.normalize import normalize
+    from httomolibgpu.prep.normalize import dark_flat_field_correction, minus_log
 
-    data_normalized = normalize(
-        cp.asarray(proj_raw), cp.asarray(flats), cp.asarray(darks), minus_log=True
+    data_normalized = dark_flat_field_correction(
+        cp.asarray(proj_raw), cp.asarray(flats), cp.asarray(darks)
     )
+
+    data_normalized = minus_log(data_normalized)
     data_normalized_np = data_normalized.get()
 
     max_scale_data_normalized = np.max(data_normalized_np)
