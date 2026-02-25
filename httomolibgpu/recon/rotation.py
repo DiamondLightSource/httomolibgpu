@@ -49,7 +49,7 @@ else:
 import math
 from typing import List, Literal, Optional, Tuple, Union
 
-from httomolibgpu.misc.utils import data_checker, __check_type_consistency
+from httomolibgpu.misc.utils import data_checker, __check_variable_type, __check_if_data_3D_array, __check_if_data_correct_type
 
 __all__ = [
     "find_center_vo",
@@ -416,7 +416,7 @@ def _downsample(image, dsp_fact0, dsp_fact1):
 
 ##%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # # %%%%%%%%%%%%%%%%%%%%%%%%%find_center_360%%%%%%%%%%%%%%%%%%%%%%%%%
-# --- Center of rotation (COR) estimation method ---#
+# Center of rotation (COR) estimation method for 360 degrees scan #
 def find_center_360(
     data: cp.ndarray,
     ind: Optional[int] = None,
@@ -435,7 +435,7 @@ def find_center_360(
     data : cp.ndarray
         3D tomographic data as a Cupy array.
     ind : int, optional
-        Index of the slice to be used for estimate the CoR and the overlap.
+        Index of the slice to be used for estimate the CoR and the overlap. If 'None' is given, the zero slice will be used.
     win_width : int, optional
         Window width used for finding the overlap area.
     side : {None, left, right}, optional
@@ -461,27 +461,31 @@ def find_center_360(
         Position of the window in the first image giving the best
         correlation metric.
     """
-    if data.ndim != 3:
-        raise ValueError("A 3D array must be provided")
-    __check_type_consistency(win_width, int, 'win_width')
-    __check_type_consistency(denoise, bool, 'denoise')
-    __check_type_consistency(norm, bool, 'norm')
-    __check_type_consistency(use_overlap, bool, 'use_overlap')
-    if side not in ['left','right', None]:
-        raise ValueError("side must be provided as 'left','right' or None for automatic determination")
+    ### Data and parameters checks ###
+    methods_name = 'find_center_360'
+    __check_if_data_3D_array(data, methods_name)
+    __check_if_data_correct_type(data, accepted_type=['float32', 'uint16'], methods_name=methods_name)    
+    if ind is not None:
+        __check_variable_type(ind, int, 'ind', [], methods_name)
+    if side is not None:
+        __check_variable_type(side, str, 'side', ['left','right'], methods_name)
+    __check_variable_type(win_width, int, 'win_width', [], methods_name)
+    __check_variable_type(denoise, bool, 'denoise', [], methods_name)
+    __check_variable_type(norm, bool, 'norm', [], methods_name)
+    __check_variable_type(use_overlap, bool, 'use_overlap', [], methods_name)
+    ###################################
 
-    data = data_checker(
-        data,
-        infsnans_correct=True,
-        zeros_warning=False,
-        data_to_method_name="find_center_360",
-    )
-
-    # this method works with a 360-degree sinogram.
     if ind is None:
         _sino = data[:, 0, :]
     else:
         _sino = data[:, ind, :]
+
+    data = data_checker(
+        _sino,
+        infsnans_correct=True,
+        zeros_warning=False,
+        data_to_method_name=methods_name,
+    )
 
     nrow, ncol = _sino.shape
     nrow_180 = nrow // 2 + 1

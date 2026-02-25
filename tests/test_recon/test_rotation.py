@@ -99,6 +99,11 @@ def test_find_center_360_data(data):
     assert side == "right"
     assert_allclose(overlap_pos, 111.906334, rtol=eps)
 
+def test_find_center_360_data2(data):
+    eps = 1e-5
+    cor, overlap, side, overlap_pos = find_center_360(data, ind=3, win_width = 5, side = 'right', norm=True, denoise=False)
+    assert_allclose(cor, 160, rtol=eps)
+    assert_allclose(overlap, 16.9026184, rtol=eps)
 
 def test_find_center_360_1D_raises(data):
     #: 360-degree sinogram must be a 3d array

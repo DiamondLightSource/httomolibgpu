@@ -83,7 +83,7 @@ def test_median_filter3d(data):
     assert filtered_data.flags.c_contiguous
 
     assert (
-        median_filter(data.astype(cp.float32), kernel_size=5, dif=1.5).get().dtype
+        median_filter(data.astype(cp.float32), kernel_size=5, dif=0.0).get().dtype
         == np.float32
     )
 
