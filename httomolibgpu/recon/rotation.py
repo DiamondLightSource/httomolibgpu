@@ -49,7 +49,12 @@ else:
 import math
 from typing import List, Literal, Optional, Tuple, Union
 
-from httomolibgpu.misc.utils import data_checker, __check_variable_type, __check_if_data_3D_array, __check_if_data_correct_type
+from httomolibgpu.misc.utils import (
+    data_checker,
+    __check_variable_type,
+    __check_if_data_3D_array,
+    __check_if_data_correct_type,
+)
 
 __all__ = [
     "find_center_vo",
@@ -462,17 +467,19 @@ def find_center_360(
         correlation metric.
     """
     ### Data and parameters checks ###
-    methods_name = 'find_center_360'
+    methods_name = "find_center_360"
     __check_if_data_3D_array(data, methods_name)
-    __check_if_data_correct_type(data, accepted_type=['float32', 'uint16'], methods_name=methods_name)    
+    __check_if_data_correct_type(
+        data, accepted_type=["float32", "uint16"], methods_name=methods_name
+    )
     if ind is not None:
-        __check_variable_type(ind, int, 'ind', [], methods_name)
+        __check_variable_type(ind, int, "ind", [], methods_name)
     if side is not None:
-        __check_variable_type(side, str, 'side', ['left','right'], methods_name)
-    __check_variable_type(win_width, int, 'win_width', [], methods_name)
-    __check_variable_type(denoise, bool, 'denoise', [], methods_name)
-    __check_variable_type(norm, bool, 'norm', [], methods_name)
-    __check_variable_type(use_overlap, bool, 'use_overlap', [], methods_name)
+        __check_variable_type(side, str, "side", ["left", "right"], methods_name)
+    __check_variable_type(win_width, int, "win_width", [], methods_name)
+    __check_variable_type(denoise, bool, "denoise", [], methods_name)
+    __check_variable_type(norm, bool, "norm", [], methods_name)
+    __check_variable_type(use_overlap, bool, "use_overlap", [], methods_name)
     ###################################
 
     if ind is None:

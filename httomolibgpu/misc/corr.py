@@ -32,12 +32,18 @@ if cupy_run:
 else:
     load_cuda_module = Mock()
 
-from httomolibgpu.misc.utils import __check_variable_type, __check_if_data_3D_array, __check_if_data_correct_type, __check_if_positive_nonzero
+from httomolibgpu.misc.utils import (
+    __check_variable_type,
+    __check_if_data_3D_array,
+    __check_if_data_correct_type,
+    __check_if_positive_nonzero,
+)
 
 __all__ = [
     "median_filter",
     "remove_outlier",
 ]
+
 
 def median_filter(
     data: cp.ndarray,
@@ -68,13 +74,17 @@ def median_filter(
         If the input array is not three dimensional.
     """
     ### Data and parameters checks ###
-    methods_name = 'median_filter/remove_outlier'
+    methods_name = "median_filter/remove_outlier"
     __check_if_data_3D_array(data, methods_name)
-    __check_if_data_correct_type(data, accepted_type=['float32', 'uint16'], methods_name=methods_name)    
-    __check_variable_type(kernel_size, int, 'kernel_size', [3, 5, 7, 9, 11, 13], methods_name)
-    __check_variable_type(dif, float, 'dif', [], methods_name)
+    __check_if_data_correct_type(
+        data, accepted_type=["float32", "uint16"], methods_name=methods_name
+    )
+    __check_variable_type(
+        kernel_size, int, "kernel_size", [3, 5, 7, 9, 11, 13], methods_name
+    )
+    __check_variable_type(dif, float, "dif", [], methods_name)
     ###################################
-    
+
     dz, dy, dx = data.shape
     input_type = data.dtype
     output = cp.copy(data, order="C")
@@ -127,7 +137,9 @@ def remove_outlier(
         Threshold value (dif) must be positive and nonzero.
     """
     ### Data and parameters checks ###
-    __check_if_positive_nonzero(dif, 'dif', positive=True, nonzero=True, methods_name='remove_outlier')
+    __check_if_positive_nonzero(
+        dif, "dif", positive=True, nonzero=True, methods_name="remove_outlier"
+    )
     ###################################
 
     return median_filter(data, kernel_size, dif)
