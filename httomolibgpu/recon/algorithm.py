@@ -38,7 +38,14 @@ else:
     RecToolsIRCuPy = Mock()
 
 from numpy import float32
-from typing import Optional, Type, Union
+from typing import Optional, Type, Union, Literal
+
+
+from httomolibgpu.misc.utils import (
+    __check_variable_type,
+    __check_if_data_3D_array,
+    __check_if_data_correct_type,
+)
 
 __all__ = [
     "FBP2d_astra",
@@ -63,7 +70,7 @@ def FBP2d_astra(
     filter_parameter: Optional[float] = None,
     filter_d: Optional[float] = None,
     recon_size: Optional[int] = None,
-    recon_mask_radius: float = 0.95,
+    recon_mask_radius: Optional[float] = None,
     gpu_id: int = 0,
 ) -> np.ndarray:
     """
@@ -89,12 +96,11 @@ def FBP2d_astra(
     filter_d: float, optional
         D parameter value for 'shepp-logan', 'cosine', 'hamming' and 'hann' filter types.
     recon_size : int, optional
-        The [recon_size, recon_size] shape of the reconstructed slice in pixels.
-        By default (None), the reconstructed size will be the dimension of the horizontal detector.
-    recon_mask_radius: float
+        The squared size of the reconstructed slice. By default (None), the reconstructed size will be the dimension of the horizontal detector.
+    recon_mask_radius: float, optional
         The radius of the circular mask that applies to the reconstructed slice in order to crop
         out some undesirable artifacts. The values outside the given diameter will be set to zero.
-        To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.
+        To implement the cropping one can use the range [0.7-1.0] or set to None (2.0) when no cropping is needed.
     gpu_id : int
         A GPU device index to perform operation on.
 
@@ -103,6 +109,32 @@ def FBP2d_astra(
     np.ndarray
         The FBP reconstructed volume as a numpy array.
     """
+    ### Data and parameters checks ###
+    methods_name = "FBP2d_astra"
+    __common_data_parameters_check(
+        data,
+        angles,
+        methods_name,
+        center,
+        detector_pad,
+        recon_size,
+        recon_mask_radius,
+        gpu_id,
+    )
+    __check_variable_type(
+        filter_type,
+        [str],
+        "filter_type",
+        ["none", "shepp-logan", "tukey", "gaussian", "blackman", "kaiser"],
+        methods_name,
+    )
+    __check_variable_type(
+        filter_parameter, [float, int, type(None)], "filter_parameter", [], methods_name
+    )
+    __check_variable_type(
+        filter_d, [float, int, type(None)], "filter_d", [], methods_name
+    )
+    ###################################
 
     data_shape = np.shape(data)
     if recon_size is None:
@@ -161,12 +193,11 @@ def FBP3d_tomobar(
     filter_freq_cutoff : float
         Cutoff frequency parameter for the SINC filter, the lower values may produce better contrast but noisy reconstruction. The filter change will also affect the dynamic range of the reconstructed image.
     recon_size : int, optional
-        The [recon_size, recon_size] shape of the reconstructed slice in pixels.
-        By default (None), the reconstructed size will be the dimension of the horizontal detector.
+        The squared size of the reconstructed slice. By default (None), the reconstructed size will be the dimension of the horizontal detector.
     recon_mask_radius: float, optional
         The radius of the circular mask that applies to the reconstructed slice in order to crop
         out some undesirable artifacts. The values outside the given diameter will be set to zero.
-        To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.
+        To implement the cropping one can use the range [0.7-1.0] or set to None (2.0) when no cropping is needed.
     gpu_id : int
         A GPU device index to perform operation on.
 
@@ -175,6 +206,22 @@ def FBP3d_tomobar(
     cp.ndarray
         FBP reconstructed volume as a CuPy array.
     """
+    ### Data and parameters checks ###
+    methods_name = "FBP3d_tomobar"
+    __common_data_parameters_check(
+        data,
+        angles,
+        methods_name,
+        center,
+        detector_pad,
+        recon_size,
+        recon_mask_radius,
+        gpu_id,
+    )
+    __check_variable_type(
+        filter_freq_cutoff, [float, int], "filter_freq_cutoff", [], methods_name
+    )
+    ###################################
 
     RecToolsCP = _instantiate_direct_recon_class(
         data, angles, center, detector_pad, recon_size, gpu_id
@@ -199,11 +246,11 @@ def LPRec3d_tomobar(
     filter_type: str = "shepp",
     filter_freq_cutoff: float = 1.0,
     recon_size: Optional[int] = None,
-    recon_mask_radius: float = 0.95,
-    power_of_2_oversampling: Optional[bool] = True,
-    power_of_2_cropping: Optional[bool] = False,
-    min_mem_usage_filter: Optional[bool] = True,
-    min_mem_usage_ifft2: Optional[bool] = True,
+    recon_mask_radius: Optional[float] = 0.95,
+    power_of_2_oversampling: bool = True,
+    power_of_2_cropping: bool = False,
+    min_mem_usage_filter: bool = True,
+    min_mem_usage_ifft2: bool = True,
 ) -> cp.ndarray:
     """
     Fourier direct inversion in 3D on unequally spaced (also called as Log-Polar) grids using
@@ -226,18 +273,40 @@ def LPRec3d_tomobar(
     filter_freq_cutoff : float
         Cutoff frequency parameter for a filter.
     recon_size : int, optional
-        The [recon_size, recon_size] shape of the reconstructed slice in pixels.
-        By default (None), the reconstructed size will be the dimension of the horizontal detector.
-    recon_mask_radius: float
+        The squared size of the reconstructed slice. By default (None), the reconstructed size will be the dimension of the horizontal detector.
+    recon_mask_radius: float, optional
         The radius of the circular mask that applies to the reconstructed slice in order to crop
         out some undesirable artifacts. The values outside the given diameter will be set to zero.
-        To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.
+        To implement the cropping one can use the range [0.7-1.0] or set to None (2.0) when no cropping is needed.
 
     Returns
     -------
     cp.ndarray
         The Log-polar Fourier reconstructed volume as a CuPy array.
     """
+    ### Data and parameters checks ###
+    methods_name = "LPRec3d_tomobar"
+    __common_data_parameters_check(
+        data,
+        angles,
+        methods_name,
+        center,
+        detector_pad,
+        recon_size,
+        recon_mask_radius,
+        gpu_id=0,
+    )
+    __check_variable_type(
+        filter_type,
+        [str],
+        "filter_type",
+        ["none", "ramp", "shepp", "cosine", "cosine2", "hamming", "hann", "parzen"],
+        methods_name,
+    )
+    __check_variable_type(
+        filter_freq_cutoff, [float, int], "filter_freq_cutoff", [], methods_name
+    )
+    ###################################
 
     RecToolsCP = _instantiate_direct_recon_class(
         data, angles, center, detector_pad, recon_size, 0
@@ -265,7 +334,7 @@ def SIRT3d_tomobar(
     center: Optional[float] = None,
     detector_pad: Union[bool, int] = False,
     recon_size: Optional[int] = None,
-    recon_mask_radius: float = 0.95,
+    recon_mask_radius: Optional[float] = 0.95,
     iterations: int = 300,
     nonnegativity: bool = True,
     gpu_id: int = 0,
@@ -288,10 +357,10 @@ def SIRT3d_tomobar(
     recon_size : int, optional
         The [recon_size, recon_size] shape of the reconstructed slice in pixels.
         By default (None), the reconstructed size will be the dimension of the horizontal detector.
-    recon_mask_radius: float
+    recon_mask_radius: float, optional
         The radius of the circular mask that applies to the reconstructed slice in order to crop
         out some undesirable artifacts. The values outside the given diameter will be set to zero.
-        To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.
+        To implement the cropping one can use the range [0.7-1.0] or set to None (2.0) when no cropping is needed.
     iterations : int
         The number of SIRT iterations.
     nonnegativity : bool
@@ -304,6 +373,20 @@ def SIRT3d_tomobar(
     cp.ndarray
         The SIRT reconstructed volume as a CuPy array.
     """
+    ### Data and parameters checks ###
+    methods_name = "SIRT3d_tomobar"
+    __common_data_parameters_check(
+        data,
+        angles,
+        methods_name,
+        center,
+        detector_pad,
+        recon_size,
+        recon_mask_radius,
+        gpu_id,
+    )
+    __common_iterative_basic_parameters_check(methods_name, iterations, nonnegativity)
+    ###################################
 
     RecToolsCP = _instantiate_iterative_recon_class(
         data,
@@ -336,7 +419,7 @@ def CGLS3d_tomobar(
     center: Optional[float] = None,
     detector_pad: Union[bool, int] = False,
     recon_size: Optional[int] = None,
-    recon_mask_radius: float = 0.95,
+    recon_mask_radius: Optional[float] = 0.95,
     iterations: int = 20,
     nonnegativity: bool = True,
     gpu_id: int = 0,
@@ -357,12 +440,11 @@ def CGLS3d_tomobar(
         Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction. Set to True to perform
         an automated padding or specify a certain value as an integer.
     recon_size : int, optional
-        The [recon_size, recon_size] shape of the reconstructed slice in pixels.
-        By default (None), the reconstructed size will be the dimension of the horizontal detector.
-    recon_mask_radius: float
+        The squared size of the reconstructed slice. By default (None), the reconstructed size will be the dimension of the horizontal detector.
+    recon_mask_radius: float, optional
         The radius of the circular mask that applies to the reconstructed slice in order to crop
         out some undesirable artifacts. The values outside the given diameter will be set to zero.
-        To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.
+        To implement the cropping one can use the range [0.7-1.0] or set to None (2.0) when no cropping is needed.
     iterations : int
         The number of CGLS iterations.
     nonnegativity : bool
@@ -375,6 +457,20 @@ def CGLS3d_tomobar(
     cp.ndarray
         The CGLS reconstructed volume as a CuPy array.
     """
+    ### Data and parameters checks ###
+    methods_name = "CGLS3d_tomobar"
+    __common_data_parameters_check(
+        data,
+        angles,
+        methods_name,
+        center,
+        detector_pad,
+        recon_size,
+        recon_mask_radius,
+        gpu_id,
+    )
+    __common_iterative_basic_parameters_check(methods_name, iterations, nonnegativity)
+    ###################################
 
     RecToolsCP = _instantiate_iterative_recon_class(
         data, angles, center, detector_pad, recon_size, gpu_id, datafidelity="LS"
@@ -401,10 +497,10 @@ def FISTA3d_tomobar(
     center: Optional[float] = None,
     detector_pad: Union[bool, int] = False,
     recon_size: Optional[int] = None,
-    recon_mask_radius: float = 0.95,
+    recon_mask_radius: Optional[float] = 0.95,
     iterations: int = 20,
     subsets_number: int = 6,
-    regularisation_type: str = "PD_TV",
+    regularisation_type: Literal["ROF_TV", "PD_TV"] = "PD_TV",
     regularisation_parameter: float = 0.000001,
     regularisation_iterations: int = 50,
     regularisation_half_precision: bool = True,
@@ -428,12 +524,11 @@ def FISTA3d_tomobar(
         Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction. Set to True to perform
         an automated padding or specify a certain value as an integer.
     recon_size : int, optional
-        The [recon_size, recon_size] shape of the reconstructed slice in pixels.
-        By default (None), the reconstructed size will be the dimension of the horizontal detector.
-    recon_mask_radius: float
+        The squared size of the reconstructed slice. By default (None), the reconstructed size will be the dimension of the horizontal detector.
+    recon_mask_radius: float, optional
         The radius of the circular mask that applies to the reconstructed slice in order to crop
         out some undesirable artifacts. The values outside the given diameter will be set to zero.
-        To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.
+        To implement the cropping one can use the range [0.7-1.0] or set to None (2.0) when no cropping is needed.
     iterations : int
         The number of FISTA algorithm iterations.
     subsets_number: int
@@ -456,6 +551,29 @@ def FISTA3d_tomobar(
     cp.ndarray
         The FISTA reconstructed volume as a CuPy array.
     """
+    ### Data and parameters checks ###
+    methods_name = "FISTA3d_tomobar"
+    __common_data_parameters_check(
+        data,
+        angles,
+        methods_name,
+        center,
+        detector_pad,
+        recon_size,
+        recon_mask_radius,
+        gpu_id,
+    )
+    __common_iterative_basic_parameters_check(methods_name, iterations, nonnegativity)
+    __common_iterative_parameters_check(
+        methods_name,
+        subsets_number,
+        regularisation_type,
+        regularisation_parameter,
+        regularisation_iterations,
+        regularisation_half_precision,
+    )
+    ###################################
+
     RecToolsCP = _instantiate_iterative_recon_class(
         data, angles, center, detector_pad, recon_size, gpu_id, datafidelity="LS"
     )
@@ -493,10 +611,10 @@ def ADMM3d_tomobar(
     center: Optional[float] = None,
     detector_pad: Union[bool, int] = False,
     recon_size: Optional[int] = None,
-    recon_mask_radius: float = 0.95,
+    recon_mask_radius: Optional[float] = 0.95,
     iterations: int = 3,
     subsets_number: int = 24,
-    initialisation: Optional[str] = "FBP",
+    initialisation: Literal["FBP", "CGLS", None] = "FBP",
     ADMM_rho_const: float = 1.0,
     ADMM_relax_par: float = 1.7,
     regularisation_type: str = "PD_TV",
@@ -523,12 +641,11 @@ def ADMM3d_tomobar(
         Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction. Set to True to perform
         an automated padding or specify a certain value as an integer.
     recon_size : int, optional
-        The [recon_size, recon_size] shape of the reconstructed slice in pixels.
-        By default (None), the reconstructed size will be the dimension of the horizontal detector.
-    recon_mask_radius: float
+        The squared size of the reconstructed slice. By default (None), the reconstructed size will be the dimension of the horizontal detector.
+    recon_mask_radius: float, optional
         The radius of the circular mask that applies to the reconstructed slice in order to crop
         out some undesirable artifacts. The values outside the given diameter will be set to zero.
-        To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.
+        To implement the cropping one can use the range [0.7-1.0] or set to None (2.0) when no cropping is needed.
     iterations : int
         The number of ADMM algorithm iterations. The recommended range is between 3 to 5 with initialisation and
         more than 10 without. Assuming that the subsets_number is reasonably large (>12).
@@ -558,10 +675,37 @@ def ADMM3d_tomobar(
     cp.ndarray
         The ADMM reconstructed volume as a CuPy array.
     """
-    if initialisation not in ["FBP", "CGLS", None]:
-        raise ValueError(
-            "The acceptable values for initialisation are 'FBP','CGLS' and None"
-        )
+    ### Data and parameters checks ###
+    methods_name = "ADMM3d_tomobar"
+    __common_data_parameters_check(
+        data,
+        angles,
+        methods_name,
+        center,
+        detector_pad,
+        recon_size,
+        recon_mask_radius,
+        gpu_id,
+    )
+    __common_iterative_basic_parameters_check(methods_name, iterations, nonnegativity)
+    __common_iterative_parameters_check(
+        methods_name,
+        subsets_number,
+        regularisation_type,
+        regularisation_parameter,
+        regularisation_iterations,
+        regularisation_half_precision,
+    )
+    ###################################
+    __check_variable_type(
+        initialisation,
+        [str, type(None)],
+        "initialisation",
+        ["FBP", "CGLS"],
+        methods_name,
+    )
+    __check_variable_type(ADMM_rho_const, [float], "ADMM_rho_const", [], methods_name)
+    __check_variable_type(ADMM_relax_par, [float], "ADMM_relax_par", [], methods_name)
 
     if initialisation is not None:
         if detector_pad == True:
@@ -777,3 +921,75 @@ def __estimate_detectorHoriz_padding(detX_size) -> int:
     padded_value_exact = int(np.sqrt(2 * (det_half**2))) - det_half
     padded_add_margin = padded_value_exact // 2
     return padded_value_exact + padded_add_margin
+
+
+def __common_data_parameters_check(
+    data,
+    angles,
+    methods_name,
+    center,
+    detector_pad,
+    recon_size,
+    recon_mask_radius,
+    gpu_id,
+):
+    ### Data and parameters checks ###
+    __check_if_data_3D_array(data, methods_name)
+    __check_if_data_correct_type(
+        data, accepted_type=["float32", "uint16"], methods_name=methods_name
+    )
+    if len(angles) != data.shape[0]:
+        err_str = f"The angles length {len(angles)} is not equal to the input data angles dimension {data.shape[0]} for method '{methods_name}'."
+        raise ValueError(err_str)
+    __check_variable_type(center, [float, int, type(None)], "center", [], methods_name)
+    __check_variable_type(detector_pad, [bool, int], "detector_pad", [], methods_name)
+    __check_variable_type(recon_size, [int, type(None)], "recon_size", [], methods_name)
+    __check_variable_type(
+        recon_mask_radius,
+        [float, int, type(None)],
+        "recon_mask_radius",
+        [],
+        methods_name,
+    )
+    __check_variable_type(gpu_id, [int], "gpu_id", [], methods_name)
+    ###################################
+
+
+def __common_iterative_basic_parameters_check(methods_name, iterations, nonnegativity):
+    __check_variable_type(iterations, [int], "iterations", [], methods_name)
+    __check_variable_type(nonnegativity, [bool], "nonnegativity", [], methods_name)
+
+
+def __common_iterative_parameters_check(
+    methods_name,
+    subsets_number,
+    regularisation_type,
+    regularisation_parameter,
+    regularisation_iterations,
+    regularisation_half_precision,
+):
+    __check_variable_type(subsets_number, [int], "subsets_number", [], methods_name)
+    __check_variable_type(
+        regularisation_type,
+        [str],
+        "regularisation_type",
+        ["ROF_TV", "PD_TV"],
+        methods_name,
+    )
+    __check_variable_type(
+        regularisation_parameter,
+        [float, int],
+        "regularisation_parameter",
+        [],
+        methods_name,
+    )
+    __check_variable_type(
+        regularisation_iterations, [int], "regularisation_iterations", [], methods_name
+    )
+    __check_variable_type(
+        regularisation_half_precision,
+        [bool],
+        "regularisation_half_precision",
+        [],
+        methods_name,
+    )

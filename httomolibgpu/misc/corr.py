@@ -31,6 +31,7 @@ if cupy_run:
     from httomolibgpu.cuda_kernels import load_cuda_module
 else:
     load_cuda_module = Mock()
+from typing import Union
 
 from httomolibgpu.misc.utils import (
     __check_variable_type,
@@ -48,7 +49,7 @@ __all__ = [
 def median_filter(
     data: cp.ndarray,
     kernel_size: int = 3,
-    dif: float = 0.0,
+    dif: Union[float, int] = 0.0,
 ) -> cp.ndarray:
     """
     Applies 3D median filter to a 3D CuPy array. For more detailed information, see :ref:`method_median_filter`.
@@ -57,9 +58,9 @@ def median_filter(
     ----------
     data : cp.ndarray
         Input CuPy 3D array either float32 or uint16 data type.
-    kernel_size : int, optional
+    kernel_size : int
         The size of the filter's kernel (a "diameter").
-    dif : float, optional
+    dif : float, int
         Expected difference value between outlier value and the
         median value of the array, leave equal to 0 for classical median.
 
@@ -80,9 +81,9 @@ def median_filter(
         data, accepted_type=["float32", "uint16"], methods_name=methods_name
     )
     __check_variable_type(
-        kernel_size, int, "kernel_size", [3, 5, 7, 9, 11, 13], methods_name
+        kernel_size, [int], "kernel_size", [3, 5, 7, 9, 11, 13], methods_name
     )
-    __check_variable_type(dif, float, "dif", [], methods_name)
+    __check_variable_type(dif, [int, float], "dif", [], methods_name)
     ###################################
 
     dz, dy, dx = data.shape
@@ -111,7 +112,7 @@ def median_filter(
 
 
 def remove_outlier(
-    data: cp.ndarray, kernel_size: int = 3, dif: float = 1000
+    data: cp.ndarray, kernel_size: int = 3, dif: Union[float, int] = 1000
 ) -> cp.ndarray:
     """Selectively applies 3D median filter to a 3D CuPy array to remove outliers. Also called a dezinger.
     For more detailed information, see :ref:`method_outlier_removal`.
@@ -120,9 +121,9 @@ def remove_outlier(
     ----------
     data : cp.ndarray
         Input CuPy 3D array either float32 or uint16 data type.
-    kernel_size : int, optional
+    kernel_size : int
         The size of the filter's kernel (a "diameter").
-    dif : float, optional
+    dif : float, int
         Expected difference value between the outlier value (central voxel) and the
         median value of the neighbourhood. Lower values lead to median filtering.
 
@@ -141,5 +142,4 @@ def remove_outlier(
         dif, "dif", positive=True, nonzero=True, methods_name="remove_outlier"
     )
     ###################################
-
     return median_filter(data, kernel_size, dif)

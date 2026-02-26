@@ -110,6 +110,28 @@ def find_center_vo(
     float32
         Rotation axis location with a subpixel precision.
     """
+    ### Data and parameters checks ###
+    methods_name = "find_center_vo"
+    __check_if_data_correct_type(
+        data, accepted_type=["float32", "uint16"], methods_name=methods_name
+    )
+    __check_variable_type(ind, [int, type(None)], "ind", [], methods_name)
+    __check_variable_type(average_radius, [int], "average_radius", [], methods_name)
+    __check_variable_type(
+        cor_initialisation_value,
+        [float, int, type(None)],
+        "cor_initialisation_value",
+        [],
+        methods_name,
+    )
+    __check_variable_type(smin, [int], "smin", [], methods_name)
+    __check_variable_type(smax, [int], "smax", [], methods_name)
+    __check_variable_type(srad, [int, float], "srad", [], methods_name)
+    __check_variable_type(step, [int, float], "step", [], methods_name)
+    __check_variable_type(ratio, [int, float], "ratio", [], methods_name)
+    __check_variable_type(drop, [int], "drop", [], methods_name)
+    ###################################
+
     # if 2d sinogram is given it is extended into a 3D array along the vertical dimension
     if data.ndim == 2:
         data = cp.expand_dims(data, 1)
@@ -444,8 +466,7 @@ def find_center_360(
     win_width : int, optional
         Window width used for finding the overlap area.
     side : {None, left, right}, optional
-        Chose between "left", "right" or "None" which corresponds to fully
-        automated determination of the side.
+        Chose between "left", "right" and "None" corresponds to fully automated determination of the side.
     denoise : bool, optional
         Apply the Gaussian filter if True.
     norm : bool, optional
@@ -472,14 +493,14 @@ def find_center_360(
     __check_if_data_correct_type(
         data, accepted_type=["float32", "uint16"], methods_name=methods_name
     )
-    if ind is not None:
-        __check_variable_type(ind, int, "ind", [], methods_name)
-    if side is not None:
-        __check_variable_type(side, str, "side", ["left", "right"], methods_name)
-    __check_variable_type(win_width, int, "win_width", [], methods_name)
-    __check_variable_type(denoise, bool, "denoise", [], methods_name)
-    __check_variable_type(norm, bool, "norm", [], methods_name)
-    __check_variable_type(use_overlap, bool, "use_overlap", [], methods_name)
+    __check_variable_type(ind, [int, type(None)], "ind", [], methods_name)
+    __check_variable_type(
+        side, [str, type(None)], "side", ["left", "right"], methods_name
+    )
+    __check_variable_type(win_width, [int], "win_width", [], methods_name)
+    __check_variable_type(denoise, [bool], "denoise", [], methods_name)
+    __check_variable_type(norm, [bool], "norm", [], methods_name)
+    __check_variable_type(use_overlap, [bool], "use_overlap", [], methods_name)
     ###################################
 
     if ind is None:
@@ -798,6 +819,20 @@ def find_center_pc(
     np.float32
         Rotation axis location.
     """
+    ### Data and parameters checks ###
+    methods_name = "find_center_pc"
+    __check_if_data_correct_type(
+        proj1, accepted_type=["float32", "uint16"], methods_name=methods_name
+    )
+    __check_if_data_correct_type(
+        proj2, accepted_type=["float32", "uint16"], methods_name=methods_name
+    )
+    __check_variable_type(tol, [int, float], "tol", [], methods_name)
+    __check_variable_type(
+        rotc_guess, [int, float, type(None)], "rotc_guess", [], methods_name
+    )
+    ###################################
+    #
     proj1 = data_checker(
         proj1,
         infsnans_correct=True,
