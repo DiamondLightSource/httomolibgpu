@@ -20,6 +20,7 @@
 # ---------------------------------------------------------------------------
 """Various utilities for data inspection and correction"""
 
+import numpy as np
 from httomolibgpu import cupywrapper
 from typing import Optional
 
@@ -153,14 +154,21 @@ def __check_variable_type(
     literals: list,
     methods_name: str,
 ):
+    datatype_int_extended = [np.int8, np.int16, np.int32, np.int64]
+    datatype_float_extended = [np.float16, np.float32, np.float64]
+    if int in expected_datatype:
+        expected_datatype.extend(datatype_int_extended)
+    if float in expected_datatype:
+        expected_datatype.extend(datatype_float_extended)
+
     if type(variable) not in expected_datatype:
         # compare variable types and raise error
-        err_str = f"Variable '{variable_name}' of '{methods_name}' method given as {variable} must have a type {expected_datatype}."
+        err_str = f"Variable '{variable_name}' of '{methods_name}' method given as '{variable}' (type '{type(variable)}') must have a type {expected_datatype}."
         raise ValueError(err_str)
     if literals and variable is not None:
         # check if variable should be a literal
         if variable not in literals:
-            err_str = f"Variable '{variable_name}' of '{methods_name}' method given as {variable} must be provided as {literals}."
+            err_str = f"Variable '{variable_name}' of '{methods_name}' method given as '{variable}' must be provided as {literals}."
             raise ValueError(err_str)
 
 
