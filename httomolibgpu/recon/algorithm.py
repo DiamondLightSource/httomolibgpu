@@ -125,7 +125,7 @@ def FBP2d_astra(
         filter_type,
         [str],
         "filter_type",
-        ["none", "shepp-logan", "tukey", "gaussian", "blackman", "kaiser"],
+        ["none", "ram-lak", "shepp-logan", "tukey", "gaussian", "blackman", "kaiser"],
         methods_name,
     )
     __check_variable_type(
