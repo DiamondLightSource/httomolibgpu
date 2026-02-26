@@ -70,7 +70,7 @@ def FBP2d_astra(
     filter_parameter: Optional[float] = None,
     filter_d: Optional[float] = None,
     recon_size: Optional[int] = None,
-    recon_mask_radius: Optional[float] = None,
+    recon_mask_radius: Optional[float] = 0.95,
     gpu_id: int = 0,
 ) -> np.ndarray:
     """
