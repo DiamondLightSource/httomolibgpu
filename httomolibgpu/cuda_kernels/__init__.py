@@ -25,5 +25,5 @@ def load_cuda_module(
         code += f.read()
 
     return cp.RawModule(
-        options=("-std=c++11", *options), code=code, name_expressions=name_expressions
+        options=("-std=c++17", *options), code=code, name_expressions=name_expressions
     )

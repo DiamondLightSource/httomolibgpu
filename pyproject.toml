@@ -34,12 +34,12 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Environment :: GPU :: NVIDIA CUDA"
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dynamic = ["version"]
 dependencies = [
-    "cupy==12.3.0",
+    "cupy==14.0.*",
     "nvtx",
-    "numpy",
+    "numpy==2.3.*",
     "scipy",
     "pillow",
     "scikit-image",
