@@ -49,7 +49,12 @@ else:
 import math
 from typing import List, Literal, Optional, Tuple, Union
 
-from httomolibgpu.misc.utils import data_checker
+from httomolibgpu.misc.utils import (
+    data_checker,
+    __check_variable_type,
+    __check_if_data_3D_array,
+    __check_if_data_correct_type,
+)
 
 __all__ = [
     "find_center_vo",
@@ -105,6 +110,28 @@ def find_center_vo(
     float32
         Rotation axis location with a subpixel precision.
     """
+    ### Data and parameters checks ###
+    methods_name = "find_center_vo"
+    __check_if_data_correct_type(
+        data, accepted_type=["float32", "uint16"], methods_name=methods_name
+    )
+    __check_variable_type(ind, [int, type(None)], "ind", [], methods_name)
+    __check_variable_type(average_radius, [int], "average_radius", [], methods_name)
+    __check_variable_type(
+        cor_initialisation_value,
+        [float, int, type(None)],
+        "cor_initialisation_value",
+        [],
+        methods_name,
+    )
+    __check_variable_type(smin, [int], "smin", [], methods_name)
+    __check_variable_type(smax, [int], "smax", [], methods_name)
+    __check_variable_type(srad, [int, float], "srad", [], methods_name)
+    __check_variable_type(step, [int, float], "step", [], methods_name)
+    __check_variable_type(ratio, [int, float], "ratio", [], methods_name)
+    __check_variable_type(drop, [int], "drop", [], methods_name)
+    ###################################
+
     # if 2d sinogram is given it is extended into a 3D array along the vertical dimension
     if data.ndim == 2:
         data = cp.expand_dims(data, 1)
@@ -416,7 +443,7 @@ def _downsample(image, dsp_fact0, dsp_fact1):
 
 ##%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # # %%%%%%%%%%%%%%%%%%%%%%%%%find_center_360%%%%%%%%%%%%%%%%%%%%%%%%%
-# --- Center of rotation (COR) estimation method ---#
+# Center of rotation (COR) estimation method for 360 degrees scan #
 def find_center_360(
     data: cp.ndarray,
     ind: Optional[int] = None,
@@ -435,12 +462,11 @@ def find_center_360(
     data : cp.ndarray
         3D tomographic data as a Cupy array.
     ind : int, optional
-        Index of the slice to be used for estimate the CoR and the overlap.
+        Index of the slice to be used for estimate the CoR and the overlap. If 'None' is given, the zero slice will be used.
     win_width : int, optional
         Window width used for finding the overlap area.
     side : {None, left, right}, optional
-        Chose between "left", "right" or "None" which corresponds to fully
-        automated determination of the side.
+        Chose between "left", "right" and "None" corresponds to fully automated determination of the side.
     denoise : bool, optional
         Apply the Gaussian filter if True.
     norm : bool, optional
@@ -461,21 +487,33 @@ def find_center_360(
         Position of the window in the first image giving the best
         correlation metric.
     """
-    if data.ndim != 3:
-        raise ValueError("A 3D array must be provided")
-
-    data = data_checker(
-        data,
-        infsnans_correct=True,
-        zeros_warning=False,
-        data_to_method_name="find_center_360",
+    ### Data and parameters checks ###
+    methods_name = "find_center_360"
+    __check_if_data_3D_array(data, methods_name)
+    __check_if_data_correct_type(
+        data, accepted_type=["float32", "uint16"], methods_name=methods_name
     )
+    __check_variable_type(ind, [int, type(None)], "ind", [], methods_name)
+    __check_variable_type(
+        side, [str, type(None)], "side", ["left", "right"], methods_name
+    )
+    __check_variable_type(win_width, [int], "win_width", [], methods_name)
+    __check_variable_type(denoise, [bool], "denoise", [], methods_name)
+    __check_variable_type(norm, [bool], "norm", [], methods_name)
+    __check_variable_type(use_overlap, [bool], "use_overlap", [], methods_name)
+    ###################################
 
-    # this method works with a 360-degree sinogram.
     if ind is None:
         _sino = data[:, 0, :]
     else:
         _sino = data[:, ind, :]
+
+    data = data_checker(
+        _sino,
+        infsnans_correct=True,
+        zeros_warning=False,
+        data_to_method_name=methods_name,
+    )
 
     nrow, ncol = _sino.shape
     nrow_180 = nrow // 2 + 1
@@ -781,6 +819,20 @@ def find_center_pc(
     np.float32
         Rotation axis location.
     """
+    ### Data and parameters checks ###
+    methods_name = "find_center_pc"
+    __check_if_data_correct_type(
+        proj1, accepted_type=["float32", "uint16"], methods_name=methods_name
+    )
+    __check_if_data_correct_type(
+        proj2, accepted_type=["float32", "uint16"], methods_name=methods_name
+    )
+    __check_variable_type(tol, [int, float], "tol", [], methods_name)
+    __check_variable_type(
+        rotc_guess, [int, float, type(None)], "rotc_guess", [], methods_name
+    )
+    ###################################
+    #
     proj1 = data_checker(
         proj1,
         infsnans_correct=True,

@@ -20,8 +20,6 @@
 # ---------------------------------------------------------------------------
 """Module for data denoising. For more detailed information see :ref:`data_denoising_module`."""
 
-import numpy as np
-
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
@@ -35,6 +33,13 @@ else:
     ROF_TV = Mock()
     PD_TV = Mock()
 
+from typing import Union
+
+from httomolibgpu.misc.utils import (
+    __check_variable_type,
+    __check_if_data_3D_array,
+    __check_if_data_correct_type,
+)
 
 __all__ = [
     "total_variation_ROF",
@@ -44,7 +49,7 @@ __all__ = [
 
 def total_variation_ROF(
     data: cp.ndarray,
-    regularisation_parameter: float = 1e-05,
+    regularisation_parameter: Union[float, int] = 1e-05,
     iterations: int = 3000,
     time_marching_parameter: float = 0.001,
     gpu_id: int = 0,
@@ -54,7 +59,6 @@ def total_variation_ROF(
     Total Variation using Rudin-Osher-Fatemi (ROF) :cite:`rudin1992nonlinear` explicit iteration scheme to perform edge-preserving image denoising.
     This is a gradient-based algorithm for a smoothed TV term which requires a small time marching parameter and a significant number of iterations.
     See more in :ref:`method_total_variation_ROF`.
-
 
     Parameters
     ----------
@@ -81,6 +85,26 @@ def total_variation_ROF(
     ValueError
         If the input array is not float32 data type.
     """
+    ### Data and parameters checks ###
+    methods_name = "total_variation_ROF"
+    __check_if_data_3D_array(data, methods_name)
+    __check_if_data_correct_type(
+        data, accepted_type=["float32"], methods_name=methods_name
+    )
+    __check_variable_type(
+        regularisation_parameter,
+        [float, int],
+        "regularisation_parameter",
+        [],
+        methods_name,
+    )
+    __check_variable_type(iterations, [int], "iterations", [], methods_name)
+    __check_variable_type(
+        time_marching_parameter, [float], "time_marching_parameter", [], methods_name
+    )
+    __check_variable_type(gpu_id, [int], "gpu_id", [], methods_name)
+    __check_variable_type(half_precision, [bool], "half_precision", [], methods_name)
+    ###################################
 
     return ROF_TV_cupy(
         data,
@@ -94,11 +118,11 @@ def total_variation_ROF(
 
 def total_variation_PD(
     data: cp.ndarray,
-    regularisation_parameter: float = 1e-05,
+    regularisation_parameter: Union[float, int] = 1e-05,
     iterations: int = 1000,
     isotropic: bool = True,
     nonnegativity: bool = False,
-    lipschitz_const: float = 8.0,
+    lipschitz_const: Union[float, int] = 8.0,
     gpu_id: int = 0,
     half_precision: bool = False,
 ) -> cp.ndarray:
@@ -109,7 +133,7 @@ def total_variation_PD(
     ----------
     data : cp.ndarray
         Input CuPy 3D array of float32 data type.
-    regularisation_parameter : float
+    regularisation_parameter : float, int
         Regularisation parameter to control the level of smoothing. Defaults to 1e-05.
     iterations : int
         The number of iterations. Defaults to 1000.
@@ -117,7 +141,7 @@ def total_variation_PD(
         Choose between isotropic or anisotropic TV norm. Defaults to isotropic.
     nonnegativity  : bool
         Enable non-negativity in iterations. Defaults to False.
-    lipschitz_const : float
+    lipschitz_const : float,int
         Lipschitz constant to control convergence. Defaults to 8.
     gpu_id : int
         GPU device index to perform processing on. Defaults to 0.
@@ -134,6 +158,27 @@ def total_variation_PD(
     ValueError
         If the input array is not float32 data type.
     """
+
+    ### Data and parameters checks ###
+    methods_name = "total_variation_PD"
+    __check_if_data_3D_array(data, methods_name)
+    __check_if_data_correct_type(
+        data, accepted_type=["float32"], methods_name=methods_name
+    )
+    __check_variable_type(
+        regularisation_parameter,
+        [float, int],
+        "regularisation_parameter",
+        [],
+        methods_name,
+    )
+    __check_variable_type(iterations, [int], "iterations", [], methods_name)
+    __check_variable_type(isotropic, [bool], "isotropic", [], methods_name)
+    __check_variable_type(nonnegativity, [bool], "nonnegativity", [], methods_name)
+    __check_variable_type(lipschitz_const, [float], "lipschitz_const", [], methods_name)
+    __check_variable_type(gpu_id, [int], "gpu_id", [], methods_name)
+    __check_variable_type(half_precision, [bool], "half_precision", [], methods_name)
+    ###################################
 
     methodTV = 0
     if not isotropic:

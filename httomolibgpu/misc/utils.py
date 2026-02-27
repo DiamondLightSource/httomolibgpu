@@ -20,6 +20,7 @@
 # ---------------------------------------------------------------------------
 """Various utilities for data inspection and correction"""
 
+import numpy as np
 from httomolibgpu import cupywrapper
 from typing import Optional
 
@@ -144,3 +145,56 @@ def __naninfs_check(
                 )
             )
     return data
+
+
+def __check_variable_type(
+    variable,
+    expected_datatype: list,
+    variable_name: str,
+    literals: list,
+    methods_name: str,
+):
+    datatype_int_extended = [np.int8, np.int16, np.int32, np.int64]
+    datatype_float_extended = [np.float16, np.float32, np.float64]
+    if int in expected_datatype:
+        expected_datatype.extend(datatype_int_extended)
+    if float in expected_datatype:
+        expected_datatype.extend(datatype_float_extended)
+
+    if type(variable) not in expected_datatype:
+        # compare variable types and raise error
+        err_str = f"Variable '{variable_name}' of '{methods_name}' method given as '{variable}' (type '{type(variable)}') must have a type {expected_datatype}."
+        raise ValueError(err_str)
+    if literals and variable is not None:
+        # check if variable should be a literal
+        if variable not in literals:
+            err_str = f"Variable '{variable_name}' of '{methods_name}' method given as '{variable}' must be provided as {literals}."
+            raise ValueError(err_str)
+
+
+def __check_if_data_3D_array(data, methods_name: str):
+    if data.ndim == 3:
+        if 0 in data.shape:
+            err_str = f"The length of one of input data dimensions of method '{methods_name}' is equal to zero."
+            raise ValueError(err_str)
+    else:
+        raise ValueError(
+            f"The input data for method '{methods_name}' must be a 3D array."
+        )
+
+
+def __check_if_data_correct_type(data, accepted_type: list, methods_name: str):
+    if data.dtype not in accepted_type:
+        err_str = f"The input data type of method '{methods_name}' must be of {accepted_type}."
+        raise ValueError(err_str)
+
+
+def __check_if_positive_nonzero(
+    variable, variable_name: str, positive: bool, nonzero: bool, methods_name: str
+):
+    if positive and variable < 0:
+        err_str = f"Variable '{variable_name}' of '{methods_name}' must be positive."
+        raise ValueError(err_str)
+    if nonzero and variable == 0:
+        err_str = f"Variable '{variable_name}' of '{methods_name}' must be nonzero."
+        raise ValueError(err_str)
