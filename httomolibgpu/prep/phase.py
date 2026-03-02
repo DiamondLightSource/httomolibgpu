@@ -117,7 +117,7 @@ def paganin_filter(
     )
     ###################################
 
-    mem_stack = _DeviceMemStack() if calc_peak_gpu_mem else None
+    mem_stack = DeviceMemStack() if calc_peak_gpu_mem else None
     if not mem_stack:
         # Check the input data is valid
         __check_if_data_3D_array(data, methods_name)
