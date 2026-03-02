@@ -299,6 +299,7 @@ def LPRec3d_tomobar(
         recon_size,
         recon_mask_radius,
         gpu_id=0,
+        mem_stack=DeviceMemStack().instance(),
     )
     __check_variable_type(
         filter_type,
@@ -1099,15 +1100,17 @@ def __common_data_parameters_check(
     recon_size,
     recon_mask_radius,
     gpu_id,
+    mem_stack=None,
 ):
     ### Data and parameters checks ###
-    __check_if_data_3D_array(data, methods_name)
-    __check_if_data_correct_type(
-        data, accepted_type=["float32", "uint16"], methods_name=methods_name
-    )
-    if len(angles) != data.shape[0]:
-        err_str = f"The angles length {len(angles)} is not equal to the input data angles dimension {data.shape[0]} for method '{methods_name}'."
-        raise ValueError(err_str)
+    if mem_stack is None:
+        __check_if_data_3D_array(data, methods_name)
+        __check_if_data_correct_type(
+            data, accepted_type=["float32", "uint16"], methods_name=methods_name
+        )
+        if len(angles) != data.shape[0]:
+            err_str = f"The angles length {len(angles)} is not equal to the input data angles dimension {data.shape[0]} for method '{methods_name}'."
+            raise ValueError(err_str)
     __check_variable_type(center, [float, int, type(None)], "center", [], methods_name)
     __check_variable_type(detector_pad, [bool, int], "detector_pad", [], methods_name)
     __check_variable_type(recon_size, [int, type(None)], "recon_size", [], methods_name)
