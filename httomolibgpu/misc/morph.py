@@ -33,7 +33,14 @@ if cupy_run:
 else:
     interpn = Mock()
 
-from typing import Literal
+from typing import Literal, Union
+
+from httomolibgpu.misc.utils import (
+    __check_variable_type,
+    __check_if_data_3D_array,
+    __check_if_data_correct_type,
+    __check_if_positive_nonzero,
+)
 
 __all__ = [
     "sino_360_to_180",
@@ -42,7 +49,9 @@ __all__ = [
 
 
 def sino_360_to_180(
-    data: cp.ndarray, overlap: float = 0, side: Literal["left", "right"] = "left"
+    data: cp.ndarray,
+    overlap: Union[float, int] = 1,
+    side: Literal["left", "right"] = "left",
 ) -> cp.ndarray:
     """
     Converts 0-360 degrees sinogram to a 0-180 sinogram.
@@ -53,7 +62,7 @@ def sino_360_to_180(
     ----------
     data : cp.ndarray
         Input 3D data.
-    overlap : float
+    overlap : float,int
         Overlapping number of pixels. Floats will be converted to integers.
     side : string
         'left' if rotation center is close to the left of the
@@ -63,24 +72,28 @@ def sino_360_to_180(
     cp.ndarray
         Output 3D data.
     """
-    if data.ndim != 3:
-        raise ValueError("only 3D data is supported")
-
+    ### Data and parameters checks ###
+    methods_name = "sino_360_to_180"
+    __check_if_data_3D_array(data, methods_name)
+    __check_if_data_correct_type(
+        data, accepted_type=["float32", "uint16"], methods_name=methods_name
+    )
+    __check_variable_type(overlap, [int, float], "overlap", [], methods_name)
+    __check_variable_type(side, [str], "side", ["left", "right"], methods_name)
+    __check_if_positive_nonzero(
+        overlap, "overlap", positive=True, nonzero=True, methods_name=methods_name
+    )
+    ###################################
+    #
     dx, dy, dz = data.shape
 
     overlap = int(np.round(overlap))
-    if overlap >= dz:
-        raise ValueError("Overlap must be less than data.shape[2]")
-    if overlap < 0:
-        raise ValueError("Only positive overlaps are allowed.")
-
-    if side not in ["left", "right"]:
-        raise ValueError(
-            f'The value {side} is invalid, only "left" or "right" strings are accepted'
-        )
+    if overlap >= dz - 1:
+        raise ValueError("Overlap must be less than size of the horizontal detector")
+    if overlap % 2 != 0:
+        overlap += 1
 
     n = dx // 2
-
     out = cp.empty((n, dy, 2 * dz - overlap), dtype=data.dtype)
 
     if side == "left":
@@ -100,11 +113,24 @@ def sino_360_to_180(
             + (weights * data[n : 2 * n, :, -overlap:])[:, :, ::-1]
         )
 
-    return out
+    return cp.pad(
+        out,
+        pad_width=(
+            (0, 0),
+            (0, 0),
+            (overlap // 2, overlap // 2),
+        ),
+        mode="edge",
+    )
 
 
 def data_resampler(
-    data: cp.ndarray, newshape: list, axis: int = 1, interpolation: str = "linear"
+    data: cp.ndarray,
+    newshape: list,
+    axis: int = 1,
+    interpolation: Literal[
+        "linear", "nearest", "slinear", "cubic", "quintic", "pchip"
+    ] = "linear",
 ) -> cp.ndarray:
     """
     Down/Up-resampler of the input data implemented through interpn function.
@@ -121,7 +147,8 @@ def data_resampler(
     axis : int, optional
         Axis along which the scaling is applied. Defaults to 1.
     interpolation : str, optional
-        Selection of interpolation method. Defaults to 'linear'.
+        Selection of interpolation method. Defaults to 'linear'. Supported "linear",
+        "nearest", "slinear", "cubic", "quintic" and "pchip".
 
     Raises
     ----------
@@ -131,6 +158,24 @@ def data_resampler(
     -------
         cp.ndarray: Up/Down-scaled 3D cupy array
     """
+
+    ### Data and parameters checks ###
+    methods_name = "data_resampler"
+    __check_if_data_3D_array(data, methods_name)
+    __check_if_data_correct_type(
+        data, accepted_type=["float32", "uint16"], methods_name=methods_name
+    )
+    __check_variable_type(newshape, [list], "newshape", [], methods_name)
+    __check_variable_type(axis, [int], "axis", [0, 1, 2], methods_name)
+    __check_variable_type(
+        interpolation,
+        [str],
+        "interpolation",
+        ["linear", "nearest", "slinear", "cubic", "quintic", "pchip"],
+        methods_name,
+    )
+    ###################################
+    #
     expanded = False
     # if 2d data is given it is extended into a 3D array along the vertical dimension
     if data.ndim == 2:
@@ -146,20 +191,18 @@ def data_resampler(
         step_x = M / newshape[0]
         step_y = Z / newshape[1]
         scaled_data = cp.empty((N, newshape[0], newshape[1]), dtype=cp.float32)
-    elif axis == 1:
+    if axis == 1:
         xaxis = cp.arange(N) - N / 2
         yaxis = cp.arange(Z) - Z / 2
         step_x = N / newshape[0]
         step_y = Z / newshape[1]
         scaled_data = cp.empty((newshape[0], M, newshape[1]), dtype=cp.float32)
-    elif axis == 2:
+    if axis == 2:
         xaxis = cp.arange(N) - N / 2
         yaxis = cp.arange(M) - M / 2
         step_x = N / newshape[0]
         step_y = M / newshape[1]
         scaled_data = cp.empty((newshape[0], newshape[1], Z), dtype=cp.float32)
-    else:
-        raise ValueError("Only 0,1,2 values for axes are supported")
 
     points = (xaxis, yaxis)
 

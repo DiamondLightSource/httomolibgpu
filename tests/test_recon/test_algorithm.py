@@ -93,7 +93,7 @@ def test_reconstruct_FBP3d_tomobar_2(data, flats, darks, ensure_clean_memory):
         np.linspace(5.0 * np.pi / 360.0, 180.0 * np.pi / 360.0, data.shape[0]),
         15.5,
         filter_freq_cutoff=1.1,
-        recon_mask_radius=None,
+        recon_mask_radius=2.0,
     )
 
     recon_data = recon_data.get()

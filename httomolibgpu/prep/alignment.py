@@ -20,7 +20,6 @@
 # ---------------------------------------------------------------------------
 """Modules for data correction"""
 
-import numpy as np
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
@@ -33,11 +32,16 @@ if cupy_run:
 else:
     map_coordinates = Mock()
 
-from typing import Dict, List, Tuple
+from typing import Literal, List
 
 __all__ = [
     "distortion_correction_proj_discorpy",
 ]
+
+from httomolibgpu.misc.utils import (
+    __check_variable_type,
+    __check_if_data_correct_type,
+)
 
 
 # CuPy implementation of distortion correction from Discorpy
@@ -51,7 +55,16 @@ def distortion_correction_proj_discorpy(
     shift_xy: List[int] = [0, 0],
     step_xy: List[int] = [1, 1],
     order: int = 3,
-    mode: str = "constant",
+    mode: Literal[
+        "constant",
+        "nearest",
+        "mirror",
+        "reflect",
+        "wrap",
+        "grid-mirror",
+        "grid-wrap",
+        "grid-constant",
+    ] = "constant",
 ):
     """Unwarp a stack of images using a backward model. See :cite:`vo2015radial`.
 
@@ -75,13 +88,40 @@ def distortion_correction_proj_discorpy(
 
     mode : str, optional
         Points outside the boundaries of the input are filled according to the given mode
-        ('constant', 'nearest', 'mirror', 'reflect', 'wrap', 'grid-mirror', 'grid-wrap', 'grid-constant' or 'opencv').
+        ('constant', 'nearest', 'mirror', 'reflect', 'wrap', 'grid-mirror', 'grid-wrap', 'grid-constant').
 
     Returns
     -------
     cp.ndarray
         3D array. Distortion-corrected array.
     """
+    ### Data and parameters checks ###
+    methods_name = "distortion_correction_proj_discorpy"
+    __check_if_data_correct_type(
+        data, accepted_type=["float32", "uint16"], methods_name=methods_name
+    )
+    __check_variable_type(metadata_path, [str], "metadata_path", [], methods_name)
+    __check_variable_type(shift_xy, [list], "shift_xy", [], methods_name)
+    __check_variable_type(step_xy, [list], "step_xy", [], methods_name)
+    __check_variable_type(order, [int], "order", [], methods_name)
+    __check_variable_type(
+        mode,
+        [str],
+        "mode",
+        [
+            "constant",
+            "nearest",
+            "mirror",
+            "reflect",
+            "wrap",
+            "grid-mirror",
+            "grid-wrap",
+            "grid-constant",
+        ],
+        methods_name,
+    )
+    ###################################
+
     # Check if it's a stack of 2D images, or only a single 2D image
     if len(data.shape) == 2:
         data = cp.expand_dims(data, axis=0)
