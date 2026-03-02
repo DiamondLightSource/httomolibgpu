@@ -20,21 +20,25 @@
 # ---------------------------------------------------------------------------
 """Module for data correction. For more detailed information see :ref:`data_correction_module`."""
 
-import numpy as np
-from typing import Union
-
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
 cupy_run = cupywrapper.cupy_run
 
-from numpy import float32
 from unittest.mock import Mock
 
 if cupy_run:
     from httomolibgpu.cuda_kernels import load_cuda_module
 else:
     load_cuda_module = Mock()
+from typing import Union
+
+from httomolibgpu.misc.utils import (
+    __check_variable_type,
+    __check_if_data_3D_array,
+    __check_if_data_correct_type,
+    __check_if_positive_nonzero,
+)
 
 __all__ = [
     "median_filter",
@@ -45,7 +49,7 @@ __all__ = [
 def median_filter(
     data: cp.ndarray,
     kernel_size: int = 3,
-    dif: float = 0.0,
+    dif: Union[float, int] = 0.0,
 ) -> cp.ndarray:
     """
     Applies 3D median filter to a 3D CuPy array. For more detailed information, see :ref:`method_median_filter`.
@@ -54,9 +58,9 @@ def median_filter(
     ----------
     data : cp.ndarray
         Input CuPy 3D array either float32 or uint16 data type.
-    kernel_size : int, optional
-        The size of the filter's kernel (a diameter).
-    dif : float, optional
+    kernel_size : int
+        The size of the filter's kernel (a "diameter").
+    dif : float, int
         Expected difference value between outlier value and the
         median value of the array, leave equal to 0 for classical median.
 
@@ -70,25 +74,25 @@ def median_filter(
     ValueError
         If the input array is not three dimensional.
     """
-    input_type = data.dtype
-    if input_type not in ["float32", "uint16"]:
-        raise ValueError("The input data should be either float32 or uint16 data type")
-
-    if data.ndim == 3:
-        if 0 in data.shape:
-            raise ValueError("The length of one of dimensions is equal to zero")
-    else:
-        raise ValueError("The input array must be a 3D array")
-
-    if kernel_size not in [3, 5, 7, 9, 11, 13]:
-        raise ValueError("Please select a correct kernel size: 3, 5, 7, 9, 11, 13")
+    ### Data and parameters checks ###
+    methods_name = "median_filter/remove_outlier"
+    __check_if_data_3D_array(data, methods_name)
+    __check_if_data_correct_type(
+        data, accepted_type=["float32", "uint16"], methods_name=methods_name
+    )
+    __check_variable_type(
+        kernel_size, [int], "kernel_size", [3, 5, 7, 9, 11, 13], methods_name
+    )
+    __check_variable_type(dif, [int, float], "dif", [], methods_name)
+    ###################################
 
     dz, dy, dx = data.shape
+    input_type = data.dtype
     output = cp.copy(data, order="C")
 
     # 3d median or dezinger
-    kernel_args = "median_general_kernel3d<{0}, {1}>".format(
-        "float" if input_type == "float32" else "unsigned short", kernel_size
+    kernel_name = "median_general_kernel3d_{0}_{1}".format(
+        "float" if input_type == "float32" else "unsigned_short", kernel_size
     )
     block_x = 128
     # setting grid/block parameters
@@ -99,8 +103,8 @@ def median_filter(
     grid_dims = (grid_x, grid_y, grid_z)
     params = (data, output, cp.float32(dif), dz, dy, dx)
 
-    median_module = load_cuda_module("median_kernel", name_expressions=[kernel_args])
-    median_filt = median_module.get_function(kernel_args)
+    median_module = load_cuda_module("median_kernel")
+    median_filt = median_module.get_function(kernel_name)
 
     median_filt(grid_dims, block_dims, params)
 
@@ -108,7 +112,7 @@ def median_filter(
 
 
 def remove_outlier(
-    data: cp.ndarray, kernel_size: int = 3, dif: float = 1000
+    data: cp.ndarray, kernel_size: int = 3, dif: Union[float, int] = 1000
 ) -> cp.ndarray:
     """Selectively applies 3D median filter to a 3D CuPy array to remove outliers. Also called a dezinger.
     For more detailed information, see :ref:`method_outlier_removal`.
@@ -117,9 +121,9 @@ def remove_outlier(
     ----------
     data : cp.ndarray
         Input CuPy 3D array either float32 or uint16 data type.
-    kernel_size : int, optional
-        The size of the filter's kernel (a diameter).
-    dif : float, optional
+    kernel_size : int
+        The size of the filter's kernel (a "diameter").
+    dif : float, int
         Expected difference value between the outlier value (central voxel) and the
         median value of the neighbourhood. Lower values lead to median filtering.
 
@@ -133,8 +137,9 @@ def remove_outlier(
     ValueError
         Threshold value (dif) must be positive and nonzero.
     """
-
-    if dif <= 0.0:
-        raise ValueError("Threshold value (dif) must be positive and nonzero.")
-
+    ### Data and parameters checks ###
+    __check_if_positive_nonzero(
+        dif, "dif", positive=True, nonzero=True, methods_name="remove_outlier"
+    )
+    ###################################
     return median_filter(data, kernel_size, dif)

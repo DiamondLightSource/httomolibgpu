@@ -1,5 +1,5 @@
 template <typename Type>
-__global__ void remove_nan_inf(Type *data, int Z, int M, int N, int *result) {
+__device__ __forceinline__ void remove_nan_inf_impl(Type *data, int Z, int M, int N, int *result) {
   const long i = blockDim.x * blockIdx.x + threadIdx.x;
   const long j = blockDim.y * blockIdx.y + threadIdx.y;
   const long k = blockDim.z * blockIdx.z + threadIdx.z;
@@ -16,4 +16,14 @@ __global__ void remove_nan_inf(Type *data, int Z, int M, int N, int *result) {
     data[index] = zero;
   }
 
+}
+
+extern "C" __global__ void remove_nan_inf_float(float *data, int Z, int M, int N, int *result)
+{
+  remove_nan_inf_impl<float>(data, Z, M, N, result);
+}
+
+extern "C" __global__ void remove_nan_inf_unsigned_short(unsigned short *data, int Z, int M, int N, int *result)
+{
+  remove_nan_inf_impl<unsigned short>(data, Z, M, N, result);
 }

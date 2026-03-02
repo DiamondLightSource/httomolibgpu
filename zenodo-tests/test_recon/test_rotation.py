@@ -111,7 +111,7 @@ def test_center_pc_i12_dataset3(i12_dataset3, ensure_clean_memory):
     darks = i12_dataset3[3]
     del i12_dataset3
 
-    projdata = cp.empty((2, np.shape(proj1)[0], np.shape(proj1)[1]))
+    projdata = cp.empty((2, np.shape(proj1)[0], np.shape(proj1)[1])).astype(cp.float32)
     projdata[0, :, :] = proj1
     projdata[1, :, :] = proj2
 
