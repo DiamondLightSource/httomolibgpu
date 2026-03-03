@@ -29,6 +29,7 @@ cupy_run = cupywrapper.cupy_run
 from unittest.mock import Mock
 
 if cupy_run:
+    from tomobar.supp.memory_estimator_helpers import DeviceMemStack
     from tomobar.methodsDIR import RecToolsDIR
     from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
     from tomobar.methodsIR_CuPy import RecToolsIRCuPy
@@ -38,7 +39,7 @@ else:
     RecToolsIRCuPy = Mock()
 
 from numpy import float32
-from typing import Optional, Type, Union, Literal
+from typing import Literal, Optional, Tuple, Type, Union
 
 
 from httomolibgpu.misc.utils import (
@@ -239,18 +240,19 @@ def FBP3d_tomobar(
 
 ## %%%%%%%%%%%%%%%%%%%%%%% LPRec  %%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
 def LPRec3d_tomobar(
-    data: cp.ndarray,
+    data: cp.ndarray | Tuple[int, int, int],
     angles: np.ndarray,
     center: Optional[float] = None,
     detector_pad: Union[bool, int] = False,
     filter_type: str = "shepp",
     filter_freq_cutoff: float = 1.0,
     recon_size: Optional[int] = None,
-    recon_mask_radius: Optional[float] = 0.95,
-    power_of_2_oversampling: bool = True,
-    power_of_2_cropping: bool = False,
-    min_mem_usage_filter: bool = True,
-    min_mem_usage_ifft2: bool = True,
+    recon_mask_radius: float = 0.95,
+    power_of_2_oversampling: Optional[bool] = True,
+    power_of_2_cropping: Optional[bool] = False,
+    min_mem_usage_filter: Optional[bool] = True,
+    min_mem_usage_ifft2: Optional[bool] = True,
+    **kwargs,
 ) -> cp.ndarray:
     """
     Fourier direct inversion in 3D on unequally spaced (also called as Log-Polar) grids using
@@ -278,6 +280,8 @@ def LPRec3d_tomobar(
         The radius of the circular mask that applies to the reconstructed slice in order to crop
         out some undesirable artifacts. The values outside the given diameter will be set to zero.
         To implement the cropping one can use the range [0.7-1.0] or set to None (2.0) when no cropping is needed.
+    calc_peak_gpu_mem: bool
+        Parameter to support memory estimation in HTTomo. Irrelevant to the method itself and can be ignored by user.
 
     Returns
     -------
@@ -295,6 +299,7 @@ def LPRec3d_tomobar(
         recon_size,
         recon_mask_radius,
         gpu_id=0,
+        mem_stack=DeviceMemStack().instance(),
     )
     __check_variable_type(
         filter_type,
@@ -309,7 +314,7 @@ def LPRec3d_tomobar(
     ###################################
 
     RecToolsCP = _instantiate_direct_recon_class(
-        data, angles, center, detector_pad, recon_size, 0
+        data, angles, center, detector_pad, recon_size, 0, "fourier"
     )
 
     reconstruction = RecToolsCP.FOURIER_INV(
@@ -322,8 +327,14 @@ def LPRec3d_tomobar(
         power_of_2_cropping=power_of_2_cropping,
         min_mem_usage_filter=min_mem_usage_filter,
         min_mem_usage_ifft2=min_mem_usage_ifft2,
+        **kwargs,
     )
     cp._default_memory_pool.free_all_blocks()
+
+    mem_stack = DeviceMemStack.instance()
+    if mem_stack:
+        return mem_stack.highwater * 1.00625
+
     return cp.require(cp.swapaxes(reconstruction, 0, 1), requirements="C")
 
 
@@ -789,7 +800,160 @@ def _instantiate_direct_recon_class(
     center: Optional[float] = None,
     detector_pad: Union[bool, int] = False,
     recon_size: Optional[int] = None,
+    recon_mask_radius: float = 0.95,
+    iterations: int = 3,
+    subsets_number: int = 24,
+    initialisation: Optional[str] = "FBP",
+    ADMM_rho_const: float = 1.0,
+    ADMM_relax_par: float = 1.7,
+    regularisation_type: str = "PD_TV",
+    regularisation_parameter: float = 0.0025,
+    regularisation_iterations: int = 40,
+    regularisation_half_precision: bool = True,
+    nonnegativity: bool = False,
     gpu_id: int = 0,
+) -> cp.ndarray:
+    """
+    An Alternating Direction Method of Multipliers method with various types of regularisation or
+    denoising operations :cite:`kazantsev2019ccpi` (currently accepts ROF_TV and PD_TV regularisations only).
+    For more information see :ref:`_method_ADMM3d_tomobar`.
+
+    Parameters
+    ----------
+    data : cp.ndarray
+        Projection data as a CuPy array.
+    angles : np.ndarray
+        An array of angles given in radians.
+    center : float, optional
+        The center of rotation (CoR).
+    detector_pad : bool, int
+        Detector width padding with edge values to remove circle/arc type artifacts in the reconstruction. Set to True to perform
+        an automated padding or specify a certain value as an integer.
+    recon_size : int, optional
+        The [recon_size, recon_size] shape of the reconstructed slice in pixels.
+        By default (None), the reconstructed size will be the dimension of the horizontal detector.
+    recon_mask_radius: float
+        The radius of the circular mask that applies to the reconstructed slice in order to crop
+        out some undesirable artifacts. The values outside the given diameter will be set to zero.
+        To implement the cropping one can use the range [0.7-1.0] or set to 2.0 when no cropping required.
+    iterations : int
+        The number of ADMM algorithm iterations. The recommended range is between 3 to 5 with initialisation and
+        more than 10 without. Assuming that the subsets_number is reasonably large (>12).
+    subsets_number: int
+        The number of the ordered subsets to accelerate convergence. The recommended range is between 12 to 24.
+    initialisation: str, optional
+        Initialise ADMM with the reconstructed image to reduce the number of iterations and accelerate. Choose between 'CGLS' when data
+        is noisy and undersampled, 'FBP' when data is of better quality (default) or None.
+    ADMM_rho_const: float
+        Convergence related parameter for ADMM, higher values lead to slower convergence, but too small values can destabilise the iterations.
+        Recommended range is between 0.9 and 2.0.
+    ADMM_relax_par: Relaxation parameter which can lead to acceleration of the algorithm, keep it in the range between 1.5 and 1.8 to avoid divergence.     regularisation_type: str
+        A method to use for regularisation. Currently PD_TV and ROF_TV are available.
+    regularisation_parameter: float
+        The main regularisation parameter to control the amount of smoothing/noise removal. Larger values lead to stronger smoothing.
+    regularisation_iterations: int
+        The number of iterations for regularisers (aka INNER iterations).
+    regularisation_half_precision: bool
+        Perform faster regularisation computation in half-precision with a very minimal sacrifice in quality.
+    nonnegativity : bool
+        Impose nonnegativity constraint (set to True) on the reconstructed image. Default False.
+    gpu_id : int
+        A GPU device index to perform operation on.
+
+    Returns
+    -------
+    cp.ndarray
+        The ADMM reconstructed volume as a CuPy array.
+    """
+    if initialisation not in ["FBP", "CGLS", None]:
+        raise ValueError(
+            "The acceptable values for initialisation are 'FBP','CGLS' and None"
+        )
+
+    if initialisation is not None:
+        if detector_pad == True:
+            detector_pad = __estimate_detectorHoriz_padding(data.shape[2])
+
+        if detector_pad > 0:
+            # if detector_pad is not zero we need to reconstruct the image on the recon+2*detector_pad size
+            recon_size = data.shape[2] + 2 * detector_pad
+
+        if initialisation == "FBP":
+            initialisation_vol = cp.require(
+                cp.swapaxes(
+                    FBP3d_tomobar(
+                        data,
+                        angles=angles,
+                        center=center,
+                        detector_pad=detector_pad,
+                        recon_size=recon_size,
+                        recon_mask_radius=recon_mask_radius,
+                    ),
+                    0,
+                    1,
+                ),
+                requirements="C",
+            )
+        elif initialisation == "CGLS":
+            initialisation_vol = cp.require(
+                cp.swapaxes(
+                    CGLS3d_tomobar(
+                        data,
+                        angles=angles,
+                        center=center,
+                        detector_pad=detector_pad,
+                        recon_size=recon_size,
+                        recon_mask_radius=recon_mask_radius,
+                        iterations=15,
+                    ),
+                    0,
+                    1,
+                ),
+                requirements="C",
+            )
+    else:
+        initialisation_vol = None
+
+    RecToolsCP = _instantiate_iterative_recon_class(
+        data, angles, center, detector_pad, recon_size, gpu_id, datafidelity="LS"
+    )
+
+    _data_ = {
+        "projection_norm_data": data,
+        "OS_number": subsets_number,
+        "data_axes_labels_order": input_data_axis_labels,
+    }
+
+    _algorithm_ = {
+        "initialise": initialisation_vol,
+        "iterations": iterations,
+        "nonnegativity": nonnegativity,
+        "recon_mask_radius": recon_mask_radius,
+        "ADMM_rho_const": ADMM_rho_const,
+        "ADMM_relax_par": ADMM_relax_par,
+    }
+
+    _regularisation_ = {
+        "method": regularisation_type,  # Selected regularisation method
+        "regul_param": regularisation_parameter,  # Regularisation parameter
+        "iterations": regularisation_iterations,  # The number of regularisation iterations
+        "half_precision": regularisation_half_precision,  # enabling half-precision calculation
+    }
+
+    reconstruction = RecToolsCP.ADMM(_data_, _algorithm_, _regularisation_)
+    cp._default_memory_pool.free_all_blocks()
+    return cp.require(cp.swapaxes(reconstruction, 0, 1), requirements="C")
+
+
+## %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ##
+def _instantiate_direct_recon_class(
+    data: cp.ndarray | Tuple[int, int, int],
+    angles: np.ndarray,
+    center: Optional[float] = None,
+    detector_pad: Union[bool, int] = False,
+    recon_size: Optional[int] = None,
+    gpu_id: int = 0,
+    projector: Literal["fourier", "astra"] = "astra",
 ) -> Type:
     """instantiate ToMoBAR's direct recon class
 
@@ -804,23 +968,27 @@ def _instantiate_direct_recon_class(
     Returns:
         Type[RecToolsDIRCuPy]: an instance of the direct recon class
     """
+
+    data_shape = data if isinstance(data, tuple) else data.shape
+
     if center is None:
-        center = data.shape[2] // 2  # making a crude guess
+        center = data_shape[2] // 2  # making a crude guess
     if recon_size is None:
-        recon_size = data.shape[2]
+        recon_size = data_shape[2]
     if detector_pad is True:
-        detector_pad = __estimate_detectorHoriz_padding(data.shape[2])
+        detector_pad = __estimate_detectorHoriz_padding(data_shape[2])
     elif detector_pad is False:
         detector_pad = 0
     RecToolsCP = RecToolsDIRCuPy(
-        DetectorsDimH=data.shape[2],  # Horizontal detector dimension
+        DetectorsDimH=data_shape[2],  # Horizontal detector dimension
         DetectorsDimH_pad=detector_pad,  # padding for horizontal detector
-        DetectorsDimV=data.shape[1],  # Vertical detector dimension (3D case)
-        CenterRotOffset=data.shape[2] / 2
+        DetectorsDimV=data_shape[1],  # Vertical detector dimension (3D case)
+        CenterRotOffset=data_shape[2] / 2
         - center
         - 0.5,  # Center of Rotation scalar or a vector
         AnglesVec=-angles,  # A vector of projection angles in radians
         ObjSize=recon_size,  # Reconstructed object dimensions (scalar)
+        projector=projector,
         device_projector=gpu_id,
     )
     return RecToolsCP
@@ -932,15 +1100,17 @@ def __common_data_parameters_check(
     recon_size,
     recon_mask_radius,
     gpu_id,
+    mem_stack=None,
 ):
     ### Data and parameters checks ###
-    __check_if_data_3D_array(data, methods_name)
-    __check_if_data_correct_type(
-        data, accepted_type=["float32", "uint16"], methods_name=methods_name
-    )
-    if len(angles) != data.shape[0]:
-        err_str = f"The angles length {len(angles)} is not equal to the input data angles dimension {data.shape[0]} for method '{methods_name}'."
-        raise ValueError(err_str)
+    if mem_stack is None:
+        __check_if_data_3D_array(data, methods_name)
+        __check_if_data_correct_type(
+            data, accepted_type=["float32", "uint16"], methods_name=methods_name
+        )
+        if len(angles) != data.shape[0]:
+            err_str = f"The angles length {len(angles)} is not equal to the input data angles dimension {data.shape[0]} for method '{methods_name}'."
+            raise ValueError(err_str)
     __check_variable_type(center, [float, int, type(None)], "center", [], methods_name)
     __check_variable_type(detector_pad, [bool, int], "detector_pad", [], methods_name)
     __check_variable_type(recon_size, [int, type(None)], "recon_size", [], methods_name)
