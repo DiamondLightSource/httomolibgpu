@@ -3,7 +3,7 @@ import time
 import cupy as cp
 import numpy as np
 import pytest
-from cupy.cuda import nvtx
+#from cupy.cuda import nvtx
 from httomolibgpu.prep.phase import paganin_filter
 from numpy.testing import assert_allclose
 
@@ -125,11 +125,11 @@ def test_paganin_filter_performance(ensure_clean_memory):
     dev.synchronize()
 
     start = time.perf_counter_ns()
-    nvtx.RangePush("Core")
+    #nvtx.RangePush("Core")
     for _ in range(10):
         paganin_filter(data)
 
-    nvtx.RangePop()
+    #nvtx.RangePop()
     dev.synchronize()
     duration_ms = float(time.perf_counter_ns() - start) * 1e-6 / 10
 
