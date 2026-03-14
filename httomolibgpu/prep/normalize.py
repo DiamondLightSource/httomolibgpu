@@ -123,7 +123,7 @@ def dark_flat_field_correction(
         "float32 out",
         kernel,
         kernel_name,
-        options=("-std=c++11",),
+        options=("-std=c++17",),
         loop_prep="constexpr float eps = 1.0e-07;",
         no_return=True,
     )
