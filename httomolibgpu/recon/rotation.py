@@ -213,9 +213,9 @@ def _search_fine(sino, srad, step, init_cen, ratio, drop):
     mask = _create_mask(2 * nrow, ncol, 0.5 * ratio * ncol, drop)
 
     cen_fliplr = (ncol - 1.0) / 2.0
-    srad = np.clip(np.abs(srad), 1, ncol // 10 - 1)
-    step = np.clip(np.abs(step), 0.1, 1.1)
-    init_cen = np.clip(init_cen, srad, ncol - srad - 1)
+    srad = np.clip(np.abs(srad), 1, ncol // 10 - 1, dtype=np.float32)
+    step = np.clip(np.abs(step), 0.1, 1.1, dtype=np.float32)
+    init_cen = np.clip(init_cen, srad, ncol - srad - 1, dtype=np.float32)
     list_cor = init_cen + cp.arange(-srad, srad + step, step, dtype=cp.float32)
     list_shift = 2.0 * (list_cor - cen_fliplr)
     list_metric = cp.empty(list_shift.shape, dtype="float32")
