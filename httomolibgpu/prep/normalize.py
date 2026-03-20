@@ -32,7 +32,13 @@ if cupy_run:
 else:
     mean = Mock()
 
+from typing import Union
 from numpy import float32
+from httomolibgpu.misc.utils import (
+    __check_variable_type,
+    __check_if_data_3D_array,
+    __check_if_data_correct_type,
+)
 
 __all__ = ["dark_flat_field_correction", "minus_log"]
 
@@ -41,9 +47,9 @@ def dark_flat_field_correction(
     data: cp.ndarray,
     flats: cp.ndarray,
     darks: cp.ndarray,
-    flats_multiplier: float = 1.0,
-    darks_multiplier: float = 1.0,
-    cutoff: float = 10.0,
+    flats_multiplier: Union[float, int] = 1.0,
+    darks_multiplier: Union[float, int] = 1.0,
+    cutoff: Union[float, int] = 10.0,
 ) -> cp.ndarray:
     """
     Perform dark/flat field correction of raw projection data.
@@ -56,11 +62,11 @@ def dark_flat_field_correction(
         3D flat field data as a CuPy array.
     darks : cp.ndarray
         3D dark field data as a CuPy array.
-    flats_multiplier: float
+    flats_multiplier: float,int
         A multiplier to apply to flats, can work as an intensity compensation constant.
-    darks_multiplier: float
+    darks_multiplier: float,int
         A multiplier to apply to darks, can work as an intensity compensation constant.
-    cutoff : float
+    cutoff : float,int
         Permitted maximum value for the normalised data.
 
             Returns
@@ -68,7 +74,28 @@ def dark_flat_field_correction(
     cp.ndarray
         dark/flat field corrected 3D tomographic data as a CuPy array.
     """
-    _check_valid_input_normalise(data, flats, darks)
+    ### Data and parameters checks ###
+    methods_name = "dark_flat_field_correction"
+    __check_if_data_3D_array(data, methods_name)
+    __check_if_data_correct_type(
+        data, accepted_type=["float32", "uint16"], methods_name=methods_name
+    )
+    __check_if_data_correct_type(
+        flats, accepted_type=["float32", "uint16"], methods_name=methods_name
+    )
+    __check_if_data_correct_type(
+        darks, accepted_type=["float32", "uint16"], methods_name=methods_name
+    )
+    __check_variable_type(
+        flats_multiplier, [int, float], "flats_multiplier", [], methods_name
+    )
+    __check_variable_type(
+        darks_multiplier, [int, float], "darks_multiplier", [], methods_name
+    )
+    __check_variable_type(cutoff, [int, float], "cutoff", [], methods_name)
+    ###################################
+
+    _check_valid_input_flats_darks(flats, darks)
 
     dark0 = cp.empty(darks.shape[1:], dtype=float32)
     flat0 = cp.empty(flats.shape[1:], dtype=float32)
@@ -124,11 +151,8 @@ def minus_log(data: cp.ndarray) -> cp.ndarray:
     return -cp.log(data)
 
 
-def _check_valid_input_normalise(data, flats, darks) -> None:
-    """Helper function to check the validity of inputs to normalisation functions"""
-    if data.ndim != 3:
-        raise ValueError("Input data must be a 3D stack of projections")
-
+def _check_valid_input_flats_darks(flats, darks) -> None:
+    """Helper function to check the validity of darks and flats"""
     if flats.ndim not in (2, 3):
         raise ValueError("Input flats must be 2D or 3D data only")
 

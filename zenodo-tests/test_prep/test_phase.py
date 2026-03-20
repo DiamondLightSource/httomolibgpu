@@ -18,7 +18,7 @@ from conftest import force_clean_gpu_memory
 )
 def test_paganin_filter_i12_dataset3(i12_dataset3, test_case, ensure_clean_memory):
     padding_method, pad_x_y, test_max, test_min = test_case
-    inputdata = cp.empty((3, 2050, 2560))
+    inputdata = cp.empty((3, 2050, 2560)).astype(cp.float32)
     inputdata[0, :, :] = i12_dataset3[0]
     inputdata[1, :, :] = i12_dataset3[1]
     inputdata[2, :, :] = i12_dataset3[2]

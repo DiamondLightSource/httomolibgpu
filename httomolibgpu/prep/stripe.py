@@ -30,6 +30,7 @@ cupy_run = cupywrapper.cupy_run
 from unittest.mock import Mock
 
 if cupy_run:
+    from tomobar.supp.memory_estimator_helpers import DeviceMemStack
     from cupyx.scipy.ndimage import median_filter, binary_dilation, uniform_filter1d
     from cupyx.scipy.fft import fft2, ifft2, fftshift
     from cupyx.scipy.fftpack import get_fft_plan
@@ -42,8 +43,13 @@ else:
     ifft2 = Mock()
     fftshift = Mock()
 
+from typing import Optional, Tuple, Union, Literal
 
-from typing import Optional, Tuple, Union
+from httomolibgpu.misc.utils import (
+    __check_variable_type,
+    __check_if_data_3D_array,
+    __check_if_data_correct_type,
+)
 
 __all__ = [
     "remove_stripe_based_sorting",
@@ -56,8 +62,8 @@ __all__ = [
 
 def remove_stripe_based_sorting(
     data: Union[cp.ndarray, np.ndarray],
-    size: int = 11,
-    dim: int = 1,
+    size: Optional[int] = 11,
+    dim: Literal[1, 2] = 1,
 ) -> Union[cp.ndarray, np.ndarray]:
     """
     Remove full and partial stripe artifacts from sinogram using Nghia Vo's
@@ -73,9 +79,9 @@ def remove_stripe_based_sorting(
     data : ndarray
         3D tomographic data as a CuPy or NumPy array.
     size : int, optional
-        Window size of the median filter.
-    dim : {1, 2}, optional
-        Dimension of the window.
+        Window size of the median filter. When None, size is estimated based on the input data size
+    dim : int
+        Dimension of the window. {1, 2}
 
     Returns
     -------
@@ -83,6 +89,15 @@ def remove_stripe_based_sorting(
         Corrected 3D tomographic data as a CuPy or NumPy array.
 
     """
+    ### Data and parameters checks ###
+    methods_name = "remove_stripe_based_sorting"
+    __check_if_data_3D_array(data, methods_name)
+    __check_if_data_correct_type(
+        data, accepted_type=["float32", "uint16"], methods_name=methods_name
+    )
+    __check_variable_type(size, [int, type(None)], "size", [], methods_name)
+    __check_variable_type(dim, [int], "dim", [1, 2], methods_name)
+    ###################################
 
     if size is None:
         if data.shape[2] > 2000:
@@ -119,7 +134,7 @@ def _rs_sort(sinogram, size, dim):
 
 def remove_stripe_ti(
     data: Union[cp.ndarray, np.ndarray],
-    beta: float = 0.1,
+    beta: Union[float, int] = 0.1,
 ) -> Union[cp.ndarray, np.ndarray]:
     """
     Removes stripes with the method of V. Titarenko (TomoCuPy implementation).
@@ -129,7 +144,7 @@ def remove_stripe_ti(
     ----------
     data : ndarray
         3D stack of projections as a CuPy array.
-    beta : float, optional
+    beta : float, int
         filter parameter, lower values increase the filter strength.
         Default is 0.1.
 
@@ -138,6 +153,14 @@ def remove_stripe_ti(
     ndarray
         3D array of de-striped projections.
     """
+    ### Data and parameters checks ###
+    methods_name = "remove_stripe_ti"
+    __check_if_data_3D_array(data, methods_name)
+    __check_if_data_correct_type(
+        data, accepted_type=["float32", "uint16"], methods_name=methods_name
+    )
+    __check_variable_type(beta, [int, float], "beta", [], methods_name)
+    ###################################
 
     _, _, dx_orig = data.shape
     if (dx_orig % 2) != 0:
@@ -204,32 +227,8 @@ def _reflect(x: np.ndarray, minx: float, maxx: float) -> np.ndarray:
     return np.array(out, dtype=x.dtype)
 
 
-class _DeviceMemStack:
-    def __init__(self) -> None:
-        self.allocations = []
-        self.current = 0
-        self.highwater = 0
-
-    def malloc(self, bytes):
-        self.allocations.append(bytes)
-        allocated = self._round_up(bytes)
-        self.current += allocated
-        self.highwater = max(self.current, self.highwater)
-
-    def free(self, bytes):
-        assert bytes in self.allocations
-        self.allocations.remove(bytes)
-        self.current -= self._round_up(bytes)
-        assert self.current >= 0
-
-    def _round_up(self, size):
-        ALLOCATION_UNIT_SIZE = 512
-        size = (size + ALLOCATION_UNIT_SIZE - 1) // ALLOCATION_UNIT_SIZE
-        return size * ALLOCATION_UNIT_SIZE
-
-
 def _mypad(
-    x: cp.ndarray, pad: Tuple[int, int, int, int], mem_stack: Optional[_DeviceMemStack]
+    x: cp.ndarray, pad: Tuple[int, int, int, int], mem_stack: Optional[DeviceMemStack]
 ) -> cp.ndarray:
     """Function to do numpy like padding on Arrays. Only works for 2-D
     padding.
@@ -272,7 +271,7 @@ def _conv2d(
     w: np.ndarray,
     stride: Tuple[int, int],
     groups: int,
-    mem_stack: Optional[_DeviceMemStack],
+    mem_stack: Optional[DeviceMemStack],
 ) -> cp.ndarray:
     """Convolution (equivalent pytorch.conv2d)"""
     b, ci, hi, wi = x.shape if not mem_stack else x
@@ -288,8 +287,7 @@ def _conv2d(
     w = cp.asarray(w)
     x = cp.expand_dims(x, axis=1)
     w = np.expand_dims(w, axis=0)
-    symbol_names = [f"grouped_convolution_x<{wk}>", f"grouped_convolution_y<{hk}>"]
-    module = load_cuda_module("remove_stripe_fw", name_expressions=symbol_names)
+    module = load_cuda_module("remove_stripe_fw")
     dim_x = out.shape[-1]
     dim_y = out.shape[-2]
     dim_z = out.shape[0]
@@ -305,7 +303,7 @@ def _conv2d(
     grid_dim = (grid_x, dim_y, dim_z)
 
     if groups == 1:
-        grouped_convolution_kernel_x = module.get_function(symbol_names[0])
+        grouped_convolution_kernel_x = module.get_function("grouped_convolution_x")
         grouped_convolution_kernel_x(
             grid_dim,
             block_dim,
@@ -321,11 +319,12 @@ def _conv2d(
                 out_stride_z,
                 out_stride_group,
                 w,
+                wk,
             ),
         )
         return out
 
-    grouped_convolution_kernel_y = module.get_function(symbol_names[1])
+    grouped_convolution_kernel_y = module.get_function("grouped_convolution_y")
     in_stride_group = x.strides[2] // x.dtype.itemsize
     grouped_convolution_kernel_y(
         grid_dim,
@@ -343,6 +342,7 @@ def _conv2d(
             out_stride_z,
             out_stride_group,
             w,
+            hk,
         ),
     )
     del w
@@ -355,7 +355,7 @@ def _conv_transpose2d(
     stride: Tuple[int, int],
     pad: Tuple[int, int],
     groups: int,
-    mem_stack: Optional[_DeviceMemStack],
+    mem_stack: Optional[DeviceMemStack],
 ) -> cp.ndarray:
     """Transposed convolution (equivalent pytorch.conv_transpose2d)"""
     b, co, ho, wo = x.shape if not mem_stack else x
@@ -383,11 +383,7 @@ def _conv_transpose2d(
     out = cp.zeros(out_shape, dtype="float32")
     w = cp.asarray(w)
 
-    symbol_names = [
-        f"transposed_convolution_x<{wk}>",
-        f"transposed_convolution_y<{hk}>",
-    ]
-    module = load_cuda_module("remove_stripe_fw", name_expressions=symbol_names)
+    module = load_cuda_module("remove_stripe_fw")
     dim_x = out.shape[-1]
     dim_y = out.shape[-2]
     dim_z = out.shape[0]
@@ -402,18 +398,44 @@ def _conv_transpose2d(
     grid_dim = (grid_x, dim_y, dim_z)
 
     if wk > 1:
-        transposed_convolution_kernel_x = module.get_function(symbol_names[0])
+        transposed_convolution_kernel_x = module.get_function(
+            "transposed_convolution_x"
+        )
         transposed_convolution_kernel_x(
             grid_dim,
             block_dim,
-            (dim_x, dim_y, dim_z, x, in_dim_x, in_stride_y, in_stride_z, w, out),
+            (
+                dim_x,
+                dim_y,
+                dim_z,
+                x,
+                in_dim_x,
+                in_stride_y,
+                in_stride_z,
+                w,
+                wk,
+                out,
+            ),
         )
     elif hk > 1:
-        transposed_convolution_kernel_y = module.get_function(symbol_names[1])
+        transposed_convolution_kernel_y = module.get_function(
+            "transposed_convolution_y"
+        )
         transposed_convolution_kernel_y(
             grid_dim,
             block_dim,
-            (dim_x, dim_y, dim_z, x, in_dim_y, in_stride_y, in_stride_z, w, out),
+            (
+                dim_x,
+                dim_y,
+                dim_z,
+                x,
+                in_dim_y,
+                in_stride_y,
+                in_stride_z,
+                w,
+                hk,
+                out,
+            ),
         )
     else:
         assert False
@@ -428,7 +450,7 @@ def _afb1d(
     h0: np.ndarray,
     h1: np.ndarray,
     dim: int,
-    mem_stack: Optional[_DeviceMemStack],
+    mem_stack: Optional[DeviceMemStack],
 ) -> cp.ndarray:
     """1D analysis filter bank (along one dimension only) of an image
 
@@ -476,7 +498,7 @@ def _sfb1d(
     g0: np.ndarray,
     g1: np.ndarray,
     dim: int,
-    mem_stack: Optional[_DeviceMemStack],
+    mem_stack: Optional[DeviceMemStack],
 ) -> cp.ndarray:
     """1D synthesis filter bank of an image Array"""
 
@@ -520,7 +542,7 @@ class _DWTForward:
         self.h1_row = np.array(h1_row).astype("float32")[::-1].reshape((1, 1, 1, -1))
 
     def apply(
-        self, x: cp.ndarray, mem_stack: Optional[_DeviceMemStack] = None
+        self, x: cp.ndarray, mem_stack: Optional[DeviceMemStack] = None
     ) -> Tuple[cp.ndarray, cp.ndarray]:
         """Forward pass of the DWT.
 
@@ -582,7 +604,7 @@ class _DWTInverse:
     def apply(
         self,
         coeffs: Tuple[cp.ndarray, cp.ndarray],
-        mem_stack: Optional[_DeviceMemStack] = None,
+        mem_stack: Optional[DeviceMemStack] = None,
     ) -> cp.ndarray:
         """
         Args:
@@ -624,7 +646,7 @@ def _repair_memory_fragmentation_if_needed(fragmentation_threshold: float = 0.2)
 
 def remove_stripe_fw(
     data: cp.ndarray,
-    sigma: float = 2,
+    sigma: Union[float, int] = 2,
     wname: str = "db5",
     level: Optional[int] = None,
     calc_peak_gpu_mem: bool = False,
@@ -637,13 +659,13 @@ def remove_stripe_fw(
     ----------
     data : ndarray
         3D tomographic data as a CuPy array.
-    sigma : float
+    sigma : float, int
         Damping parameter in Fourier space.
     wname : str
-        Type of the wavelet filter: select from 'db5', 'db7', 'haar', 'sym5', 'sym16' 'bior4.4'.
+        Type of the wavelet filter: select from 'db5', 'db7', 'haar', 'sym5', 'sym16' 'bior4.4'. See more in PyWavelets documentation.
     level : int, optional
         Number of discrete wavelet transform levels.
-    calc_peak_gpu_mem: str:
+    calc_peak_gpu_mem: bool:
         Parameter to support memory estimation in HTTomo. Irrelevant to the method itself and can be ignored by user.
 
     Returns
@@ -651,6 +673,17 @@ def remove_stripe_fw(
     ndarray
         Stripe-corrected 3D tomographic data as a CuPy array.
     """
+    ### Data and parameters checks ###
+    methods_name = "remove_stripe_fw"
+    if not calc_peak_gpu_mem:
+        __check_if_data_3D_array(data, methods_name)
+        __check_if_data_correct_type(
+            data, accepted_type=["float32"], methods_name=methods_name
+        )
+    __check_variable_type(sigma, [int, float], "sigma", [], methods_name)
+    __check_variable_type(wname, [str], "wname", [], methods_name)
+    __check_variable_type(level, [int, type(None)], "level", [], methods_name)
+    ###################################
 
     if level is None:
         if calc_peak_gpu_mem:
@@ -672,7 +705,7 @@ def remove_stripe_fw(
     sli_shape = [nz, 1, nproj_pad, ni]
 
     if calc_peak_gpu_mem:
-        mem_stack = _DeviceMemStack()
+        mem_stack = DeviceMemStack()
         # A data copy is assumed when invoking the function
         mem_stack.malloc(np.prod(data) * np.float32().itemsize)
         mem_stack.malloc(np.prod(sli_shape) * np.float32().itemsize)
@@ -783,10 +816,10 @@ def remove_stripe_fw(
 # *************************************************************************** #
 def remove_all_stripe(
     data: cp.ndarray,
-    snr: float = 3.0,
+    snr: Union[float, int] = 3.0,
     la_size: int = 61,
     sm_size: int = 21,
-    dim: int = 1,
+    dim: Literal[1, 2] = 1,
 ) -> cp.ndarray:
     """
     Remove all types of stripe artifacts from sinogram using Nghia Vo's
@@ -796,14 +829,14 @@ def remove_all_stripe(
     ----------
     data : ndarray
         3D tomographic data as a CuPy array.
-    snr  : float, optional
+    snr  : float, int
         Ratio used to locate large stripes.
         Greater is less sensitive.
-    la_size : int, optional
+    la_size : int,
         Window size of the median filter to remove large stripes.
-    sm_size : int, optional
+    sm_size : int,
         Window size of the median filter to remove small-to-medium stripes.
-    dim : {1, 2}, optional
+    dim : {1, 2},
         Dimension of the window.
 
     Returns
@@ -812,6 +845,18 @@ def remove_all_stripe(
         Corrected 3D tomographic data as a CuPy or NumPy array.
 
     """
+
+    ### Data and parameters checks ###
+    methods_name = "remove_all_stripe"
+    __check_if_data_3D_array(data, methods_name)
+    __check_if_data_correct_type(
+        data, accepted_type=["float32"], methods_name=methods_name
+    )
+    __check_variable_type(snr, [int, float], "snr", [], methods_name)
+    __check_variable_type(la_size, [int], "la_size", [], methods_name)
+    __check_variable_type(sm_size, [int], "sm_size", [], methods_name)
+    __check_variable_type(dim, [int], "dim", [1, 2], methods_name)
+    ###################################
 
     matindex = _create_matindex(data.shape[2], data.shape[0])
     for m in range(data.shape[1]):
@@ -956,22 +1001,22 @@ def raven_filter(
     data : cp.ndarray
         Input CuPy 3D array either float32 or uint16 data type.
 
-    pad_y : int, optional
+    pad_y : int
         Pad the top and bottom of projections.
 
-    pad_x : int, optional
+    pad_x : int
         Pad the left and right of projections.
 
-    pad_method : str, optional
+    pad_method : str
         Numpy pad method to use.
 
-    uvalue : int, optional
+    uvalue : int
         Cut-off frequency. To control the strength of filter, e.g., strong=10, moderate=20, weak=50.
 
-    nvalue : int, optional
+    nvalue : int
         The shape of filter.
 
-    vvalue : int, optional
+    vvalue : int
         Number of image-rows around the zero-frequency to be applied the filter.
 
     Returns
@@ -984,9 +1029,19 @@ def raven_filter(
     ValueError
         If the input array is not three dimensional.
     """
-    if data.dtype != cp.float32:
-        raise ValueError("The input data should be float32 data type")
-
+    ### Data and parameters checks ###
+    methods_name = "raven_filter"
+    __check_if_data_3D_array(data, methods_name)
+    __check_if_data_correct_type(
+        data, accepted_type=["float32"], methods_name=methods_name
+    )
+    __check_variable_type(pad_y, [int], "pad_y", [], methods_name)
+    __check_variable_type(pad_x, [int], "pad_x", [], methods_name)
+    __check_variable_type(pad_method, [str], "pad_method", [], methods_name)
+    __check_variable_type(uvalue, [int], "uvalue", [], methods_name)
+    __check_variable_type(nvalue, [int], "nvalue", [], methods_name)
+    __check_variable_type(vvalue, [int], "vvalue", [], methods_name)
+    ###################################
     # Padding of the sinogram
     data = cp.pad(data, ((pad_y, pad_y), (0, 0), (pad_x, pad_x)), mode=pad_method)
 
@@ -1001,7 +1056,7 @@ def raven_filter(
     height, images, width = data.shape
 
     # Set the input type of the kernel
-    kernel_args = "raven_filter<{0}>".format(
+    kernel_name = "raven_filter_{0}".format(
         "float" if calc_type == "complex64" else "double"
     )
 
@@ -1014,8 +1069,8 @@ def raven_filter(
     grid_dims = (grid_x, grid_y, grid_z)
     params = (fft_data_shifted, fft_data, width, images, height, uvalue, nvalue, vvalue)
 
-    raven_module = load_cuda_module("raven_filter", name_expressions=[kernel_args])
-    raven_filt = raven_module.get_function(kernel_args)
+    raven_module = load_cuda_module("raven_filter")
+    raven_filt = raven_module.get_function(kernel_name)
 
     raven_filt(grid_dims, block_dims, params)
     del fft_data_shifted

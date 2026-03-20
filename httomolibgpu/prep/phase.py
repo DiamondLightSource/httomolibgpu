@@ -22,7 +22,7 @@
 
 import numpy as np
 from httomolibgpu import cupywrapper
-from httomolibgpu.memory_estimator_helpers import _DeviceMemStack
+from tomobar.supp.memory_estimator_helpers import DeviceMemStack
 
 cp = cupywrapper.cp
 cupy_run = cupywrapper.cupy_run
@@ -38,9 +38,14 @@ else:
     ifft2 = Mock()
     fftshift = Mock()
 
-from numpy import float32
-from typing import Literal, Optional, Tuple
+from typing import Literal, Optional, Tuple, Union
 import math
+
+from httomolibgpu.misc.utils import (
+    __check_variable_type,
+    __check_if_data_3D_array,
+    __check_if_data_correct_type,
+)
 
 __all__ = [
     "paganin_filter",
@@ -52,11 +57,11 @@ __all__ = [
 # different unit standards and also control of the filter driven by 'delta/beta' ratio
 # as opposed to 'alpha' in the TomoPy's implementation.
 def paganin_filter(
-    tomo: cp.ndarray,
-    pixel_size: float = 1.28,
-    distance: float = 1.0,
-    energy: float = 53.0,
-    ratio_delta_beta: float = 250,
+    data: cp.ndarray,
+    pixel_size: Union[float, int] = 1.28,
+    distance: Union[float, int] = 1.0,
+    energy: Union[float, int] = 53.0,
+    ratio_delta_beta: Union[float, int] = 250,
     calculate_padding_value_method: Literal[
         "next_power_of_2", "next_fast_length", "use_pad_x_y"
     ] = "next_power_of_2",
@@ -69,15 +74,15 @@ def paganin_filter(
 
     Parameters
     ----------
-    tomo : cp.ndarray
+    data : cp.ndarray
         3D array of f/d corrected tomographic projections.
-    pixel_size : float
+    pixel_size : float,int
         Detector pixel size (resolution) in micron units.
-    distance : float
+    distance : float,int
         Propagation distance of the wavefront from sample to detector in metre units.
-    energy : float
+    energy : float,int
         Beam energy in keV.
-    ratio_delta_beta : float
+    ratio_delta_beta : float,int
         The ratio of delta/beta, where delta is the phase shift and real part of the complex material refractive index and beta is the absorption.
     calculate_padding_value_method: str
         Method to calculate the padded size of the input data. Accepted values are 'next_power_of_2', 'next_fast_length' and 'use_pad_x_y`.
@@ -91,31 +96,52 @@ def paganin_filter(
     cp.ndarray
         The 3D array of Paganin phase-filtered projection images.
     """
-    mem_stack = _DeviceMemStack() if calc_peak_gpu_mem else None
-    # Check the input data is valid
-    if not mem_stack and tomo.ndim != 3:
-        raise ValueError(
-            f"Invalid number of dimensions in data: {tomo.ndim},"
-            " please provide a stack of 2D projections."
+    ### Data and parameters checks ###
+    methods_name = "paganin_filter"
+    __check_variable_type(pixel_size, [int, float], "pixel_size", [], methods_name)
+    __check_variable_type(distance, [int, float], "distance", [], methods_name)
+    __check_variable_type(energy, [int, float], "energy", [], methods_name)
+    __check_variable_type(
+        ratio_delta_beta, [int, float], "ratio_delta_beta", [], methods_name
+    )
+    __check_variable_type(
+        calculate_padding_value_method,
+        [str],
+        "calculate_padding_value_method",
+        ["next_power_of_2", "next_fast_length", "use_pad_x_y"],
+        methods_name,
+    )
+    __check_variable_type(pad_x_y, [list, type(None)], "pad_x_y", [], methods_name)
+    __check_variable_type(
+        calc_peak_gpu_mem, [bool], "calc_peak_gpu_mem", [], methods_name
+    )
+    ###################################
+
+    mem_stack = DeviceMemStack() if calc_peak_gpu_mem else None
+    if not mem_stack:
+        # Check the input data is valid
+        __check_if_data_3D_array(data, methods_name)
+        __check_if_data_correct_type(
+            data, accepted_type=["float32", "uint16"], methods_name=methods_name
         )
     if mem_stack:
-        mem_stack.malloc(np.prod(tomo) * np.float32().itemsize)
-    dz_orig, dy_orig, dx_orig = tomo.shape if not mem_stack else tomo
+        mem_stack.malloc(np.prod(data) * np.float32().itemsize)
+    dz_orig, dy_orig, dx_orig = data.shape if not mem_stack else data
 
-    padded_tomo, pad_tup = _pad_projections(
-        tomo, calculate_padding_value_method, pad_x_y, mem_stack
+    padded_data, pad_tup = _pad_projections(
+        data, calculate_padding_value_method, pad_x_y, mem_stack
     )
 
-    dz, dy, dx = padded_tomo.shape if not mem_stack else padded_tomo
+    dz, dy, dx = padded_data.shape if not mem_stack else padded_data
 
-    # 3D FFT of tomo data
+    # 3D FFT of data data
     if mem_stack:
-        mem_stack.malloc(np.prod(padded_tomo) * np.complex64().itemsize)
-        mem_stack.free(np.prod(padded_tomo) * np.float32().itemsize)
-        fft_input = cp.empty(padded_tomo, dtype=cp.complex64)
+        mem_stack.malloc(np.prod(padded_data) * np.complex64().itemsize)
+        mem_stack.free(np.prod(padded_data) * np.float32().itemsize)
+        fft_input = cp.empty(padded_data, dtype=cp.complex64)
     else:
-        padded_tomo = cp.asarray(padded_tomo, dtype=cp.complex64)
-        fft_input = padded_tomo
+        padded_data = cp.asarray(padded_data, dtype=cp.complex64)
+        fft_input = padded_data
 
     fft_plan = get_fft_plan(fft_input, axes=(-2, -1))
     if mem_stack:
@@ -123,8 +149,8 @@ def paganin_filter(
         mem_stack.free(fft_plan.work_area.mem.size)
     else:
         with fft_plan:
-            fft_tomo = fft2(padded_tomo, axes=(-2, -1), overwrite_x=True)
-        del padded_tomo
+            fft_data = fft2(padded_data, axes=(-2, -1), overwrite_x=True)
+        del padded_data
     del fft_input
     del fft_plan
 
@@ -168,12 +194,12 @@ def paganin_filter(
         phase_filter = phase_filter / phase_filter.max()  # normalisation
 
         # Filter projections
-        fft_tomo *= phase_filter
+        fft_data *= phase_filter
         del phase_filter
 
     # Apply filter and take inverse FFT
     ifft_input = (
-        fft_tomo if not mem_stack else cp.empty(padded_tomo, dtype=cp.complex64)
+        fft_data if not mem_stack else cp.empty(padded_data, dtype=cp.complex64)
     )
     ifft_plan = get_fft_plan(ifft_input, axes=(-2, -1))
     if mem_stack:
@@ -181,8 +207,8 @@ def paganin_filter(
         mem_stack.free(ifft_plan.work_area.mem.size)
     else:
         with ifft_plan:
-            ifft_filtered_tomo = ifft2(fft_tomo, axes=(-2, -1), overwrite_x=True).real
-        del fft_tomo
+            ifft_filtered_data = ifft2(fft_data, axes=(-2, -1), overwrite_x=True).real
+        del fft_data
     del ifft_plan
     del ifft_input
 
@@ -194,28 +220,28 @@ def paganin_filter(
     )
 
     if mem_stack:
-        mem_stack.malloc(np.prod(tomo) * np.float32().itemsize)  # astype(cp.float32)
+        mem_stack.malloc(np.prod(data) * np.float32().itemsize)  # astype(cp.float32)
         mem_stack.free(
-            np.prod(padded_tomo) * np.complex64().itemsize
-        )  # ifft_filtered_tomo
+            np.prod(padded_data) * np.complex64().itemsize
+        )  # ifft_filtered_data
         mem_stack.malloc(
-            np.prod(tomo) * np.float32().itemsize
-        )  # return _log_kernel(tomo)
+            np.prod(data) * np.float32().itemsize
+        )  # return _log_kernel(data)
         return mem_stack.highwater
 
     # crop the padded filtered data:
-    tomo = ifft_filtered_tomo[slc_indices].astype(cp.float32)
-    del ifft_filtered_tomo
+    data = ifft_filtered_data[slc_indices].astype(cp.float32)
+    del ifft_filtered_data
 
     # taking the negative log
     _log_kernel = cp.ElementwiseKernel(
-        "C tomo",
+        "C data",
         "C out",
-        "out = -log(tomo)",
+        "out = -log(data)",
         name="log_kernel",
     )
 
-    return _log_kernel(tomo)
+    return _log_kernel(data)
 
 
 def _calculate_alpha(energy, distance_micron, ratio_delta_beta):
@@ -296,12 +322,12 @@ def _calculate_pad_size(
 
 
 def _pad_projections(
-    tomo: cp.ndarray,
+    data: cp.ndarray,
     calculate_padding_value_method: Literal[
         "next_power_of_2", "next_fast_length", "use_pad_x_y"
     ],
     pad_x_y: Optional[list],
-    mem_stack: Optional[_DeviceMemStack],
+    mem_stack: Optional[DeviceMemStack],
 ) -> Tuple[cp.ndarray, Tuple[int, int]]:
     """
     Performs padding of each projection to a size optimal for FFT.
@@ -309,7 +335,7 @@ def _pad_projections(
 
     Parameters
     ----------
-    tomo : cp.ndarray
+    data : cp.ndarray
         3d projection data
     calculate_padding_value_method: str
         Method to calculate the padded size of the input data. Accepted values are 'next_power_of_2', 'next_fast_length' and 'use_pad_x_y`.
@@ -323,21 +349,21 @@ def _pad_projections(
     ndarray: padded 3d projection data
     tuple: a tuple with padding dimensions
     """
-    full_shape_tomo = cp.shape(tomo) if not mem_stack else tomo
+    full_shape_data = cp.shape(data) if not mem_stack else data
 
     pad_list = _calculate_pad_size(
-        full_shape_tomo, calculate_padding_value_method, pad_x_y
+        full_shape_data, calculate_padding_value_method, pad_x_y
     )
 
     if mem_stack:
-        padded_tomo = [
-            sh + pad[0] + pad[1] for sh, pad in zip(full_shape_tomo, pad_list)
+        padded_data = [
+            sh + pad[0] + pad[1] for sh, pad in zip(full_shape_data, pad_list)
         ]
-        mem_stack.malloc(np.prod(padded_tomo) * np.float32().itemsize)
+        mem_stack.malloc(np.prod(padded_data) * np.float32().itemsize)
     else:
-        padded_tomo = cp.pad(tomo, tuple(pad_list), "edge")
+        padded_data = cp.pad(data, tuple(pad_list), "edge")
 
-    return padded_tomo, tuple(pad_list)
+    return padded_data, tuple(pad_list)
 
 
 def _wavelength_micron(energy: float) -> float:
@@ -370,7 +396,7 @@ def _reciprocal_coord(pixel_size: float, num_grid: int) -> np.ndarray:
 
 
 def paganin_filter_savu_legacy(
-    tomo: cp.ndarray,
+    data: cp.ndarray,
     pixel_size: float = 1.28,
     distance: float = 1.0,
     energy: float = 53.0,
@@ -384,7 +410,7 @@ def paganin_filter_savu_legacy(
 
     Parameters
     ----------
-    tomo : cp.ndarray
+    data : cp.ndarray
         3D array of f/d corrected tomographic projections.
     pixel_size : float
         Detector pixel size (resolution) in micron units.
@@ -404,7 +430,7 @@ def paganin_filter_savu_legacy(
     """
 
     return paganin_filter(
-        tomo,
+        data,
         pixel_size,
         distance,
         energy,
