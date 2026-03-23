@@ -39,7 +39,7 @@ dynamic = ["version"]
 dependencies = [
     "cupy==14.0.*",
     "nvtx",
-    "numpy==2.3.*",
+    "numpy==2.4.*",
     "scipy",
     "pillow",
     "scikit-image",
