@@ -207,7 +207,7 @@ def paganin_filter(
         mem_stack.free(ifft_plan.work_area.mem.size)
     else:
         with ifft_plan:
-            ifft_filtered_data = ifft2(fft_data, axes=(-2, -1), overwrite_x=True).real
+            ifft_filtered_data = ifft2(fft_data, axes=(-2, -1), overwrite_x=True)
         del fft_data
     del ifft_plan
     del ifft_input
@@ -230,6 +230,7 @@ def paganin_filter(
         return mem_stack.highwater
 
     # crop the padded filtered data:
+    # .real should not be used for now, see: https://github.com/cupy/cupy/issues/9750
     data = ifft_filtered_data[slc_indices].astype(cp.float32)
     del ifft_filtered_data
 
