@@ -175,7 +175,7 @@ def total_variation_PD(
     __check_variable_type(iterations, [int], "iterations", [], methods_name)
     __check_variable_type(isotropic, [bool], "isotropic", [], methods_name)
     __check_variable_type(nonnegativity, [bool], "nonnegativity", [], methods_name)
-    __check_variable_type(lipschitz_const, [float], "lipschitz_const", [], methods_name)
+    __check_variable_type(lipschitz_const, [float, int], "lipschitz_const", [], methods_name)
     __check_variable_type(gpu_id, [int], "gpu_id", [], methods_name)
     __check_variable_type(half_precision, [bool], "half_precision", [], methods_name)
     ###################################
