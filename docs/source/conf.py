@@ -33,6 +33,7 @@ MOCK_MODULES = [
     "scipy.fft",
     "scipy.ndimage",
     "pywt",
+    "DeviceMemStack",
 ]
 
 for mod_name in MOCK_MODULES:
@@ -59,8 +60,7 @@ sys.modules["tomobar.methodsDIR"] = CustomMock()
 sys.modules["tomobar.methodsDIR_CuPy"] = CustomMock()
 sys.modules["tomobar.methodsIR_CuPy "] = CustomMock()
 sys.modules["skimage.registration"] = CustomMock()
-
-
+sys.modules["tomobar.supp.memory_estimator_helpers"] = CustomMock()
 # ------------------------------------------------------------------------------
 
 project = "HTTomolibgpu"

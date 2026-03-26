@@ -30,7 +30,10 @@ cupy_run = cupywrapper.cupy_run
 from unittest.mock import Mock
 
 if cupy_run:
-    from tomobar.supp.memory_estimator_helpers import DeviceMemStack
+    try:
+        from tomobar.supp.memory_estimator_helpers import DeviceMemStack
+    except ImportError:
+        pass
     from cupyx.scipy.ndimage import median_filter, binary_dilation, uniform_filter1d
     from cupyx.scipy.fft import fft2, ifft2, fftshift
     from cupyx.scipy.fftpack import get_fft_plan

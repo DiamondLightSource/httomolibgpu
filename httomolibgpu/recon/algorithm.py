@@ -29,7 +29,10 @@ cupy_run = cupywrapper.cupy_run
 from unittest.mock import Mock
 
 if cupy_run:
-    from tomobar.supp.memory_estimator_helpers import DeviceMemStack
+    try:
+        from tomobar.supp.memory_estimator_helpers import DeviceMemStack
+    except ImportError:
+        pass
     from tomobar.methodsDIR import RecToolsDIR
     from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
     from tomobar.methodsIR_CuPy import RecToolsIRCuPy
@@ -654,7 +657,7 @@ def ADMM3d_tomobar(
     """
     An Alternating Direction Method of Multipliers method with various types of regularisation or
     denoising operations :cite:`kazantsev2019ccpi` (currently accepts ROF_TV and PD_TV regularisations only).
-    For more information see :ref:`_method_ADMM3d_tomobar`.
+    For more information see :ref:`method_ADMM3d_tomobar`.
 
     Parameters
     ----------
