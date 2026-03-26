@@ -27,12 +27,9 @@ cp = cupywrapper.cp
 cupy_run = cupywrapper.cupy_run
 
 from unittest.mock import Mock
+from tomobar.supp.memory_estimator_helpers import DeviceMemStack
 
 if cupy_run:
-    try:
-        from tomobar.supp.memory_estimator_helpers import DeviceMemStack
-    except ImportError:
-        pass
     from tomobar.methodsDIR import RecToolsDIR
     from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
     from tomobar.methodsIR_CuPy import RecToolsIRCuPy

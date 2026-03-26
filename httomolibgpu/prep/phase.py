@@ -29,14 +29,11 @@ next_fast_len = cupywrapper.next_fast_len
 
 from unittest.mock import Mock
 
+from tomobar.supp.memory_estimator_helpers import DeviceMemStack
+
 if cupy_run:
     from cupyx.scipy.fft import fft2, ifft2, fftshift
     from cupyx.scipy.fftpack import get_fft_plan
-
-    try:
-        from tomobar.supp.memory_estimator_helpers import DeviceMemStack
-    except ImportError:
-        pass
 else:
     fft2 = Mock()
     ifft2 = Mock()
