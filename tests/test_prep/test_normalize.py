@@ -22,6 +22,66 @@ def test_dark_flat_field_correction_1D_raises(data, flats, darks, ensure_clean_m
         dark_flat_field_correction(data, _data_1d, darks)
 
 
+def test_dark_flat_field_upper_bound(data, flats, darks, ensure_clean_memory):
+    # --- testing dark_flat_field_correction with minus_log ---#
+    data_normalize = cp.asnumpy(
+        dark_flat_field_correction(
+            cp.copy(data),
+            flats,
+            darks,
+            flats_multiplier=1,
+            darks_multiplier=1,
+            upper_bound=0.8,
+            lower_bound=None,
+        )
+    )
+
+    assert data_normalize.dtype == np.float32
+    assert_allclose(np.mean(data_normalize), 0.6904512, rtol=1e-06)
+    assert_allclose(np.mean(data_normalize, axis=(1, 2)).sum(), 124.28119, rtol=1e-06)
+    assert data_normalize.flags.c_contiguous
+
+
+def test_dark_flat_field_lower_bound(data, flats, darks, ensure_clean_memory):
+    # --- testing dark_flat_field_correction with minus_log ---#
+    data_normalize = cp.asnumpy(
+        dark_flat_field_correction(
+            cp.copy(data),
+            flats,
+            darks,
+            flats_multiplier=1,
+            darks_multiplier=1,
+            upper_bound=None,
+            lower_bound=0.1,
+        )
+    )
+
+    assert data_normalize.dtype == np.float32
+    assert_allclose(np.mean(data_normalize), 0.8285064, rtol=1e-06)
+    assert_allclose(np.mean(data_normalize, axis=(1, 2)).sum(), 149.13116, rtol=1e-06)
+    assert data_normalize.flags.c_contiguous
+
+
+def test_dark_flat_field_upper_and_lower_bound(data, flats, darks, ensure_clean_memory):
+    # --- testing dark_flat_field_correction with minus_log ---#
+    data_normalize = cp.asnumpy(
+        dark_flat_field_correction(
+            cp.copy(data),
+            flats,
+            darks,
+            flats_multiplier=1,
+            darks_multiplier=1,
+            upper_bound=0.7,
+            lower_bound=0.2,
+        )
+    )
+
+    assert data_normalize.dtype == np.float32
+    assert_allclose(np.mean(data_normalize), 0.6218485, rtol=1e-06)
+    assert_allclose(np.mean(data_normalize, axis=(1, 2)).sum(), 111.93274, rtol=1e-06)
+    assert data_normalize.flags.c_contiguous
+
+
 def test_dark_flat_field_minus_log_correction(data, flats, darks, ensure_clean_memory):
     # --- testing dark_flat_field_correction with minus_log ---#
     data_normalize = dark_flat_field_correction(cp.copy(data), flats, darks)

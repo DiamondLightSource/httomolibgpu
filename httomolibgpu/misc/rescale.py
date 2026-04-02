@@ -33,7 +33,6 @@ __all__ = [
 
 from httomolibgpu.misc.utils import (
     __check_variable_type,
-    __check_if_data_3D_array,
     __check_if_data_correct_type,
 )
 
