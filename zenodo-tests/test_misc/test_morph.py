@@ -11,7 +11,7 @@ def test_sino_360_to_180_i13_dataset1(i13_dataset1):
     darks = i13_dataset1[3]
     del i13_dataset1
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
 
     del flats, darks, projdata
     force_clean_gpu_memory()
@@ -32,7 +32,7 @@ def test_sino_360_to_180_i13_dataset3(i13_dataset3):
     darks = i13_dataset3[3]
     del i13_dataset3
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
     del flats, darks, projdata
     force_clean_gpu_memory()
 
@@ -52,7 +52,7 @@ def test_sino_360_to_180_i12_dataset5(i12_dataset5):
     darks = i12_dataset5[3]
     del i12_dataset5
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
     del flats, darks, projdata
     force_clean_gpu_memory()
 

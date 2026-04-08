@@ -31,7 +31,9 @@ def test_reconstruct_FBP2d_astra_i12_dataset1(i12_dataset1: tuple):
     darks = i12_dataset1[3]
     del i12_dataset1
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(
+        projdata, flats, darks, upper_bound=10.0
+    )
     data_normalised = minus_log(data_normalised)
 
     del flats, darks, projdata
@@ -48,7 +50,7 @@ def test_reconstruct_FBP2d_astra_i12_dataset1(i12_dataset1: tuple):
         recon_mask_radius=0.9,
     )
     assert recon_data.flags.c_contiguous
-    assert_allclose(np.sum(recon_data), 84672.84, atol=1e-2)
+    assert_allclose(np.sum(recon_data), 84673.39, atol=1e-2)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 50, 2560)
 
@@ -61,7 +63,9 @@ def test_reconstruct_FBP3d_tomobar_i12_dataset1(i12_dataset1: tuple):
     darks = i12_dataset1[3]
     del i12_dataset1
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(
+        projdata, flats, darks, upper_bound=5.0, lower_bound=0
+    )
     data_normalised = minus_log(data_normalised)
 
     del flats, darks, projdata
@@ -76,7 +80,7 @@ def test_reconstruct_FBP3d_tomobar_i12_dataset1(i12_dataset1: tuple):
     )
     assert recon_data.flags.c_contiguous
     recon_data = cp.asnumpy(recon_data)
-    assert_allclose(np.sum(recon_data), 46569.39, rtol=1e-07, atol=1e-6)
+    assert_allclose(np.sum(recon_data), 46569.46, rtol=1e-07, atol=1e-6)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 50, 2560)
 
@@ -89,7 +93,7 @@ def test_reconstruct_FBP3d_tomobar_i12_dataset1_pad(i12_dataset1: tuple):
     darks = i12_dataset1[3]
     del i12_dataset1
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
     data_normalised = minus_log(data_normalised)
 
     del flats, darks, projdata
@@ -105,7 +109,7 @@ def test_reconstruct_FBP3d_tomobar_i12_dataset1_pad(i12_dataset1: tuple):
     )
     assert recon_data.flags.c_contiguous
     recon_data = cp.asnumpy(recon_data)
-    assert_allclose(np.sum(recon_data), 9864.915, rtol=1e-07, atol=1e-6)
+    assert_allclose(np.sum(recon_data), 9864.938, rtol=1e-07, atol=1e-6)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 10, 2560)
 
@@ -118,7 +122,7 @@ def test_reconstruct_FBP3d_tomobar_i12_dataset1_autopad(i12_dataset1: tuple):
     darks = i12_dataset1[3]
     del i12_dataset1
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
     data_normalised = minus_log(data_normalised)
 
     del flats, darks, projdata
@@ -134,7 +138,7 @@ def test_reconstruct_FBP3d_tomobar_i12_dataset1_autopad(i12_dataset1: tuple):
     )
     assert recon_data.flags.c_contiguous
     recon_data = cp.asnumpy(recon_data)
-    assert_allclose(np.sum(recon_data), 7208.2295, rtol=1e-07, atol=1e-6)
+    assert_allclose(np.sum(recon_data), 7208.2275, rtol=1e-07, atol=1e-6)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 5, 2560)
 
@@ -147,7 +151,7 @@ def test_reconstruct_LPRec3d_tomobar_i12_dataset1(i12_dataset1: tuple):
     darks = i12_dataset1[3]
     del i12_dataset1
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
     data_normalised = minus_log(data_normalised)
 
     data_normalised_cut = data_normalised[:, 5:8, :]
@@ -165,7 +169,7 @@ def test_reconstruct_LPRec3d_tomobar_i12_dataset1(i12_dataset1: tuple):
     )
     assert recon_data.flags.c_contiguous
     recon_data = cp.asnumpy(recon_data)
-    assert isclose(np.sum(recon_data), 9628.818, abs_tol=10**-3)
+    assert isclose(np.sum(recon_data), 9628.824, abs_tol=10**-3)
     assert pytest.approx(np.max(recon_data), rel=1e-3) == 0.006367563270032406
     assert pytest.approx(np.min(recon_data), rel=1e-3) == -0.0062076798
     assert recon_data.dtype == np.float32
@@ -180,7 +184,7 @@ def test_reconstruct_LPRec3d_tomobar_i12_dataset1_autopad(i12_dataset1: tuple):
     darks = i12_dataset1[3]
     del i12_dataset1
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
     data_normalised = minus_log(data_normalised)
 
     data_normalised_cut = data_normalised[:, 5:8, :]
@@ -213,7 +217,7 @@ def test_reconstruct_LPRec_tomobar_i13_dataset1(i13_dataset1: tuple):
     darks = i13_dataset1[3]
     del i13_dataset1
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
     data_normalised = minus_log(data_normalised)
 
     del flats, darks, projdata
@@ -252,7 +256,7 @@ def test_FBP3d_tomobar_performance_i13_dataset2(i13_dataset2: tuple):
     darks = i13_dataset2[3]
     del i13_dataset2
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
     data_normalised = minus_log(data_normalised)
 
     del flats, darks, projdata
@@ -293,7 +297,7 @@ def test_reconstruct_LPRec3d_tomobar_i13_dataset2(i13_dataset2: tuple):
     darks = i13_dataset2[3]
     del i13_dataset2
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
     data_normalised = minus_log(data_normalised)
 
     del flats, darks, projdata
@@ -326,7 +330,7 @@ def test_LPRec3d_tomobar_performance_i13_dataset2(i13_dataset2: tuple):
     darks = i13_dataset2[3]
     del i13_dataset2
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
     data_normalised = minus_log(data_normalised)
 
     del flats, darks, projdata
@@ -365,7 +369,7 @@ def test_reconstruct_FBP3d_tomobar_i13_dataset3(i13_dataset3: tuple):
     darks = i13_dataset3[3]
     del i13_dataset3
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
     data_normalised = minus_log(data_normalised)
 
     del flats, darks, projdata
@@ -402,7 +406,7 @@ def test_reconstruct_FBP3d_tomobar_i12_dataset5(i12_dataset5: tuple):
     darks = i12_dataset5[3]
     del i12_dataset5
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
     data_normalised = minus_log(data_normalised)
 
     del flats, darks, projdata
@@ -436,7 +440,7 @@ def test_reconstruct_LPRec3d_tomobar_k11_dataset2(k11_dataset2: tuple):
     darks = k11_dataset2[3]
     del k11_dataset2
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
     data_normalised = minus_log(data_normalised)
 
     del flats, darks, projdata
@@ -453,7 +457,7 @@ def test_reconstruct_LPRec3d_tomobar_k11_dataset2(k11_dataset2: tuple):
     )
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
-    assert isclose(np.sum(recon_data), 10865.34, abs_tol=10**-2)
+    assert isclose(np.sum(recon_data), 10865.37, abs_tol=10**-2)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 25, 2560)
 
@@ -466,7 +470,7 @@ def test_reconstruct_CGLS3d_tomobar_k11_dataset2(k11_dataset2: tuple):
     darks = k11_dataset2[3]
     del k11_dataset2
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
     data_normalised = minus_log(data_normalised)
 
     del flats, darks, projdata
@@ -495,7 +499,7 @@ def test_reconstruct_SIRT3d_tomobar_k11_dataset2(k11_dataset2: tuple):
     darks = k11_dataset2[3]
     del k11_dataset2
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
     data_normalised = minus_log(data_normalised)
 
     del flats, darks, projdata
@@ -524,7 +528,7 @@ def test_reconstruct_FISTA3d_tomobar_autopad_k11_dataset2(k11_dataset2: tuple):
     darks = k11_dataset2[3]
     del k11_dataset2
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
     data_normalised = minus_log(data_normalised)
 
     del flats, darks, projdata
@@ -541,7 +545,7 @@ def test_reconstruct_FISTA3d_tomobar_autopad_k11_dataset2(k11_dataset2: tuple):
     )
     assert recon_data.flags.c_contiguous
     recon_data = cp.asnumpy(recon_data)
-    assert isclose(np.sum(recon_data), 1355.4624, abs_tol=10**-3)
+    assert isclose(np.sum(recon_data), 1355.4636, abs_tol=10**-3)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (2560, 5, 2560)
 
@@ -554,7 +558,7 @@ def test_reconstruct_ADMM3d_tomobar_autopad_k11_dataset2(k11_dataset2: tuple):
     darks = k11_dataset2[3]
     del k11_dataset2
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
     data_normalised = minus_log(data_normalised)
 
     del flats, darks, projdata
@@ -574,6 +578,6 @@ def test_reconstruct_ADMM3d_tomobar_autopad_k11_dataset2(k11_dataset2: tuple):
 
     assert recon_data.flags.c_contiguous
     recon_data = cp.asnumpy(recon_data)
-    assert isclose(np.sum(recon_data), 2275.893, abs_tol=10**-3)
+    assert isclose(np.sum(recon_data), 2275.8916, abs_tol=10**-3)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (4150, 3, 4150)
