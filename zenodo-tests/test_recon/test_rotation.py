@@ -18,7 +18,7 @@ def test_center_vo_i12_dataset1(i12_dataset1):
     darks = i12_dataset1[3]
     del i12_dataset1
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
 
     del flats, darks, projdata
     force_clean_gpu_memory()
@@ -41,7 +41,7 @@ def test_center_vo_i12_dataset1_performance(i12_dataset1, ensure_clean_memory):
     darks = i12_dataset1[3]
     del i12_dataset1
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
 
     del flats, darks, projdata
     ensure_clean_memory
@@ -69,7 +69,7 @@ def test_center_vo_i12_dataset2(i12_dataset2, ensure_clean_memory):
     darks = i12_dataset2[3]
     del i12_dataset2
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
 
     del flats, darks, projdata
     ensure_clean_memory
@@ -89,7 +89,7 @@ def test_center_vo_average_i12_dataset2(i12_dataset2, ensure_clean_memory):
     darks = i12_dataset2[3]
     del i12_dataset2
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
     del flats, darks, projdata
 
     ensure_clean_memory
@@ -115,7 +115,7 @@ def test_center_pc_i12_dataset3(i12_dataset3, ensure_clean_memory):
     projdata[0, :, :] = proj1
     projdata[1, :, :] = proj2
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
     data_normalised = minus_log(data_normalised)
 
     proj1 = data_normalised[0, :, :]
@@ -138,7 +138,7 @@ def test_center_vo_i13_dataset2(i13_dataset2, ensure_clean_memory):
     darks = i13_dataset2[3]
     del i13_dataset2
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
 
     del flats, darks, projdata
 
@@ -160,7 +160,7 @@ def test_center_vo_geant4_dataset1(geant4_dataset1, ensure_clean_memory):
     darks = geant4_dataset1[3]
     del geant4_dataset1
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
     del flats, darks, projdata
 
     mid_slice = data_normalised.shape[1] // 2
@@ -179,7 +179,7 @@ def test_center_vo_k11_dataset1(k11_dataset1, ensure_clean_memory):
     darks = k11_dataset1[3]
     del k11_dataset1
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
 
     del flats, darks, projdata
 
@@ -202,7 +202,7 @@ def test_center_360_i12_dataset5(i12_dataset5, ensure_clean_memory):
     darks = i12_dataset5[3]
     del i12_dataset5
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
 
     del flats, darks, projdata
 
@@ -223,7 +223,7 @@ def test_center_360_i13_dataset1(i13_dataset1, ensure_clean_memory):
     darks = i13_dataset1[3]
     del i13_dataset1
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
     del flats, darks, projdata
 
     ensure_clean_memory
@@ -243,7 +243,7 @@ def test_center_360_i13_dataset3(i13_dataset3, ensure_clean_memory):
     darks = i13_dataset3[3]
     del i13_dataset3
 
-    data_normalised = dark_flat_field_correction(projdata, flats, darks, cutoff=10)
+    data_normalised = dark_flat_field_correction(projdata, flats, darks)
     del flats, darks, projdata
 
     ensure_clean_memory

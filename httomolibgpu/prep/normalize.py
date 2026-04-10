@@ -21,6 +21,7 @@
 """Modules for raw projection data normalization"""
 
 from httomolibgpu import cupywrapper
+import numpy as np
 
 cp = cupywrapper.cp
 cupy_run = cupywrapper.cupy_run
@@ -32,8 +33,8 @@ if cupy_run:
 else:
     mean = Mock()
 
-from typing import Union
-from numpy import float32
+from typing import Union, Optional
+from numpy import float32, int64
 from httomolibgpu.misc.utils import (
     __check_variable_type,
     __check_if_data_3D_array,
@@ -49,7 +50,8 @@ def dark_flat_field_correction(
     darks: cp.ndarray,
     flats_multiplier: Union[float, int] = 1.0,
     darks_multiplier: Union[float, int] = 1.0,
-    cutoff: Union[float, int] = 10.0,
+    upper_bound: Optional[Union[float, int]] = None,
+    lower_bound: Optional[Union[float, int]] = None,
 ) -> cp.ndarray:
     """
     Perform dark/flat field correction of raw projection data.
@@ -66,8 +68,10 @@ def dark_flat_field_correction(
         A multiplier to apply to flats, can work as an intensity compensation constant.
     darks_multiplier: float,int
         A multiplier to apply to darks, can work as an intensity compensation constant.
-    cutoff : float,int
-        Permitted maximum value for the normalised data.
+    upper_bound : Optional[float, int]
+        All values above the upper bound are set to the provided value. Default None.
+    lower_bound : Optional[float, int]
+        All values bellow the lower bound are set to the provided value. Default None.
 
             Returns
     -------
@@ -92,10 +96,21 @@ def dark_flat_field_correction(
     __check_variable_type(
         darks_multiplier, [int, float], "darks_multiplier", [], methods_name
     )
-    __check_variable_type(cutoff, [int, float], "cutoff", [], methods_name)
-    ###################################
+    __check_variable_type(
+        upper_bound, [int, float, type(None)], "upper_bound", [], methods_name
+    )
+    __check_variable_type(
+        lower_bound, [int, float, type(None)], "lower_bound", [], methods_name
+    )
 
     _check_valid_input_flats_darks(flats, darks)
+    ###################################
+
+    data_elements_num = int(np.prod(data.shape))
+    if upper_bound is None:
+        upper_bound = 1e12
+    if lower_bound is None:
+        lower_bound = -1e12
 
     dark0 = cp.empty(darks.shape[1:], dtype=float32)
     flat0 = cp.empty(flats.shape[1:], dtype=float32)
@@ -114,12 +129,12 @@ def dark_flat_field_correction(
         }
         float v = (float(data) - float(darks))/denom;
         """
-    kernel += "if (v > cutoff) v = cutoff;\n"
-    kernel += "if (v < -cutoff) v = cutoff;\n"
+    kernel += "if (v > upper_bound) v = upper_bound;\n"
+    kernel += "if (v <= lower_bound) v = lower_bound;\n"
     kernel += "out = v;\n"
 
     normalisation_kernel = cp.ElementwiseKernel(
-        "T data, U flats, U darks, raw float32 cutoff",
+        "T data, U flats, U darks, raw float32 upper_bound, raw float32 lower_bound",
         "float32 out",
         kernel,
         kernel_name,
@@ -128,7 +143,52 @@ def dark_flat_field_correction(
         no_return=True,
     )
 
-    normalisation_kernel(data, flat0, dark0, float32(cutoff), out)
+    count_greater_kernel = cp.ReductionKernel(
+        in_params="T data, raw float32 upper_bound",
+        out_params="int32 out",
+        map_expr="data >= upper_bound ? 1 : 0",  # map each element → 1 or 0
+        reduce_expr="a + b",  # sum them
+        post_map_expr="out = a",  # final result
+        identity="0",
+        name="count_greater",
+    )
+
+    count_smaller_kernel = cp.ReductionKernel(
+        in_params="T data, raw float32 lower_bound",
+        out_params="int32 out",
+        map_expr="data <= lower_bound ? 1 : 0",  # map each element → 1 or 0
+        reduce_expr="a + b",  # sum them
+        post_map_expr="out = a",  # final result
+        identity="0",
+        name="count_smaller",
+    )
+
+    normalisation_kernel(data, flat0, dark0, upper_bound, lower_bound, out)
+
+    # Count the amount of clipping and raise warnings if required
+    clipped_percentage_warning = (
+        50.0  # warning if more clipped values than given percentage
+    )
+
+    clipped_total_up = int(count_greater_kernel(out, float32(upper_bound)))
+    clipped_up_percent = clipped_total_up / data_elements_num * 100
+
+    if clipped_up_percent >= clipped_percentage_warning:
+        print(
+            "Warning! The output data of 'dark_flat_field_correction' method contains \033[31m{}\033[0m percent of 'upper_bound' clipped data.".format(
+                int(clipped_up_percent)
+            )
+        )
+
+    clipped_total_lower = int(count_smaller_kernel(out, float32(lower_bound)))
+    clipped_down_percent = clipped_total_lower / data_elements_num * 100
+
+    if clipped_down_percent >= clipped_percentage_warning:
+        print(
+            "Warning! The output data of 'dark_flat_field_correction' method contains \033[31m{}\033[0m percent of 'lower_bound' clipped data.".format(
+                int(clipped_down_percent)
+            )
+        )
 
     return out
 

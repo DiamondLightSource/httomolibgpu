@@ -18,7 +18,7 @@ from ..conftest import MaxMemoryHook
 
 
 def test_reconstruct_FBP_2d_astra(data, flats, darks, ensure_clean_memory):
-    normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
+    normalised_data = dark_flat_field_correction(data, flats, darks)
     normalised_data = minus_log(normalised_data)
     recon_size = 150
 
@@ -41,7 +41,7 @@ def test_reconstruct_FBP_2d_astra(data, flats, darks, ensure_clean_memory):
 
 
 def test_reconstruct_FBP_2d_astra_pad(data, flats, darks, ensure_clean_memory):
-    normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
+    normalised_data = dark_flat_field_correction(data, flats, darks)
     normalised_data = minus_log(normalised_data)
     recon_size = 150
 
@@ -64,7 +64,7 @@ def test_reconstruct_FBP_2d_astra_pad(data, flats, darks, ensure_clean_memory):
 
 
 def test_reconstruct_FBP3d_tomobar_1(data, flats, darks, ensure_clean_memory):
-    normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
+    normalised_data = dark_flat_field_correction(data, flats, darks)
     normalised_data = minus_log(normalised_data)
 
     recon_data = FBP3d_tomobar(
@@ -85,7 +85,7 @@ def test_reconstruct_FBP3d_tomobar_1(data, flats, darks, ensure_clean_memory):
 
 
 def test_reconstruct_FBP3d_tomobar_2(data, flats, darks, ensure_clean_memory):
-    normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
+    normalised_data = dark_flat_field_correction(data, flats, darks)
     normalised_data = minus_log(normalised_data)
 
     recon_data = FBP3d_tomobar(
@@ -108,7 +108,7 @@ def test_reconstruct_FBP3d_tomobar_2(data, flats, darks, ensure_clean_memory):
 def test_reconstruct_FBP3d_tomobar_3_detpad_true(
     data, flats, darks, ensure_clean_memory
 ):
-    normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
+    normalised_data = dark_flat_field_correction(data, flats, darks)
     normalised_data = minus_log(normalised_data)
 
     recon_data = FBP3d_tomobar(
@@ -131,7 +131,7 @@ def test_reconstruct_FBP3d_tomobar_3_detpad_true(
 
 
 def test_reconstruct_LPRec3d_tomobar_1(data, flats, darks, ensure_clean_memory):
-    normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
+    normalised_data = dark_flat_field_correction(data, flats, darks)
     normalised_data = minus_log(normalised_data)
 
     recon_data = LPRec3d_tomobar(
@@ -150,7 +150,7 @@ def test_reconstruct_LPRec3d_tomobar_1(data, flats, darks, ensure_clean_memory):
 
 
 def test_reconstruct_LPRec3d_tomobar_1_pad(data, flats, darks, ensure_clean_memory):
-    normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
+    normalised_data = dark_flat_field_correction(data, flats, darks)
     normalised_data = minus_log(normalised_data)
 
     recon_data = LPRec3d_tomobar(
@@ -170,7 +170,7 @@ def test_reconstruct_LPRec3d_tomobar_1_pad(data, flats, darks, ensure_clean_memo
 
 def test_reconstruct_SIRT3d_tomobar(data, flats, darks, ensure_clean_memory):
     objrecon_size = data.shape[2]
-    normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
+    normalised_data = dark_flat_field_correction(data, flats, darks)
     normalised_data = minus_log(normalised_data)
 
     recon_data = SIRT3d_tomobar(
@@ -190,7 +190,7 @@ def test_reconstruct_SIRT3d_tomobar(data, flats, darks, ensure_clean_memory):
 
 def test_reconstruct_CGLS3d_tomobar(data, flats, darks, ensure_clean_memory):
     objrecon_size = data.shape[2]
-    normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
+    normalised_data = dark_flat_field_correction(data, flats, darks)
     normalised_data = minus_log(normalised_data)
 
     recon_data = CGLS3d_tomobar(
@@ -212,7 +212,7 @@ def test_reconstruct_CGLS3d_tomobar_detpad_true(
     data, flats, darks, ensure_clean_memory
 ):
     objrecon_size = data.shape[2]
-    normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
+    normalised_data = dark_flat_field_correction(data, flats, darks)
     normalised_data = minus_log(normalised_data)
 
     recon_data = CGLS3d_tomobar(
@@ -233,7 +233,7 @@ def test_reconstruct_CGLS3d_tomobar_detpad_true(
 
 def test_reconstruct_FISTA3d_tomobar_pd_tv(data, flats, darks, ensure_clean_memory):
     objrecon_size = data.shape[2]
-    normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
+    normalised_data = dark_flat_field_correction(data, flats, darks)
     normalised_data = minus_log(normalised_data)
 
     recon_data = FISTA3d_tomobar(
@@ -261,7 +261,7 @@ def test_reconstruct_FISTA3d_tomobar_pd_tv_detpad_true(
     data, flats, darks, ensure_clean_memory
 ):
     objrecon_size = data.shape[2]
-    normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
+    normalised_data = dark_flat_field_correction(data, flats, darks)
     normalised_data = minus_log(normalised_data)
 
     recon_data = FISTA3d_tomobar(
@@ -288,7 +288,7 @@ def test_reconstruct_FISTA3d_tomobar_pd_tv_detpad_true(
 
 def test_reconstruct_FISTA3d_tomobar_rof_tv(data, flats, darks, ensure_clean_memory):
     objrecon_size = data.shape[2]
-    normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
+    normalised_data = dark_flat_field_correction(data, flats, darks)
     normalised_data = minus_log(normalised_data)
 
     recon_data = FISTA3d_tomobar(
@@ -313,7 +313,7 @@ def test_reconstruct_FISTA3d_tomobar_rof_tv(data, flats, darks, ensure_clean_mem
 
 def test_reconstruct_ADMM3d_tomobar_pd_tv(data, flats, darks, ensure_clean_memory):
     objrecon_size = data.shape[2]
-    normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
+    normalised_data = dark_flat_field_correction(data, flats, darks)
     normalised_data = minus_log(normalised_data)
 
     recon_data = ADMM3d_tomobar(
@@ -341,7 +341,7 @@ def test_reconstruct_ADMM3d_tomobar_pd_tv(data, flats, darks, ensure_clean_memor
 
 def test_reconstruct_ADMM3d_warm_tomobar_pd_tv(data, flats, darks, ensure_clean_memory):
     objrecon_size = data.shape[2]
-    normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
+    normalised_data = dark_flat_field_correction(data, flats, darks)
     normalised_data = minus_log(normalised_data)
 
     recon_data = ADMM3d_tomobar(
@@ -371,7 +371,7 @@ def test_reconstruct_ADMM3d_warm2_tomobar_pd_tv(
     data, flats, darks, ensure_clean_memory
 ):
     objrecon_size = data.shape[2]
-    normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
+    normalised_data = dark_flat_field_correction(data, flats, darks)
     normalised_data = minus_log(normalised_data)
 
     recon_data = ADMM3d_tomobar(
@@ -401,7 +401,7 @@ def test_reconstruct_ADMM3d_tomobar_pd_tv_detpad_true(
     data, flats, darks, ensure_clean_memory
 ):
     objrecon_size = data.shape[2]
-    normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
+    normalised_data = dark_flat_field_correction(data, flats, darks)
     normalised_data = minus_log(normalised_data)
 
     recon_data = ADMM3d_tomobar(
@@ -432,7 +432,7 @@ def test_reconstruct_ADMM3d_warm_tomobar_pd_tv_detpad_true(
     data, flats, darks, ensure_clean_memory
 ):
     objrecon_size = data.shape[2]
-    normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
+    normalised_data = dark_flat_field_correction(data, flats, darks)
     normalised_data = minus_log(normalised_data)
 
     recon_data = ADMM3d_tomobar(
@@ -461,7 +461,7 @@ def test_reconstruct_ADMM3d_warm_tomobar_pd_tv_detpad_true(
 
 def test_reconstruct_ADMM3d_tomobar_rof_tv(data, flats, darks, ensure_clean_memory):
     objrecon_size = data.shape[2]
-    normalised_data = dark_flat_field_correction(data, flats, darks, cutoff=10)
+    normalised_data = dark_flat_field_correction(data, flats, darks)
     normalised_data = minus_log(normalised_data)
 
     recon_data = ADMM3d_tomobar(

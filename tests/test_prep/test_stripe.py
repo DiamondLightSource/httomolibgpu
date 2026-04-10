@@ -17,7 +17,7 @@ from numpy.testing import assert_allclose
 
 def test_remove_stripe_ti_on_data(data, flats, darks):
     # --- testing the CuPy implementation from TomoCupy ---#
-    data_norm = dark_flat_field_correction(cp.copy(data), flats, darks, cutoff=10)
+    data_norm = dark_flat_field_correction(cp.copy(data), flats, darks)
     data_norm = minus_log(data_norm)
 
     data_after_stripe_removal = cp.asnumpy(remove_stripe_ti(data_norm))
@@ -54,7 +54,7 @@ class MaxMemoryHook(cp.cuda.MemoryHook):
 
 def test_remove_stripe_fw_on_data(data, flats, darks):
     # --- testing the CuPy implementation from TomoCupy ---#
-    data_norm = dark_flat_field_correction(data, flats, darks, cutoff=10)
+    data_norm = dark_flat_field_correction(data, flats, darks)
     data_norm = minus_log(data_norm)
 
     data_after_stripe_removal = remove_stripe_fw(
@@ -183,7 +183,7 @@ def test_remove_stripe_ti_dims_change(angles, det_y, det_x):
 
 def test_stripe_removal_sorting_cupy(data, flats, darks):
     # --- testing the CuPy port of TomoPy's implementation ---#
-    data_norm = dark_flat_field_correction(cp.copy(data), flats, darks, cutoff=10)
+    data_norm = dark_flat_field_correction(cp.copy(data), flats, darks)
     data_norm = minus_log(data_norm)
 
     corrected_data = cp.asnumpy(remove_stripe_based_sorting(data_norm))
@@ -199,7 +199,7 @@ def test_stripe_removal_sorting_cupy(data, flats, darks):
 
 
 def test_stripe_raven_cupy(data, flats, darks):
-    data_norm = dark_flat_field_correction(cp.copy(data), flats, darks, cutoff=10)
+    data_norm = dark_flat_field_correction(cp.copy(data), flats, darks)
     data_norm = minus_log(data_norm)
 
     data_after_raven_gpu = cp.asnumpy(raven_filter(data_norm))
@@ -289,7 +289,7 @@ def test_raven_filter_performance(ensure_clean_memory):
 
 def test_remove_all_stripe_on_data(data, flats, darks):
     # --- testing the CuPy implementation from TomoCupy ---#
-    data_norm = dark_flat_field_correction(cp.copy(data), flats, darks, cutoff=10)
+    data_norm = dark_flat_field_correction(cp.copy(data), flats, darks)
     data_norm = minus_log(data_norm)
 
     data_after_stripe_removal = cp.asnumpy(remove_all_stripe(data_norm))
