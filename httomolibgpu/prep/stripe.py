@@ -121,7 +121,11 @@ def _rs_sort(sinogram, size, dim):
     #: Sort each column of the sinogram by its grayscale values
     #: Keep track of the sorting indices so we can reverse it below
     sortvals = cp.argsort(sinogram, axis=1)
-    sortvals_reverse = cp.argsort(sortvals, axis=1)
+    # sortvals_reverse = cp.argsort(sortvals, axis=1)
+    sortvals_reverse = cp.empty_like(sortvals)
+    nrows, ncols = sinogram.shape
+    rows = np.arange(nrows)[:, None]
+    sortvals_reverse[rows, sortvals] = np.arange(ncols)
     sino_sort = cp.take_along_axis(sinogram, sortvals, axis=1)
 
     #: Now apply the median filter on the sorted image along each row
