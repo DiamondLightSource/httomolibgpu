@@ -116,25 +116,24 @@ def _rs_sort(sinogram, size, dim):
     """
     Remove stripes using the sorting technique.
     """
-    sinogram = cp.transpose(sinogram)
-
     #: Sort each column of the sinogram by its grayscale values
     #: Keep track of the sorting indices so we can reverse it below
-    sortvals = cp.argsort(sinogram, axis=1)
-    # sortvals_reverse = cp.argsort(sortvals, axis=1)
+    sortvals = cp.argsort(sinogram, axis=0)
+
     sortvals_reverse = cp.empty_like(sortvals)
     nrows, ncols = sinogram.shape
-    rows = np.arange(nrows)[:, None]
-    sortvals_reverse[rows, sortvals] = np.arange(ncols)
-    sino_sort = cp.take_along_axis(sinogram, sortvals, axis=1)
+    cols = np.arange(ncols)[None, :]
+    sortvals_reverse[sortvals, cols] = np.arange(nrows)[:, None]
+
+    sino_sort = cp.take_along_axis(sinogram, sortvals, axis=0)
 
     #: Now apply the median filter on the sorted image along each row
-    sino_sort = median_filter(sino_sort, (size, 1) if dim == 1 else (size, size))
+    sino_sort = median_filter(sino_sort, (1, size) if dim == 1 else (size, size))
 
     #: step 3: re-sort the smoothed image columns to the original rows
-    sino_corrected = cp.take_along_axis(sino_sort, sortvals_reverse, axis=1)
+    sino_corrected = cp.take_along_axis(sino_sort, sortvals_reverse, axis=0)
 
-    return cp.transpose(sino_corrected)
+    return sino_corrected
 
 
 def remove_stripe_ti(
