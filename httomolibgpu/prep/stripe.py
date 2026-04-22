@@ -23,6 +23,7 @@
 import numpy as np
 import pywt
 from httomolibgpu import cupywrapper
+from httomolibgpu.misc.sorting import argsort_with_reverse
 
 cp = cupywrapper.cp
 cupy_run = cupywrapper.cupy_run
@@ -116,14 +117,8 @@ def _rs_sort(sinogram, size, dim):
     """
     Remove stripes using the sorting technique.
     """
-    #: Sort each column of the sinogram by its grayscale values
-    #: Keep track of the sorting indices so we can reverse it below
-    sortvals = cp.argsort(sinogram, axis=0)
-
-    sortvals_reverse = cp.empty_like(sortvals)
-    nrows, ncols = sinogram.shape
-    cols = np.arange(ncols)[None, :]
-    sortvals_reverse[sortvals, cols] = np.arange(nrows)[:, None]
+    #: Sort each row of the sinogram by its grayscale values
+    sortvals, sortvals_reverse = argsort_with_reverse(sinogram, axis=0)
 
     sino_sort = cp.take_along_axis(sinogram, sortvals, axis=0)
 
@@ -865,7 +860,8 @@ def remove_all_stripe(
     matindex = _create_matindex(data.shape[2], data.shape[0])
     for m in range(data.shape[1]):
         sino = data[:, m, :]
-        sino = _rs_dead(sino, snr, la_size, matindex)
+        sino = _rs_dead(sino, snr, la_size)
+        sino = _rs_large(sino, snr, la_size, matindex)
         sino = _rs_sort(sino, sm_size, dim)
         sino = cp.nan_to_num(sino)
         data[:, m, :] = sino
@@ -913,15 +909,17 @@ def _detect_stripe(listdata, snr):
     return listmask
 
 
-def _rs_large(sinogram, snr, size, matindex, drop_ratio=0.1, norm=True):
+def _rs_large(sinogram, snr, size, matindex, drop_ratio=0.1):
     """
     Remove large stripes.
     """
     drop_ratio = max(min(drop_ratio, 0.8), 0)  # = cp.clip(drop_ratio, 0.0, 0.8)
     nrow, ncol = sinogram.shape
     ndrop = int(0.5 * drop_ratio * nrow)
-    sinosort = cp.sort(sinogram, axis=0)
+    sort_indices, sort_indices_reverse = argsort_with_reverse(sinogram, axis=0)
+    sinosort = cp.take_along_axis(sinogram, sort_indices, axis=0)
     sinosmooth = median_filter(sinosort, (1, size))
+    sino_corrected = cp.take_along_axis(sinosmooth, sort_indices_reverse, axis=0)
     list1 = cp.mean(sinosort[ndrop : nrow - ndrop], axis=0)
     list2 = cp.mean(sinosmooth[ndrop : nrow - ndrop], axis=0)
     listfact = list1 / list2
@@ -931,29 +929,29 @@ def _rs_large(sinogram, snr, size, matindex, drop_ratio=0.1, norm=True):
     listmask = binary_dilation(listmask, iterations=1).astype(listmask.dtype)
     matfact = cp.tile(listfact, (nrow, 1))
     # Normalize
-    if norm is True:
-        sinogram = sinogram / matfact
-    sinogram1 = cp.transpose(sinogram)
-    matcombine = cp.asarray(cp.dstack((matindex, sinogram1)))
+    sinogram = sinogram / matfact
+    # sinogram1 = cp.transpose(sinogram)
+    # matcombine = cp.asarray(cp.dstack((matindex, sinogram1)))
 
-    ids = cp.argsort(matcombine[:, :, 1], axis=1)
-    matsort = matcombine.copy()
-    matsort[:, :, 0] = cp.take_along_axis(matsort[:, :, 0], ids, axis=1)
-    matsort[:, :, 1] = cp.take_along_axis(matsort[:, :, 1], ids, axis=1)
+    # ids = cp.argsort(matcombine[:, :, 1], axis=1)
+    # matsort = matcombine.copy()
+    # matsort[:, :, 0] = cp.take_along_axis(matsort[:, :, 0], ids, axis=1)
+    # matsort[:, :, 1] = cp.take_along_axis(matsort[:, :, 1], ids, axis=1)
 
-    matsort[:, :, 1] = cp.transpose(sinosmooth)
-    ids = cp.argsort(matsort[:, :, 0], axis=1)
-    matsortback = matsort.copy()
-    matsortback[:, :, 0] = cp.take_along_axis(matsortback[:, :, 0], ids, axis=1)
-    matsortback[:, :, 1] = cp.take_along_axis(matsortback[:, :, 1], ids, axis=1)
+    # matsort[:, :, 1] = cp.transpose(sinosmooth)
+    # ids = cp.argsort(matsort[:, :, 0], axis=1)
+    # matsortback = matsort.copy()
+    # matsortback[:, :, 0] = cp.take_along_axis(matsortback[:, :, 0], ids, axis=1)
+    # matsortback[:, :, 1] = cp.take_along_axis(matsortback[:, :, 1], ids, axis=1)
 
-    sino_corrected = cp.transpose(matsortback[:, :, 1])
+    # sino_corrected = cp.transpose(matsortback[:, :, 1])
+
     listxmiss = cp.where(listmask > 0.0)[0]
     sinogram[:, listxmiss] = sino_corrected[:, listxmiss]
     return sinogram
 
 
-def _rs_dead(sinogram, snr, size, matindex, norm=True):
+def _rs_dead(sinogram, snr, size):
     """remove unresponsive and fluctuating stripes"""
     sinogram = cp.copy(sinogram)  # Make it mutable
     nrow, _ = sinogram.shape
@@ -982,9 +980,6 @@ def _rs_dead(sinogram, snr, size, matindex, norm=True):
             sinogram[:, listx[ids]] - sinogram[:, listx[ids - 1]]
         )
 
-    # Remove residual stripes
-    if norm is True:
-        sinogram = _rs_large(sinogram, snr, size, matindex)
     return sinogram
 
 
