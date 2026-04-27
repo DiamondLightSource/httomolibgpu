@@ -3,6 +3,9 @@ import cupy as cp
 from cupy.cuda import nvtx
 import numpy as np
 import pytest
+import tomophantom
+from tomophantom.qualitymetrics import QualityTools
+import os
 
 from httomolibgpu.prep.normalize import dark_flat_field_correction, minus_log
 from httomolibgpu.prep.stripe import (
@@ -12,6 +15,7 @@ from httomolibgpu.prep.stripe import (
     remove_all_stripe,
     raven_filter,
 )
+from httomolibgpu.recon.algorithm import FBP3d_tomobar
 from numpy.testing import assert_allclose
 
 
@@ -339,6 +343,61 @@ def test_remove_all_stripe_on_data_not_normalized(data, flats, darks):
     # make sure the output is float32
     assert data_after_stripe_removal.dtype == np.float32
     assert data_after_stripe_removal.flags.c_contiguous
+
+
+def test_remove_all_stripe_quality(ensure_clean_memory):
+    model = 13  # select a model number from the library
+    N_size = 256  # Define phantom dimensions using a scalar value (cubic phantom)
+    path = os.path.dirname(tomophantom.__file__)
+    path_library3D = os.path.join(path, "phantomlib", "Phantom3DLibrary.dat")
+    # This will generate a N_size x N_size x N_size phantom (3D)
+    phantom_tm = tomophantom.TomoP3D.Model(model, N_size, path_library3D)
+
+    # Projection geometry related parameters:
+    Horiz_det = N_size  # detector column count (horizontal)
+    Vert_det = N_size  # detector row count (vertical) (no reason for it to be > N)
+    angles_num = int(0.5 * np.pi * N_size)
+    # angles number
+    angles = np.linspace(0.0, 179.9, angles_num, dtype="float32")  # in degrees
+    angles_rad = angles * (np.pi / 180.0)
+    projData3D_analyt = tomophantom.TomoP3D.ModelSino(
+        model, N_size, Horiz_det, Vert_det, angles, path_library3D
+    )
+
+    # forming dictionaries with artifact types
+    _noise_ = {
+        "noise_type": "Poisson",
+        "noise_amplitude": 10000,  # noise amplitude
+        "noise_seed": 0,
+    }
+
+    _stripes_ = {
+        "stripes_percentage": 1.2,
+        "stripes_maxthickness": 3,
+        "stripes_intensity": 0.25,
+        "stripes_type": "mix",
+        "stripes_variability": 0.005,
+    }
+
+    projData3D_analyt_noisy = tomophantom.artefacts.artefacts_mix(
+        projData3D_analyt, **_noise_, **_stripes_
+    )
+    projData3D_analyt_noisy = cp.asarray(projData3D_analyt_noisy).swapaxes(0, 1)
+
+    recNumerical_noisy = FBP3d_tomobar(
+        projData3D_analyt_noisy, angles_rad
+    )  # FBP reconstruction
+    Qtools = QualityTools(phantom_tm, recNumerical_noisy.get())
+    RMSE_noisy = Qtools.rmse()
+
+    projData3D_analyt_stripe_removed = remove_all_stripe(projData3D_analyt_noisy)
+    recNumerical_stripe_removed = FBP3d_tomobar(
+        projData3D_analyt_stripe_removed, angles_rad
+    )  # FBP reconstruction
+    Qtools = QualityTools(phantom_tm, recNumerical_stripe_removed.get())
+    RMSE_stripe_removed = Qtools.rmse()
+
+    assert RMSE_noisy > RMSE_stripe_removed
 
 
 @pytest.mark.perf
