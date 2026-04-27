@@ -819,6 +819,7 @@ def remove_all_stripe(
     la_size: int = 61,
     sm_size: int = 21,
     dim: Literal[1, 2] = 1,
+    normalize: bool = False,
 ) -> cp.ndarray:
     """
     Remove all types of stripe artifacts from sinogram using Nghia Vo's
@@ -837,6 +838,8 @@ def remove_all_stripe(
         Window size of the median filter to remove small-to-medium stripes.
     dim : {1, 2},
         Dimension of the window.
+    normalize : bool,
+        Controls whether to normalize while removing large stripes
 
     Returns
     -------
@@ -857,11 +860,10 @@ def remove_all_stripe(
     __check_variable_type(dim, [int], "dim", [1, 2], methods_name)
     ###################################
 
-    matindex = _create_matindex(data.shape[2], data.shape[0])
     for m in range(data.shape[1]):
         sino = data[:, m, :]
         sino = _rs_dead(sino, snr, la_size)
-        sino = _rs_large(sino, snr, la_size, matindex)
+        sino = _rs_large(sino, snr, la_size, normalize)
         sino = _rs_sort(sino, sm_size, dim)
         sino = cp.nan_to_num(sino)
         data[:, m, :] = sino
@@ -909,7 +911,7 @@ def _detect_stripe(listdata, snr):
     return listmask
 
 
-def _rs_large(sinogram, snr, size, matindex, drop_ratio=0.1):
+def _rs_large(sinogram, snr, size, normalize, drop_ratio=0.1):
     """
     Remove large stripes.
     """
@@ -919,7 +921,7 @@ def _rs_large(sinogram, snr, size, matindex, drop_ratio=0.1):
     sort_indices, sort_indices_reverse = argsort_with_reverse(sinogram, axis=0)
     sinosort = cp.take_along_axis(sinogram, sort_indices, axis=0)
     sinosmooth = median_filter(sinosort, (1, size))
-    sino_corrected = cp.take_along_axis(sinosmooth, sort_indices_reverse, axis=0)
+
     list1 = cp.mean(sinosort[ndrop : nrow - ndrop], axis=0)
     list2 = cp.mean(sinosmooth[ndrop : nrow - ndrop], axis=0)
     listfact = list1 / list2
@@ -928,24 +930,10 @@ def _rs_large(sinogram, snr, size, matindex, drop_ratio=0.1):
     listmask = _detect_stripe(listfact, snr)
     listmask = binary_dilation(listmask, iterations=1).astype(listmask.dtype)
     matfact = cp.tile(listfact, (nrow, 1))
-    # Normalize
-    sinogram = sinogram / matfact
-    # sinogram1 = cp.transpose(sinogram)
-    # matcombine = cp.asarray(cp.dstack((matindex, sinogram1)))
-
-    # ids = cp.argsort(matcombine[:, :, 1], axis=1)
-    # matsort = matcombine.copy()
-    # matsort[:, :, 0] = cp.take_along_axis(matsort[:, :, 0], ids, axis=1)
-    # matsort[:, :, 1] = cp.take_along_axis(matsort[:, :, 1], ids, axis=1)
-
-    # matsort[:, :, 1] = cp.transpose(sinosmooth)
-    # ids = cp.argsort(matsort[:, :, 0], axis=1)
-    # matsortback = matsort.copy()
-    # matsortback[:, :, 0] = cp.take_along_axis(matsortback[:, :, 0], ids, axis=1)
-    # matsortback[:, :, 1] = cp.take_along_axis(matsortback[:, :, 1], ids, axis=1)
-
-    # sino_corrected = cp.transpose(matsortback[:, :, 1])
-
+    if normalize:
+        sinogram = sinogram / matfact
+        sort_indices, sort_indices_reverse = argsort_with_reverse(sinogram, axis=0)
+    sino_corrected = cp.take_along_axis(sinosmooth, sort_indices_reverse, axis=0)
     listxmiss = cp.where(listmask > 0.0)[0]
     sinogram[:, listxmiss] = sino_corrected[:, listxmiss]
     return sinogram
