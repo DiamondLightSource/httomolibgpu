@@ -126,7 +126,18 @@ def FBP2d_astra(
         filter_type,
         [str],
         "filter_type",
-        ["none", "ram-lak", "shepp-logan", "tukey", "gaussian", "blackman", "kaiser"],
+        [
+            "none",
+            "ram-lak",
+            "cosine",
+            "shepp-logan",
+            "tukey",
+            "gaussian",
+            "blackman",
+            "kaiser",
+            "lanczos",
+            "hann",
+        ],
         methods_name,
     )
     __check_variable_type(
@@ -552,7 +563,7 @@ def FISTA3d_tomobar(
     subsets_number: int
         The number of the ordered subsets to accelerate convergence. Keep the value bellow 10 to avoid divergence.
     data_fidelity: str
-        Data fidelity given as 'LS' (Least Squares), 'PWLS' (Penalised Weightes LS).
+        Data fidelity given as 'LS' (Least Squares), 'PWLS' (Penalised Weighted LS).
     regularisation_type: str
         A method to use for regularisation. Currently PD_TV and ROF_TV are available.
     regularisation_parameter: float
@@ -644,7 +655,7 @@ def ADMM3d_tomobar(
     initialisation: Literal["FBP", "CGLS", "SIRT", None] = "FBP",
     ADMM_rho_const: float = 1.0,
     ADMM_relax_par: float = 1.7,
-    regularisation_type: str = "PD_TV",
+    regularisation_type: Literal["ROF_TV", "PD_TV"] = "PD_TV",
     regularisation_parameter: float = 0.0025,
     regularisation_iterations: int = 40,
     regularisation_half_precision: bool = True,
