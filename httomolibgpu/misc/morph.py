@@ -80,45 +80,76 @@ def sino_360_to_180(
     )
     __check_variable_type(overlap, [int, float], "overlap", [], methods_name)
     __check_variable_type(side, [str], "side", ["left", "right"], methods_name)
-    __check_if_positive_nonzero(
-        overlap, "overlap", positive=True, nonzero=True, methods_name=methods_name
-    )
     ###################################
     #
     dx, dy, dz = data.shape
 
     overlap = int(np.round(overlap))
-    if overlap >= dz - 1:
-        raise ValueError("Overlap must be less than size of the horizontal detector")
     if overlap % 2 != 0:
         overlap += 1
-
+    overlap_pos = abs(overlap)
+    if overlap_pos >= dz - 1:
+        raise ValueError("Overlap must be less than size of the horizontal detector")
     n = dx // 2
     out = cp.empty((n, dy, 2 * dz - overlap), dtype=data.dtype)
 
     if side == "left":
-        weights = cp.linspace(0, 1.0, overlap, dtype=cp.float32)
-        out[:, :, -dz + overlap :] = data[:n, :, overlap:]
-        out[:, :, : dz - overlap] = data[n : 2 * n, :, overlap:][:, :, ::-1]
-        out[:, :, dz - overlap : dz] = (
-            weights * data[:n, :, :overlap]
-            + (weights * data[n : 2 * n, :, :overlap])[:, :, ::-1]
-        )
+        if overlap == 0:
+            out[:, :, -dz:] = data[:n, :, :]
+            out[:, :, :dz] = data[n : 2 * n, :, :][:, :, ::-1]
+            return out
+        elif overlap < 0:
+            out[:, :, -dz:] = data[:n, :, :]
+            out[:, :, : (dz + overlap_pos)] = cp.pad(
+                data[n : 2 * n, :, :][:, :, ::-1],
+                pad_width=(
+                    (0, 0),
+                    (0, 0),
+                    (0, overlap_pos),
+                ),
+                mode="edge",
+            )
+            return out
+        else:
+            weights = cp.linspace(0, 1.0, overlap, dtype=cp.float32)
+            out[:, :, -dz + overlap :] = data[:n, :, overlap:]
+            out[:, :, : dz - overlap] = data[n : 2 * n, :, overlap:][:, :, ::-1]
+            out[:, :, dz - overlap : dz] = (
+                weights * data[:n, :, :overlap]
+                + (weights * data[n : 2 * n, :, :overlap])[:, :, ::-1]
+            )
     if side == "right":
-        weights = cp.linspace(1.0, 0, overlap, dtype=cp.float32)
-        out[:, :, : dz - overlap] = data[:n, :, :-overlap]
-        out[:, :, -dz + overlap :] = data[n : 2 * n, :, :-overlap][:, :, ::-1]
-        out[:, :, dz - overlap : dz] = (
-            weights * data[:n, :, -overlap:]
-            + (weights * data[n : 2 * n, :, -overlap:])[:, :, ::-1]
-        )
+        if overlap == 0:
+            out[:, :, :dz] = data[:n, :, :]
+            out[:, :, dz::] = data[n : 2 * n, :, :][:, :, ::-1]
+            return out
+        elif overlap < 0:
+            out[:, :, : (dz + overlap_pos)] = cp.pad(
+                data[:n, :, :],
+                pad_width=(
+                    (0, 0),
+                    (0, 0),
+                    (0, overlap_pos),
+                ),
+                mode="edge",
+            )
+            out[:, :, (dz + overlap_pos) : :] = data[n : 2 * n, :, :][:, :, ::-1]
+            return out
+        else:
+            weights = cp.linspace(1.0, 0, overlap, dtype=cp.float32)
+            out[:, :, : dz - overlap] = data[:n, :, :-overlap]
+            out[:, :, -dz + overlap :] = data[n : 2 * n, :, :-overlap][:, :, ::-1]
+            out[:, :, dz - overlap : dz] = (
+                weights * data[:n, :, -overlap:]
+                + (weights * data[n : 2 * n, :, -overlap:])[:, :, ::-1]
+            )
 
     return cp.pad(
         out,
         pad_width=(
             (0, 0),
             (0, 0),
-            (overlap // 2, overlap // 2),
+            (overlap_pos // 2, overlap_pos // 2),
         ),
         mode="edge",
     )
