@@ -14,6 +14,7 @@ from httomolibgpu.recon.algorithm import (
     SIRT3d_tomobar,
     FISTA3d_tomobar,
     ADMM3d_tomobar,
+    OSEM3d_tomobar,
 )
 from httomolibgpu.misc.morph import sino_360_to_180
 from numpy.testing import assert_allclose
