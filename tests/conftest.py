@@ -47,6 +47,12 @@ def distortion_correction_path(test_data_path):
     return os.path.join(test_data_path, "distortion-correction")
 
 
+@pytest.fixture(scope="session")
+def data_XRFfile(test_data_path):
+    in_file = os.path.join(test_data_path, "Ga-Ka_aligned.npz")
+    return np.load(in_file)
+
+
 # only load from disk once per session, and we use np.copy for the elements,
 # to ensure data in this loaded file stays as originally loaded
 @pytest.fixture(scope="session")
@@ -139,6 +145,16 @@ def host_detector_x(data_file):
 @pytest.fixture
 def detector_x(host_detector_x, ensure_clean_memory):
     return cp.asarray(host_detector_x)
+
+
+@pytest.fixture
+def raw_data_Xrf(data_XRFfile):
+    return np.float32(np.copy(data_XRFfile["arr_0"]))
+
+
+@pytest.fixture
+def angles_data_Xrf(data_XRFfile):
+    return np.float32(np.copy(data_XRFfile["arr_1"]))
 
 
 class MaxMemoryHook(cp.cuda.MemoryHook):
