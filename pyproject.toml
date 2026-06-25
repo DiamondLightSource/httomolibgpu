@@ -60,7 +60,8 @@ dev = [
   "imageio",
   "h5py",
   "pre-commit",
-  "pyfftw"
+  "pyfftw",
+  "tomophantom"
 ]
 
 

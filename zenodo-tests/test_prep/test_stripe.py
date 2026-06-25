@@ -172,6 +172,7 @@ def test_remove_all_stripe_i12_dataset4(
         la_size=la_size_val,
         sm_size=sm_size_val,
         dim=1,
+        normalize=True,
     )
 
     residual_calc = data_normalised - output
