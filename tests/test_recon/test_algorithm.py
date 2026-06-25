@@ -9,6 +9,7 @@ from httomolibgpu.recon.algorithm import (
     CGLS3d_tomobar,
     FISTA3d_tomobar,
     ADMM3d_tomobar,
+    OSEM3d_tomobar,
 )
 from numpy.testing import assert_allclose
 import time
@@ -483,6 +484,31 @@ def test_reconstruct_ADMM3d_tomobar_rof_tv(data, flats, darks, ensure_clean_memo
     assert_allclose(np.mean(recon_data), 0.0017946999, rtol=1e-07, atol=1e-6)
     assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.22972171, rtol=1e-04)
     assert recon_data.dtype == np.float32
+
+
+def test_reconstruct_OSEM3d_tomobar_XRF_dataset(
+    raw_data_Xrf,
+    angles_data_Xrf,
+):
+    _, detY, detX = np.shape(raw_data_Xrf)
+    data_cp = cp.asarray(np.float32(raw_data_Xrf), order="C")
+    angles_rad = np.deg2rad(angles_data_Xrf)
+
+    args = {
+        "angles": angles_rad,
+        "center": -0.5,
+        "detector_pad": False,
+        "recon_mask_radius": 2.0,
+        "iterations": 10,
+        "regularisation_parameter": 1.5,
+    }
+
+    recon_data = OSEM3d_tomobar(data=data_cp, **args)
+
+    assert recon_data.flags.c_contiguous
+    recon_data = cp.asnumpy(recon_data)
+    assert_allclose(np.min(recon_data), -5.1245663e-16, rtol=1e-04)
+    assert_allclose(np.max(recon_data), 71016.34, rtol=1e-04)
 
 
 @pytest.mark.perf
