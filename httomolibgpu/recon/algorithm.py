@@ -566,13 +566,13 @@ def FISTA3d_tomobar(
     data_fidelity: str
         Data fidelity given as 'LS' (Least Squares)
     regularisation_type: str
-        A method to use for regularisation. Currently PD_TV and ROF_TV are available.
+        A method to use for regularisation. Currently PD_TV and ROF_TV penalties are available.
     regularisation_parameter: float
         The main regularisation parameter to control the amount of smoothing/noise removal. Larger values lead to stronger smoothing.
     regularisation_iterations: int
         The number of iterations for regularisers (aka INNER iterations).
     regularisation_half_precision: bool
-        Perform faster regularisation computation in half-precision with a very minimal sacrifice in quality.
+        Perform faster regularisation computation in half-precision with some sacrifice in quality (can be used to find the best settings).
     nonnegativity : bool
         Impose nonnegativity constraint on the reconstructed image.
     gpu_id : int
@@ -698,14 +698,16 @@ def ADMM3d_tomobar(
     ADMM_rho_const: float
         Convergence related parameter for ADMM, higher values lead to slower convergence, but too small values can destabilise the iterations.
         Recommended range is between 0.9 and 2.0.
-    ADMM_relax_par: Relaxation parameter which can lead to acceleration of the algorithm, keep it in the range between 1.5 and 1.8 to avoid divergence.     regularisation_type: str
-        A method to use for regularisation. Currently PD_TV and ROF_TV are available.
+    ADMM_relax_par: float
+        Relaxation parameter which can lead to acceleration of the algorithm, keep it in the range between 1.5 and 1.8 to avoid divergence.
+    regularisation_type: str
+        A method to use for regularisation. Currently PD_TV and ROF_TV penalties are available.
     regularisation_parameter: float
         The main regularisation parameter to control the amount of smoothing/noise removal. Larger values lead to stronger smoothing.
     regularisation_iterations: int
         The number of iterations for regularisers (aka INNER iterations).
     regularisation_half_precision: bool
-        Perform faster regularisation computation in half-precision with a very minimal sacrifice in quality.
+        Perform faster regularisation computation in half-precision with some sacrifice in quality (can be used to find the best settings).
     nonnegativity : bool
         Impose nonnegativity constraint (set to True) on the reconstructed image. Default False.
     gpu_id : int
