@@ -20,7 +20,9 @@
 # ---------------------------------------------------------------------------
 
 from typing import Tuple
-import cupy as cp
+from httomolibgpu import cupywrapper
+
+cp = cupywrapper.cp
 
 
 def argsort_with_reverse(
