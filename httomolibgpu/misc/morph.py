@@ -45,6 +45,7 @@ from httomolibgpu.misc.utils import (
 __all__ = [
     "sino_360_to_180",
     "data_resampler",
+    "average_projection_frames",
 ]
 
 
@@ -305,3 +306,65 @@ def data_resampler(
     if expanded:
         scaled_data = cp.squeeze(scaled_data, axis=axis)
     return scaled_data
+
+
+def average_projection_frames(
+    data: cp.ndarray,
+    projection_averaging_factor: int = 2,
+) -> cp.ndarray:
+    """
+    This method averages/downsamples by averaging data along the angular direction based on the provided projection_averaging_factor.
+
+    Parameters
+    ----------
+    data : cp.ndarray
+        3d cupy array given as (angles, detY, detX).
+    projection_averaging_factor : int
+        to average every (defined by the provided factor) consecutive projections into one effective projection.
+
+    Raises
+    ----------
+        ValueError: When data is not 3D
+
+    Returns
+    -------
+        cp.ndarray: 3D cupy array with averaged projection data
+    """
+
+    ### Data and parameters checks ###
+    methods_name = "average_projection_frames"
+    __check_if_data_3D_array(data, methods_name)
+    __check_if_data_correct_type(
+        data, accepted_type=["float32", "uint16"], methods_name=methods_name
+    )
+    __check_if_positive_nonzero(
+        projection_averaging_factor,
+        "projection_averaging_factor",
+        True,
+        True,
+        methods_name,
+    )
+
+    ###################################
+    if projection_averaging_factor > 1:
+        k = projection_averaging_factor
+        n_proj = data.shape[0]
+
+        n_full = n_proj // k
+        remainder = n_proj % k
+
+        n_out = n_full + (remainder > 0)
+
+        averaged = cp.empty((n_out, *data.shape[1:]), dtype=data.dtype)
+
+        if n_full:
+            averaged[:n_full] = (
+                data[: n_full * k].reshape(n_full, k, *data.shape[1:]).mean(axis=1)
+            )
+
+        if remainder:
+            averaged[-1] = data[n_full * k :].mean(axis=0)
+
+        return averaged
+    else:
+        return data

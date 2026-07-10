@@ -4,7 +4,11 @@ import numpy as np
 from cupy.cuda import nvtx
 import pytest
 from numpy.testing import assert_allclose
-from httomolibgpu.misc.morph import sino_360_to_180, data_resampler
+from httomolibgpu.misc.morph import (
+    sino_360_to_180,
+    data_resampler,
+    average_projection_frames,
+)
 
 
 @pytest.mark.parametrize(
@@ -34,9 +38,9 @@ def test_sino_360_to_180_wrong_dims(ensure_clean_memory, shape):
 @pytest.mark.parametrize("axis", [0, 1, 2])
 def test_data_resampler(data, axis, ensure_clean_memory):
     newshape = [60, 80]
-    scaled_data = data_resampler(
-        data, newshape=newshape, axis=axis, interpolation="linear"
-    ).get()
+    scaled_data = cp.asnumpy(
+        data_resampler(data, newshape=newshape, axis=axis, interpolation="linear")
+    )
 
     assert scaled_data.ndim == 3
     if axis == 0:
@@ -50,6 +54,58 @@ def test_data_resampler(data, axis, ensure_clean_memory):
         assert_allclose(np.max(scaled_data), 1113.2761)
     assert scaled_data.dtype == np.float32
     assert scaled_data.flags.c_contiguous
+
+
+@pytest.mark.parametrize("projection_averaging_factor", [1, 2, 3, 7])
+def test_average_projection_frames_testdata(
+    data, projection_averaging_factor, ensure_clean_memory
+):
+    averaged_data = cp.asnumpy(
+        average_projection_frames(
+            data, projection_averaging_factor=projection_averaging_factor
+        )
+    )
+
+    assert averaged_data.ndim == 3
+
+    if projection_averaging_factor == 1:
+        assert averaged_data.shape == (180, 128, 160)
+    if projection_averaging_factor == 2:
+        assert averaged_data.shape == (90, 128, 160)
+        assert_allclose(np.max(averaged_data), 1089)
+    if projection_averaging_factor == 3:
+        assert averaged_data.shape == (60, 128, 160)
+        assert_allclose(np.max(averaged_data), 1070)
+    if projection_averaging_factor == 7:
+        assert averaged_data.shape == (26, 128, 160)
+        assert_allclose(np.max(averaged_data), 1044)
+    assert averaged_data.dtype == np.uint16
+    assert averaged_data.flags.c_contiguous
+
+
+@pytest.mark.parametrize("projection_averaging_factor", [2, 3])
+def test_average_projection_frames_randdata(
+    projection_averaging_factor, ensure_clean_memory
+):
+    data_host = (
+        np.random.random_sample(size=(1801, 5, 2560)).astype(np.float32) * 2.0 + 0.001
+    )
+    data = cp.asarray(data_host, dtype=np.float32)
+
+    averaged_data = cp.asnumpy(
+        average_projection_frames(
+            data, projection_averaging_factor=projection_averaging_factor
+        )
+    )
+
+    assert averaged_data.ndim == 3
+
+    if projection_averaging_factor == 2:
+        assert averaged_data.shape == (901, 5, 2560)
+    if projection_averaging_factor == 3:
+        assert averaged_data.shape == (601, 5, 2560)
+    assert averaged_data.dtype == np.float32
+    assert averaged_data.flags.c_contiguous
 
 
 @pytest.mark.parametrize("rotation", ["left", "right"])
