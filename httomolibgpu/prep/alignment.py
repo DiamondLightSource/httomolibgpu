@@ -32,7 +32,7 @@ if cupy_run:
 else:
     map_coordinates = Mock()
 
-from typing import Literal, List
+from typing import Literal, List, Optional
 
 __all__ = [
     "distortion_correction_proj_discorpy",
@@ -51,7 +51,10 @@ from httomolibgpu.misc.utils import (
 # but with the additional params `order` and `mode`).
 def distortion_correction_proj_discorpy(
     data: cp.ndarray,
-    metadata_path: str,
+    metadata_path: Optional[str] = None,
+    xcenter: Optional[float] = None,
+    ycenter: Optional[float] = None,
+    list_fact: Optional[List[float]] = None,
     shift_xy: List[int] = [0, 0],
     step_xy: List[int] = [1, 1],
     order: int = 3,
@@ -73,9 +76,17 @@ def distortion_correction_proj_discorpy(
     data : cp.ndarray
         3D array.
 
-    metadata_path : str
-        The path to the file containing the distortion coefficients for the
-        data.
+    metadata_path : Optional, str
+        The path to the file containing the distortion coefficients for the data. When the file is provided the center values are ignored.
+
+    xcenter : Optional, float
+        Center of distortion in x-direction. From the left of the image.
+
+    ycenter : Optional, float
+        Center of distortion in y-direction. From the top of the image.
+
+    list_fact : Optional, list
+        Polynomial coefficients of the backward model.
 
     shift_xy: List[int]
          Centers of distortion in x (from the left of the image) and y directions (from the top of the image).
@@ -100,7 +111,17 @@ def distortion_correction_proj_discorpy(
     __check_if_data_correct_type(
         data, accepted_type=["float32", "uint16"], methods_name=methods_name
     )
-    __check_variable_type(metadata_path, [str], "metadata_path", [], methods_name)
+    __check_variable_type(
+        metadata_path, [str, type(None)], "metadata_path", [], methods_name
+    )
+    __check_variable_type(
+        xcenter, [float, int, type(None)], "xcenter", [], methods_name
+    )
+    __check_variable_type(
+        ycenter, [float, int, type(None)], "ycenter", [], methods_name
+    )
+    __check_variable_type(list_fact, [list, type(None)], "list_fact", [], methods_name)
+
     __check_variable_type(shift_xy, [list], "shift_xy", [], methods_name)
     __check_variable_type(step_xy, [list], "step_xy", [], methods_name)
     __check_variable_type(order, [int], "order", [], methods_name)
@@ -126,8 +147,14 @@ def distortion_correction_proj_discorpy(
     if len(data.shape) == 2:
         data = cp.expand_dims(data, axis=0)
 
-    # Get info from metadata txt file
-    xcenter, ycenter, list_fact = _load_metadata_txt(metadata_path)
+    if metadata_path is not None:
+        # Get info from metadata txt file
+        xcenter, ycenter, list_fact = _load_metadata_txt(metadata_path)
+    else:
+        if any(v is None for v in (xcenter, ycenter, list_fact)):
+            raise ValueError(
+                "When file with distortion coefficients is not provided, xcenter, ycenter and list_fact must be given."
+            )
 
     # Use preview information to offset the x and y coords of the center of
     # distortion
@@ -146,8 +173,8 @@ def distortion_correction_proj_discorpy(
     det_x_shift = shift_xy[0]
     det_y_shift = shift_xy[1]
 
-    xcenter = xcenter - det_x_shift
-    ycenter = ycenter - det_y_shift
+    xcenter -= det_x_shift
+    ycenter -= det_y_shift
 
     height, width = data.shape[1], data.shape[2]
     xu_list = cp.arange(width) - xcenter
