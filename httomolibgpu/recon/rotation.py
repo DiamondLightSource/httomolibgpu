@@ -21,16 +21,25 @@
 """Modules for finding the axis of rotation for 180 and 360 degrees scans"""
 
 import numpy as np
+import os
+import pathlib
 from numpy.polynomial import Polynomial
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp
 cupy_run = cupywrapper.cupy_run
 
+
 from unittest.mock import Mock
 
 if cupy_run:
     from httomolibgpu.cuda_kernels import load_cuda_module
+    from httomolibgpu.recon.algorithm import (
+        FBP3d_tomobar,
+        LPRec3d_tomobar,
+        SIRT3d_tomobar,
+        CGLS3d_tomobar,
+    )
     from cupyx.scipy.ndimage import shift, gaussian_filter
     from ._phase_cross_correlation import phase_cross_correlation
     from cupyx.scipy.fftpack import get_fft_plan
@@ -60,6 +69,7 @@ __all__ = [
     "find_center_vo",
     "find_center_360",
     "find_center_pc",
+    "find_center_metric_recon",
 ]
 
 
@@ -863,3 +873,97 @@ def find_center_pc(
 
 
 ##%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+def find_center_metric_recon(
+    data: cp.ndarray,
+    angles: np.ndarray,
+    metric_type: Literal["entropy", "tv"] = "tv",
+    range: int = 10,
+    step: Union[float, int] = 0.5,
+    reconstruction_method: Literal[
+        "LPRec3d_tomobar", "FBP3d_tomobar", "SIRT3d_tomobar", "CGLS3d_tomobar"
+    ] = "LPRec3d_tomobar",
+    recon_mask_radius: Union[float, int] = 0.75,
+    recon_iterations: Optional[int] = None,
+    cor_initialisation_value: Optional[float] = None,
+    gaussian_filter_sigma: Optional[float] = None,
+    save_recon_tiff: Optional[os.PathLike] = None,
+) -> np.float32:
+    """
+    Find the rotation axis location using different metrics that are applied to the result of the reconstruction. This method iteratively
+    assesses the quality of the reconstruction while changing the CoR value within the provided range. This approach for the CoR finding is suitable
+    for limited angle (missing wedge) data, when the symmetry and consistency of the sinogram is lost.
+
+
+    Parameters
+    ----------
+    data : cp.ndarray
+        3D [angles, 1, detX] tomographic data as a CuPy array.
+    angles : np.ndarray
+        An array of angles given in radians.
+    metric_type : str,
+        Type of image quality metric to use on the reconstructed image. Available metrics are 'entropy', 'tv' (total variation).
+    range : int
+        CoR search range/radius. The search will be performed in the range: [-range:cor_initialisation_value:range]
+    step : float
+        Step for CoR value.
+    reconstruction_method : str,
+           Type of the reconstruction method to be used. Choose from: "LPRec3d_tomobar", "FBP3d_tomobar", "SIRT3d_tomobar", "CGLS3d_tomobar". Default 'LPRec3d_tomobar'.
+    recon_mask_radius: float,
+        The radius of the circular mask that applies to the reconstructed slice in order to crop
+        out some undesirable artifacts. The values outside the given diameter will be set to zero.
+        To implement the cropping one can use the range [0.7-1.0] or set to None (2.0) when no cropping is needed.
+        Selection of the mask is crucial for this algorithm to work.
+    recon_iterations: int, optional
+            Set only for iterative methods: 'SIRT3d_tomobar', 'CGLS3d_tomobar'.
+    cor_initialisation_value : float, optional
+        The initial approximation for the centre of rotation. If the value is None, use the horizontal centre of the projection/sinogram image.
+    gaussian_filter_sigma: float, optional
+            Enable gaussian filtering of the reconstructed image, recommended for noisy data. Good range of values 1.0-4.0.
+    save_recon_tiff: path, optional
+        Path to output directory for the saved reconstruction image when CoR = cor_initialisation_value. Useful for debugging.
+
+    Returns
+    -------
+    float32
+        Rotation axis location with a subpixel precision.
+    """
+    ### Data and parameters checks ###
+    methods_name = "find_center_metric_recon"
+    __check_if_data_correct_type(
+        data, accepted_type=["float32"], methods_name=methods_name
+    )
+    __check_variable_type(
+        metric_type, [str], "metric_type", ["entropy", "tv"], methods_name
+    )
+    __check_variable_type(range, [int], "range", [], methods_name)
+    __check_variable_type(step, [int, float], "step", [], methods_name)
+    __check_variable_type(
+        reconstruction_method,
+        [str],
+        "reconstruction_method",
+        ["LPRec3d_tomobar", "FBP3d_tomobar", "SIRT3d_tomobar", "CGLS3d_tomobar"],
+        methods_name,
+    )
+    __check_variable_type(
+        recon_iterations, [int, type(None)], "recon_iterations", [], methods_name
+    )
+    if recon_iterations is None and reconstruction_method in [
+        "SIRT3d_tomobar",
+        "CGLS3d_tomobar",
+    ]:
+        recon_iterations = 15
+    __check_variable_type(
+        gaussian_filter_sigma,
+        [float, type(None)],
+        "gaussian_filter_sigma",
+        [],
+        methods_name,
+    )
+    __check_variable_type(
+        save_recon_tiff, [str, pathlib.PosixPath], "save_recon_tiff", [], methods_name
+    )
+
+    return 0.0
+    ###################################
