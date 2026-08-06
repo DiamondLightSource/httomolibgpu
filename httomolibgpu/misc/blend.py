@@ -99,7 +99,7 @@ def seam_blend_stitched_data(
         err_str = f"Seam index '{seam_index}' cannot be negative or larger than the horizontal dimension of the data '{detX}'. Check 'shift_seam_index'."
         raise ValueError(err_str)
 
-    ramp = np.linspace(0, 1, overlap)
+    ramp = cp.asarray(np.linspace(0, 1, overlap))
 
     blended_data = cp.empty((angles_dim, detY, detX - overlap), dtype=data.dtype)
 
