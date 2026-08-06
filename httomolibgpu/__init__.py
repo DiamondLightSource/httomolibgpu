@@ -1,5 +1,6 @@
 from httomolibgpu.misc.utils import data_checker
 
+from httomolibgpu.misc.blend import seam_blend_stitched_data
 from httomolibgpu.misc.corr import median_filter, remove_outlier
 from httomolibgpu.misc.denoise import total_variation_ROF, total_variation_PD
 from httomolibgpu.misc.morph import sino_360_to_180, data_resampler
@@ -22,6 +23,7 @@ from httomolibgpu.recon.algorithm import (
     SIRT3d_tomobar,
     CGLS3d_tomobar,
     FISTA3d_tomobar,
+    ADMM3d_tomobar,
 )
 
 from httomolibgpu.recon.rotation import find_center_vo, find_center_360, find_center_pc
