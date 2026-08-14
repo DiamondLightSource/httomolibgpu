@@ -24,4 +24,9 @@ from httomolibgpu.recon.algorithm import (
     FISTA3d_tomobar,
 )
 
-from httomolibgpu.recon.rotation import find_center_vo, find_center_360, find_center_pc
+from httomolibgpu.recon.rotation import (
+    find_center_vo,
+    find_center_360,
+    find_center_pc,
+    find_center_metric_recon,
+)

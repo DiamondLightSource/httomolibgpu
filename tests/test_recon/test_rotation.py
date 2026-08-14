@@ -9,6 +9,7 @@ from httomolibgpu.prep.normalize import dark_flat_field_correction, minus_log
 from httomolibgpu.recon.rotation import (
     _calculate_chunks,
     find_center_360,
+    find_center_metric_recon,
     find_center_vo,
     find_center_pc,
 )
@@ -26,6 +27,38 @@ def test_find_center_vo(data, flats, darks):
 
     data = None  #: free up GPU memory
     assert_allclose(cor, 79.5)
+
+
+@pytest.mark.parametrize(
+    "metric",
+    [
+        "tv",
+        "entropy",
+        "sharpness",
+    ],
+)
+def test_find_center_metric_recon(data, host_angles, flats, darks, metric):
+    data_normalize = dark_flat_field_correction(cp.copy(data), flats, darks)
+
+    # --- testing the center of rotation on tomo_standard ---#
+    cor = find_center_metric_recon(
+        data_normalize,
+        angles=host_angles,
+        metric_type=metric,
+        range=10,
+        step=0.5,
+        reconstruction_method="LPRec3d_tomobar",
+        gaussian_filter_sigma=2.0,
+        squared_mask_x_y_size=[20, 20, 20],
+    )
+
+    data = None
+    if metric == "tv":
+        assert_allclose(cor, 86.5)
+    elif metric == "entropy":
+        assert_allclose(cor, 72.5)
+    elif metric == "sharpness":
+        assert_allclose(cor, 87.0)
 
 
 def test_find_center_vo_ones(ensure_clean_memory):
