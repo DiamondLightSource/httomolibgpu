@@ -4,7 +4,7 @@
 API reference
 ==========================
 
-This section contains the API reference and usage information for HttomolibGPU.
+This section contains the API reference and usage information for HTTomolibGPU.
 
 HTTomolibGPU Modules
 ---------------------

@@ -18,19 +18,40 @@
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 01 November 2022
 # ---------------------------------------------------------------------------
-"""Modules for finding the axis of rotation for 180 and 360 degrees scans"""
+"""Modules for finding the axis of rotation for 180 or 360 degrees scans.
+
+* :mod:`httomolibgpu.recon.rotation.find_center_vo`
+
+* :mod:`httomolibgpu.recon.rotation.find_center_360`
+
+* :mod:`httomolibgpu.recon.rotation.find_center_pc`
+
+* :mod:`httomolibgpu.recon.rotation.find_center_metric_recon`
+"""
 
 import numpy as np
+import os
+import pathlib
+from pathlib import Path
 from numpy.polynomial import Polynomial
 from httomolibgpu import cupywrapper
+from PIL import Image
+from scipy.ndimage import laplace
 
 cp = cupywrapper.cp
 cupy_run = cupywrapper.cupy_run
+
 
 from unittest.mock import Mock
 
 if cupy_run:
     from httomolibgpu.cuda_kernels import load_cuda_module
+    from httomolibgpu.recon.algorithm import (
+        FBP3d_tomobar,
+        LPRec3d_tomobar,
+        SIRT3d_tomobar,
+        CGLS3d_tomobar,
+    )
     from cupyx.scipy.ndimage import shift, gaussian_filter
     from ._phase_cross_correlation import phase_cross_correlation
     from cupyx.scipy.fftpack import get_fft_plan
@@ -60,6 +81,7 @@ __all__ = [
     "find_center_vo",
     "find_center_360",
     "find_center_pc",
+    "find_center_metric_recon",
 ]
 
 
@@ -863,3 +885,287 @@ def find_center_pc(
 
 
 ##%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+## %%%%%%%%%%%%%%%%%%%find_center_metric_recon%%%%%%%%%%%%%%%%%%%%%
+def find_center_metric_recon(
+    data: cp.ndarray,
+    angles: np.ndarray,
+    metric_type: Literal["entropy", "tv", "sharpness"] = "tv",
+    range: int = 10,
+    step: Union[float, int] = 0.5,
+    reconstruction_method: Literal[
+        "LPRec3d_tomobar", "FBP3d_tomobar", "SIRT3d_tomobar", "CGLS3d_tomobar"
+    ] = "LPRec3d_tomobar",
+    ind: Optional[int] = None,
+    recon_iterations: Optional[int] = None,
+    cor_initialisation_value: Optional[float] = None,
+    squared_mask_x_y_size: Optional[list] = None,
+    gaussian_filter_sigma: Optional[float] = None,
+    save_recon_tiff: Optional[os.PathLike] = None,
+) -> np.float32:
+    """
+    Find the rotation axis location using different metrics that are applied to the result of the reconstruction. This method iteratively
+    assesses the quality of the reconstruction while changing the CoR value within the provided range. This approach for the CoR finding is suitable
+    for limited angle (missing wedge) data, when the symmetry and consistency of the sinogram is lost.
+    See more about the method and its parameters in :ref:`find_center_metric_recon_doc`.
+
+
+    Parameters
+    ----------
+    data : cp.ndarray
+        3D [angles, 1, detX] tomographic data as a CuPy array.
+    angles : np.ndarray
+        An array of angles given in radians.
+    metric_type : str,
+        Type of image quality metric to use on the reconstructed image. Available metrics are :code:`'entropy'`, :code:`'tv'`, :code:`'sharpness'`.
+    range : int
+        CoR search range/radius. The search will be performed in the range: :code:`[-range:cor_initialisation_value:range]`.
+    step : float
+        Step for CoR value.
+    reconstruction_method : str,
+        Type of the reconstruction method to be used. Choose from: :code:`"LPRec3d_tomobar"`, :code:`"FBP3d_tomobar"`, :code:`"SIRT3d_tomobar"`, :code:`"CGLS3d_tomobar"`. Default :code:`'LPRec3d_tomobar'`.
+    ind : int, optional
+        Index of the slice to be used for estimate the CoR. If 'None' is given, the zero slice will be used.
+    recon_iterations: int, optional
+        Set only for iterative methods: :code:`'SIRT3d_tomobar'`, :code:`'CGLS3d_tomobar'`.
+    cor_initialisation_value : float, optional
+        The initial approximation for the centre of rotation. If the value is None, use the horizontal centre of the projection/sinogram image.
+    squared_mask_x_y_size: list, optional
+        Apply a square mask to the reconstructed image. Selection of the mask is crucial for this algorithm to work successfully.
+        The mask is defined as a :code:`list` with 3 values :code:`[X, Y, size]`. The positive offsets :code:`X, Y` place the mask with respect to the left top corner of the reconstructed image and the third parameter is the size of the cropped image in percents with respect to the whole reconstructed image.
+        Example: :code:`squared_mask_x_y_size = [10, 20, 50]` will apply a mask that is 10 pixels away from the left top corner in the horizontal direction and 20 pixels away in the vertical direction, the mask will be 50% in size of the reconstructed image size.
+        The default value when  :code:`squared_mask_x_y_size = None` is the mask in the center of the reconstructed image (not always the best position as many ring artifacts are present) with a size of 50% of the reconstructed image size.
+    gaussian_filter_sigma: float, optional
+        Enable gaussian filtering of the reconstructed image, highly recommended for noisy data. Good range of values 1.0-4.0.
+    save_recon_tiff: path, optional
+        Path to output directory for the saved reconstruction image when :code:`CoR = cor_initialisation_value` and also the masked image. Useful for debugging.
+
+    Returns
+    -------
+    float32
+        Rotation axis location with a subpixel precision.
+    """
+    ### Data and parameters checks ###
+    if ind is None:
+        data = data[:, 0:1, :]
+    else:
+        data = data[:, ind : ind + 1, :]
+    methods_name = "find_center_metric_recon"
+    __check_if_data_correct_type(
+        data, accepted_type=["float32"], methods_name=methods_name
+    )
+    __check_variable_type(
+        metric_type, [str], "metric_type", ["entropy", "tv", "sharpness"], methods_name
+    )
+    __check_variable_type(range, [int], "range", [], methods_name)
+    __check_variable_type(step, [int, float], "step", [], methods_name)
+    __check_variable_type(
+        reconstruction_method,
+        [str],
+        "reconstruction_method",
+        ["LPRec3d_tomobar", "FBP3d_tomobar", "SIRT3d_tomobar", "CGLS3d_tomobar"],
+        methods_name,
+    )
+    __check_variable_type(
+        recon_iterations, [int, type(None)], "recon_iterations", [], methods_name
+    )
+    if recon_iterations is None and reconstruction_method in [
+        "SIRT3d_tomobar",
+        "CGLS3d_tomobar",
+    ]:
+        recon_iterations_n = 15
+    __check_variable_type(
+        gaussian_filter_sigma,
+        [float, type(None)],
+        "gaussian_filter_sigma",
+        [],
+        methods_name,
+    )
+    __check_variable_type(
+        squared_mask_x_y_size,
+        [list, type(None)],
+        "squared_mask_x_y_size",
+        [],
+        methods_name,
+    )
+    __check_variable_type(
+        save_recon_tiff,
+        [str, pathlib.PosixPath, type(None)],
+        "save_recon_tiff",
+        [],
+        methods_name,
+    )
+    ###################################################################
+    detectorX_size = data.shape[2]
+    if cor_initialisation_value is None:
+        center = detectorX_size // 2
+    else:
+        center = cor_initialisation_value
+
+    if squared_mask_x_y_size is None:
+        squared_mask_x_y_size = [
+            detectorX_size // 2,
+            detectorX_size // 2,
+            50,
+        ]  # default mask is the center of the reconstructed image with a size of 50% of the reconstructed image size
+
+    centres = np.arange(center - range, center + range + step, step)
+
+    values = []
+
+    for i, center in enumerate(centres):
+        # ---------- RECONSTRUCTION ----------------
+        if reconstruction_method == "LPRec3d_tomobar":
+            recon = LPRec3d_tomobar(
+                data, angles, center=center, detector_pad=True, recon_mask_radius=2.0
+            )
+        elif reconstruction_method == "FBP3d_tomobar":
+            recon = FBP3d_tomobar(
+                data, angles, center=center, detector_pad=True, recon_mask_radius=2.0
+            )
+        elif reconstruction_method == "SIRT3d_tomobar":
+            recon = SIRT3d_tomobar(
+                data,
+                angles,
+                center=center,
+                detector_pad=True,
+                recon_mask_radius=2.0,
+                iterations=recon_iterations_n,
+            )
+        elif reconstruction_method == "CGLS3d_tomobar":
+            recon = CGLS3d_tomobar(
+                data,
+                angles,
+                center=center,
+                detector_pad=True,
+                recon_mask_radius=2.0,
+                iterations=recon_iterations_n,
+            )
+        recon = recon[:, 0, :]
+        # ----CROPPING with the position defined by the squared mask-----
+        x_start, x_end, y_start, y_end = square_mask_bounds(
+            recon,
+            centre_x=squared_mask_x_y_size[0],
+            centre_y=squared_mask_x_y_size[1],
+            size_pct=squared_mask_x_y_size[2],
+        )
+        image = recon[y_start:y_end, x_start:x_end]
+
+        cp.nan_to_num(image, copy=False, nan=0.0, posinf=0, neginf=0)
+
+        # ---------- SMOOTHING -----------
+        image = (
+            gaussian_filter(image, sigma=gaussian_filter_sigma, mode="reflect")
+            if gaussian_filter_sigma is not None
+            else image
+        )
+
+        image = cp.asnumpy(image)
+
+        # SAVING reconstruction and masked image as TIFF
+        if save_recon_tiff is not None:
+            save_dir = Path(save_recon_tiff)
+            save_dir.mkdir(parents=True, exist_ok=True)
+
+            save_path_recon = save_dir / f"reconstruction_cor_{center:.3f}.tiff"
+            save_path_masked = save_dir / f"masked_recon_{center:.3f}.tiff"
+
+            Image.fromarray(to_uint16(cp.asnumpy(recon))).save(save_path_recon)
+            Image.fromarray(to_uint16(image)).save(save_path_masked)
+
+        # ------- METRIC CALCULATION --------
+
+        if metric_type == "entropy":
+            metric_val = image_entropy(image)
+        elif metric_type == "tv":
+            metric_val = gradient_energy(image)
+        elif metric_type == "sharpness":
+            metric_val = sharpness_metric(image)
+
+        values.append(metric_val)
+
+        print(
+            f"{i+1}/{len(centres)}  " f"center={center:.3f}, " f"value={metric_val:.6f}"
+        )
+
+    values_arr = np.asarray(values)
+
+    best_index = np.argmin(values_arr)
+
+    best_center = centres[best_index]
+    value_function_min = values_arr[best_index]
+
+    return best_center
+    ###################################
+
+
+def image_entropy(image: np.ndarray) -> float:
+    """Compute the Shannon entropy of a reconstructed (cropped) 2D image."""
+
+    bins = (
+        np.shape(image)[0] // 10
+    )  # choosing the number of bins based on the image size
+    x = image.flatten()
+    # Histogram -> probability distribution
+    counts, _ = np.histogram(x, bins=bins)
+    p = counts[counts > 0] / counts.sum()
+
+    # Shannon entropy
+    return float(-np.sum(p * np.log2(p)))
+
+
+def gradient_energy(image: np.ndarray) -> float:
+    """Compute the gradient energy of a reconstructed (cropped) 2D image."""
+
+    # gradients
+    gx = np.zeros_like(image)
+    gy = np.zeros_like(image)
+
+    gx[:-1, :] = np.diff(image, axis=0)
+    gy[:, :-1] = np.diff(image, axis=1)
+
+    # gradient magnitude
+    return float(np.sum(np.sqrt(gx**2 + gy**2)))
+
+
+def sharpness_metric(image: np.ndarray) -> float:
+    """Variance of the Laplacian; higher values indicate sharper images."""
+
+    lap = laplace(image)
+
+    return float(np.var(lap))
+
+
+def square_mask_bounds(
+    image: cp.ndarray,
+    centre_x: float,
+    centre_y: float,
+    size_pct: float,
+) -> tuple[int, int, int, int]:
+    height, width = image.shape[:2]
+
+    # Square side length as percentage of image size
+    side = int(round(min(height, width) * size_pct / 100))
+
+    half_side = side // 2
+
+    x_start = max(0, int(round(centre_x)) - half_side)
+    x_end = min(width, int(round(centre_x)) + half_side)
+
+    y_start = max(0, int(round(centre_y)) - half_side)
+    y_end = min(height, int(round(centre_y)) + half_side)
+
+    return x_start, x_end, y_start, y_end
+
+
+# Rescale each image independently to uint16
+def to_uint16(arr: np.ndarray) -> np.ndarray:
+    arr_min = np.nanmin(arr)
+    arr_max = np.nanmax(arr)
+
+    if arr_max == arr_min:
+        return np.zeros_like(arr, dtype=np.uint16)
+
+    arr = (arr - arr_min) / (arr_max - arr_min)
+    return np.round(arr * 65535).astype(np.uint16)

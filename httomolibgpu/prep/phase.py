@@ -18,7 +18,13 @@
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 01 November 2022
 # ---------------------------------------------------------------------------
-"""Modules for phase retrieval and phase-contrast enhancement. For more detailed information, see :ref:`phase_contrast_module`."""
+"""Modules for phase retrieval and phase-contrast enhancement. For more detailed information, see :ref:`phase_contrast_module`.
+
+* :mod:`httomolibgpu.prep.phase.paganin_filter`
+
+* :mod:`httomolibgpu.prep.phase.paganin_filter_savu_legacy`
+
+"""
 
 import numpy as np
 from httomolibgpu import cupywrapper

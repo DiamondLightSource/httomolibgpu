@@ -18,7 +18,11 @@
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 01 November 2022
 # ---------------------------------------------------------------------------
-"""Modules for data correction"""
+"""Modules for data correction:
+
+* :mod:`httomolibgpu.prep.alignment.distortion_correction_proj_discorpy`
+
+"""
 
 from httomolibgpu import cupywrapper
 

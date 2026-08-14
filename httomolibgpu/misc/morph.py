@@ -18,7 +18,15 @@
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 23 March 2023
 # ---------------------------------------------------------------------------
-"""Module for data type morphing functions"""
+"""Module for data type morphing functions:
+
+* :mod:`httomolibgpu.misc.morph.sino_360_to_180`
+
+* :mod:`httomolibgpu.misc.morph.data_resampler`
+
+* :mod:`httomolibgpu.misc.morph.average_projection_frames`
+
+"""
 
 import numpy as np
 from httomolibgpu import cupywrapper
