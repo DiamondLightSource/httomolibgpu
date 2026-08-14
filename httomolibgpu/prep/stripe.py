@@ -18,7 +18,19 @@
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 01 November 2022
 # ---------------------------------------------------------------------------
-"""Module for stripes removal"""
+"""Module for stripes removal (ring artifacts suppression), see more in :ref:`stripes_removal_module`.
+
+* :mod:`httomolibgpu.prep.stripe.remove_stripe_based_sorting`
+
+* :mod:`httomolibgpu.prep.stripe.remove_stripe_fw`
+
+* :mod:`httomolibgpu.prep.stripe.remove_stripe_ti`
+
+* :mod:`httomolibgpu.prep.stripe.remove_all_stripe`
+
+* :mod:`httomolibgpu.prep.stripe.raven_filter`
+
+"""
 
 import numpy as np
 import pywt

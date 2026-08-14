@@ -18,7 +18,13 @@
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 21/October/2022
 # ---------------------------------------------------------------------------
-"""Module for data correction. For more detailed information see :ref:`data_correction_module`."""
+"""Module for data correction. For more detailed information see :ref:`data_correction_module`.
+
+* :mod:`httomolibgpu.misc.corr.median_filter`
+
+* :mod:`httomolibgpu.misc.corr.remove_outlier`
+
+"""
 
 from httomolibgpu import cupywrapper
 

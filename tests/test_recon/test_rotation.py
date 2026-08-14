@@ -48,17 +48,18 @@ def test_find_center_metric_recon(data, host_angles, flats, darks, metric):
         range=10,
         step=0.5,
         reconstruction_method="LPRec3d_tomobar",
+        ind=64,
         gaussian_filter_sigma=2.0,
         squared_mask_x_y_size=[20, 20, 20],
     )
 
     data = None
     if metric == "tv":
-        assert_allclose(cor, 86.5)
+        assert_allclose(cor, 88.0)
     elif metric == "entropy":
-        assert_allclose(cor, 72.5)
+        assert_allclose(cor, 81.5)
     elif metric == "sharpness":
-        assert_allclose(cor, 87.0)
+        assert_allclose(cor, 84.5)
 
 
 def test_find_center_vo_ones(ensure_clean_memory):

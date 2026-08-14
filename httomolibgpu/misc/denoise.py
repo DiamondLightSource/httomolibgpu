@@ -18,7 +18,13 @@
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 18/December/2024
 # ---------------------------------------------------------------------------
-"""Module for data denoising. For more detailed information see :ref:`data_denoising_module`."""
+"""Module for data denoising. For more detailed information see :ref:`data_denoising_module`:
+
+* :mod:`httomolibgpu.misc.denoise.total_variation_ROF`
+
+* :mod:`httomolibgpu.misc.denoise.total_variation_PD`
+
+"""
 
 from httomolibgpu import cupywrapper
 

@@ -18,7 +18,11 @@
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 5 August 2026
 # ---------------------------------------------------------------------------
-"""Module for data type morphing functions"""
+"""Module for data type morphing functions:
+
+* :mod:`httomolibgpu.misc.blend.seam_blend_stitched_data`
+
+"""
 
 import numpy as np
 from httomolibgpu import cupywrapper

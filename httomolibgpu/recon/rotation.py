@@ -18,7 +18,16 @@
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 01 November 2022
 # ---------------------------------------------------------------------------
-"""Modules for finding the axis of rotation for 180 and 360 degrees scans"""
+"""Modules for finding the axis of rotation for 180 or 360 degrees scans.
+
+* :mod:`httomolibgpu.recon.rotation.find_center_vo`
+
+* :mod:`httomolibgpu.recon.rotation.find_center_360`
+
+* :mod:`httomolibgpu.recon.rotation.find_center_pc`
+
+* :mod:`httomolibgpu.recon.rotation.find_center_metric_recon`
+"""
 
 import numpy as np
 import os
@@ -888,6 +897,7 @@ def find_center_metric_recon(
     reconstruction_method: Literal[
         "LPRec3d_tomobar", "FBP3d_tomobar", "SIRT3d_tomobar", "CGLS3d_tomobar"
     ] = "LPRec3d_tomobar",
+    ind: Optional[int] = None,
     recon_iterations: Optional[int] = None,
     cor_initialisation_value: Optional[float] = None,
     squared_mask_x_y_size: Optional[list] = None,
@@ -915,6 +925,8 @@ def find_center_metric_recon(
         Step for CoR value.
     reconstruction_method : str,
         Type of the reconstruction method to be used. Choose from: :code:`"LPRec3d_tomobar"`, :code:`"FBP3d_tomobar"`, :code:`"SIRT3d_tomobar"`, :code:`"CGLS3d_tomobar"`. Default :code:`'LPRec3d_tomobar'`.
+    ind : int, optional
+        Index of the slice to be used for estimate the CoR. If 'None' is given, the zero slice will be used.
     recon_iterations: int, optional
         Set only for iterative methods: :code:`'SIRT3d_tomobar'`, :code:`'CGLS3d_tomobar'`.
     cor_initialisation_value : float, optional
@@ -935,6 +947,10 @@ def find_center_metric_recon(
         Rotation axis location with a subpixel precision.
     """
     ### Data and parameters checks ###
+    if ind is None:
+        data = data[:, 0:1, :]
+    else:
+        data = data[:, ind : ind + 1, :]
     methods_name = "find_center_metric_recon"
     __check_if_data_correct_type(
         data, accepted_type=["float32"], methods_name=methods_name

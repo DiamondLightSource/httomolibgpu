@@ -18,7 +18,11 @@
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 1 March 2024
 # ---------------------------------------------------------------------------
-"""Module for data rescaling. For more detailed information see :ref:`data_rescale_module`."""
+"""Module for data rescaling. For more detailed information see :ref:`data_rescale_module` :
+
+* :mod:`httomolibgpu.misc.rescale.rescale_to_int`
+
+"""
 
 import numpy as np
 from httomolibgpu import cupywrapper

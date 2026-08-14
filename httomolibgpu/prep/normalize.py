@@ -18,7 +18,13 @@
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 01 November 2022
 # ---------------------------------------------------------------------------
-"""Modules for raw projection data normalization"""
+"""Modules for flat/dark-field correction of projection data and normalisation:
+
+* :mod:`httomolibgpu.prep.normalize.dark_flat_field_correction`
+
+* :mod:`httomolibgpu.prep.normalize.minus_log`
+
+"""
 
 from httomolibgpu import cupywrapper
 import numpy as np
