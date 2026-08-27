@@ -34,7 +34,7 @@ Conda environment
 
    $ conda create --name httomolibgpu # create a fresh conda environment
    $ conda activate httomolibgpu # activate the environment
-   $ conda install conda-forge::cupy==14.0.*
+   $ conda install conda-forge::cupy==14.2.*
    $ pip install httomolibgpu
 
 Setup the development environment:
@@ -43,6 +43,6 @@ Setup the development environment:
 .. code-block:: console
 
    $ git clone git@github.com:DiamondLightSource/httomolibgpu.git # clone the repo
-   $ conda env create --name httomolibgpu -c conda-forge cupy==14.0.* # install dependencies
+   $ conda env create --name httomolibgpu -c conda-forge cupy==14.2.* # install dependencies
    $ conda activate httomolibgpu # activate the environment
    $ pip install -e ./httomolibgpu[dev] # editable/development mode
