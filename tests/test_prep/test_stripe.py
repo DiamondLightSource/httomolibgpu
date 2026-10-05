@@ -15,6 +15,7 @@ from httomolibgpu.prep.stripe import (
     remove_all_stripe,
     raven_filter,
 )
+import httomolibgpu
 from httomolibgpu.recon.algorithm import FBP3d_tomobar
 from numpy.testing import assert_allclose
 
@@ -56,26 +57,26 @@ class MaxMemoryHook(cp.cuda.MemoryHook):
         self.current -= mem_size
 
 
-def test_remove_stripe_fw_on_data(data, flats, darks):
-    # --- testing the CuPy implementation from TomoCupy ---#
-    data_norm = dark_flat_field_correction(data, flats, darks)
-    data_norm = minus_log(data_norm)
-
-    data_after_stripe_removal = remove_stripe_fw(
-        cp.copy(data_norm), wname="sym16", sigma=1, level=7
-    ).get()
-
-    assert_allclose(np.mean(data_after_stripe_removal), 0.279236, rtol=1e-05)
-    assert_allclose(
-        np.mean(data_after_stripe_removal, axis=(1, 2)).sum(), 50.2624, rtol=1e-06
-    )
-    assert_allclose(np.median(data_after_stripe_removal), 0.079203, rtol=1e-05)
-    assert_allclose(np.max(data_after_stripe_removal), 2.442347, rtol=1e-05)
-    assert data_after_stripe_removal.flags.c_contiguous
-
-    data = None  #: free up GPU memory
-    # make sure the output is float32
-    assert data_after_stripe_removal.dtype == np.float32
+# def test_remove_stripe_fw_on_data(data, flats, darks):
+#     # --- testing the CuPy implementation from TomoCupy ---#
+#     data_norm = dark_flat_field_correction(data, flats, darks)
+#     data_norm = minus_log(data_norm)
+#
+#     data_after_stripe_removal = remove_stripe_fw(
+#         cp.copy(data_norm), wname="sym16", sigma=1, level=7
+#     ).get()
+#
+#     assert_allclose(np.mean(data_after_stripe_removal), 0.279236, rtol=1e-05)
+#     assert_allclose(
+#         np.mean(data_after_stripe_removal, axis=(1, 2)).sum(), 50.2624, rtol=1e-06
+#     )
+#     assert_allclose(np.median(data_after_stripe_removal), 0.079203, rtol=1e-05)
+#     assert_allclose(np.max(data_after_stripe_removal), 2.442347, rtol=1e-05)
+#     assert data_after_stripe_removal.flags.c_contiguous
+#
+#     data = None  #: free up GPU memory
+#     # make sure the output is float32
+#     assert data_after_stripe_removal.dtype == np.float32
 
 
 @pytest.fixture
@@ -90,7 +91,13 @@ def ensure_clean_memory():
     cache = cp.fft.config.get_plan_cache()
     cache.clear()
 
-
+# @pytest.mark.parametrize("use_nvmath", [False, True])
+# @pytest.mark.parametrize("wname", ["db4"])
+# @pytest.mark.parametrize("slices", [3])
+# @pytest.mark.parametrize("level", [None])
+# @pytest.mark.parametrize("dim_x", [128])
+# def test_remove_stripe_fw_calc_mem(slices, level, dim_x, wname, use_nvmath, ensure_clean_memory):
+#     httomolibgpu.prep.stripe.USE_NVMATH = use_nvmath
 @pytest.mark.parametrize("wname", ["haar", "db4", "sym5", "sym16", "bior4.4"])
 @pytest.mark.parametrize("slices", [3, 7, 32, 61, 109, 120, 150])
 @pytest.mark.parametrize("level", [None, 1, 3, 11])

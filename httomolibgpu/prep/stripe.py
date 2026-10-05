@@ -33,6 +33,7 @@
 """
 
 import numpy as np
+import nvmath
 import pywt
 from httomolibgpu import cupywrapper
 from httomolibgpu.misc.sorting import argsort_with_reverse
@@ -654,6 +655,24 @@ def _repair_memory_fragmentation_if_needed(fragmentation_threshold: float = 0.2)
     if (total / pool.used_bytes()) - 1 > fragmentation_threshold:
         pool.free_all_blocks()
 
+USE_NVMATH = True
+# USE_NVMATH = False
+
+# PLOT = True
+PLOT = False
+
+import matplotlib.pyplot as plt
+def _plot_data(plot_data):
+    shape = plot_data.shape
+    plt.figure()
+    plt.title(f"{PLOT} NVMATH")
+    plt.subplot(131)
+    plt.imshow(plot_data[shape[0] // 2, :, :].real.get())
+    plt.subplot(132)
+    plt.imshow(plot_data[:, shape[1] // 2, :].real.get())
+    plt.subplot(133)
+    plt.imshow(plot_data[:, :, shape[2] // 2].real.get())
+    plt.show()
 
 def remove_stripe_fw(
     data: cp.ndarray,
@@ -715,6 +734,12 @@ def remove_stripe_fw(
     cc = []
     sli_shape = [nz, 1, nproj_pad, ni]
 
+    if USE_NVMATH:
+        c2c_fft_options = nvmath.fft.FFTOptions(
+            fft_type="C2C",
+            inplace=False,
+        )
+
     if calc_peak_gpu_mem:
         mem_stack = DeviceMemStack()
         # A data copy is assumed when invoking the function
@@ -731,18 +756,34 @@ def remove_stripe_fw(
             if fcV_bytes:
                 mem_stack.free(fcV_bytes)
             fcV_shape = [c[0], c[3], c[4]]
-            fcV_bytes = np.prod(fcV_shape) * np.complex64().itemsize
+            fcV_dtype = np.complex64()
+            fcV_bytes = np.prod(fcV_shape) * fcV_dtype.itemsize
             mem_stack.malloc(fcV_bytes)
 
             # For the FFT
             mem_stack.malloc(2 * np.prod(fcV_shape) * np.float32().itemsize)
             mem_stack.malloc(2 * fcV_bytes)
 
-            fft_dummy = cp.empty(fcV_shape, dtype="float32")
-            fft_plan = get_fft_plan(fft_dummy)
-            fft_plan_size = fft_plan.work_area.mem.size
-            del fft_dummy
-            del fft_plan
+            if USE_NVMATH:
+                swapped_fcV_shape = tuple([fcV_shape[0], fcV_shape[2], fcV_shape[1]])
+                if swapped_fcV_shape[-1] == 1:
+                    fft_plan_size = 0
+                else:
+                    key = nvmath.fft.FFT.create_key_from_metadata(
+                        shape=swapped_fcV_shape,
+                        dtype="complex64",
+                        memory_space="cuda",
+                        axes=[-1],
+                        options=c2c_fft_options,
+                    )
+                    fft_plan_size = nvmath.fft.estimate_workspace_size(key)
+            else:
+                fft_dummy = cp.empty(fcV_shape, dtype="float32")
+                fft_plan = get_fft_plan(fft_dummy)
+                fft_plan_size = fft_plan.work_area.mem.size
+                del fft_dummy
+                del fft_plan
+
             mem_stack.malloc(fft_plan_size)
             mem_stack.free(2 * np.prod(fcV_shape) * np.float32().itemsize)
             mem_stack.free(fft_plan_size)
@@ -765,28 +806,181 @@ def remove_stripe_fw(
 
     sli = cp.zeros(sli_shape, dtype="float32")
     sli[:, 0, (nproj_pad - nproj) // 2 : (nproj_pad + nproj) // 2] = data.swapaxes(0, 1)
+
+    if USE_NVMATH:
+        fft_cache = {}
+
     for k in range(level):
         sli, c = xfm.apply(sli)
         cc.append(c)
         # FFT
         fft_in = cp.ascontiguousarray(cc[k][:, 0, 1])
-        fft_plan = get_fft_plan(fft_in, axes=1)
-        with fft_plan:
-            fcV = cp.fft.fft(fft_in, axis=1)
-        del fft_plan
-        del fft_in
+
+        plot_data = {}
+        if USE_NVMATH:
+            nvmath_fft_in = cp.ascontiguousarray(cp.swapaxes(fft_in, 1, -1), dtype=cp.complex64)
+            if nvmath_fft_in.shape[-1] == 1:
+                fft_result = nvmath_fft_in
+                fft_result = cp.swapaxes(fft_result, 1, -1)
+
+                if PLOT:
+                    plot_data["nvmath_fft"] = fft_result
+                    # _plot_data(fcV)
+
+                fcV = fft_result
+            else:
+                target_axes = [-1]
+                cache_key = nvmath.fft.FFT.create_key(
+                    operand=nvmath_fft_in,
+                    axes=target_axes,
+                    options=c2c_fft_options,
+                    execution=nvmath.fft.ExecutionCUDA(),
+                )
+                if cache_key not in fft_cache:
+                    fft_cache[cache_key] = nvmath.fft.FFT(nvmath_fft_in, axes=target_axes, options=c2c_fft_options)
+
+                nv_fft = fft_cache[cache_key]
+                nv_fft.reset_operand(nvmath_fft_in)
+                nv_fft.plan(direction=nvmath.fft.FFTDirection.FORWARD)
+                fft_result = nv_fft.execute(direction=nvmath.fft.FFTDirection.FORWARD)
+                fft_result = cp.swapaxes(fft_result, 1, -1)
+
+                if PLOT:
+                    plot_data["nvmath_fft"] = fft_result
+                    # _plot_data(fcV)
+
+                fcV = fft_result
+        else:
+            fft_plan = get_fft_plan(fft_in, axes=1)
+            with fft_plan:
+                fcV = cp.fft.fft(fft_in, axis=1)
+
+                if PLOT:
+                    plot_data["no_nvmath_fft"] = fcV
+                    # _plot_data(fcV)
+            del fft_plan
+            del fft_in
+
+        if PLOT:
+            fig, axes = plt.subplots(3, 3, figsize=(12, 9))
+            fig.suptitle(f"fft")
+            plt.get_current_fig_manager().window.attributes('-fullscreen', True)
+
+            cur_plot_data = plot_data["no_nvmath_fft"]
+            shape = cur_plot_data.shape
+            axes[0, 0].imshow(cur_plot_data[shape[0] // 2, :, :].real.get())
+            axes[0, 1].imshow(cur_plot_data[:, shape[1] // 2, :].real.get())
+            axes[0, 2].imshow(cur_plot_data[:, :, shape[2] // 2].real.get())
+            cur_plot_data = plot_data["nvmath_fft"]
+            shape = cur_plot_data.shape
+            axes[1, 0].imshow(cur_plot_data[shape[0] // 2, :, :].real.get())
+            axes[1, 1].imshow(cur_plot_data[:, shape[1] // 2, :].real.get())
+            axes[1, 2].imshow(cur_plot_data[:, :, shape[2] // 2].real.get())
+            cur_plot_data = plot_data["no_nvmath_fft"] - plot_data["nvmath_fft"]
+            shape = cur_plot_data.shape
+            im = axes[2, 0].imshow(cur_plot_data[shape[0] // 2, :, :].real.get())
+            fig.colorbar(im, ax=axes[2, 0])
+            im = axes[2, 1].imshow(cur_plot_data[:, shape[1] // 2, :].real.get())
+            fig.colorbar(im, ax=axes[2, 1])
+            im = axes[2, 2].imshow(cur_plot_data[:, :, shape[2] // 2].real.get())
+            fig.colorbar(im, ax=axes[2, 2])
+            plt.tight_layout()
+            plt.show()
+
         _, my, mx = fcV.shape
         # Damping of ring artifact information.
         y_hat = np.fft.ifftshift((np.arange(-my, my, 2) + 1) / 2)
         damp = -np.expm1(-(y_hat**2) / (2 * sigma**2))
         fcV *= cp.tile(damp, (mx, 1)).swapaxes(0, 1)
         # Inverse FFT.
+
         ifft_in = cp.ascontiguousarray(fcV)
-        ifft_plan = get_fft_plan(ifft_in, axes=1)
-        with ifft_plan:
-            cc[k][:, 0, 1] = cp.fft.ifft(ifft_in, my, axis=1).real
-        del ifft_plan
-        del ifft_in
+
+        if USE_NVMATH:
+            nvmath_ifft_in = cp.ascontiguousarray(cp.swapaxes(ifft_in, 1, -1))
+            if nvmath_ifft_in.shape[-1] == 1:
+                ifft_result = nvmath_ifft_in
+                ifft_result = cp.swapaxes(ifft_result, 1, -1)
+
+                if PLOT:
+                    plot_data["nvmath_ifft"] = ifft_result
+                    # _plot_data(ifft_result)
+
+                cc[k][:, 0, 1] = ifft_result.real
+            else:
+                target_axes = [-1]
+                cache_key = nvmath.fft.FFT.create_key(
+                    operand=nvmath_ifft_in,
+                    axes=target_axes,
+                    options=c2c_fft_options,
+                    execution=nvmath.fft.ExecutionCUDA(),
+                )
+                if cache_key not in fft_cache:
+                    fft_cache[cache_key] = nvmath.fft.FFT(nvmath_ifft_in, axes=target_axes, options=c2c_fft_options)
+
+                nv_fft = fft_cache[cache_key]
+                nv_fft.reset_operand(nvmath_ifft_in)
+                nv_fft.plan(direction=nvmath.fft.FFTDirection.INVERSE)
+                ifft_result = nv_fft.execute(direction=nvmath.fft.FFTDirection.INVERSE)
+                ifft_result /= ifft_result.shape[-1]
+                ifft_result = cp.swapaxes(ifft_result, 1, -1)
+
+                if PLOT:
+                    plot_data["nvmath_ifft"] = ifft_result
+                    # _plot_data(ifft_result)
+
+                cc[k][:, 0, 1] = ifft_result.real
+        else:
+            ifft_plan = get_fft_plan(ifft_in, axes=1)
+            with ifft_plan:
+                ifft_result = cp.fft.ifft(ifft_in, my, axis=1)
+
+                if PLOT:
+                    plot_data["no_nvmath_ifft"] = ifft_result
+                    # _plot_data(ifft_result)
+
+                cc[k][:, 0, 1] = ifft_result.real
+            del ifft_plan
+            del ifft_in
+            _repair_memory_fragmentation_if_needed()
+
+        if PLOT:
+            fig, axes = plt.subplots(3, 3, figsize=(12, 9))
+            fig.suptitle(f"ifft")
+            plt.get_current_fig_manager().window.attributes('-fullscreen', True)
+
+            cur_plot_data = plot_data["no_nvmath_ifft"]
+            shape = cur_plot_data.shape
+            im = axes[0, 0].imshow(cur_plot_data[shape[0] // 2, :, :].real.get())
+            fig.colorbar(im, ax=axes[0, 0])
+            im = axes[0, 1].imshow(cur_plot_data[:, shape[1] // 2, :].real.get())
+            fig.colorbar(im, ax=axes[0, 1])
+            im = axes[0, 2].imshow(cur_plot_data[:, :, shape[2] // 2].real.get())
+            fig.colorbar(im, ax=axes[0, 2])
+            cur_plot_data = plot_data["nvmath_ifft"]
+            shape = cur_plot_data.shape
+            im = axes[1, 0].imshow(cur_plot_data[shape[0] // 2, :, :].real.get())
+            fig.colorbar(im, ax=axes[1, 0])
+            im = axes[1, 1].imshow(cur_plot_data[:, shape[1] // 2, :].real.get())
+            fig.colorbar(im, ax=axes[1, 1])
+            im = axes[1, 2].imshow(cur_plot_data[:, :, shape[2] // 2].real.get())
+            fig.colorbar(im, ax=axes[1, 2])
+            cur_plot_data = plot_data["no_nvmath_ifft"] - plot_data["nvmath_ifft"]
+            shape = cur_plot_data.shape
+            im = axes[2, 0].imshow(cur_plot_data[shape[0] // 2, :, :].real.get())
+            fig.colorbar(im, ax=axes[2, 0])
+            im = axes[2, 1].imshow(cur_plot_data[:, shape[1] // 2, :].real.get())
+            fig.colorbar(im, ax=axes[2, 1])
+            im = axes[2, 2].imshow(cur_plot_data[:, :, shape[2] // 2].real.get())
+            fig.colorbar(im, ax=axes[2, 2])
+            plt.tight_layout()
+            plt.show()
+
+    if USE_NVMATH:
+        for v in fft_cache.values():
+            v.free()
+
+        del fft_cache
         _repair_memory_fragmentation_if_needed()
 
     # Wavelet reconstruction.
