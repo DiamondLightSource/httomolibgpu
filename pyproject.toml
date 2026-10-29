@@ -38,6 +38,7 @@ requires-python = ">=3.12"
 dynamic = ["version"]
 dependencies = [
     "cupy==14.2.*",
+    "nvmath-python",
     "nvtx",
     "numpy==2.4.*",
     "scipy",
