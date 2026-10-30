@@ -33,6 +33,7 @@
 """
 
 import numpy as np
+import nvmath
 import pywt
 from httomolibgpu import cupywrapper
 from httomolibgpu.misc.sorting import argsort_with_reverse
@@ -499,6 +500,7 @@ def _afb1d(
     lohi = _conv2d(padded_x, h, stride=s, groups=C, mem_stack=mem_stack)
     if mem_stack:
         mem_stack.free(np.prod(padded_x) * np.float32().itemsize)
+
     del padded_x
     return lohi
 
@@ -586,6 +588,7 @@ class _DWTForward:
             mem_stack.malloc(np.prod(yh_shape) * np.float32().itemsize)
             mem_stack.free(np.prod(y) * np.float32().itemsize)
             return x_shape, yh_shape
+
         del lohi
         s = y.shape
         y = y.reshape(s[0], -1, 4, s[-2], s[-1])
@@ -714,42 +717,67 @@ def remove_stripe_fw(
     # Wavelet decomposition.
     cc = []
     sli_shape = [nz, 1, nproj_pad, ni]
+    sli_bytes = np.prod(sli_shape) * np.float32().itemsize
 
     if calc_peak_gpu_mem:
+        c2c_fft_options = nvmath.fft.FFTOptions(
+            fft_type="C2C",
+            inplace=False,
+        )
+
         mem_stack = DeviceMemStack()
-        # A data copy is assumed when invoking the function
         mem_stack.malloc(np.prod(data) * np.float32().itemsize)
         mem_stack.malloc(np.prod(sli_shape) * np.float32().itemsize)
+
         cc = []
+        sli_bytes = None
         fcV_bytes = None
+        ifft_out_bytes = None
+
+        fft_cache = {}
         for k in range(level):
             new_sli_shape, c = xfm.apply(sli_shape, mem_stack)
-            mem_stack.free(np.prod(sli_shape) * np.float32().itemsize)
-            sli_shape = new_sli_shape
             cc.append(c)
+            sli_shape = new_sli_shape
+            if sli_bytes:
+                mem_stack.free(sli_bytes)
+            sli_bytes = np.prod(sli_shape) * np.float32().itemsize
+
+            fcV_shape = [c[0], c[3], c[4]]
+
+            if not (fcV_shape[1] == 1):
+                mem_stack.malloc(np.prod(fcV_shape) * np.complex64().itemsize)
+
+                swapped_fcV_shape = tuple([fcV_shape[0], fcV_shape[2], fcV_shape[1]])
+                cache_key = nvmath.fft.FFT.create_key_from_metadata(
+                    shape=swapped_fcV_shape,
+                    dtype="complex64",
+                    memory_space="cuda",
+                    axes=[-1],
+                    options=c2c_fft_options,
+                    execution=nvmath.fft.ExecutionCUDA(),
+                )
+                if cache_key not in fft_cache:
+                    fft_plan_size = nvmath.fft.estimate_workspace_size(cache_key)
+                    fft_cache[cache_key] = fft_plan_size
+                    mem_stack.malloc(fft_plan_size)
+
+                mem_stack.malloc(np.prod(fcV_shape) * np.complex64().itemsize)
 
             if fcV_bytes:
                 mem_stack.free(fcV_bytes)
-            fcV_shape = [c[0], c[3], c[4]]
-            fcV_bytes = np.prod(fcV_shape) * np.complex64().itemsize
-            mem_stack.malloc(fcV_bytes)
+            fcV_bytes = np.prod(fcV_shape) * np.complex64()
 
-            # For the FFT
-            mem_stack.malloc(2 * np.prod(fcV_shape) * np.float32().itemsize)
-            mem_stack.malloc(2 * fcV_bytes)
+            if not (fcV_shape[1] == 1):
+                mem_stack.free(np.prod(fcV_shape) * np.complex64().itemsize)
 
-            fft_dummy = cp.empty(fcV_shape, dtype="float32")
-            fft_plan = get_fft_plan(fft_dummy)
-            fft_plan_size = fft_plan.work_area.mem.size
-            del fft_dummy
-            del fft_plan
-            mem_stack.malloc(fft_plan_size)
-            mem_stack.free(2 * np.prod(fcV_shape) * np.float32().itemsize)
-            mem_stack.free(fft_plan_size)
-            mem_stack.free(2 * fcV_bytes)
+                mem_stack.malloc(np.prod(fcV_shape) * np.complex64().itemsize)
+                if ifft_out_bytes:
+                    mem_stack.free(ifft_out_bytes)
+                ifft_out_bytes = np.prod(fcV_shape) * np.complex64().itemsize
 
-            # The rest of the iteration doesn't contribute to the peak
-        # NOTE: The last iteration of fcV is "leaked"
+        for v in fft_cache.values():
+            mem_stack.free(v)
 
         for k in range(level)[::-1]:
             new_sli_shape = [sli_shape[0], sli_shape[1], cc[k][-2], cc[k][-1]]
@@ -757,37 +785,90 @@ def remove_stripe_fw(
             mem_stack.free(np.prod(sli_shape) * np.float32().itemsize)
             sli_shape = new_sli_shape
 
-        mem_stack.malloc(np.prod(data) * np.float32().itemsize)
+        mem_stack.free(np.prod(sli_shape) * np.float32().itemsize)
         for c in cc:
             mem_stack.free(np.prod(c) * np.float32().itemsize)
-        mem_stack.free(np.prod(sli_shape) * np.float32().itemsize)
-        return int(mem_stack.highwater * 1.1)
+        mem_stack.malloc(np.prod(sli_shape) * np.float32().itemsize)
+        return int(mem_stack.highwater)
 
     sli = cp.zeros(sli_shape, dtype="float32")
     sli[:, 0, (nproj_pad - nproj) // 2 : (nproj_pad + nproj) // 2] = data.swapaxes(0, 1)
+
+    c2c_fft_options = nvmath.fft.FFTOptions(
+        fft_type="C2C",
+        inplace=False,
+    )
+
+    fft_cache = {}
     for k in range(level):
         sli, c = xfm.apply(sli)
         cc.append(c)
-        # FFT
-        fft_in = cp.ascontiguousarray(cc[k][:, 0, 1])
-        fft_plan = get_fft_plan(fft_in, axes=1)
-        with fft_plan:
-            fcV = cp.fft.fft(fft_in, axis=1)
-        del fft_plan
+
+        fft_in = cc[k][:, 0, 1]
+        if fft_in.shape[1] == 1:
+            fcV = fft_in.astype(cp.complex64)
+        else:
+            fft_in = cp.ascontiguousarray(
+                cp.swapaxes(fft_in, 1, -1), dtype=cp.complex64
+            )
+
+            target_axes = [-1]
+            cache_key = nvmath.fft.FFT.create_key(
+                operand=fft_in,
+                axes=target_axes,
+                options=c2c_fft_options,
+                execution=nvmath.fft.ExecutionCUDA(),
+            )
+            if cache_key in fft_cache:
+                nv_fft = fft_cache[cache_key]
+                nv_fft.reset_operand(fft_in)
+            else:
+                nv_fft = nvmath.fft.FFT(
+                    fft_in, axes=target_axes, options=c2c_fft_options
+                )
+                fft_cache[cache_key] = nv_fft
+
+            nv_fft.plan(direction=nvmath.fft.FFTDirection.FORWARD)
+            fft_result = nv_fft.execute(direction=nvmath.fft.FFTDirection.FORWARD)
+            fcV = cp.swapaxes(fft_result, 1, -1)
+
         del fft_in
+
         _, my, mx = fcV.shape
         # Damping of ring artifact information.
         y_hat = np.fft.ifftshift((np.arange(-my, my, 2) + 1) / 2)
         damp = -np.expm1(-(y_hat**2) / (2 * sigma**2))
         fcV *= cp.tile(damp, (mx, 1)).swapaxes(0, 1)
-        # Inverse FFT.
-        ifft_in = cp.ascontiguousarray(fcV)
-        ifft_plan = get_fft_plan(ifft_in, axes=1)
-        with ifft_plan:
-            cc[k][:, 0, 1] = cp.fft.ifft(ifft_in, my, axis=1).real
-        del ifft_plan
+
+        ifft_in = fcV
+        if ifft_in.shape[1] == 1:
+            cc[k][:, 0, 1] = ifft_in.real
+        else:
+            ifft_in = cp.ascontiguousarray(cp.swapaxes(ifft_in, 1, -1))
+
+            target_axes = [-1]
+            cache_key = nvmath.fft.FFT.create_key(
+                operand=ifft_in,
+                axes=target_axes,
+                options=c2c_fft_options,
+                execution=nvmath.fft.ExecutionCUDA(),
+            )
+            nv_fft = fft_cache[cache_key]
+            nv_fft.reset_operand(ifft_in)
+            nv_fft.plan(direction=nvmath.fft.FFTDirection.INVERSE)
+            ifft_result = nv_fft.execute(direction=nvmath.fft.FFTDirection.INVERSE)
+            ifft_result /= ifft_result.shape[-1]
+
+            cc[k][:, 0, 1] = cp.swapaxes(ifft_result, 1, -1).real
+
         del ifft_in
         _repair_memory_fragmentation_if_needed()
+
+    for v in fft_cache.values():
+        v.free()
+
+    del fft_cache
+    _repair_memory_fragmentation_if_needed()
 
     # Wavelet reconstruction.
     for k in range(level)[::-1]:

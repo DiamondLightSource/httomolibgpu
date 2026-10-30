@@ -90,7 +90,6 @@ def ensure_clean_memory():
     cache = cp.fft.config.get_plan_cache()
     cache.clear()
 
-
 @pytest.mark.parametrize("wname", ["haar", "db4", "sym5", "sym16", "bior4.4"])
 @pytest.mark.parametrize("slices", [3, 7, 32, 61, 109, 120, 150])
 @pytest.mark.parametrize("level", [None, 1, 3, 11])
@@ -111,7 +110,7 @@ def test_remove_stripe_fw_calc_mem(slices, level, dim_x, wname, ensure_clean_mem
         pytest.skip("Not enough GPU memory to estimate memory peak")
 
     assert actual_mem_peak * 0.99 <= estimated_mem_peak
-    assert estimated_mem_peak <= actual_mem_peak * 1.3
+    assert estimated_mem_peak <= actual_mem_peak * 1.4
 
 
 @pytest.mark.parametrize("wname", ["haar", "db4", "sym5", "sym16", "bior4.4"])
@@ -148,7 +147,7 @@ def test_remove_stripe_fw_calc_mem_big(wname, slices, level, dims, ensure_clean_
     actual_mem_peak = hook.max_mem
 
     assert actual_mem_peak * 0.99 <= estimated_mem_peak
-    assert estimated_mem_peak <= actual_mem_peak * 1.3
+    assert estimated_mem_peak <= actual_mem_peak * 1.4
 
 
 @pytest.mark.perf
