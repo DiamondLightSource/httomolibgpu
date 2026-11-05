@@ -110,7 +110,7 @@ def test_remove_stripe_fw_calc_mem(slices, level, dim_x, wname, ensure_clean_mem
         pytest.skip("Not enough GPU memory to estimate memory peak")
 
     assert actual_mem_peak * 0.99 <= estimated_mem_peak
-    assert estimated_mem_peak <= actual_mem_peak * 1.4
+    assert estimated_mem_peak <= actual_mem_peak * 1.075
 
 
 @pytest.mark.parametrize("wname", ["haar", "db4", "sym5", "sym16", "bior4.4"])
@@ -147,7 +147,7 @@ def test_remove_stripe_fw_calc_mem_big(wname, slices, level, dims, ensure_clean_
     actual_mem_peak = hook.max_mem
 
     assert actual_mem_peak * 0.99 <= estimated_mem_peak
-    assert estimated_mem_peak <= actual_mem_peak * 1.4
+    assert estimated_mem_peak <= actual_mem_peak * 1.075
 
 
 @pytest.mark.perf

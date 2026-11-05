@@ -293,6 +293,9 @@ def _conv2d(
     out_shape = [b, co, ho, wo]
     if mem_stack:
         mem_stack.malloc(np.prod(out_shape) * np.float32().itemsize)
+        mem_stack.malloc(np.prod(w.shape) * w.dtype.itemsize)
+        mem_stack.free(np.prod(w.shape) * w.dtype.itemsize)
+
         return out_shape
 
     out = cp.zeros(out_shape, dtype="float32")
@@ -334,6 +337,7 @@ def _conv2d(
                 wk,
             ),
         )
+        del w
         return out
 
     grouped_convolution_kernel_y = module.get_function("grouped_convolution_y")
@@ -730,7 +734,6 @@ def remove_stripe_fw(
         mem_stack.malloc(np.prod(sli_shape) * np.float32().itemsize)
 
         cc = []
-        sli_bytes = None
         fcV_bytes = None
         ifft_out_bytes = None
 
@@ -759,14 +762,10 @@ def remove_stripe_fw(
                 )
                 if cache_key not in fft_cache:
                     fft_plan_size = nvmath.fft.estimate_workspace_size(cache_key)
-                    fft_cache[cache_key] = fft_plan_size
-                    mem_stack.malloc(fft_plan_size)
-
-                mem_stack.malloc(np.prod(fcV_shape) * np.complex64().itemsize)
-
-            if fcV_bytes:
-                mem_stack.free(fcV_bytes)
-            fcV_bytes = np.prod(fcV_shape) * np.complex64()
+                    fft_cache[cache_key] = fft_plan_size + np.prod(fcV_shape) * np.complex64().itemsize
+                    mem_stack.malloc(fft_plan_size + np.prod(fcV_shape) * np.complex64().itemsize)
+                else:
+                    mem_stack.malloc(np.prod(fcV_shape) * np.complex64().itemsize)
 
             if not (fcV_shape[1] == 1):
                 mem_stack.free(np.prod(fcV_shape) * np.complex64().itemsize)
@@ -776,7 +775,7 @@ def remove_stripe_fw(
                     mem_stack.free(ifft_out_bytes)
                 ifft_out_bytes = np.prod(fcV_shape) * np.complex64().itemsize
 
-        for v in fft_cache.values():
+        for v in list(fft_cache.values())[:-1]:
             mem_stack.free(v)
 
         for k in range(level)[::-1]:
