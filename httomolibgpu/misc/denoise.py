@@ -68,17 +68,19 @@ def non_local_means(
     search_radius: int = 5,
     patch_radius: int = 2,
     num_neighbours: int = 0,
+    full_3d: bool = True,
 ) -> cp.ndarray:
-    """Denoise images with Gaussian-weighted non-local means on the GPU.
+    """Denoise images or volumes with Gaussian-weighted non-local means on the GPU.
 
-    A 3D input is treated as independent 2D images along axis 0. This uses
+    A 3D input uses volumetric search windows and patches by default. Set
+    full_3d=False to process independent 2D images along axis 0. This uses
     the patch-distance model of CCPi's PatchSelect_GPU, followed by a
     normalised weighted average. See :ref:`method_non_local_means`.
 
     Parameters
     ----------
     data : cp.ndarray
-        Non-empty float32 CuPy image (y, x) or stack (n, y, x). Values must
+        Non-empty float32 CuPy image (y, x) or volume (z, y, x). Values must
         be finite. Non-contiguous inputs are supported and are not modified.
     h : float
         Positive, finite smoothing strength in input intensity units.
@@ -86,15 +88,20 @@ def non_local_means(
         The Gaussian-weighted squared patch differences are summed, not
         averaged, so the appropriate h also depends on patch_radius.
     search_radius : int
-        Non-negative half-width of the square search window, in pixels.
+        Non-negative half-width of the square or cubic search window.
     patch_radius : int
         Non-negative half-width of the comparison patch. Its Gaussian has
         sigma equal to patch_radius. Zero compares individual pixels.
     num_neighbours : int
         Number of strongest non-self matches to average, plus the centre
         pixel with weight one. Zero uses all matches. A positive value must
-        not exceed (2 * search_radius + 1)**2 - 1. Near image boundaries,
-        fewer neighbours may be available.
+        not exceed (2 * search_radius + 1)**D - 1, where D is three for
+        full 3D processing and two otherwise. Near boundaries, fewer
+        neighbours may be available.
+    full_3d : bool
+        Use 3D search windows and patches for a volume. Defaults to True.
+        False processes each data[z, :, :] slice independently. A 2D input
+        always uses 2D processing, with either value of this flag.
 
     Returns
     -------
@@ -112,8 +119,11 @@ def non_local_means(
     The kernel runs on the input device and current CuPy stream. It retains
     no full neighbour graph: workspace consists of a contiguous input copy
     if needed, the output, Gaussian weights and per-thread selection storage.
-    Runtime grows with search-window area times patch area; requesting many
-    neighbours also increases per-thread storage and selection cost.
+    Runtime grows with search-window size times patch size; requesting many
+    neighbours also increases per-thread storage and selection cost. In 3D
+    both windows are cubic. For chunked volumes, supply an input halo of
+    search_radius + patch_radius voxels on each side of each chunked axis
+    and keep only the output interior to reproduce whole-volume filtering.
 
     Raises
     ------
@@ -130,6 +140,10 @@ def non_local_means(
         raise ValueError("data must be a non-empty 2D image or 3D stack")
     if data.dtype != cp.float32:
         raise ValueError("data must have dtype float32")
+    if not isinstance(full_3d, bool):
+        raise TypeError("full_3d must be a boolean")
+    volume_mode = full_3d and data.ndim == 3
+    spatial_shape = data.shape if volume_mode else data.shape[-2:]
     if isinstance(h, bool) or not isinstance(h, Real):
         raise TypeError("h must be a real number")
     h = float(h)
@@ -144,16 +158,20 @@ def non_local_means(
             raise TypeError(f"{name} must be an integer")
         if value < 0 or value > np.iinfo(np.int32).max:
             raise ValueError(f"{name} must be a non-negative int32 value")
-    if num_neighbours > (2 * int(search_radius) + 1) ** 2 - 1:
+    if num_neighbours > (2 * int(search_radius) + 1) ** len(spatial_shape) - 1:
         raise ValueError("num_neighbours exceeds the number of non-self candidates")
     height, width = data.shape[-2:]
-    if max(height, width) > np.iinfo(np.int32).max:
+    depth = data.shape[0] if data.ndim == 3 else 1
+    if max(depth, height, width) > np.iinfo(np.int32).max:
         raise ValueError("image dimensions must fit int32")
 
     # Offsets beyond the image extent can never contribute to any patch.
-    patch_extent = min(int(patch_radius), max(height, width) - 1)
-    search_extent = min(int(search_radius), max(height, width) - 1)
-    neighbours = min(int(num_neighbours), height * width - 1)
+    patch_extent = min(int(patch_radius), max(spatial_shape) - 1)
+    search_extent = min(int(search_radius), max(spatial_shape) - 1)
+    max_candidates = 1
+    for size in spatial_shape:
+        max_candidates *= min(size, 2 * search_extent + 1)
+    neighbours = min(int(num_neighbours), max_candidates - 1)
     with data.device:
         source = cp.ascontiguousarray(data)
         output = cp.empty(data.shape, dtype=cp.float32)
@@ -162,7 +180,7 @@ def non_local_means(
             gaussian = cp.exp(-(offsets**2) / (2.0 * float(patch_radius) ** 2))
         else:
             gaussian = cp.ones(1, dtype=cp.float32)
-        kernel_name = f"non_local_means_kernel<{neighbours}>"
+        kernel_name = f"non_local_means_kernel<{neighbours}, {int(volume_mode)}>"
         module = load_cuda_module("non_local_means", name_expressions=[kernel_name])
         kernel = module.get_function(kernel_name)
         block = (128,)
@@ -175,6 +193,7 @@ def non_local_means(
                 output,
                 gaussian,
                 np.int64(data.size),
+                np.int32(depth),
                 np.int32(height),
                 np.int32(width),
                 np.int32(search_extent),
