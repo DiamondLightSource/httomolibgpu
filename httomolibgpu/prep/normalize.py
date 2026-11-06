@@ -40,7 +40,7 @@ else:
     mean = Mock()
 
 from typing import Union, Optional
-from numpy import float32, int64
+from numpy import float32
 from httomolibgpu.misc.utils import (
     __check_variable_type,
     __check_if_data_3D_array,
@@ -58,6 +58,7 @@ def dark_flat_field_correction(
     darks_multiplier: Union[float, int] = 1.0,
     upper_bound: Optional[Union[float, int]] = None,
     lower_bound: Optional[Union[float, int]] = None,
+    clipping_warning: bool = False,
 ) -> cp.ndarray:
     """
     Perform dark/flat field correction of raw projection data.
@@ -78,6 +79,8 @@ def dark_flat_field_correction(
         All values above the upper bound are set to the provided value. Default None.
     lower_bound : Optional[float, int]
         All values bellow the lower bound are set to the provided value. Default None.
+    clipping_warning: bool,
+        Set to True if you want to check if the data is not clipped too much (more than 50%) with the provided upper_bound or/and lower_bound value.
 
             Returns
     -------
@@ -171,30 +174,29 @@ def dark_flat_field_correction(
 
     normalisation_kernel(data, flat0, dark0, upper_bound, lower_bound, out)
 
-    # Count the amount of clipping and raise warnings if required
-    clipped_percentage_warning = (
-        50.0  # warning if more clipped values than given percentage
-    )
-
-    clipped_total_up = int(count_greater_kernel(out, float32(upper_bound)))
-    clipped_up_percent = clipped_total_up / data_elements_num * 100
-
-    if clipped_up_percent >= clipped_percentage_warning:
-        print(
-            "Warning! The output data of 'dark_flat_field_correction' method contains \033[31m{}\033[0m percent of 'upper_bound' clipped data.".format(
-                int(clipped_up_percent)
-            )
+    if clipping_warning:
+        # Count the amount of clipping and print warnings if required
+        clipped_percentage_warning = (
+            50.0  # warning if more clipped values than given percentage
         )
 
-    clipped_total_lower = int(count_smaller_kernel(out, float32(lower_bound)))
-    clipped_down_percent = clipped_total_lower / data_elements_num * 100
+        clipped_total_up = int(count_greater_kernel(out, float32(upper_bound)))
+        clipped_up_percent = clipped_total_up / data_elements_num * 100
+        clipped_total_lower = int(count_smaller_kernel(out, float32(lower_bound)))
+        clipped_down_percent = clipped_total_lower / data_elements_num * 100
 
-    if clipped_down_percent >= clipped_percentage_warning:
-        print(
-            "Warning! The output data of 'dark_flat_field_correction' method contains \033[31m{}\033[0m percent of 'lower_bound' clipped data.".format(
-                int(clipped_down_percent)
+        if clipped_up_percent >= clipped_percentage_warning:
+            print(
+                "Warning! The output data of 'dark_flat_field_correction' method contains \033[31m{}\033[0m percent of 'upper_bound' clipped data.".format(
+                    int(clipped_up_percent)
+                )
             )
-        )
+        if clipped_down_percent >= clipped_percentage_warning:
+            print(
+                "Warning! The output data of 'dark_flat_field_correction' method contains \033[31m{}\033[0m percent of 'lower_bound' clipped data.".format(
+                    int(clipped_down_percent)
+                )
+            )
 
     return out
 
