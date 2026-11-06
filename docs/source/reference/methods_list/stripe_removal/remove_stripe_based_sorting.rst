@@ -1,7 +1,7 @@
 .. _method_remove_stripe_based_sorting:
 
 Remove stripes by sorting
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Description**
 
@@ -48,7 +48,3 @@ In this example we demonstrate how to apply the stripe removal algorithm to the 
       - .. figure:: ../../../_static/auto_images_methods/remove_stripe_based_sorting_res_proj.png
 
            Projection view of absolute residual between input and output
-
-
-
-

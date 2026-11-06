@@ -1,7 +1,7 @@
 .. _method_non_local_means:
 
 Non-local means denoising
-^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Description**
 

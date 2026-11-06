@@ -20,9 +20,9 @@
 # ---------------------------------------------------------------------------
 """Module for data correction. For more detailed information see :ref:`data_correction_module`.
 
-* :mod:`httomolibgpu.misc.corr.median_filter`
+* :func:`httomolibgpu.misc.corr.median_filter`
 
-* :mod:`httomolibgpu.misc.corr.remove_outlier`
+* :func:`httomolibgpu.misc.corr.remove_outlier`
 
 """
 

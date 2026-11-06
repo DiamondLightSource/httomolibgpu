@@ -20,11 +20,11 @@
 # ---------------------------------------------------------------------------
 """Module for data denoising. For more detailed information see :ref:`data_denoising_module`:
 
-* :mod:`httomolibgpu.misc.denoise.total_variation_ROF`
+* :func:`httomolibgpu.misc.denoise.total_variation_ROF`
 
-* :mod:`httomolibgpu.misc.denoise.total_variation_PD`
+* :func:`httomolibgpu.misc.denoise.total_variation_PD`
 
-* :mod:`httomolibgpu.misc.denoise.non_local_means`
+* :func:`httomolibgpu.misc.denoise.non_local_means`
 
 """
 

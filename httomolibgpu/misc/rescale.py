@@ -20,7 +20,7 @@
 # ---------------------------------------------------------------------------
 """Module for data rescaling. For more detailed information see :ref:`data_rescale_module` :
 
-* :mod:`httomolibgpu.misc.rescale.rescale_to_int`
+* :func:`httomolibgpu.misc.rescale.rescale_to_int`
 
 """
 
