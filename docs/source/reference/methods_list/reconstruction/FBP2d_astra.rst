@@ -17,5 +17,7 @@ GPU memory footprint and therefore a good choice on systems with very limited GP
 
 **What are the adjustable parameters:**
 
-See the ASTRA's API for the `FBP_CUDA <https://astra-toolbox.com/docs/algs/FBP_CUDA.html>`_ method as the same parameters applicable.
+See :func:`httomolibgpu.recon.algorithm.FBP2d_astra` for the parameters
+accepted by this wrapper. The filter options are described in ASTRA's
+`FBP_CUDA documentation <https://astra-toolbox.com/docs/algs/FBP_CUDA.html>`_.
 

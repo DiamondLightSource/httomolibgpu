@@ -14,7 +14,7 @@ Remove stripes combination uses four algorithms applied sequentially to the data
 
 Remove stripes combination should be applied when different types of stripe artefacts present in the data (e.g. small or large or partial stripes). It is useful to have a look at this
 `classification <https://sarepy.readthedocs.io/toc/section2.html>`_ of different ring/stripe artefacts beforehand. The method can be used blindly, however,
-applying multiple pre-processing algorithms can distort the data, resulting in artefacts in the reconstruction. Meaning that if there are not to many stripes in the data and the method is still applied,
+applying multiple pre-processing algorithms can distort the data, resulting in artefacts in the reconstruction. Meaning that if there are not too many stripes in the data and the method is still applied,
 could result in suboptimal reconstructions.
 
 **What are the adjustable parameters:**
@@ -55,7 +55,3 @@ In this example we demonstrate how to apply remove stripes combo algorithm to th
       - .. figure:: ../../../_static/auto_images_methods/remove_all_stripe_res_proj.png
 
            Projection view of absolute residual between input and output
-
-
-
-

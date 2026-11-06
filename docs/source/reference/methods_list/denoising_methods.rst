@@ -10,5 +10,6 @@ Methods from the :mod:`httomolibgpu.misc.denoise` module are normally used as a 
 
    denoising/total_variation_ROF
    denoising/total_variation_PD
+   denoising/non_local_means
 
 

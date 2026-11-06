@@ -49,7 +49,6 @@ Use it when the noise in the reconstructed image/volume needs to be removed. The
 
 * :code:`regularisation_parameter` Is the most important parameter as it controls the level of smoothing of the image. Larger values lead to more smoothing, which can lead to undesirable oversmoothing.
 
-* :code:`iterations` Algorithm iterations. You will need a significant number of iteration to run in order to see the change in the image. It is recommended to keep this number between 1000 and 5000 iterations.
+* :code:`iterations` Algorithm iterations. You will need a significant number of iterations to run in order to see the change in the image. It is recommended to keep this number between 1000 and 5000 iterations.
 
 * :code:`time_marching_parameter` This parameter ensures the stability of iterations and needs to be small. If you notice unusual artefacts in the denoised image, reduce the value of the parameter. We suggest to keep it 0.001 or smaller.
-
