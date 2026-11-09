@@ -13,7 +13,30 @@ Raven filter can be used in pre-processing, i.e., before the reconstruction to r
 
 **What are the adjustable parameters:**
 
-Most important parameters are :code:`uvalue` and :code:`nvalue` that define the shape of the filter, as well as, :code:`vvalue`, the number of rows to be applied to the filter.
+* :code:`uvalue` is the positive cut-off frequency in Fourier bins. Smaller
+  values give stronger smoothing of the selected band.
+* :code:`nvalue` is the positive integer filter order controlling the roll-off.
+* :code:`vvalue` is the non-negative half-width of the band around zero
+  angular frequency. Zero filters only the zero-frequency row.
+* :code:`pad_y` and :code:`pad_x` are non-negative padding sizes along the
+  angular and horizontal detector axes, respectively.
+
+The Fourier-domain transfer function is real and symmetric about zero:
+
+.. math::
+
+   H(u,v) =
+   \begin{cases}
+      \frac{1}{1 + (u/u_0)^{2n}}, & |v| \leq v_0, \\
+      1, & \text{otherwise}.
+   \end{cases}
+
+This expression is also given in equation (14) of
+`Farzi et al. (2021) <https://doi.org/10.1109/TMI.2021.3097907>`_.
+The filter scales Fourier coefficients without introducing a phase rotation.
+
+.. note:: The frequency centring and real weighting correct the earlier
+   implementation inherited from Savu. Results can differ from older versions.
 
 **Practical example:**
 
