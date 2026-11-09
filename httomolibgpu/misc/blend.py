@@ -20,7 +20,7 @@
 # ---------------------------------------------------------------------------
 """Module for data type morphing functions:
 
-* :mod:`httomolibgpu.misc.blend.seam_blend_stitched_data`
+* :func:`httomolibgpu.misc.blend.seam_blend_stitched_data`
 
 """
 

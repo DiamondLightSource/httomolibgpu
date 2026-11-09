@@ -2,7 +2,11 @@ from httomolibgpu.misc.utils import data_checker
 
 from httomolibgpu.misc.blend import seam_blend_stitched_data
 from httomolibgpu.misc.corr import median_filter, remove_outlier
-from httomolibgpu.misc.denoise import total_variation_ROF, total_variation_PD
+from httomolibgpu.misc.denoise import (
+    total_variation_ROF,
+    total_variation_PD,
+    non_local_means,
+)
 from httomolibgpu.misc.morph import sino_360_to_180, data_resampler
 from httomolibgpu.misc.rescale import rescale_to_int
 from httomolibgpu.prep.alignment import distortion_correction_proj_discorpy

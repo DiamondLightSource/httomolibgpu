@@ -20,7 +20,7 @@
 # ---------------------------------------------------------------------------
 """Modules for data correction:
 
-* :mod:`httomolibgpu.prep.alignment.distortion_correction_proj_discorpy`
+* :func:`httomolibgpu.prep.alignment.distortion_correction_proj_discorpy`
 
 """
 

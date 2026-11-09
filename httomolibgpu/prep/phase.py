@@ -20,9 +20,9 @@
 # ---------------------------------------------------------------------------
 """Modules for phase retrieval and phase-contrast enhancement. For more detailed information, see :ref:`phase_contrast_module`.
 
-* :mod:`httomolibgpu.prep.phase.paganin_filter`
+* :func:`httomolibgpu.prep.phase.paganin_filter`
 
-* :mod:`httomolibgpu.prep.phase.paganin_filter_savu_legacy`
+* :func:`httomolibgpu.prep.phase.paganin_filter_savu_legacy`
 
 """
 

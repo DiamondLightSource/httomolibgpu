@@ -6,7 +6,7 @@ Rescale to integers
 **Description**
 
 This method is used to rescale the data before it gets saved into the images. The method allows you to rescale the data into 8, 16,
-or 32 bit of unsigned integer as well as to use the percentage scaling (explained bellow) to enhance contrast and remove outliers in the resulting images.
+or 32 bit of unsigned integer as well as to use the percentage scaling (explained below) to enhance contrast and remove outliers in the resulting images.
 
 **Where and how to use it:**
 
@@ -23,9 +23,9 @@ clipping of the data and therefore the loss of the information.
 
 * :code:`bits` defines the number of bits in the resulting data. The input can be any data type and will be rescaled into unsigned integer of 8, 16 or 32 bit type.
 
-* :code:`perc_range_min` defines the lower cutoff point in the input data, in percent of the data range (defaults to 0). The lower bound is computed as :math:`\frac{\textrm{perc_range_min} * (\max-\min)}{100} + \min`. Note that :math:`\max` and :math:`\min` values will be automatically estimated from the input data, unless they are provided with the `glob_stats` optional parameter.
+* :code:`perc_range_min` defines the lower cutoff point in the input data, in percent of the data range (defaults to 0). The lower bound is computed as :math:`\frac{\mathrm{perc\_range\_min} * (\max-\min)}{100} + \min`. Note that :math:`\max` and :math:`\min` values will be automatically estimated from the input data, unless they are provided with the :code:`glob_stats` optional parameter.
 
-* :code:`perc_range_max` defines the upper cutoff point in the input data, in percent of the data range (defaults to 100). The higher bound is computed as :math:`\frac{\textrm{perc_range_max} * (\max-\min)}{100} + \min`.
+* :code:`perc_range_max` defines the upper cutoff point in the input data, in percent of the data range (defaults to 100). The higher bound is computed as :math:`\frac{\mathrm{perc\_range\_max} * (\max-\min)}{100} + \min`.
 
 **Practical example:**
 
@@ -47,11 +47,11 @@ In this example we demonstrate how to use the rescaling when saving the data fro
            Projection data saved into 8-bit image with :code:`perc_range_min = 10` and :code:`perc_range_max = 90` scaling. Note that the contrast appears to be better with this scaling.
       - .. figure:: ../../../_static/auto_images_methods/rescale_to_int_histo_10_to_90.png
 
-           The corresponding histogram of the image to the left. Note that the background is now outside the range and the histogram shows a good distribution of values withing the [0,128] range. If possible, however, it is better to aim for a wider histogram which represents the image well within the given range.
+           The corresponding histogram of the image to the left. Note that the background is now outside the range and the histogram shows a good distribution of values within the [0,128] range. If possible, however, it is better to aim for a wider histogram which represents the image well within the given range.
 
     * - .. figure:: ../../../_static/auto_images_methods/rescale_to_int_proj_30_to_70.png
 
-           Projection data saved into 8-bit image with :code:`perc_range_min = 30` and :code:`perc_range_max = 70` scaling. This is en example of a poorer scaling when the loss of the information is clearly visible through poorer contrast.
+           Projection data saved into 8-bit image with :code:`perc_range_min = 30` and :code:`perc_range_max = 70` scaling. This is an example of a poorer scaling when the loss of the information is clearly visible through poorer contrast.
       - .. figure:: ../../../_static/auto_images_methods/rescale_to_int_histo_30_to_70.png
 
            The corresponding histogram of the image to the left. Note that the histogram has been significantly flattened with this scaling. Meaning that there is less values that represent the image in the selected range. And the histogram also has got less variation of values compared to the histogram without percentage scaling. Such flat histograms is best to avoid.

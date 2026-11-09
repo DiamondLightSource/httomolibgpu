@@ -1,7 +1,7 @@
 .. _method_raven_filter:
 
 Raven filter
-^^^^^^^^^^^^^
+^^^^^^^^^^^^
 
 **Description**
 
@@ -69,7 +69,3 @@ In this example we demonstrate how to apply Raven filter to the normalised proje
       - .. figure:: ../../../_static/auto_images_methods/raven_filter_res_proj.png
 
            Projection view of absolute residual between input and output
-
-
-
-

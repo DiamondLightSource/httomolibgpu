@@ -23,7 +23,7 @@ Use it when the centre of rotation is unknown and needs to be found automaticall
 This method can be applied to any data, however the main benefit of this method
 is when the data is incomplete, i.e., limited angle/missing wedge data.
 
-.. note:: For parallel-beam tomography, projections separated by approximately 180 degrees contain complementary information. With a correctly determined COR, the projections should exhibit the expected geometrical relationship. Other methods, such as, :mod:`httomolibgpu.recon.rotation.find_center_vo` and :mod:`httomolibgpu.recon.rotation.find_center_pc`, rely on that assumption. So it is advisable to use other methods first, if the data is complete.
+.. note:: For parallel-beam tomography, projections separated by approximately 180 degrees contain complementary information. With a correctly determined COR, the projections should exhibit the expected geometrical relationship. Other methods, such as, :func:`httomolibgpu.recon.rotation.find_center_vo` and :func:`httomolibgpu.recon.rotation.find_center_pc`, rely on that assumption. So it is advisable to use other methods first, if the data is complete.
 
 **What are the adjustable parameters:**
 
@@ -32,16 +32,16 @@ The most important ones are:
 
 * :code:`metric_type` the choice of metrics to be computed on the reconstructed image. Choose from:
 
-     * :code:`'entropy'` - Shannon entropy measures the information content or complexity of an image intensity distribution. For a discrete intensity distribution with probabilities :math:`p_i`, the entropy is :math:`H = -\sum_i p_i \log_2(p_i)`. A higher entropy indicates a broader or more complex intensity distribution. For an image, the intensity distribution can be estimated using a histogram This metric is sensitive to noise and background, but less sensitive to contrast and reconstruction artefacts. Normally a second best choice after :code:`'tv'` metric.
+     * :code:`'entropy'` - Shannon entropy measures the information content or complexity of an image intensity distribution. For a discrete intensity distribution with probabilities :math:`p_i`, the entropy is :math:`H = -\sum_i p_i \log_2(p_i)`. A higher entropy indicates a broader or more complex intensity distribution. For an image, the intensity distribution can be estimated using a histogram. This metric is sensitive to noise and background, but less sensitive to contrast and reconstruction artefacts. Normally a second best choice after :code:`'tv'` metric.
 
-     * :code:`'tv'` - the total variation (the sum of the magnitude of the image gradient) of the reconstructed image. :math:`|\nabla I| = \sqrt{\left(\frac{\partial I}{\partial x}\right)^2 + \left(\frac{\partial I}{\partial y}\right)^2}`. The :code:`'tv'` metric is the sum of gradient's magnitude: :math:`M_\mathrm{grad} = \sum{(|\nabla I|)}`. Default choice and of the most robust metrics.
+     * :code:`'tv'` - the total variation (the sum of the magnitude of the image gradient) of the reconstructed image. :math:`|\nabla I| = \sqrt{\left(\frac{\partial I}{\partial x}\right)^2 + \left(\frac{\partial I}{\partial y}\right)^2}`. The :code:`'tv'` metric is the sum of gradient's magnitude: :math:`M_\mathrm{grad} = \sum{(|\nabla I|)}`. Default choice and one of the most robust metrics.
 
-     * :code:`'sharpness'` - the variance of of the Laplacian. The metric is defined as :math:`M_\mathrm{Lap} = \operatorname{Var}(\nabla^2 I)`, where :math:`I` is the reconstructed image. Very sensitive to high-frequency noise.
+     * :code:`'sharpness'` - the variance of the Laplacian. The metric is defined as :math:`M_\mathrm{Lap} = \operatorname{Var}(\nabla^2 I)`, where :math:`I` is the reconstructed image. Very sensitive to high-frequency noise.
 
 
 .. note:: We found that smoothing the image before computing any of the metrics with :code:`'gaussian_filter_sigma'` can improve the performance of the correct CoR estimation significantly. Usually the range between 1 and 3 is a good choice for the :code:`'gaussian_filter_sigma'` parameter (see images below).
 
-* :code:`reconstruction_method` is set to :code:`'LPRec3d_tomobar'` by default, however the iterative methods such as :code:`'SIRT3d_tomobar'`, :code:`'CGLS3d_tomobar'` are also available. In some cases (especially limited angle data) the iterative methods can provide better results than the default direct methods. Set :code:`'gaussian_filter_sigma' = None'` if iterative methods are enabled.
+* :code:`reconstruction_method` is set to :code:`'LPRec3d_tomobar'` by default, however the iterative methods such as :code:`'SIRT3d_tomobar'`, :code:`'CGLS3d_tomobar'` are also available. In some cases (especially limited angle data) the iterative methods can provide better results than the default direct methods. Set :code:`gaussian_filter_sigma = None` if iterative methods are enabled.
 
 * :code:`cor_initialisation_value` is the initial guess of the centre of rotation. The search for the optimal CoR will be performed in the range :code:`[cor_initialisation_value - cor_search_range, cor_initialisation_value + cor_search_range]`. The default value is set to :code:`None`, which means that the initialisation value will be set to the middle of the detector.
 
@@ -53,7 +53,7 @@ The most important ones are:
 
   The default value when  :code:`squared_mask_x_y_size = None` is the mask in the center of the reconstructed image (not always the best position as many ring artifacts are present) with a size of 50% of the reconstructed image size.
 
-* :code:`save_recon_tiff` - this feature is useful for debugging. When set to a valid path, the reconstructed image together with the mask after smoothing are saved in to a specified folder. This allows for visual inspection of the reconstruction and mask placement.
+* :code:`save_recon_tiff` - this feature is useful for debugging. When set to a valid path, the reconstructed image together with the mask after smoothing are saved into a specified folder. This allows for visual inspection of the reconstruction and mask placement.
 
 **Practical example:**
 
@@ -69,9 +69,3 @@ In this example we demonstrate how the choice of smoothing can affect the perfor
       - .. figure:: ../../../_static/figures/center_find/find_center_entropy_1253_smoothing3.jpg
 
            :code:`metric_type = entropy`, :code:`squared_mask_x_y_size = None` (center), :code:`gaussian_filter_sigma = 3`. Correct CoR found as the masked image is smoothed.
-
-
-
-
-
-

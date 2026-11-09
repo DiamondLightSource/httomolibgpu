@@ -20,15 +20,15 @@
 # ---------------------------------------------------------------------------
 """Module for stripes removal (ring artifacts suppression), see more in :ref:`stripes_removal_module`.
 
-* :mod:`httomolibgpu.prep.stripe.remove_stripe_based_sorting`
+* :func:`httomolibgpu.prep.stripe.remove_stripe_based_sorting`
 
-* :mod:`httomolibgpu.prep.stripe.remove_stripe_fw`
+* :func:`httomolibgpu.prep.stripe.remove_stripe_fw`
 
-* :mod:`httomolibgpu.prep.stripe.remove_stripe_ti`
+* :func:`httomolibgpu.prep.stripe.remove_stripe_ti`
 
-* :mod:`httomolibgpu.prep.stripe.remove_all_stripe`
+* :func:`httomolibgpu.prep.stripe.remove_all_stripe`
 
-* :mod:`httomolibgpu.prep.stripe.raven_filter`
+* :func:`httomolibgpu.prep.stripe.raven_filter`
 
 """
 
