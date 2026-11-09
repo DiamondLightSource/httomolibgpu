@@ -1,7 +1,7 @@
 .. _method_total_variation_PD:
 
 Total Variation denoising (PD)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Description**
 
@@ -50,7 +50,7 @@ Use it when the noise in the reconstructed image/volume needs to be removed. The
 
 * :code:`regularisation_parameter` Is the most important parameter as it controls the level of smoothing of the image. Larger values lead to more smoothing, which can lead to undesirable oversmoothing.
 
-* :code:`iterations` Algorithm iterations. You will also need a significant number of iteration for this optimisation scheme. It is recommended to keep the number of iterations between 500 and 2000 iterations.
+* :code:`iterations` Algorithm iterations. You will also need a significant number of iterations for this optimisation scheme. It is recommended to keep the number of iterations between 500 and 2000 iterations.
 
 * :code:`isotropic` Choose between the preference of the smoothing dimension of the TV norm, isotropic (True) or anisotropic (False). Defaults to isotropic.
 

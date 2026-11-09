@@ -21,6 +21,7 @@
 """Various utilities for data inspection and correction"""
 
 import numpy as np
+from numbers import Integral, Real
 from httomolibgpu import cupywrapper
 from typing import Optional
 
@@ -153,7 +154,10 @@ def __check_variable_type(
     variable_name: str,
     literals: list,
     methods_name: str,
+    type_error: type[Exception] = ValueError,
 ):
+    # Do not mutate a caller's list when adding NumPy scalar types.
+    expected_datatype = list(expected_datatype)
     datatype_int_extended = [np.int8, np.int16, np.int32, np.int64]
     datatype_float_extended = [np.float16, np.float32, np.float64]
     if int in expected_datatype:
@@ -161,10 +165,14 @@ def __check_variable_type(
     if float in expected_datatype:
         expected_datatype.extend(datatype_float_extended)
 
-    if type(variable) not in expected_datatype:
+    abstract_numeric_type = any(
+        datatype in (Integral, Real) and isinstance(variable, datatype)
+        for datatype in expected_datatype
+    ) and not isinstance(variable, (bool, np.bool_))
+    if type(variable) not in expected_datatype and not abstract_numeric_type:
         # compare variable types and raise error
         err_str = f"Variable '{variable_name}' of '{methods_name}' method given as '{variable}' (type '{type(variable)}') must have a type {expected_datatype}."
-        raise ValueError(err_str)
+        raise type_error(err_str)
     if literals and variable is not None:
         # check if variable should be a literal
         if variable not in literals:
@@ -172,15 +180,18 @@ def __check_variable_type(
             raise ValueError(err_str)
 
 
-def __check_if_data_3D_array(data, methods_name: str):
-    if data.ndim == 3:
-        if 0 in data.shape:
-            err_str = f"The length of one of input data dimensions of method '{methods_name}' is equal to zero."
-            raise ValueError(err_str)
-    else:
+def __check_if_data_ndim(data, accepted_ndim: tuple, methods_name: str):
+    """Check supported dimensionalities and reject empty arrays."""
+    if data.ndim not in accepted_ndim or 0 in data.shape:
+        dimensions = " or ".join(f"{ndim}D" for ndim in accepted_ndim)
         raise ValueError(
-            f"The input data for method '{methods_name}' must be a 3D array."
+            f"The input data for method '{methods_name}' must be a non-empty "
+            f"{dimensions} array."
         )
+
+
+def __check_if_data_3D_array(data, methods_name: str):
+    __check_if_data_ndim(data, (3,), methods_name)
 
 
 def __check_if_data_correct_type(data, accepted_type: list, methods_name: str):

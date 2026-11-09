@@ -58,12 +58,12 @@ sys.modules["scipy.fftpack"] = CustomMock()
 sys.modules["tomobar"] = CustomMock()
 sys.modules["tomobar.methodsDIR"] = CustomMock()
 sys.modules["tomobar.methodsDIR_CuPy"] = CustomMock()
-sys.modules["tomobar.methodsIR_CuPy "] = CustomMock()
+sys.modules["tomobar.methodsIR_CuPy"] = CustomMock()
 sys.modules["skimage.registration"] = CustomMock()
 sys.modules["tomobar.supp.memory_estimator_helpers"] = CustomMock()
 # ------------------------------------------------------------------------------
 
-project = "HTTomolibgpu"
+project = "HTTomolibGPU"
 author = "Imaging Team"
 copyright = f"{date.today().year}, Diamond Light Source"
 
@@ -112,7 +112,7 @@ pygments_style = "sphinx"
 # -- Options for HTML output --------------------------------------------------
 
 html_theme = "sphinx_book_theme"
-html_title = "HTTomolibgpu Documentation page"
+html_title = "HTTomolibGPU Documentation"
 html_copy_source = True
 html_last_updated_fmt = ""
 html_static_path = ["_static"]
@@ -124,10 +124,10 @@ html_theme_options = {
 }
 
 html_context = {
-    "github_user": "httomolibgpu",
-    "github_repo": "https://github.com/DiamondLightSource/httomolibgpu",
+    "github_user": "DiamondLightSource",
+    "github_repo": "httomolibgpu",
     "github_version": "main",
-    "doc_path": "docs",
+    "doc_path": "docs/source",
 }
 
 

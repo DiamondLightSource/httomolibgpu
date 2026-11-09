@@ -20,9 +20,9 @@
 # ---------------------------------------------------------------------------
 """Modules for flat/dark-field correction of projection data and normalisation:
 
-* :mod:`httomolibgpu.prep.normalize.dark_flat_field_correction`
+* :func:`httomolibgpu.prep.normalize.dark_flat_field_correction`
 
-* :mod:`httomolibgpu.prep.normalize.minus_log`
+* :func:`httomolibgpu.prep.normalize.minus_log`
 
 """
 

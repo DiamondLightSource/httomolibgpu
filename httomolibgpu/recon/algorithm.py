@@ -20,21 +20,21 @@
 # ---------------------------------------------------------------------------
 """Module for tomographic reconstruction. For more detailed information, see :ref:`image_reconstruction_module`
 
-* :mod:`httomolibgpu.recon.algorithm.FBP2d_astra`
+* :func:`httomolibgpu.recon.algorithm.FBP2d_astra`
 
-* :mod:`httomolibgpu.recon.algorithm.FBP3d_tomobar`
+* :func:`httomolibgpu.recon.algorithm.FBP3d_tomobar`
 
-* :mod:`httomolibgpu.recon.algorithm.LPRec3d_tomobar`
+* :func:`httomolibgpu.recon.algorithm.LPRec3d_tomobar`
 
-* :mod:`httomolibgpu.recon.algorithm.SIRT3d_tomobar`
+* :func:`httomolibgpu.recon.algorithm.SIRT3d_tomobar`
 
-* :mod:`httomolibgpu.recon.algorithm.CGLS3d_tomobar`
+* :func:`httomolibgpu.recon.algorithm.CGLS3d_tomobar`
 
-* :mod:`httomolibgpu.recon.algorithm.FISTA3d_tomobar`
+* :func:`httomolibgpu.recon.algorithm.FISTA3d_tomobar`
 
-* :mod:`httomolibgpu.recon.algorithm.ADMM3d_tomobar`
+* :func:`httomolibgpu.recon.algorithm.ADMM3d_tomobar`
 
-* :mod:`httomolibgpu.recon.algorithm.OSEM3d_tomobar`
+* :func:`httomolibgpu.recon.algorithm.OSEM3d_tomobar`
 
 """
 

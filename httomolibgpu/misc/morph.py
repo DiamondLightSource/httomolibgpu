@@ -20,11 +20,11 @@
 # ---------------------------------------------------------------------------
 """Module for data type morphing functions:
 
-* :mod:`httomolibgpu.misc.morph.sino_360_to_180`
+* :func:`httomolibgpu.misc.morph.sino_360_to_180`
 
-* :mod:`httomolibgpu.misc.morph.data_resampler`
+* :func:`httomolibgpu.misc.morph.data_resampler`
 
-* :mod:`httomolibgpu.misc.morph.average_projection_frames`
+* :func:`httomolibgpu.misc.morph.average_projection_frames`
 
 """
 

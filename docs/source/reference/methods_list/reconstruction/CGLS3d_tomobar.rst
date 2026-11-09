@@ -8,7 +8,7 @@ CGLS 3D (ToMoBAR)
 Conjugate Gradient for Least Squares (CGLS) is an iterative approach to solve the reconstruction problems via least-squares minimisation.
 The algorithm aims to solve the system of normal equations :math:`\mathbf{A}^{\intercal}\mathbf{A}x = \mathbf{A}^{\intercal} b`, where
 :math:`\mathbf{A}` is the forward projection or geometry matrix, :math:`x` is the sought solution (reconstructed image), :math:`b` is the vectorised projection data,
-and :math:`\mathbf{A}^{\intercal}` is the inverse projection operator.
+and :math:`\mathbf{A}^{\intercal}` is the transpose (back-projection) operator.
 
 
 **Where and how to use it:**
@@ -48,6 +48,3 @@ Normally, noise amplification or overfitting can happen when too many iterations
    :alt: CGLS rec
 
    CGLS reconstruction with :code:`iterations=15` and :code:`nonnegativity=True`.
-
-
-
