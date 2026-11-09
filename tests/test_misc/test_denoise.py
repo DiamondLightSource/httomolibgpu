@@ -441,7 +441,7 @@ def test_defaults_use_radius_two_search_and_radius_one_patches(shape, full_3d):
     result = non_local_means(cp.asarray(original), full_3d=full_3d)
     expected = _reference(
         original,
-        h=0.1,
+        h=0.01,
         search_radius=2,
         patch_radius=1,
         num_neighbours=0,

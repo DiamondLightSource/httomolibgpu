@@ -108,7 +108,7 @@ def _validate_non_local_means(
 
 def non_local_means(
     data: cp.ndarray,
-    h: float = 0.1,
+    h: float = 0.01,
     search_radius: int = 2,
     patch_radius: int = 1,
     num_neighbours: int = 0,
