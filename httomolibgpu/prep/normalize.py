@@ -152,26 +152,6 @@ def dark_flat_field_correction(
         no_return=True,
     )
 
-    count_greater_kernel = cp.ReductionKernel(
-        in_params="T data, raw float32 upper_bound",
-        out_params="int32 out",
-        map_expr="data >= upper_bound ? 1 : 0",  # map each element → 1 or 0
-        reduce_expr="a + b",  # sum them
-        post_map_expr="out = a",  # final result
-        identity="0",
-        name="count_greater",
-    )
-
-    count_smaller_kernel = cp.ReductionKernel(
-        in_params="T data, raw float32 lower_bound",
-        out_params="int32 out",
-        map_expr="data <= lower_bound ? 1 : 0",  # map each element → 1 or 0
-        reduce_expr="a + b",  # sum them
-        post_map_expr="out = a",  # final result
-        identity="0",
-        name="count_smaller",
-    )
-
     normalisation_kernel(data, flat0, dark0, upper_bound, lower_bound, out)
 
     if clipping_warning:
@@ -180,9 +160,9 @@ def dark_flat_field_correction(
             50.0  # warning if more clipped values than given percentage
         )
 
-        clipped_total_up = int(count_greater_kernel(out, float32(upper_bound)))
+        clipped_total_up = cp.count_nonzero(out >= upper_bound)
         clipped_up_percent = clipped_total_up / data_elements_num * 100
-        clipped_total_lower = int(count_smaller_kernel(out, float32(lower_bound)))
+        clipped_total_lower = cp.count_nonzero(out <= lower_bound)
         clipped_down_percent = clipped_total_lower / data_elements_num * 100
 
         if clipped_up_percent >= clipped_percentage_warning:
