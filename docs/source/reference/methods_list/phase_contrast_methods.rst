@@ -27,7 +27,7 @@ where:
 
 * :math:`I(x, y, z = \Delta)` - measured X-ray beam intensity at the propagation distance :math:`\Delta`.
 
-* :math:`I_{0}` - measured X-ray beam intensity at the zero-distance from the X-ray source (incident beam).
+* :math:`I_{0}` - measured X-ray beam intensity without the sample (flat-field intensity).
 
 * :math:`\Delta > 0` - propagation distance of the wavefront from sample to detector.
 
@@ -35,7 +35,7 @@ where:
 
 * :math:`\delta` - the phase decrement, related to the phase shift of X-rays. It is the real part of the complex refractive index:  :math:`n = (1 - \delta) + i \beta`.
 
-* :math:`\beta` - the absorption index, related to the attenuation. It the complex part of the material refractive index: :math:`n = (1 - \delta) + i \beta`.
+* :math:`\beta` - the absorption index, related to the attenuation. It is the imaginary part of the material refractive index: :math:`n = (1 - \delta) + i \beta`.
 
 One can re-write the formula above as:
 
@@ -88,7 +88,7 @@ We also used the following parameters for Paganin filter, while varying only :co
       - .. figure:: ../../_static/figures/paganin/paganin_10.jpg
            :width: 335px
 
-           Paganin filter with :math:`\frac{\delta}{\beta} = 10`. Some features are recongnisable, but the image is still too noisy.
+           Paganin filter with :math:`\frac{\delta}{\beta} = 10`. Some features are recognisable, but the image is still too noisy.
 
 
 .. list-table::

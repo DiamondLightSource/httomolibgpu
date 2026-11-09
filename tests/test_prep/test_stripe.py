@@ -17,6 +17,7 @@ from httomolibgpu.prep.stripe import (
 )
 from httomolibgpu.recon.algorithm import FBP3d_tomobar
 from numpy.testing import assert_allclose
+from tests.test_prep.raven_reference import raven_reference
 
 
 def test_remove_stripe_ti_on_data(data, flats, darks):
@@ -209,7 +210,12 @@ def test_stripe_raven_cupy(data, flats, darks):
     data_after_raven_gpu = cp.asnumpy(raven_filter(data_norm))
 
     data = None  #: free up GPU memory
-    assert_allclose(np.mean(data_after_raven_gpu), 0.2892464, rtol=1e-06)
+    assert_allclose(
+        data_after_raven_gpu,
+        raven_reference(cp.asnumpy(data_norm)),
+        atol=2e-6,
+        rtol=2e-5,
+    )
 
     # make sure the output is float32
     assert data_after_raven_gpu.dtype == np.float32

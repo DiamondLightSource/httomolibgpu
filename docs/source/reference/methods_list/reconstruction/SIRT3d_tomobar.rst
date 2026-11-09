@@ -6,9 +6,9 @@ SIRT 3D (ToMoBAR)
 **Description**
 
 Simultaneous Iterative Reconstruction Technique (SIRT) is a widely used iterative algorithm for image reconstruction. It updates the system of linear algebraic equations simultaneously using averages and therefore faster
-than Algebraic Reconstruction Technique. The following iterations are performed: :math:`x^{k+1} = \mathbf{C}\mathbf{A}^{\intercal}\mathbf{R}(b - \mathbf{A}x^{k})`,
+than Algebraic Reconstruction Technique. The following iterations are performed: :math:`x^{k+1} = x^k + \mathbf{C}\mathbf{A}^{\intercal}\mathbf{R}(b - \mathbf{A}x^{k})`,
 where :math:`\mathbf{A}` is the forward projection or geometry matrix, :math:`x` is the sought solution (reconstructed image), :math:`b` is the vectorised projection data,
-and :math:`\mathbf{A}^{\intercal}` is the inverse projection operator. Matrices :math:`\mathbf{R}` and :math:`\mathbf{C}` are the preconditioning matrices
+and :math:`\mathbf{A}^{\intercal}` is the transpose (back-projection) operator. Matrices :math:`\mathbf{R}` and :math:`\mathbf{C}` are the preconditioning matrices
 which are pre-calculated before the main iterations.
 
 
@@ -20,7 +20,7 @@ Note the SIRT method is slow in convergence and it also requires hundreds of ite
 
 **What are the adjustable parameters:**
 
-* The number of :code:`iterations` is an important parameter for the method as as too few iterations leave the reconstruction blurry, while too many lead to noise amplification. SIRT might require 200-400 iterations, so one can also try a faster :ref:`method_CGLS3d_tomobar` method.
+* The number of :code:`iterations` is an important parameter for the method as too few iterations leave the reconstruction blurry, while too many lead to noise amplification. SIRT might require 200-400 iterations, so one can also try a faster :ref:`method_CGLS3d_tomobar` method.
 
 
 .. list-table::
@@ -39,5 +39,4 @@ Note the SIRT method is slow in convergence and it also requires hundreds of ite
       - .. figure:: ../../../_static/figures/reconstructions/sirt_recon_iter250.jpg
            :width: 200px
 
-           SIRT reconstruction with :code:`iterations=250` improves the resolution further more, yet the noise levels are low.
-
+           SIRT reconstruction with :code:`iterations=250` improves the resolution further, yet the noise levels are low.
