@@ -7,7 +7,7 @@ API reference
 This section contains the API reference and usage information for HTTomolibGPU.
 
 HTTomolibGPU Modules
----------------------
+--------------------
 
 .. toctree::
    :glob:
@@ -22,3 +22,8 @@ HTTomolibGPU Modules
    ../api/httomolibgpu.prep.stripe
    ../api/httomolibgpu.recon.algorithm
    ../api/httomolibgpu.recon.rotation
+
+.. toctree::
+   :hidden:
+
+   ../api/httomolibgpu

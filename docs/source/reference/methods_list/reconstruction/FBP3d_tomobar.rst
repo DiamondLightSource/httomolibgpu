@@ -13,16 +13,16 @@ bypassing the device-host transfer, which makes this method more efficient on th
 **Where and how to use it:**
 
 Together with :ref:`method_LPRec3d_tomobar`, this can be a first choice reconstruction method in the library. It is also fast and in well-sampled data situations delivers a similar reconstruction quality as the Log-Polar
-reconstruction method. It is also recommended to use the FBP method when the data is not well and/or unevenly sampled. Note that for that type of data it might be better to to use iterative algorithms instead, such as :ref:`method_CGLS3d_tomobar` or more advanced :ref:`method_FISTA3d_tomobar`.
+reconstruction method. It is also recommended to use the FBP method when the data is not well and/or unevenly sampled. Note that for that type of data it might be better to use iterative algorithms instead, such as :ref:`method_CGLS3d_tomobar` or more advanced :ref:`method_FISTA3d_tomobar`.
 
 
 **What are the adjustable parameters:**
 
-Most of parameters are self-explanatory from the method's API :mod:`httomolibgpu.recon.algorithm.FBP3d_tomobar`, so we will mention only the ones that potentially need more explanation.
+Most of parameters are self-explanatory from the method's API :func:`httomolibgpu.recon.algorithm.FBP3d_tomobar`, so we will mention only the ones that potentially need more explanation.
 
-* :code:`detector_pad` This parameter is responsible for padding of both (left/right) sides of the horizontal detector of each radiograph. This type of padding extend the edge assuming the sample outside the field of view is approximately similar. This should be used in cases when the sample is larger than the field of view or when the halo-type artifacts should be minimised. Set it to :code:`True` to enable automatic padding to avoid artifacts (middle image bellow).
+* :code:`detector_pad` This parameter is responsible for padding of both (left/right) sides of the horizontal detector of each radiograph. This type of padding extends the edge assuming the sample outside the field of view is approximately similar. This should be used in cases when the sample is larger than the field of view or when the halo-type artifacts should be minimised. Set it to :code:`True` to enable automatic padding to avoid artifacts (middle image below).
 
-* :code:`recon_mask_radius` This applies the circular mask to the reconstructed volume by zeroing all data outside a certain radius (right image bellow).
+* :code:`recon_mask_radius` This applies the circular mask to the reconstructed volume by zeroing all data outside a certain radius (right image below).
 
 .. list-table::
 
@@ -43,7 +43,7 @@ Most of parameters are self-explanatory from the method's API :mod:`httomolibgpu
            Applying circular masking :code:`recon_mask_radius=0.9`.
 
 
-* :code:`filter_freq_cutoff` can behave differently for this method compared to :ref:`method_LPRec3d_tomobar`. Normally the lower values might give you noisier and sharper reconstruction, while the higher values can lead to a blur. Note that the change of the filter will lead to the change in the dynamic range of the reconstructed image (see colour bars in the figures bellow).
+* :code:`filter_freq_cutoff` can behave differently for this method compared to :ref:`method_LPRec3d_tomobar`. Normally the lower values might give you noisier and sharper reconstruction, while the higher values can lead to a blur. Note that the change of the filter will lead to the change in the dynamic range of the reconstructed image (see colour bars in the figures below).
 
 .. list-table::
 
@@ -57,6 +57,3 @@ Most of parameters are self-explanatory from the method's API :mod:`httomolibgpu
            :width: 315px
 
            FBP reconstruction with :code:`filter_freq_cutoff = 2.0`. A slight loss of the resolution, yet reduced noise.
-
-
-**Practical example:**

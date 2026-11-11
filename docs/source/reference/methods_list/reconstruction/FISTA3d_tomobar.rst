@@ -9,7 +9,7 @@ FISTA stands for A Fast Iterative Shrinkage-Thresholding Algorithm :cite:`beck20
 to build complex optimisation functionals that can handle a variety of problematic data. For instance, the amplification of the noise
 in iterations which is common for classical iterative methods, such as, :ref:`method_CGLS3d_tomobar` and :ref:`method_SIRT3d_tomobar`,
 can be resolved by using regularisation :cite:`kazantsev2019ccpi`. There are few types of regularisation that can be used, please see method's
-API :mod:`httomolibgpu.recon.algorithm.FISTA3d_tomobar`.
+API :func:`httomolibgpu.recon.algorithm.FISTA3d_tomobar`.
 
 
 **Where and how to use it:**
@@ -53,10 +53,8 @@ When the data is highly inaccurate,  noisy, incomplete, or limited-angle data. D
 
            Same as left but :code:`nonnegativity = True`. See how the reconstruction looks like a segmented image now.
 
-* :code:`regularisation_iterations` defines how many inner iterations for regularisation performed on every step of the outer (FISTA) algorithm. This can depend on :code:`regularisation_type` and  :code:`subsets_number`. The general rule is when :code:`subsets_number` is smaller then :code:`regularisation_iterations` should be increased.
+* :code:`regularisation_iterations` defines how many inner iterations for regularisation performed on every step of the outer (FISTA) algorithm. This can depend on :code:`regularisation_type` and  :code:`subsets_number`. The general rule is when :code:`subsets_number` is smaller, then :code:`regularisation_iterations` should be increased.
 
 * :code:`subsets_number` usually helps with the faster convergence of the reconstruction algorithm. However, higher values can lead to divergence. It is recommended to keep that value between 4 and 8. In the case of the incorrect reconstruction, one can set :code:`subsets_number` to 1, therefore enabling a classical FISTA algorithm. For the classical FISTA one needs to run significantly more outer :code:`iterations`, in the range between 200-500.
 
 * :code:`nonnegativity`. By setting this parameter to :code:`True` imposes positivity constraint on the solution. In certain situations, when reconstructions require segmentation, one can try enabling it.
-
-

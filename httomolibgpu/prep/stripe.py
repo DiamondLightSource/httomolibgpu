@@ -20,15 +20,15 @@
 # ---------------------------------------------------------------------------
 """Module for stripes removal (ring artifacts suppression), see more in :ref:`stripes_removal_module`.
 
-* :mod:`httomolibgpu.prep.stripe.remove_stripe_based_sorting`
+* :func:`httomolibgpu.prep.stripe.remove_stripe_based_sorting`
 
-* :mod:`httomolibgpu.prep.stripe.remove_stripe_fw`
+* :func:`httomolibgpu.prep.stripe.remove_stripe_fw`
 
-* :mod:`httomolibgpu.prep.stripe.remove_stripe_ti`
+* :func:`httomolibgpu.prep.stripe.remove_stripe_ti`
 
-* :mod:`httomolibgpu.prep.stripe.remove_all_stripe`
+* :func:`httomolibgpu.prep.stripe.remove_all_stripe`
 
-* :mod:`httomolibgpu.prep.stripe.raven_filter`
+* :func:`httomolibgpu.prep.stripe.raven_filter`
 
 """
 
@@ -64,6 +64,7 @@ from httomolibgpu.misc.utils import (
     __check_variable_type,
     __check_if_data_3D_array,
     __check_if_data_correct_type,
+    __check_if_positive_nonzero,
 )
 
 __all__ = [
@@ -1078,25 +1079,27 @@ def raven_filter(
     Parameters
     ----------
     data : cp.ndarray
-        Input CuPy 3D array either float32 or uint16 data type.
+        Input float32 CuPy array with shape (angles, detector_y, detector_x).
 
     pad_y : int
-        Pad the top and bottom of projections.
+        Non-negative padding along the angular axis of each sinogram.
 
     pad_x : int
-        Pad the left and right of projections.
+        Non-negative padding along the horizontal detector axis.
 
     pad_method : str
         Numpy pad method to use.
 
     uvalue : int
-        Cut-off frequency. To control the strength of filter, e.g., strong=10, moderate=20, weak=50.
+        Positive cut-off frequency in Fourier bins. To control the strength
+        of filter, e.g., strong=10, moderate=20, weak=50.
 
     nvalue : int
-        The shape of filter.
+        Positive integer filter order controlling the roll-off.
 
     vvalue : int
-        Number of image-rows around the zero-frequency to be applied the filter.
+        Non-negative half-width of the filtered band around zero angular
+        frequency. Zero filters only the zero-frequency row.
 
     Returns
     -------
@@ -1106,7 +1109,8 @@ def raven_filter(
     Raises
     ------
     ValueError
-        If the input array is not three dimensional.
+        If the input array is not three dimensional or float32, or a parameter
+        has an invalid type or range.
     """
     ### Data and parameters checks ###
     methods_name = "raven_filter"
@@ -1120,6 +1124,16 @@ def raven_filter(
     __check_variable_type(uvalue, [int], "uvalue", [], methods_name)
     __check_variable_type(nvalue, [int], "nvalue", [], methods_name)
     __check_variable_type(vvalue, [int], "vvalue", [], methods_name)
+    for name, value, nonzero in (
+        ("pad_y", pad_y, False),
+        ("pad_x", pad_x, False),
+        ("uvalue", uvalue, True),
+        ("nvalue", nvalue, True),
+        ("vvalue", vvalue, False),
+    ):
+        __check_if_positive_nonzero(value, name, True, nonzero, methods_name)
+        if value > np.iinfo(np.int32).max:
+            raise ValueError(f"Variable '{name}' of '{methods_name}' must fit int32.")
     ###################################
     # Padding of the sinogram
     data = cp.pad(data, ((pad_y, pad_y), (0, 0), (pad_x, pad_x)), mode=pad_method)

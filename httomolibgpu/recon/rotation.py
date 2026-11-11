@@ -20,13 +20,13 @@
 # ---------------------------------------------------------------------------
 """Modules for finding the axis of rotation for 180 or 360 degrees scans.
 
-* :mod:`httomolibgpu.recon.rotation.find_center_vo`
+* :func:`httomolibgpu.recon.rotation.find_center_vo`
 
-* :mod:`httomolibgpu.recon.rotation.find_center_360`
+* :func:`httomolibgpu.recon.rotation.find_center_360`
 
-* :mod:`httomolibgpu.recon.rotation.find_center_pc`
+* :func:`httomolibgpu.recon.rotation.find_center_pc`
 
-* :mod:`httomolibgpu.recon.rotation.find_center_metric_recon`
+* :func:`httomolibgpu.recon.rotation.find_center_metric_recon`
 """
 
 import numpy as np

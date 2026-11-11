@@ -82,6 +82,49 @@ def test_dark_flat_field_upper_and_lower_bound(data, flats, darks, ensure_clean_
     assert data_normalize.flags.c_contiguous
 
 
+@pytest.mark.parametrize(
+    "clipping_warning", [None, False, True], ids=["default", "off", "on"]
+)
+@pytest.mark.parametrize(
+    "clipped_count", [1, 2, 3], ids=["25_percent", "50_percent", "75_percent"]
+)
+@pytest.mark.parametrize("bound", ["upper_bound", "lower_bound"])
+def test_dark_flat_field_clipping_warning(
+    clipping_warning, clipped_count, bound, capsys, ensure_clean_memory
+):
+    # Unit flats and zero darks leave the input unchanged before clipping.
+    clipped_value, other_value = (
+        (0.75, 0.25) if bound == "upper_bound" else (0.25, 0.75)
+    )
+    data_host = np.array(
+        [clipped_value] * clipped_count + [other_value] * (4 - clipped_count),
+        dtype=np.float32,
+    ).reshape(1, 2, 2)
+    flats = cp.ones((1, 2, 2), dtype=cp.float32)
+    darks = cp.zeros((1, 2, 2), dtype=cp.float32)
+    kwargs = {bound: 0.5}
+    if clipping_warning is not None:
+        kwargs["clipping_warning"] = clipping_warning
+
+    result = dark_flat_field_correction(cp.asarray(data_host), flats, darks, **kwargs)
+
+    captured = capsys.readouterr()
+    if clipping_warning and clipped_count >= 2:
+        assert captured.out == (
+            "Warning! The output data of 'dark_flat_field_correction' method contains "
+            f"\033[31m{clipped_count * 25}\033[0m percent of '{bound}' clipped data.\n"
+        )
+    else:
+        assert captured.out == ""
+    assert captured.err == ""
+    expected = (
+        np.minimum(data_host, 0.5)
+        if bound == "upper_bound"
+        else np.maximum(data_host, 0.5)
+    )
+    assert_allclose(cp.asnumpy(result), expected)
+
+
 def test_dark_flat_field_minus_log_correction(data, flats, darks, ensure_clean_memory):
     # --- testing dark_flat_field_correction with minus_log ---#
     data_normalize = dark_flat_field_correction(cp.copy(data), flats, darks)
