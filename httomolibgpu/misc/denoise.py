@@ -36,7 +36,7 @@ cupy_run = cupywrapper.cupy_run
 from unittest.mock import Mock
 
 if cupy_run:
-    from tomobar.regularisersCuPy import ROF_TV_cupy, PD_TV_cupy
+    from tomobar.regularisers import ROF_TV_cupy, PD_TV_cupy
     from httomolibgpu.cuda_kernels import load_cuda_module
 else:
     ROF_TV = Mock()
