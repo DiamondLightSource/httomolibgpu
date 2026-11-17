@@ -1,21 +1,21 @@
 extern "C" __global__ void grouped_convolution_x(
-    int dim_x,
-    int dim_y,
-    int dim_z,
+    long long dim_x,
+    long long dim_y,
+    long long dim_z,
     const float* in,
-    int in_stride_x,
-    int in_stride_y,
-    int in_stride_z,
+    long long in_stride_x,
+    long long in_stride_y,
+    long long in_stride_z,
     float* out,
-    int out_stride_z,
-    int out_stride_group,
+    long long out_stride_z,
+    long long out_stride_group,
     const float* w,
     int wk
 )
 {
-    const int g_thd_x = blockDim.x * blockIdx.x + threadIdx.x;
-    const int g_thd_y = blockDim.y * blockIdx.y + threadIdx.y;
-    const int g_thd_z = blockDim.z * blockIdx.z + threadIdx.z;
+    const long long g_thd_x = blockDim.x * blockIdx.x + threadIdx.x;
+    const long long g_thd_y = blockDim.y * blockIdx.y + threadIdx.y;
+    const long long g_thd_z = blockDim.z * blockIdx.z + threadIdx.z;
     if (g_thd_x >= dim_x || g_thd_y >= dim_y || g_thd_z >= dim_z)
     {
         return;
@@ -28,33 +28,33 @@ extern "C" __global__ void grouped_convolution_x(
         for (int j = 0; j < wk; ++j)
         {
             const int w_idx = i * wk + j;
-            const int in_idx = (g_thd_x * in_stride_x + j) + g_thd_y * in_stride_y + g_thd_z * in_stride_z;
+            const long long in_idx = (g_thd_x * in_stride_x + j) + g_thd_y * in_stride_y + g_thd_z * in_stride_z;
             acc += w[w_idx] * in[in_idx];
         }
-        const int out_idx = g_thd_x + g_thd_y * dim_x + g_thd_z * out_stride_z + i * out_stride_group;
+        const long long out_idx = g_thd_x + g_thd_y * dim_x + g_thd_z * out_stride_z + i * out_stride_group;
         out[out_idx] = acc;
     }
 }
 
 extern "C" __global__ void grouped_convolution_y(
-    int dim_x,
-    int dim_y,
-    int dim_z,
+    long long dim_x,
+    long long dim_y,
+    long long dim_z,
     const float* in,
-    int in_stride_x,
-    int in_stride_y,
-    int in_stride_z,
-    int in_stride_group,
+    long long in_stride_x,
+    long long in_stride_y,
+    long long in_stride_z,
+    long long in_stride_group,
     float* out,
-    int out_stride_z,
-    int out_stride_group,
+    long long out_stride_z,
+    long long out_stride_group,
     const float* w,
     int hk
 )
 {
-    const int g_thd_x = blockDim.x * blockIdx.x + threadIdx.x;
-    const int g_thd_y = blockDim.y * blockIdx.y + threadIdx.y;
-    const int g_thd_z = blockDim.z * blockIdx.z + threadIdx.z;
+    const long long g_thd_x = blockDim.x * blockIdx.x + threadIdx.x;
+    const long long g_thd_y = blockDim.y * blockIdx.y + threadIdx.y;
+    const long long g_thd_z = blockDim.z * blockIdx.z + threadIdx.z;
     if (g_thd_x >= dim_x || g_thd_y >= dim_y || g_thd_z >= dim_z)
     {
         return;
@@ -70,32 +70,32 @@ extern "C" __global__ void grouped_convolution_y(
             float acc = 0.F;
             for (int j = 0; j < hk; ++j)
             {
-                const int w_idx = (out_groups * group + i) * hk + j;
-                const int in_idx = g_thd_x * in_stride_x + (item_stride_y * g_thd_y + j) * in_stride_y + group * in_stride_group + g_thd_z * in_stride_z;
+                const long long w_idx = (out_groups * group + i) * hk + j;
+                const long long in_idx = g_thd_x * in_stride_x + (item_stride_y * g_thd_y + j) * in_stride_y + group * in_stride_group + g_thd_z * in_stride_z;
                 acc += w[w_idx] * in[in_idx];
             }
-            const int out_idx = g_thd_x + g_thd_y * dim_x + g_thd_z * out_stride_z + (out_groups * group + i) * out_stride_group;
+            const long long out_idx = g_thd_x + g_thd_y * dim_x + g_thd_z * out_stride_z + (out_groups * group + i) * out_stride_group;
             out[out_idx] = acc;
         }
     }
 }
 
 extern "C" __global__ void transposed_convolution_x(
-    int dim_x,
-    int dim_y,
-    int dim_z,
+    long long dim_x,
+    long long dim_y,
+    long long dim_z,
     const float* in,
-    int in_dim_x,
-    int in_stride_y,
-    int in_stride_z,
+    long long in_dim_x,
+    long long in_stride_y,
+    long long in_stride_z,
     const float* w,
     int wk,
     float* out
 )
 {
-    const int g_thd_x = blockDim.x * blockIdx.x + threadIdx.x;
-    const int g_thd_y = blockDim.y * blockIdx.y + threadIdx.y;
-    const int g_thd_z = blockDim.z * blockIdx.z + threadIdx.z;
+    const long long g_thd_x = blockDim.x * blockIdx.x + threadIdx.x;
+    const long long g_thd_y = blockDim.y * blockIdx.y + threadIdx.y;
+    const long long g_thd_z = blockDim.z * blockIdx.z + threadIdx.z;
     if (g_thd_x >= dim_x || g_thd_y >= dim_y || g_thd_z >= dim_z)
     {
         return;
@@ -105,34 +105,34 @@ extern "C" __global__ void transposed_convolution_x(
     float acc = 0.F;
     for (int i = 0; i < wk; ++i)
     {
-        const int in_x = (g_thd_x - i) / item_out_stride;
-        const int in_x_mod = (g_thd_x - i) % item_out_stride;
+        const long long in_x = (g_thd_x - i) / item_out_stride;
+        const long long in_x_mod = (g_thd_x - i) % item_out_stride;
         if (in_x_mod == 0 && in_x >= 0 && in_x < in_dim_x)
         {
-            const int in_idx = in_x + g_thd_y * in_stride_y + g_thd_z * in_stride_z;
+            const long long in_idx = in_x + g_thd_y * in_stride_y + g_thd_z * in_stride_z;
             acc += in[in_idx] * w[i];
         }
     }
-    const int out_idx = g_thd_x + dim_x * g_thd_y + dim_x * dim_y * g_thd_z;
+    const long long out_idx = g_thd_x + dim_x * g_thd_y + dim_x * dim_y * g_thd_z;
     out[out_idx] = acc;
 }
 
 extern "C" __global__ void transposed_convolution_y(
-    int dim_x,
-    int dim_y,
-    int dim_z,
+    long long dim_x,
+    long long dim_y,
+    long long dim_z,
     const float* in,
-    int in_dim_y,
-    int in_stride_y,
-    int in_stride_z,
+    long long in_dim_y,
+    long long in_stride_y,
+    long long in_stride_z,
     const float* w,
     int hk,
     float* out
 )
 {
-    const int g_thd_x = blockDim.x * blockIdx.x + threadIdx.x;
-    const int g_thd_y = blockDim.y * blockIdx.y + threadIdx.y;
-    const int g_thd_z = blockDim.z * blockIdx.z + threadIdx.z;
+    const long long g_thd_x = blockDim.x * blockIdx.x + threadIdx.x;
+    const long long g_thd_y = blockDim.y * blockIdx.y + threadIdx.y;
+    const long long g_thd_z = blockDim.z * blockIdx.z + threadIdx.z;
     if (g_thd_x >= dim_x || g_thd_y >= dim_y || g_thd_z >= dim_z)
     {
         return;
@@ -142,14 +142,14 @@ extern "C" __global__ void transposed_convolution_y(
     float acc = 0.F;
     for (int i = 0; i < hk; ++i)
     {
-        const int in_y = (g_thd_y - i) / item_out_stride;
-        const int in_y_mod = (g_thd_y - i) % item_out_stride;
+        const long long in_y = (g_thd_y - i) / item_out_stride;
+        const long long in_y_mod = (g_thd_y - i) % item_out_stride;
         if (in_y_mod == 0 && in_y >= 0 && in_y < in_dim_y)
         {
-            const int in_idx = g_thd_x + in_y * in_stride_y + g_thd_z * in_stride_z;
+            const long long in_idx = g_thd_x + in_y * in_stride_y + g_thd_z * in_stride_z;
             acc += in[in_idx] * w[i];
         }
     }
-    const int out_idx = g_thd_x + dim_x * g_thd_y + dim_x * dim_y * g_thd_z;
+    const long long out_idx = g_thd_x + dim_x * g_thd_y + dim_x * dim_y * g_thd_z;
     out[out_idx] = acc;
 }
