@@ -1,7 +1,8 @@
-{%- if show_headings %}:mod:`{{ basename }}`
-============================================
+{%- if show_headings %}
+{{- qualname | e | heading }}
 {%- endif %}
 .. automodule:: {{ qualname }}
+   :ignore-module-all:
 {%- for option in automodule_options %}
    :{{ option }}:
 {%- endfor %}

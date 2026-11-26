@@ -1,0 +1,123 @@
+{
+  "execution_environment": "Saved notebook provenance records the exact environment. New/updated transfer notebooks executed on RTX 4060 8 GB with CuPy 14.2.0, NumPy 2.4.6, ASTRA 2.5.0 and ToMoBAR 2026.3.1.0.",
+  "coverage": {
+    "functions": 37,
+    "expanded_cases": 50
+  },
+  "failed_cases": {
+    "test_reconstruct_FBP3d_tomobar_i12_dataset5": [
+      {
+        "test": "test_reconstruct_FBP3d_tomobar_i12_dataset5",
+        "assertion": "Complete original input fits GPU",
+        "passed": false,
+        "details": "Out of memory allocating 1,769,472,000 bytes (allocated so far: 4,645,233,664 bytes)."
+      }
+    ],
+    "test_raven_filter_i12_dataset4": [
+      {
+        "test": "test_raven_filter_i12_dataset4",
+        "parameters": {
+          "pad_y": 20,
+          "pad_x": 20,
+          "pad_method": "edge",
+          "uvalue": 20,
+          "nvalue": 2,
+          "vvalue": 4
+        },
+        "expected_norm": 94.0996,
+        "observed_norm": 93.35231018066406,
+        "dtype": "float32",
+        "c_contiguous": true,
+        "passed": false
+      },
+      {
+        "test": "test_raven_filter_i12_dataset4",
+        "parameters": {
+          "pad_y": 20,
+          "pad_x": 20,
+          "pad_method": "edge",
+          "uvalue": 20,
+          "nvalue": 4,
+          "vvalue": 2
+        },
+        "expected_norm": 86.3459,
+        "observed_norm": 86.07943725585938,
+        "dtype": "float32",
+        "c_contiguous": true,
+        "passed": false
+      },
+      {
+        "test": "test_raven_filter_i12_dataset4",
+        "parameters": {
+          "pad_y": 20,
+          "pad_x": 20,
+          "pad_method": "edge",
+          "uvalue": 20,
+          "nvalue": 6,
+          "vvalue": 5
+        },
+        "expected_norm": 111.1377,
+        "observed_norm": 110.93734741210938,
+        "dtype": "float32",
+        "c_contiguous": true,
+        "passed": false
+      }
+    ],
+    "test_reconstruct_FISTA3d_tomobar_autopad_k11_dataset2": [
+      {
+        "test": "test_reconstruct_FISTA3d_tomobar_autopad_k11_dataset2",
+        "assertion": "isclose(np.sum(recon_data), 1355.4636, abs_tol=10 ** (-3))",
+        "passed": false
+      }
+    ],
+    "test_reconstruct_ADMM3d_tomobar_autopad_k11_dataset2": [
+      {
+        "test": "test_reconstruct_ADMM3d_tomobar_autopad_k11_dataset2",
+        "assertion": "isclose(np.sum(recon_data), 2275.8916, abs_tol=10 ** (-3))",
+        "passed": false
+      },
+      {
+        "test": "test_reconstruct_ADMM3d_tomobar_autopad_k11_dataset2",
+        "assertion": "recon_data.shape == (4150, 3, 4150)",
+        "passed": false
+      }
+    ],
+    "test_reconstruct_FBP3d_tomobar_i12_dataset1_pad": [
+      {
+        "test": "test_reconstruct_FBP3d_tomobar_i12_dataset1_pad",
+        "assertion": "assert_allclose",
+        "observed": 29412.486328125,
+        "expected": 9864.938,
+        "tolerances": {
+          "rtol": 1e-07,
+          "atol": 1e-06
+        },
+        "passed": false,
+        "details": "\nNot equal to tolerance rtol=1e-07, atol=1e-06\n\nMismatched elements: 1 / 1 (100%)\nMax absolute difference among violations: 19547.54832812\nMax relative difference among violations: 1.98151761\n ACTUAL: array(29412.486, dtype=float32)\n DESIRED: array(9864.938)"
+      }
+    ],
+    "test_reconstruct_FBP3d_tomobar_i12_dataset1_autopad": [
+      {
+        "test": "test_reconstruct_FBP3d_tomobar_i12_dataset1_autopad",
+        "assertion": "assert_allclose",
+        "observed": 8256.740234375,
+        "expected": 7208.2275,
+        "tolerances": {
+          "rtol": 1e-07,
+          "atol": 1e-06
+        },
+        "passed": false,
+        "details": "\nNot equal to tolerance rtol=1e-07, atol=1e-06\n\nMismatched elements: 1 / 1 (100%)\nMax absolute difference among violations: 1048.51273438\nMax relative difference among violations: 0.14546055\n ACTUAL: array(8256.74, dtype=float32)\n DESIRED: array(7208.2275)"
+      }
+    ],
+    "test_reconstruct_FBP3d_tomobar_i12_dataset1": [
+      {
+        "test": "test_reconstruct_FBP3d_tomobar_i12_dataset1",
+        "assertion": "Complete original input fits GPU",
+        "passed": false,
+        "details": "Out of memory allocating 2,951,479,296 bytes (allocated so far: 3,872,870,400 bytes)."
+      }
+    ]
+  },
+  "original_test_comparison": "All seven numerical failure cases reproduced with unchanged original test files on the same environment before retiring them. ADMM also fails its original output-shape assertion, which the old test did not reach after its sum failure. Two additional full-data FBP cases exceed local GPU memory. References and tolerances have not been changed."
+}

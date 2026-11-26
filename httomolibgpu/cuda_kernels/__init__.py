@@ -1,3 +1,7 @@
+"""Load packaged CUDA kernels through the shared array backend."""
+
+from __future__ import annotations
+
 import os
 from typing import List, Optional, Tuple
 
@@ -15,6 +19,7 @@ def load_cuda_module(
     compile it, and return is as a CuPy RawModule for further
     processing.
     """
+    cupywrapper.require_gpu("load_cuda_module")
 
     dir = os.path.dirname(os.path.abspath(__file__))
     file = os.path.join(dir, file + ".cu")

@@ -6,17 +6,19 @@ Log-Polar 3D (ToMoBAR)
 **Description**
 
 The Log-Polar method is especially useful for implementing filtered back-projection (FBP) and Fourier-based reconstruction techniques via Fourier Slice Theorem aka `Projection-Slice Theorem <https://en.wikipedia.org/wiki/Projection-slice_theorem>`_.
-It is normally the fastest reconstruction method, as it allows Fast Fourier Transform (FFT) computations. Instead of working in standard Cartesian coordinates, the projection data (Radon transform) is mapped into log-polar coordinates, where scaling and rotation become
+It uses Fast Fourier Transform (FFT) computations to accelerate reconstruction. Instead of working in standard Cartesian coordinates, the projection data (Radon transform) is mapped into log-polar coordinates, where scaling and rotation become
 simpler transformations, see more :cite:`andersson2016fast`. The method is implemented in `ToMoBAR <https://dkazanc.github.io/ToMoBAR>`_ software :cite:`kazantsev2020tomographic` using CuPy API and exposed in HTTomolibGPU. It is also optimised to work with
 the 3D projection data.
 
 **Where and how to use it:**
 
-Because of the FFT involved operations, it is the fastest direct method in the library compared to :ref:`method_FBP3d_tomobar` and :ref:`method_FBP2d_astra`. The method, however, is also the most memory-hungry one.
-The quality of reconstruction for Log-Polar method is similar to FBP, providing that the data is well-sampled and evenly spaced. However, for poor/uneven-sampled
-projection data it is generally recommended to use FBP methods to avoid interpolation errors during coordinate transformation. Arguably, the reconstruction errors (artifacts) can be minor and generally not visible.
-The Log-Polar can be used as a first choice method for fast reconstruction followed by :ref:`method_FBP3d_tomobar`.
-
+Log-polar reconstruction is a direct option for well-sampled, evenly spaced
+parallel-beam data. Its coordinate transforms require GPU workspace; compare
+its memory use and measured runtime with :ref:`method_FBP3d_tomobar` for your
+dataset. There is no universal speed ranking across hardware and shapes.
+For a recorded timing example, see :doc:`../../../benchmarks/index`.
+Limited-angle or uneven sampling may require a different method and additional
+validation of interpolation artefacts.
 
 **What are the adjustable parameters:**
 
@@ -59,3 +61,27 @@ Most of parameters are self-explanatory from the method's API :func:`httomolibgp
            :width: 335px
 
            Reconstruction using :code:`filter_type = 'parzen'` and :code:`filter_freq_cutoff=1.0`.
+
+Papers and further reading
+--------------------------
+
+* `Fast algorithms and efficient GPU implementations for the Radon transform and the back-projection operator represented as convolution operators <https://doi.org/10.1137/15M1023762>`_.
+
+Validation examples and images
+------------------------------
+
+See the saved reconstruction images, processing settings and dataset details
+in the following validation notebooks:
+
+* :doc:`LPRec3D · I12 dataset 1 <../../../validation/reconstruction/direct/lprec3d_i12_dataset1>`
+* :doc:`LPRec3D · I13 dataset 1 <../../../validation/reconstruction/direct/lprec3d_i13_dataset1>`
+* :doc:`LPRec3D · I13 dataset 2 <../../../validation/reconstruction/direct/lprec3d_i13_dataset2>`
+* :doc:`LPRec3D · K11 dataset 2 <../../../validation/reconstruction/direct/lprec3d_k11_dataset2>`
+
+:doc:`Original legacy-scaling and padding cases <../../../validation/reconstruction/transferred/lprec_legacy>` retains the original
+Zenodo regression parameters and numerical checks.
+
+API reference
+-------------
+
+:func:`httomolibgpu.recon.algorithm.LPRec3d_tomobar` — signature, input/output types and full parameter details.

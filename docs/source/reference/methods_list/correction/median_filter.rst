@@ -9,11 +9,9 @@ Median filter is a non-linear noise-removal technique with edge-preserving prope
 
 .. math::
 
-   f \in \mathrm{R}^{N}: \textit{input}
+   g_i=\operatorname{median}\{f_j:j\in\mathcal{N}_i\}.
 
-   g \in \mathrm{R}^{N}: \textit{output}
-
-   g_{i} = \textit{median}(f_{j}), \textrm{where} \ j \in \mathrm{N}_{i}
+Here :math:`f` is the input and :math:`g` is the output.
 
 
 Where :math:`\mathrm{N}_{i}` is the symmetric neighbourhood (e.g. 3 x 3) of the pixel :math:`i`.
@@ -60,3 +58,8 @@ In this example we demonstrate how to apply median filter to projection data to 
       - .. figure:: ../../../_static/auto_images_methods/median_filter_res_proj.png
 
            Projection view of absolute residual between input and output
+
+API reference
+-------------
+
+:func:`httomolibgpu.misc.corr.median_filter` — signature, input/output types and full parameter details.

@@ -20,47 +20,70 @@
 # ---------------------------------------------------------------------------
 """Module for data denoising. For more detailed information see :ref:`data_denoising_module`:
 
-* :func:`httomolibgpu.misc.denoise.total_variation_ROF`
+* :func:`~httomolibgpu.misc.denoise.total_variation_ROF`
 
-* :func:`httomolibgpu.misc.denoise.total_variation_PD`
+* :func:`~httomolibgpu.misc.denoise.total_variation_PD`
 
-* :func:`httomolibgpu.misc.denoise.non_local_means`
+* :func:`~httomolibgpu.misc.denoise.total_variation_SB`
+
+* :func:`~httomolibgpu.misc.denoise.total_variation_FGP`
+
+* :func:`~httomolibgpu.misc.denoise.total_generalised_variation`
+
+* :func:`~httomolibgpu.misc.denoise.nonlinear_diffusion`
+
+* :func:`~httomolibgpu.misc.denoise.non_local_means`
 
 """
 
-from httomolibgpu import cupywrapper
+from __future__ import annotations
 
-cp = cupywrapper.cp
-cupy_run = cupywrapper.cupy_run
-
-from unittest.mock import Mock
-
-if cupy_run:
-    from tomobar.regularisers import ROF_TV_cupy, PD_TV_cupy
-    from httomolibgpu.cuda_kernels import load_cuda_module
-else:
-    ROF_TV = Mock()
-    PD_TV = Mock()
-    load_cuda_module = Mock()
-
-from typing import Union
 from math import isfinite
 from numbers import Integral, Real
+from typing import Union
 
 import numpy as np
 
+from httomolibgpu import cupywrapper
+from httomolibgpu.cuda_kernels import load_cuda_module
 from httomolibgpu.misc.utils import (
-    __check_variable_type,
     __check_if_data_3D_array,
     __check_if_data_correct_type,
     __check_if_data_ndim,
     __check_if_positive_nonzero,
+    __check_variable_type,
 )
+
+cp = cupywrapper.cp
+cupy_run = cupywrapper.cupy_run
+
+
+if cupy_run:
+    from tomobar.regularisers import (
+        FGP_TV_cupy,
+        NDF_cupy,
+        PD_TV_cupy,
+        ROF_TV_cupy,
+        SB_TV_cupy,
+        TGV_cupy,
+    )
+else:
+    ROF_TV_cupy = cupywrapper._UnavailableGPU("ROF_TV_cupy")
+    PD_TV_cupy = cupywrapper._UnavailableGPU("PD_TV_cupy")
+    SB_TV_cupy = cupywrapper._UnavailableGPU("SB_TV_cupy")
+    FGP_TV_cupy = cupywrapper._UnavailableGPU("FGP_TV_cupy")
+    TGV_cupy = cupywrapper._UnavailableGPU("TGV_cupy")
+    NDF_cupy = cupywrapper._UnavailableGPU("NDF_cupy")
+
 
 __all__ = [
     "non_local_means",
     "total_variation_ROF",
     "total_variation_PD",
+    "total_variation_SB",
+    "total_variation_FGP",
+    "total_generalised_variation",
+    "nonlinear_diffusion",
 ]
 
 
@@ -114,42 +137,30 @@ def non_local_means(
     num_neighbours: int = 0,
     full_3d: bool = True,
 ) -> cp.ndarray:
-    """Denoise images or volumes with Gaussian-weighted non-local means on the GPU.
-
-    A 3D input uses volumetric search windows and patches by default. Set
-    full_3d=False to process independent 2D images along axis 0. See :ref:`method_non_local_means`.
+    """GPU non-local means denoising. See :ref:`method_non_local_means`.
 
     Parameters
     ----------
     data : cp.ndarray
-        CuPy float32 image (y, x) or a volume (z, y, x).
+        CuPy float32 image (Y, X) or volume (Z, Y, X); input is not modified.
     h : float
-        Positive, finite smoothing strength in input intensity units.
-        Larger values give more smoothing. No intensity rescaling is applied.
-        The Gaussian-weighted squared patch differences are summed, not
-        averaged, so the appropriate h also depends on patch_radius.
+        Positive finite smoothing strength in intensity units. Patch distances
+        are summed, not averaged; retune when changing patch size or dimension.
     search_radius : int
-        Non-negative half-width of the square or cubic search window.
-        Defaults to 2 (a 5 by 5 by 5 window in 3D).
+        Nonnegative search-window half-width; zero returns a copy.
     patch_radius : int
-        Non-negative half-width of the comparison patch. Its Gaussian has
-        sigma equal to patch_radius. Defaults to 1 (a 3 by 3 by 3 patch in
-        3D). Zero compares individual pixels.
+        Nonnegative patch half-width and Gaussian weighting sigma; zero compares pixels.
     num_neighbours : int
-        Number of strongest non-self matches to average, plus the centre
-        pixel with weight one. Zero uses all matches. A positive value must
-        not exceed (2 * search_radius + 1)**D - 1, where D is three for
-        full 3D processing and two otherwise. Near boundaries, fewer
-        neighbours may be available.
+        Strongest non-self matches to average; 0 uses all. Positive values must
+        not exceed (2 * search_radius + 1)**D - 1 for processing dimension D.
     full_3d : bool
-        Use 3D search windows and patches for a volume. Defaults to True.
-        False processes each data[z, :, :] slice independently. A 2D input
-        always uses 2D processing, with either value of this flag.
+        True uses cubic volume patches; False filters each Z slice independently.
+        A 2D input always uses 2D processing.
 
     Returns
     -------
-    cp.ndarray
-        C-contiguous float32 array.
+    cupy.ndarray
+        C-contiguous float32 denoised array, same shape and device as input.
 
     Raises
     ------
@@ -211,30 +222,28 @@ def total_variation_ROF(
     gpu_id: int = 0,
     half_precision: bool = False,
 ) -> cp.ndarray:
-    """
-    Total Variation using Rudin-Osher-Fatemi (ROF) :cite:`rudin1992nonlinear` explicit iteration scheme to perform edge-preserving image denoising.
-    This is a gradient-based algorithm for a smoothed TV term which requires a small time marching parameter and a significant number of iterations.
-    See more in :ref:`method_total_variation_ROF`.
+    """Smoothed ROF-TV denoising. See :ref:`method_total_variation_ROF`.
 
     Parameters
     ----------
     data : cp.ndarray
-        Input CuPy 3D array of float32 data type.
+        Finite float32 CuPy volume (Z, Y, X); use (1, Y, X) for a 2D image.
+        Input is not modified.
     regularisation_parameter : float
-        Regularisation parameter to control the level of smoothing. Defaults to 1e-05.
+        Nonnegative smoothing strength; larger values smooth more. Zero disables it.
     iterations : int
-        The number of iterations. Defaults to 3000.
+        Positive fixed iteration count.
     time_marching_parameter : float
-        Time marching parameter, needs to be small to ensure convergence. Defaults to 0.001.
+        Positive explicit time step; smaller values may need more iterations.
     gpu_id : int
-        GPU device index to perform processing on. Defaults to 0.
+        CUDA device index; input must reside on this device.
     half_precision : bool
-        Perform faster computation in half-precision with a very minimal sacrifice in quality. Defaults to False.
+        Use float16 auxiliary fields; image and output remain float32.
 
     Returns
     -------
-    ndarray
-        TV-ROF filtered 3D CuPy array in float32 data type.
+    cupy.ndarray
+        C-contiguous float32 denoised array, same shape and device as input.
 
     Raises
     ------
@@ -282,32 +291,32 @@ def total_variation_PD(
     gpu_id: int = 0,
     half_precision: bool = False,
 ) -> cp.ndarray:
-    """
-    Primal Dual algorithm for non-smooth convex Total Variation functional :cite:`chan1999nonlinear`. See more in :ref:`method_total_variation_PD`.
+    """Primal-dual TV denoising. See :ref:`method_total_variation_PD`.
 
     Parameters
     ----------
     data : cp.ndarray
-        Input CuPy 3D array of float32 data type.
+        Finite float32 CuPy volume (Z, Y, X); use (1, Y, X) for a 2D image.
+        Input is not modified.
     regularisation_parameter : float, int
-        Regularisation parameter to control the level of smoothing. Defaults to 1e-05.
+        Nonnegative smoothing strength; larger values smooth more. Zero disables it.
     iterations : int
-        The number of iterations. Defaults to 1000.
+        Positive fixed iteration count.
     isotropic : bool
-        Choose between isotropic or anisotropic TV norm. Defaults to isotropic.
-    nonnegativity  : bool
-        Enable non-negativity in iterations. Defaults to False.
+        True: isotropic TV; False: anisotropic TV.
+    nonnegativity : bool
+        Project image values to >= 0, including at zero strength.
     lipschitz_const : float,int
-        Lipschitz constant to control convergence. Defaults to 8.
+        Positive squared gradient-operator bound; minimum 4 * spatial_ndim.
     gpu_id : int
-        GPU device index to perform processing on. Defaults to 0.
+        CUDA device index; input must reside on this device.
     half_precision : bool
-        Perform faster computation in half-precision with a very minimal sacrifice in quality. Defaults to False.
+        Use float16 auxiliary fields; image and output remain float32.
 
     Returns
     -------
-    ndarray
-        TV-PD filtered 3D CuPy array in float32 data type.
+    cupy.ndarray
+        C-contiguous float32 denoised array, same shape and device as input.
 
     Raises
     ------
@@ -355,4 +364,277 @@ def total_variation_PD(
         lipschitz_const,
         gpu_id,
         half_precision,
+    )
+
+
+def _check_tomobar_denoiser(
+    data,
+    method,
+    regularisation_parameter,
+    iterations,
+    nonnegativity,
+    gpu_id,
+    half_precision,
+    parameters=(),
+):
+    """Share the PD-TV wrapper contract; ToMoBAR validates parameter ranges."""
+    cupywrapper.require_gpu(method, device_index=gpu_id)
+    if not isinstance(data, cp.ndarray):
+        raise TypeError("data must be a CuPy array")
+    __check_if_data_3D_array(data, method)
+    __check_if_data_correct_type(data, ["float32"], method)
+    for value, types, name in (
+        (regularisation_parameter, [float, int], "regularisation_parameter"),
+        (iterations, [int], "iterations"),
+        (nonnegativity, [bool], "nonnegativity"),
+        (gpu_id, [int], "gpu_id"),
+        (half_precision, [bool], "half_precision"),
+        *parameters,
+    ):
+        __check_variable_type(value, types, name, [], method)
+
+
+def total_variation_SB(
+    data: cp.ndarray,
+    regularisation_parameter: Union[float, int] = 0.001,
+    iterations: int = 150,
+    isotropic: bool = True,
+    nonnegativity: bool = False,
+    gpu_id: int = 0,
+    half_precision: bool = False,
+) -> cp.ndarray:
+    """Split Bregman TV denoising. See :ref:`method_total_variation_SB`.
+
+    Parameters
+    ----------
+    data : cupy.ndarray
+        Finite float32 CuPy volume (Z, Y, X); use (1, Y, X) for a 2D image.
+        Input is not modified.
+    regularisation_parameter : float or int
+        Nonnegative smoothing strength; larger values smooth more. Zero disables it.
+    iterations : int
+        Positive fixed iteration count.
+    isotropic : bool
+        True: isotropic TV; False: anisotropic TV.
+    nonnegativity : bool
+        Project image values to >= 0, including at zero strength.
+    gpu_id : int
+        CUDA device index; input must reside on this device.
+    half_precision : bool
+        Use float16 auxiliary fields; image and output remain float32.
+
+    Returns
+    -------
+    cupy.ndarray
+        C-contiguous float32 denoised array, same shape and device as input.
+    """
+    _check_tomobar_denoiser(
+        data,
+        "total_variation_SB",
+        regularisation_parameter,
+        iterations,
+        nonnegativity,
+        gpu_id,
+        half_precision,
+        ((isotropic, [bool], "isotropic"),),
+    )
+    return SB_TV_cupy(
+        data,
+        regularisation_parameter=regularisation_parameter,
+        iterations=iterations,
+        methodTV=0 if isotropic else 1,
+        nonneg=int(nonnegativity),
+        gpu_id=gpu_id,
+        half_precision=half_precision,
+    )
+
+
+def total_variation_FGP(
+    data: cp.ndarray,
+    regularisation_parameter: Union[float, int] = 0.001,
+    iterations: int = 150,
+    isotropic: bool = True,
+    nonnegativity: bool = False,
+    gpu_id: int = 0,
+    half_precision: bool = False,
+) -> cp.ndarray:
+    """Fast Gradient Projection TV denoising. See :ref:`method_total_variation_FGP`.
+
+    Parameters
+    ----------
+    data : cupy.ndarray
+        Finite float32 CuPy volume (Z, Y, X); use (1, Y, X) for a 2D image.
+        Input is not modified.
+    regularisation_parameter : float or int
+        Nonnegative smoothing strength; larger values smooth more. Zero disables it.
+    iterations : int
+        Positive fixed iteration count.
+    isotropic : bool
+        True: isotropic TV; False: anisotropic TV.
+    nonnegativity : bool
+        Project image values to >= 0, including at zero strength.
+    gpu_id : int
+        CUDA device index; input must reside on this device.
+    half_precision : bool
+        Use float16 auxiliary fields; image and output remain float32.
+
+    Returns
+    -------
+    cupy.ndarray
+        C-contiguous float32 denoised array, same shape and device as input.
+    """
+    _check_tomobar_denoiser(
+        data,
+        "total_variation_FGP",
+        regularisation_parameter,
+        iterations,
+        nonnegativity,
+        gpu_id,
+        half_precision,
+        ((isotropic, [bool], "isotropic"),),
+    )
+    return FGP_TV_cupy(
+        data,
+        regularisation_parameter=regularisation_parameter,
+        iterations=iterations,
+        methodTV=0 if isotropic else 1,
+        nonneg=int(nonnegativity),
+        gpu_id=gpu_id,
+        half_precision=half_precision,
+    )
+
+
+def total_generalised_variation(
+    data: cp.ndarray,
+    regularisation_parameter: Union[float, int] = 0.001,
+    iterations: int = 150,
+    alpha1: float = 1.0,
+    alpha0: float = 2.0,
+    lipschitz_const: float = 12.0,
+    nonnegativity: bool = False,
+    gpu_id: int = 0,
+    half_precision: bool = False,
+) -> cp.ndarray:
+    """Second-order TGV denoising. See :ref:`method_total_generalised_variation`.
+
+    Parameters
+    ----------
+    data : cupy.ndarray
+        Finite float32 CuPy volume (Z, Y, X); use (1, Y, X) for a 2D image.
+        Input is not modified.
+    regularisation_parameter : float or int
+        Nonnegative smoothing strength; larger values smooth more. Zero disables it.
+    iterations : int
+        Positive fixed iteration count.
+    alpha1 : float
+        Positive first-order TGV weight.
+    alpha0 : float
+        Positive second-order TGV weight.
+    lipschitz_const : float
+        Positive squared derivative-operator bound; minimum 8 * spatial_ndim + 2.
+    nonnegativity : bool
+        Project image values to >= 0, including at zero strength.
+    gpu_id : int
+        CUDA device index; input must reside on this device.
+    half_precision : bool
+        Use float16 auxiliary fields; image and output remain float32.
+
+    Returns
+    -------
+    cupy.ndarray
+        C-contiguous float32 denoised array, same shape and device as input.
+    """
+    _check_tomobar_denoiser(
+        data,
+        "total_generalised_variation",
+        regularisation_parameter,
+        iterations,
+        nonnegativity,
+        gpu_id,
+        half_precision,
+        (
+            (alpha1, [float, int], "alpha1"),
+            (alpha0, [float, int], "alpha0"),
+            (lipschitz_const, [float, int], "lipschitz_const"),
+        ),
+    )
+    return TGV_cupy(
+        data,
+        regularisation_parameter=regularisation_parameter,
+        iterations=iterations,
+        alpha1=alpha1,
+        alpha0=alpha0,
+        lipschitz_const=lipschitz_const,
+        nonneg=int(nonnegativity),
+        gpu_id=gpu_id,
+        half_precision=half_precision,
+    )
+
+
+def nonlinear_diffusion(
+    data: cp.ndarray,
+    regularisation_parameter: Union[float, int] = 0.001,
+    iterations: int = 150,
+    sigma: float = 0.01,
+    time_marching_parameter: float = 0.005,
+    penalty_type: int = 1,
+    nonnegativity: bool = False,
+    gpu_id: int = 0,
+    half_precision: bool = False,
+) -> cp.ndarray:
+    """Edge-preserving diffusion denoising. See :ref:`method_nonlinear_diffusion`.
+
+    Parameters
+    ----------
+    data : cupy.ndarray
+        Finite float32 CuPy volume (Z, Y, X); use (1, Y, X) for a 2D image.
+        Input is not modified.
+    regularisation_parameter : float or int
+        Nonnegative smoothing strength; larger values smooth more. Zero disables it.
+    iterations : int
+        Positive fixed iteration count.
+    sigma : float
+        Nonnegative edge parameter; effective threshold is sigma / sqrt(2).
+        Zero selects linear diffusion.
+    time_marching_parameter : float
+        Positive requested time step; ToMoBAR caps it internally for stability.
+    penalty_type : int
+        1 Huber, 2 Perona-Malik, 3 Tukey, 4 truncated quadratic,
+        5 truncated Huber. Types 2--5 are nonconvex.
+    nonnegativity : bool
+        Project image values to >= 0, including at zero strength.
+    gpu_id : int
+        CUDA device index; input must reside on this device.
+    half_precision : bool
+        Must be False; NDF supports float32 only.
+
+    Returns
+    -------
+    cupy.ndarray
+        C-contiguous float32 denoised array, same shape and device as input.
+    """
+    _check_tomobar_denoiser(
+        data,
+        "nonlinear_diffusion",
+        regularisation_parameter,
+        iterations,
+        nonnegativity,
+        gpu_id,
+        half_precision,
+        (
+            (sigma, [float, int], "sigma"),
+            (time_marching_parameter, [float, int], "time_marching_parameter"),
+            (penalty_type, [int], "penalty_type"),
+        ),
+    )
+    return NDF_cupy(
+        data,
+        regularisation_parameter=regularisation_parameter,
+        iterations=iterations,
+        sigma=sigma,
+        time_marching_parameter=time_marching_parameter,
+        penalty_type=penalty_type,
+        nonneg=int(nonnegativity),
+        gpu_id=gpu_id,
+        half_precision=half_precision,
     )

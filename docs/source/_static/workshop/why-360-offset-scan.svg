@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="390" viewBox="0 0 1200 390">
+<rect width="1200" height="390" fill="#191919"/>
+<defs>
+<clipPath id="sample"><circle cx="0" cy="0" r="115"/></clipPath>
+<g id="structure" fill="none" stroke="#c4cbd0" stroke-width="2"><circle r="115"/><circle cx="-48" cy="-35" r="27"/><ellipse cx="42" cy="30" rx="33" ry="42"/><circle cx="20" cy="-65" r="13"/></g>
+</defs>
+<g font-family="DejaVu Sans, sans-serif" text-anchor="middle">
+<text x="195" y="32" fill="#56d9db" font-size="25">View at θ</text>
+<text x="600" y="32" fill="#db8df2" font-size="25">Opposite view: θ + 180°</text>
+<text x="1005" y="32" fill="#f1f4f5" font-size="25">Combined coverage</text>
+<g transform="translate(195 175)"><circle r="115" fill="#303030"/><g clip-path="url(#sample)"><rect x="-18" y="-120" width="140" height="240" fill="#235f61"/></g><use href="#structure"/><line x1="-18" y1="-128" x2="-18" y2="128" stroke="#56d9db" stroke-width="3"/><circle r="5" fill="#ffcf66"/></g>
+<g transform="translate(600 175)"><circle r="115" fill="#303030"/><g clip-path="url(#sample)"><rect x="-122" y="-120" width="140" height="240" fill="#68446d"/></g><use href="#structure"/><line x1="18" y1="-128" x2="18" y2="128" stroke="#db8df2" stroke-width="3"/><circle r="5" fill="#ffcf66"/></g>
+<g transform="translate(1005 175)"><g clip-path="url(#sample)"><rect x="-120" y="-120" width="120" height="240" fill="#68446d"/><rect x="0" y="-120" width="120" height="240" fill="#235f61"/><rect x="-18" y="-120" width="36" height="240" fill="#8e7739"/></g><use href="#structure"/><circle r="5" fill="#ffcf66"/></g>
+<text x="400" y="188" fill="#f1f4f5" font-size="40">+</text><text x="800" y="188" fill="#f1f4f5" font-size="40">→</text>
+<text x="195" y="331" fill="#56d9db" font-size="23">One side is recorded</text><text x="600" y="331" fill="#db8df2" font-size="23">The other side is recorded</text><text x="1005" y="331" fill="#ffcf66" font-size="23">Shared strip = overlap</text>
+<text x="600" y="378" fill="#b6c0c7" font-size="18">Coverage shown in the same sample coordinates • yellow dot: rotation axis • schematic, not to scale</text>
+</g></svg>

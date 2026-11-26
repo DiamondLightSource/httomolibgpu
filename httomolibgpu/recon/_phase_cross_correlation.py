@@ -28,13 +28,23 @@ Port of Manuel Guizar's code from:
 http://www.mathworks.com/matlabcentral/fileexchange/18401-efficient-subpixel-image-registration-by-cross-correlation
 """
 
+from __future__ import annotations
+
 import itertools
 import math
 import warnings
 
-import cupy as cp
-import cupyx.scipy.ndimage as ndi
 import numpy as np
+
+from httomolibgpu import cupywrapper
+
+cp = cupywrapper.cp
+cupy_run = cupywrapper.cupy_run
+
+if cupy_run:
+    import cupyx.scipy.ndimage as ndi
+else:
+    ndi = cupywrapper._UnavailableGPU("cupyx.scipy.ndimage")
 
 
 def _upsampled_dft(data, upsampled_region_size, upsample_factor=1, axis_offsets=None):
@@ -303,6 +313,7 @@ def phase_cross_correlation(
     .. [4] James R. Fienup, "Invariant error metrics for image reconstruction"
            Optics Letters 36, 8352-8357 (1997). :DOI:`10.1364/AO.36.008352`
     """
+    cupywrapper.require_gpu("phase_cross_correlation")
 
     # images must be the same shape
     if reference_image.shape != moving_image.shape:

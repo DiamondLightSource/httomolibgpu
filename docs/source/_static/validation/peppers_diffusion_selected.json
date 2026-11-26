@@ -1,0 +1,148 @@
+{
+  "noise_sigma": 0.15,
+  "seed": 42,
+  "image_shape": [
+    512,
+    512
+  ],
+  "criterion": "Maximise PSNR + 20*SSIM among candidates improving both baseline metrics",
+  "candidate_count": 3387,
+  "baseline": {
+    "1": {
+      "method": "NDF Huber",
+      "penalty_type": 1,
+      "regularisation_parameter": 2.0,
+      "sigma": 0.5,
+      "iterations": 3000,
+      "time_marching_parameter": 0.1,
+      "psnr": 25.910436271435884,
+      "ssim": 0.7229885935270326,
+      "score": 40.37020814197653,
+      "stage": "baseline"
+    },
+    "2": {
+      "method": "NDF Perona-Malik",
+      "penalty_type": 2,
+      "regularisation_parameter": 2.0,
+      "sigma": 0.5,
+      "iterations": 3000,
+      "time_marching_parameter": 0.1,
+      "psnr": 26.869571296659096,
+      "ssim": 0.6415566277216569,
+      "score": 39.700703851092236,
+      "stage": "baseline"
+    },
+    "3": {
+      "method": "NDF Tukey",
+      "penalty_type": 3,
+      "regularisation_parameter": 4.0,
+      "sigma": 0.5,
+      "iterations": 3000,
+      "time_marching_parameter": 0.1,
+      "psnr": 25.263960321467533,
+      "ssim": 0.6185892544726164,
+      "score": 37.63574541091986,
+      "stage": "baseline"
+    },
+    "4": {
+      "method": "NDF truncated quadratic",
+      "penalty_type": 4,
+      "regularisation_parameter": 1.0,
+      "sigma": 0.5,
+      "iterations": 3000,
+      "time_marching_parameter": 0.1,
+      "psnr": 25.093598331499596,
+      "ssim": 0.5115138492326742,
+      "score": 35.32387531615308,
+      "stage": "baseline"
+    },
+    "5": {
+      "method": "NDF truncated Huber",
+      "penalty_type": 5,
+      "regularisation_parameter": 0.3,
+      "sigma": 0.5,
+      "iterations": 3000,
+      "time_marching_parameter": 0.1,
+      "psnr": 25.3242735358608,
+      "ssim": 0.507068363932281,
+      "score": 35.46564081450642,
+      "stage": "baseline"
+    }
+  },
+  "selected": {
+    "NDF Huber": {
+      "method": "NDF Huber",
+      "penalty_type": 1,
+      "regularisation_parameter": 0.24,
+      "sigma": 0.018,
+      "iterations": 64,
+      "time_marching_parameter": 0.1,
+      "psnr": 28.457390547402618,
+      "ssim": 0.7791451117817861,
+      "score": 44.04029278303834,
+      "stage": "final_refinement"
+    },
+    "NDF Perona-Malik": {
+      "method": "NDF Perona-Malik",
+      "penalty_type": 2,
+      "regularisation_parameter": 8.0,
+      "sigma": 0.1,
+      "iterations": 40,
+      "time_marching_parameter": 0.1,
+      "psnr": 28.197450263161215,
+      "ssim": 0.7575028689679012,
+      "score": 43.34750764251924,
+      "stage": "final_refinement"
+    },
+    "NDF Tukey": {
+      "method": "NDF Tukey",
+      "penalty_type": 3,
+      "regularisation_parameter": 24.0,
+      "sigma": 0.9,
+      "iterations": 8,
+      "time_marching_parameter": 0.1,
+      "psnr": 27.26083195503144,
+      "ssim": 0.7217935332308699,
+      "score": 41.69670261964884,
+      "stage": "final_refinement"
+    },
+    "NDF truncated quadratic": {
+      "method": "NDF truncated quadratic",
+      "penalty_type": 4,
+      "regularisation_parameter": 7.2,
+      "sigma": 0.84,
+      "iterations": 12,
+      "time_marching_parameter": 0.025,
+      "psnr": 26.969403911891913,
+      "ssim": 0.7196486554200822,
+      "score": 41.36237702029356,
+      "stage": "final_refinement"
+    },
+    "NDF truncated Huber": {
+      "method": "NDF truncated Huber",
+      "penalty_type": 5,
+      "regularisation_parameter": 2.016,
+      "sigma": 0.34,
+      "iterations": 9,
+      "time_marching_parameter": 0.025,
+      "psnr": 27.167198793829815,
+      "ssim": 0.712130836688703,
+      "score": 41.409815527603875,
+      "stage": "final_refinement"
+    }
+  },
+  "environment": {
+    "python": "3.14.7",
+    "packages": {
+      "httomolibgpu": "6.0.1.post16+git.bbaa03d2.dirty",
+      "tomobar": "2026.3.1.0",
+      "cupy": "14.2.0",
+      "numpy": "2.4.6",
+      "scikit-image": "0.26.0"
+    },
+    "gpu": "NVIDIA GeForce RTX 4060",
+    "cuda_runtime": 13020,
+    "image_sha256": "ac1a8b8f353613307fc97a2ca57e8ad782a474f91e74b6fdc19835f80d62e5e9"
+  },
+  "limitation": "Reference-guided tuning on one fixed image/noise pair; not held-out validation or a global optimum"
+}

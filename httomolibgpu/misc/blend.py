@@ -24,20 +24,22 @@
 
 """
 
-import numpy as np
-from httomolibgpu import cupywrapper
-
-cp = cupywrapper.cp
-cupy_run = cupywrapper.cupy_run
+from __future__ import annotations
 
 from typing import Optional
 
+import numpy as np
+
+from httomolibgpu import cupywrapper
 from httomolibgpu.misc.utils import (
-    __check_variable_type,
     __check_if_data_3D_array,
     __check_if_data_correct_type,
     __check_if_positive_nonzero,
+    __check_variable_type,
 )
+
+cp = cupywrapper.cp
+
 
 __all__ = [
     "seam_blend_stitched_data",

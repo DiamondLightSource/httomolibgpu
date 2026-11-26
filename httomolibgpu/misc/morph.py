@@ -28,27 +28,29 @@
 
 """
 
+from __future__ import annotations
+
+from typing import Literal, Union
+
 import numpy as np
+
 from httomolibgpu import cupywrapper
+from httomolibgpu.misc.utils import (
+    __check_if_data_3D_array,
+    __check_if_data_correct_type,
+    __check_if_positive_nonzero,
+    __check_variable_type,
+)
 
 cp = cupywrapper.cp
 cupy_run = cupywrapper.cupy_run
 
-from unittest.mock import Mock
 
 if cupy_run:
     from cupyx.scipy.interpolate import interpn
 else:
-    interpn = Mock()
+    interpn = cupywrapper._UnavailableGPU("interpn")
 
-from typing import Literal, Union
-
-from httomolibgpu.misc.utils import (
-    __check_variable_type,
-    __check_if_data_3D_array,
-    __check_if_data_correct_type,
-    __check_if_positive_nonzero,
-)
 
 __all__ = [
     "sino_360_to_180",
@@ -198,6 +200,7 @@ def data_resampler(
     -------
         cp.ndarray: Up/Down-scaled 3D cupy array
     """
+    cupywrapper.require_gpu("data_resampler")
 
     ### Data and parameters checks ###
     methods_name = "data_resampler"

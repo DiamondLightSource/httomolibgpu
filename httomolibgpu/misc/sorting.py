@@ -19,7 +19,11 @@
 # Created Date: 22 April 2026
 # ---------------------------------------------------------------------------
 
+
+from __future__ import annotations
+
 from typing import Tuple
+
 from httomolibgpu import cupywrapper
 
 cp = cupywrapper.cp

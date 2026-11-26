@@ -5,7 +5,7 @@ Non-local means denoising
 
 **Description**
 
-Non-local means (NLM) denoising reduces noise by averaging pixels or voxels
+Non-local means (NLM) denoising :cite:`buades2005nonlocal` reduces noise by averaging pixels or voxels
 with similar surrounding patches. Instead of smoothing all nearby pixels
 equally, it gives more weight to those whose local structure resembles the
 patch being filtered. This helps preserve edges and repeated features in
@@ -79,7 +79,7 @@ independently. A 2D input always uses 2D processing.
   positive and is expressed in input intensity units; the method does not
   normalise the data. Patch distances are summed rather than averaged, so
   retune this parameter when changing the intensity scale, patch radius or
-  processing dimension. Defaults to 0.1.
+  processing dimension. Defaults to 0.01.
 
 * :code:`search_radius` Sets the half-width of the search window. The default
   value of 2 gives a 5 by 5 window in 2D or a 5 by 5 by 5 window in 3D. Larger
@@ -113,3 +113,20 @@ independently. A 2D input always uses 2D processing.
    Without overlap, chunk boundaries can introduce differences from
    filtering the whole volume. Independent slice processing needs no
    overlap along the slice axis.
+
+
+**Validation examples and images**
+
+See :doc:`3D Shepp–Logan denoising <../../../validation/denoising/denoising_shepp_logan_3d>`
+for volumetric Non-Local Means alongside TV, TGV and diffusion, with central
+and orthogonal slice images, volume-wide PSNR and 3D SSIM.
+
+Papers and further reading
+--------------------------
+
+* `A non-local algorithm for image denoising <https://doi.org/10.1109/CVPR.2005.38>`_.
+
+API reference
+-------------
+
+:func:`httomolibgpu.misc.denoise.non_local_means` — signature, input/output types and full parameter details.

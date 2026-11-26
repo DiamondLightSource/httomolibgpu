@@ -8,6 +8,10 @@ from itertools import product
 from httomolibgpu.misc.denoise import (
     total_variation_ROF,
     total_variation_PD,
+    total_variation_SB,
+    total_variation_FGP,
+    total_generalised_variation,
+    nonlinear_diffusion,
     non_local_means,
 )
 from numpy.testing import assert_allclose, assert_array_equal
@@ -47,7 +51,8 @@ def test_tv_PD(data):
     assert filtered_data.ndim == 3
     assert_allclose(np.mean(filtered_data), 809.04987, rtol=eps)
     assert_allclose(np.max(filtered_data), 1112.6956)
-    assert_allclose(np.min(filtered_data), 77.97832)
+    # Match the module's float32 tolerance; direct ToMoBAR differs by ~1e-5.
+    assert_allclose(np.min(filtered_data), 77.97832, rtol=eps)
 
     assert filtered_data.dtype == np.float32
     assert filtered_data.flags.c_contiguous
@@ -449,3 +454,145 @@ def test_defaults_use_radius_two_search_and_radius_one_patches(shape, full_3d):
     )
 
     assert_allclose(result.get(), expected, rtol=3e-5, atol=5e-7)
+
+
+# Direct ToMoBAR reference measurements on tomo_standard.npz, float32, strength 5,
+# 200 iterations, all other parameters at their native defaults (RTX 4060).
+_NEW_DENOISERS = [
+    (total_variation_SB, (809.0498657226562, 1112.6453857421875, 77.99597930908203)),
+    (total_variation_FGP, (809.0498657226562, 1112.6959228515625, 77.9784164428711)),
+    (
+        total_generalised_variation,
+        (809.0499877929688, 1112.701171875, 78.01063537597656),
+    ),
+    (nonlinear_diffusion, (809.05029296875, 1134.639404296875, 63.36799621582031)),
+]
+
+
+@pytest.mark.parametrize("denoise, expected", _NEW_DENOISERS)
+def test_tomobar_denoiser_wrong_dtype(data, denoise, expected):
+    with pytest.raises(ValueError, match="float32"):
+        denoise(data)
+
+
+@pytest.mark.parametrize("denoise, expected", _NEW_DENOISERS)
+def test_tomobar_denoiser(data, denoise, expected):
+    original = data.astype(cp.float32)
+    saved = original.copy()
+    filtered_data = denoise(original, regularisation_parameter=5, iterations=200).get()
+    assert filtered_data.ndim == 3
+    assert filtered_data.shape == original.shape
+    assert_allclose(np.mean(filtered_data), expected[0], rtol=eps)
+    assert_allclose(np.max(filtered_data), expected[1], rtol=eps)
+    assert_allclose(np.min(filtered_data), expected[2], rtol=eps)
+    assert filtered_data.dtype == np.float32
+    assert filtered_data.flags.c_contiguous
+    assert np.isfinite(filtered_data).all()
+    assert_array_equal(original.get(), saved.get())
+
+
+@pytest.mark.parametrize(
+    "denoise, backend, options, native_options",
+    [
+        (total_variation_SB, "SB_TV_cupy", {"isotropic": False}, {"methodTV": 1}),
+        (total_variation_FGP, "FGP_TV_cupy", {"isotropic": False}, {"methodTV": 1}),
+        (
+            total_generalised_variation,
+            "TGV_cupy",
+            {"alpha1": 1.5, "alpha0": 2.5, "lipschitz_const": 32.0},
+            {"alpha1": 1.5, "alpha0": 2.5, "lipschitz_const": 32.0},
+        ),
+        (
+            nonlinear_diffusion,
+            "NDF_cupy",
+            {"sigma": 0.2, "time_marching_parameter": 0.05, "penalty_type": 3},
+            {"sigma": 0.2, "time_marching_parameter": 0.05, "penalty_type": 3},
+        ),
+    ],
+)
+@pytest.mark.parametrize("shape", [(1, 16, 20), (3, 12, 16)])
+@pytest.mark.parametrize("half_precision", [False, True])
+def test_tomobar_denoiser_native_options(
+    denoise, backend, options, native_options, shape, half_precision
+):
+    from tomobar import regularisers
+
+    if backend == "NDF_cupy" and half_precision:
+        pytest.skip("NDF has no half-precision work fields")
+    original = cp.asarray(
+        np.random.default_rng(5).normal(0.5, 0.1, shape), dtype=cp.float32
+    )
+    data = original[..., ::-1]  # Exercise packing and shape preservation too.
+    saved = data.copy()
+    result = denoise(
+        data,
+        regularisation_parameter=0.1,
+        iterations=20,
+        nonnegativity=True,
+        half_precision=half_precision,
+        **options,
+    )
+    expected = getattr(regularisers, backend)(
+        data,
+        regularisation_parameter=0.1,
+        iterations=20,
+        nonneg=1,
+        half_precision=half_precision,
+        **native_options,
+    )
+    assert_array_equal(result.get(), expected.get())
+    assert_array_equal(data.get(), saved.get())
+    assert result.shape == data.shape
+    assert result.dtype == cp.float32
+    assert result.flags.c_contiguous
+    assert result.device.id == data.device.id
+    assert bool(cp.isfinite(result).all())
+    assert float(result.min()) >= 0
+
+
+@pytest.mark.parametrize("denoise, expected", _NEW_DENOISERS)
+def test_tomobar_denoiser_zero_strength(denoise, expected):
+    data = cp.asarray([[[-1.0, 0.0, 2.0]]], dtype=cp.float32)
+    result = denoise(data, regularisation_parameter=0)
+    assert_array_equal(result.get(), data.get())
+    assert result.data.ptr != data.data.ptr
+    projected = denoise(data, regularisation_parameter=0, nonnegativity=True)
+    assert_array_equal(projected.get(), cp.maximum(data, 0).get())
+
+
+@pytest.mark.parametrize("denoise, expected", _NEW_DENOISERS)
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"regularisation_parameter": -1},
+        {"iterations": 0},
+        {"nonnegativity": "yes"},
+        {"half_precision": "yes"},
+    ],
+)
+def test_tomobar_denoiser_invalid_parameters(denoise, expected, kwargs):
+    with pytest.raises((ValueError, TypeError)):
+        denoise(cp.ones((1, 4, 5), dtype=cp.float32), **kwargs)
+
+
+@pytest.mark.parametrize("denoise, expected", _NEW_DENOISERS)
+def test_tomobar_denoiser_input_contract(denoise, expected):
+    with pytest.raises(TypeError, match="CuPy"):
+        denoise(np.ones((1, 4, 5), dtype=np.float32))
+    with pytest.raises(ValueError):
+        denoise(cp.ones((4, 5), dtype=cp.float32))
+    with pytest.raises(ValueError):
+        denoise(cp.full((1, 4, 5), cp.nan, dtype=cp.float32))
+
+
+def test_nonlinear_diffusion_rejects_half_precision():
+    with pytest.raises(ValueError, match="half"):
+        nonlinear_diffusion(cp.ones((1, 4, 5), dtype=cp.float32), half_precision=True)
+
+
+def test_new_denoiser_top_level_exports():
+    import httomolibgpu
+
+    for denoise, _ in _NEW_DENOISERS:
+        assert getattr(httomolibgpu, denoise.__name__) is denoise
+        assert denoise.__name__ in httomolibgpu.__all__

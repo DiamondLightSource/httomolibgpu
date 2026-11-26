@@ -29,53 +29,54 @@
 * :func:`httomolibgpu.recon.rotation.find_center_metric_recon`
 """
 
-import numpy as np
+from __future__ import annotations
+
+import math
 import os
-import pathlib
 from pathlib import Path
-from numpy.polynomial import Polynomial
-from httomolibgpu import cupywrapper
+import pathlib
+from typing import List, Literal, Optional, Tuple, Union
+
 from PIL import Image
+import numpy as np
+from numpy.polynomial import Polynomial
 from scipy.ndimage import laplace
+
+from httomolibgpu import cupywrapper
+from httomolibgpu.cuda_kernels import load_cuda_module
+from httomolibgpu.misc.utils import (
+    __check_if_data_3D_array,
+    __check_if_data_correct_type,
+    __check_variable_type,
+    data_checker,
+)
+from httomolibgpu.recon._phase_cross_correlation import phase_cross_correlation
 
 cp = cupywrapper.cp
 cupy_run = cupywrapper.cupy_run
 
 
-from unittest.mock import Mock
-
 if cupy_run:
-    from httomolibgpu.cuda_kernels import load_cuda_module
+    from cupyx.scipy.fft import fft2, fftshift
+    from cupyx.scipy.fftpack import get_fft_plan
+    from cupyx.scipy.ndimage import gaussian_filter, shift
     from httomolibgpu.recon.algorithm import (
+        CGLS3d_tomobar,
         FBP3d_tomobar,
         LPRec3d_tomobar,
         SIRT3d_tomobar,
-        CGLS3d_tomobar,
     )
-    from cupyx.scipy.ndimage import shift, gaussian_filter
-    from ._phase_cross_correlation import phase_cross_correlation
-    from cupyx.scipy.fftpack import get_fft_plan
-    from cupyx.scipy.fft import fft2, fftshift
 else:
-    load_cuda_module = Mock()
-    shift = Mock()
-    gaussian_filter = Mock()
-    phase_cross_correlation = Mock()
-    get_fft_plan = Mock()
-    fft2 = Mock()
-    fftshift = Mock()
-    fft = Mock()
-    rfft2 = Mock()
+    FBP3d_tomobar = cupywrapper._UnavailableGPU("FBP3d_tomobar")
+    LPRec3d_tomobar = cupywrapper._UnavailableGPU("LPRec3d_tomobar")
+    SIRT3d_tomobar = cupywrapper._UnavailableGPU("SIRT3d_tomobar")
+    CGLS3d_tomobar = cupywrapper._UnavailableGPU("CGLS3d_tomobar")
+    shift = cupywrapper._UnavailableGPU("shift")
+    gaussian_filter = cupywrapper._UnavailableGPU("gaussian_filter")
+    get_fft_plan = cupywrapper._UnavailableGPU("get_fft_plan")
+    fft2 = cupywrapper._UnavailableGPU("fft2")
+    fftshift = cupywrapper._UnavailableGPU("fftshift")
 
-import math
-from typing import List, Literal, Optional, Tuple, Union
-
-from httomolibgpu.misc.utils import (
-    data_checker,
-    __check_variable_type,
-    __check_if_data_3D_array,
-    __check_if_data_correct_type,
-)
 
 __all__ = [
     "find_center_vo",
@@ -132,6 +133,7 @@ def find_center_vo(
     float32
         Rotation axis location with a subpixel precision.
     """
+    cupywrapper.require_gpu("find_center_vo")
     ### Data and parameters checks ###
     methods_name = "find_center_vo"
     __check_if_data_correct_type(
@@ -509,6 +511,7 @@ def find_center_360(
         Position of the window in the first image giving the best
         correlation metric.
     """
+    cupywrapper.require_gpu("find_center_360")
     ### Data and parameters checks ###
     methods_name = "find_center_360"
     __check_if_data_3D_array(data, methods_name)
@@ -837,6 +840,7 @@ def find_center_pc(
     np.float32
         Rotation axis location.
     """
+    cupywrapper.require_gpu("find_center_pc")
     ### Data and parameters checks ###
     methods_name = "find_center_pc"
     __check_if_data_correct_type(
@@ -946,6 +950,7 @@ def find_center_metric_recon(
     float32
         Rotation axis location with a subpixel precision.
     """
+    cupywrapper.require_gpu("find_center_metric_recon")
     ### Data and parameters checks ###
     if ind is None:
         data = data[:, 0:1, :]

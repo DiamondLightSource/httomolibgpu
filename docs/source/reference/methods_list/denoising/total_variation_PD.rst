@@ -5,7 +5,7 @@ Total Variation denoising (PD)
 
 **Description**
 
-`Total variation (TV) denoising <https://en.wikipedia.org/wiki/Total_variation_denoising>`_ using Primal-Dual optimisation strategy :cite:`chan1999nonlinear` is more advanced
+`Total variation (TV) denoising <https://en.wikipedia.org/wiki/Total_variation_denoising>`_ using the Chambolle–Pock primal-dual optimisation strategy :cite:`chambolle2011first` is more advanced
 method compared to :ref:`method_total_variation_ROF` which uses smoothed version of the TV-norm :cite:`rudin1992nonlinear`.
 
 From the user perspective this model usually leads to true piecewise-constant images with a better contrast.
@@ -29,14 +29,18 @@ Mathematically speaking, the optimisation problem involving the exact TV-norm ne
 
 .. math::
 
-     \mathbf{x} \in \mathrm{R}^{m \times n}: \textit{input}
+   \min_{u\in C}\;\frac{1}{2}\lVert u-f\rVert_2^2
+   +\lambda\sum_p\lVert(Du)_p\rVert_2.
 
-     \mathbf{u} \in \mathrm{R}^{m \times n}: \textit{output}
+Here :math:`f` is the noisy input, :math:`u` is the output, :math:`D` is the
+spatial finite-difference operator and :math:`\lambda` controls smoothing.
+The set :math:`C` is unconstrained unless nonnegativity is requested.
 
-     g(\mathbf{x}) = \lambda\| \nabla \mathbf{x} \| : \textit{TV-functional}
 
-The authors used a trick to avoid singularity in the TV-norm derivative by *introducing an additional variable for the
-flux quantity appearing in the gradient of the objective function, which can be interpreted as the normal vector to the level sets of the image* :math:`x`.
+Earlier primal-dual formulations introduced an auxiliary flux variable to
+handle the nonsmooth TV term :cite:`chan1999nonlinear`. The current ToMoBAR
+implementation uses first-order Chambolle–Pock updates rather than that earlier
+Newton-type scheme.
 
 More information about different denoising models, including TV-models can be found in this paper :cite:`kazantsev2019ccpi`.
 
@@ -57,3 +61,23 @@ Use it when the noise in the reconstructed image/volume needs to be removed. The
 * :code:`nonnegativity` Enables non-negativity in iterations which can lead to better contrast. Disabled by default.
 
 * :code:`lipschitz_const` This parameter controls the stability of convergence. Defaults to 8, which should satisfy the condition.
+
+
+**Validation examples and images**
+
+See the :doc:`pepper-image comparison <../../../validation/denoising/denoising_peppers>`
+and :doc:`3D Shepp–Logan comparison <../../../validation/denoising/denoising_shepp_logan_3d>`
+for saved denoised images, parameter settings, PSNR and SSIM.
+
+Papers and further reading
+--------------------------
+
+* `A first-order primal-dual algorithm for convex problems with applications to imaging <https://doi.org/10.1007/s10851-010-0251-1>`_.
+* `Nonlinear total variation based noise removal algorithms <https://doi.org/10.1016/0167-2789(92)90242-F>`_.
+* `A nonlinear primal-dual method for total variation-based image restoration <https://doi.org/10.1137/S1064827596299767>`_.
+* `CCPi-Regularisation toolkit for computed tomographic image reconstruction with proximal splitting algorithms <https://doi.org/10.1016/j.softx.2019.04.003>`_.
+
+API reference
+-------------
+
+:func:`httomolibgpu.misc.denoise.total_variation_PD` — signature, input/output types and full parameter details.

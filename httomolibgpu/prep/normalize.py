@@ -26,26 +26,22 @@
 
 """
 
-from httomolibgpu import cupywrapper
+from __future__ import annotations
+
+from typing import Optional, Union
+
+from numpy import float32
 import numpy as np
 
-cp = cupywrapper.cp
-cupy_run = cupywrapper.cupy_run
-
-from unittest.mock import Mock
-
-if cupy_run:
-    from cupy import mean
-else:
-    mean = Mock()
-
-from typing import Union, Optional
-from numpy import float32
+from httomolibgpu import cupywrapper
 from httomolibgpu.misc.utils import (
-    __check_variable_type,
     __check_if_data_3D_array,
     __check_if_data_correct_type,
+    __check_variable_type,
 )
+
+cp = cupywrapper.cp
+
 
 __all__ = ["dark_flat_field_correction", "minus_log"]
 
@@ -87,6 +83,7 @@ def dark_flat_field_correction(
     cp.ndarray
         dark/flat field corrected 3D tomographic data as a CuPy array.
     """
+    cupywrapper.require_gpu("dark_flat_field_correction")
     ### Data and parameters checks ###
     methods_name = "dark_flat_field_correction"
     __check_if_data_3D_array(data, methods_name)
@@ -124,8 +121,8 @@ def dark_flat_field_correction(
     dark0 = cp.empty(darks.shape[1:], dtype=float32)
     flat0 = cp.empty(flats.shape[1:], dtype=float32)
     out = cp.empty(data.shape, dtype=float32)
-    mean(darks, axis=0, dtype=float32, out=dark0)
-    mean(flats, axis=0, dtype=float32, out=flat0)
+    cp.mean(darks, axis=0, dtype=float32, out=dark0)
+    cp.mean(flats, axis=0, dtype=float32, out=flat0)
 
     dark0 *= darks_multiplier
     flat0 *= flats_multiplier

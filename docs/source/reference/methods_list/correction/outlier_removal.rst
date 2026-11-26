@@ -14,13 +14,13 @@ Mathematically, one can express the dezinger as:
 
 .. math::
 
-   f \in \mathrm{R}^{N}: \textit{input}
+   \widehat f_i=\operatorname{median}\{f_j:j\in\mathcal{N}_i\},
+   \qquad
+   g_i=\begin{cases}
+      \widehat f_i,& |f_i-\widehat f_i|\geq\sigma,\\
+      f_i,& \text{otherwise}.
+   \end{cases}
 
-   g \in \mathrm{R}^{N}: \textit{output}
-
-   \hat{f}_{i} = \textit{median}(f_{j}), \textrm{where} \ j \in \mathrm{N}_{i}
-
-   g_{i} = \hat{f}_{i} \  \textrm{if} \ | f_{i} - \hat{f}_{i} | \geq \sigma.
 
 Where :math:`\sigma` is the threshold parameter and :math:`\mathrm{N}_{i}` is the symmetric neighbourhood (e.g. 3 x 3) of the pixel :math:`i`.
 
@@ -42,18 +42,20 @@ the outliers, it is preferable to avoid any modification of the data, therefore 
 
 **Practical example:**
 
-In this example we demonstrate how the outliers, visible in sinogram and projection spaces can be removed from the data.
+The input is TomoPhantom model 7 with realistic flats, dark current, photon/read
+noise and random zingers. The raw-count filter uses ``kernel_size=5`` and
+``dif=2000``. See :doc:`../../../scripts/README` for generation settings.
 
 .. list-table::
 
 
     * - .. figure:: ../../../_static/auto_images_methods/remove_outlier_input_sino.png
 
-           Input (sinogram view) with a stripe of outliers in the middle of the image.
+           Realistic synthetic detector data with randomly distributed zingers (sinogram view).
 
       - .. figure:: ../../../_static/auto_images_methods/remove_outlier_input_proj.png
 
-           Input (projection view) with some outliers in the left part of the image.
+           The same noisy detector data with zingers (projection view).
 
     * - .. figure:: ../../../_static/auto_images_methods/remove_outlier_sino.png
 
@@ -65,8 +67,30 @@ In this example we demonstrate how the outliers, visible in sinogram and project
 
     * - .. figure:: ../../../_static/auto_images_methods/remove_outlier_res_sino.png
 
-           Sinogram view of absolute residual between input and output. Note that the residual contains only removed outliers, we want to avoid smoothing the data.
+           Sinogram view of absolute residual between input and output. Replaced pixels are visible; changes to real structures indicate an overly aggressive threshold.
 
       - .. figure:: ../../../_static/auto_images_methods/remove_outlier_res_proj.png
 
-           Projection view of absolute residual between input and output. Note that the residual contains only removed outliers, we want to avoid smoothing the data.
+           Projection view of absolute residual between input and output. Replaced pixels are visible; changes to real structures indicate an overly aggressive threshold.
+
+
+Reconstruction effect
+---------------------
+
+.. list-table::
+
+   * - .. figure:: ../../../_static/auto_images_methods/raw_data_recon.png
+          :alt: Reconstruction with streaks caused by zingers.
+
+          FBP of normalised data before outlier removal.
+
+     - .. figure:: ../../../_static/auto_images_methods/data_stripes_added_recon.png
+          :alt: Reconstruction after raw-count outlier removal, with remaining rings and noise.
+
+          FBP after removing raw-count outliers. Stripe artefacts and detector
+          noise remain. Both images use the ideal reconstruction's display range.
+
+API reference
+-------------
+
+:func:`httomolibgpu.misc.corr.remove_outlier` — signature, input/output types and full parameter details.

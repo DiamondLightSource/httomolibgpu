@@ -1,38 +1,55 @@
-===================================
-How to build the html pages locally
-===================================
-
-Create a conda environment
+Building the documentation
 ==========================
 
-Setup a new conda environment using the requirements file docs/source/doc-conda-requirements.yml
-If you are using a diamond computer you can load python into your path to do this.
+Create or update the documentation environment from the repository root::
 
-    >>> module load python
-    >>> conda env create --prefix /path/to/env/doc-env --file /path/to/httomolibgpu/docs/source/doc-conda-requirements.yml
+    conda env create -f docs/source/doc-conda-requirements.yml
+    conda activate httomolibgpu-docs
 
+For an existing environment::
 
-Update API documentation and build
-==================================
+    conda env update -f docs/source/doc-conda-requirements.yml --prune
 
-While inside your virtual environment, run the sphinx-build.sh script.
+The environment contains the documentation tools, including Pandoc for notebook
+conversion. Installing the library or its GPU runtime is not required to render
+the documentation: optional scientific imports are mocked in ``conf.py``.
+The dependency ranges target Sphinx 9, Sphinx Book Theme 1.4 and nbsphinx 0.9.8.
 
-    >>> conda activate /path/to/env/doc-env
-    >>> source /path/to/httomolibgpu/docs/sphinx-build.sh
+Generate the API pages and build HTML::
 
-The script will:
+    bash docs/sphinx-build.sh
 
-1. Remove previous api and build directories.
-2. Generate current httomolibgpu api files
-3. Run a python script to add yaml file downloads for every function for every module rst file.
-4. Run sphinx to create html documentation pages in docs/build.
+Open ``docs/build/index.html`` in a browser. An optional first argument selects
+a different output directory. The script stops on errors and treats Sphinx
+warnings as failures. It updates generated API pages without deleting the
+source or build directories. CI uses the same script.
 
-You can view the completed pages by opening the httomolibgpu/docs/build/index.html page inside a browser.
+Notebook pages render saved outputs; they are never executed by Sphinx.
+To refresh notebook results, use the validation environment and execution
+instructions in the notebooks before rebuilding the documentation.
 
-To conclude
-===========
+Runtime import conventions
+--------------------------
 
-When you have finished, you can deactivate the virtual environment and remove python from your path.
+Method modules group standard-library, third-party and local imports before
+binding ``cp = cupywrapper.cp``. Use deferred annotations so importing a CUDA
+kernel loader does not evaluate GPU-only types on a CPU-only machine.
 
-    >>> conda deactivate
-    >>> module unload python
+Import CuPy itself through ``httomolibgpu.cupywrapper``. Keep CuPyX and ToMoBAR
+imports inside an ``if cupy_run`` block. Its ``else`` branch defines every
+conditional dependency using ``cupywrapper._UnavailableGPU``; calling one of
+these placeholders raises a clear runtime error. New GPU-only entry points
+should use ``cupywrapper.require_gpu`` before creating kernels or GPU buffers.
+Ordinary NumPy-backed array utilities may continue using the shared fallback.
+
+Local CUDA kernel loading is safe to import unconditionally: the loader checks
+for CUDA when called. Keep reconstruction imports lazy where needed to avoid
+loading those backends while importing independent processing utilities.
+Do not catch a broken GPU dependency's import error when CUDA is available;
+report the installation problem rather than substituting an executable mock.
+The documentation's third-party mocks in ``conf.py`` remain separate from this
+runtime policy.
+
+``tests/test_imports.py`` exercises missing CuPy/ToMoBAR and inaccessible CUDA
+devices in isolated subprocesses, as well as NumPy utilities and GPU-only errors.
+Run it from the development environment with ``python -m pytest tests/test_imports.py``.

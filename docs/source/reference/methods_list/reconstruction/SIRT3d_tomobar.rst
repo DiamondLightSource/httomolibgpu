@@ -40,3 +40,16 @@ Note the SIRT method is slow in convergence and it also requires hundreds of ite
            :width: 200px
 
            SIRT reconstruction with :code:`iterations=250` improves the resolution further, yet the noise levels are low.
+
+Validation examples and images
+------------------------------
+
+See the saved reconstruction images, processing settings and dataset details
+in the following validation notebooks:
+
+* :doc:`SIRT · K11 dataset 2 <../../../validation/reconstruction/iterative/sirt3d_k11_dataset2>`
+
+API reference
+-------------
+
+:func:`httomolibgpu.recon.algorithm.SIRT3d_tomobar` — signature, input/output types and full parameter details.

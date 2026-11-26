@@ -17,6 +17,11 @@ API :func:`httomolibgpu.recon.algorithm.FISTA3d_tomobar`.
 When the data is highly inaccurate,  noisy, incomplete, or limited-angle data. Due to added regularisation, the quality of FISTA reconstruction  is expected to be better than other classical methods, such as,
 :ref:`method_CGLS3d_tomobar` or :ref:`method_SIRT3d_tomobar`.
 
+.. note:: The image examples below illustrate a particular acquisition and
+   parameter configuration. Treat their iteration counts and regularisation
+   strengths as example settings. For the current solver's scaling conventions,
+   see :ref:`iterative_regularisation` and the linked validation notebooks.
+
 **What are the adjustable parameters:**
 
 * The number of :code:`iterations` is an important parameter as one would like to achieve a trade-off between the resolution and SNR. For FISTA-OS method (when :code:`subsets_number > 5`) the range of iterations between 10 and 20 is a good choice normally.
@@ -58,3 +63,29 @@ When the data is highly inaccurate,  noisy, incomplete, or limited-angle data. D
 * :code:`subsets_number` usually helps with the faster convergence of the reconstruction algorithm. However, higher values can lead to divergence. It is recommended to keep that value between 4 and 8. In the case of the incorrect reconstruction, one can set :code:`subsets_number` to 1, therefore enabling a classical FISTA algorithm. For the classical FISTA one needs to run significantly more outer :code:`iterations`, in the range between 200-500.
 
 * :code:`nonnegativity`. By setting this parameter to :code:`True` imposes positivity constraint on the solution. In certain situations, when reconstructions require segmentation, one can try enabling it.
+
+See :ref:`iterative_regularisation` for all six regularisers, their additional
+controls and strength conventions.
+
+Papers and further reading
+--------------------------
+
+* `A fast iterative shrinkage-thresholding algorithm for linear inverse problems <https://doi.org/10.1137/080716542>`_.
+* `CCPi-Regularisation toolkit for computed tomographic image reconstruction with proximal splitting algorithms <https://doi.org/10.1016/j.softx.2019.04.003>`_.
+
+Validation examples and images
+------------------------------
+
+See the saved reconstruction images, processing settings and dataset details
+in the following validation notebooks:
+
+* :doc:`FISTA · K11 dataset 2 <../../../validation/reconstruction/regularised/fista3d_k11_dataset2>`
+* :doc:`FISTA · GEANT4 dataset 1 <../../../validation/reconstruction/regularised/fista3d_geant4_dataset1>`
+
+:doc:`Original regularisation settings <../../../validation/reconstruction/transferred/regularised_legacy>` retains the original
+Zenodo regression parameters and numerical checks.
+
+API reference
+-------------
+
+:func:`httomolibgpu.recon.algorithm.FISTA3d_tomobar` — signature, input/output types and full parameter details.

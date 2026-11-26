@@ -48,3 +48,41 @@ In this example we demonstrate how to apply the stripe removal algorithm to the 
       - .. figure:: ../../../_static/auto_images_methods/remove_stripe_based_sorting_res_proj.png
 
            Projection view of absolute residual between input and output
+
+
+Reconstruction effect
+---------------------
+
+The realistic model 7 acquisition includes detector-response variations and
+additional stripes from the bundled artefact settings. Raw zingers are removed
+before normalisation and stripe filtering. See :doc:`../../../scripts/README`.
+
+.. list-table::
+
+   * - .. figure:: ../../../_static/auto_images_methods/data_stripes_added_recon.png
+          :alt: FBP before stripe removal, showing ring artefacts.
+
+          FBP before stripe removal.
+
+     - .. figure:: ../../../_static/auto_images_methods/remove_stripe_based_sorting_recon.png
+          :alt: FBP after applying remove_stripe_based_sorting to the sinograms.
+
+          FBP after ``remove_stripe_based_sorting``, using the same reconstruction settings and
+          display limits. This example illustrates behaviour, not a claim of
+          optimal parameters for every dataset.
+
+Papers and further reading
+--------------------------
+
+* `Superior techniques for eliminating ring artifacts in X-ray micro-tomography <https://doi.org/10.1364/OE.26.028396>`_.
+
+Validation
+----------
+
+:doc:`I12 parameter comparisons <../../../validation/preprocessing/stripe_removal>` retains the original
+Zenodo regression parameters and numerical checks.
+
+API reference
+-------------
+
+:func:`httomolibgpu.prep.stripe.remove_stripe_based_sorting` — signature, input/output types and full parameter details.

@@ -1,0 +1,6 @@
+Reused from httomo-workshop/images and httomo-workshop/videos.
+CoR-dark.png, why-360-offset-scan.svg, distortion-coefficient-map.svg: workshop schematics.
+cor-search.mp4 and poster: synthetic workshop explanation of Vo et al. 2014, DOI 10.1364/OE.22.019078.
+360-to-180-tomography.mp4 and poster: synthetic workshop explanation of Vo et al. 2021, DOI 10.1364/OE.418448.
+discorpy-distortion-mapping.jpg: Discorpy methods documentation, Fig. 2.2.1.2.
+distortion-vo2019-fig4.png and fig8.png: Vo, Atwood and Drakopoulos 2019, DOI 10.1117/12.2530324, Figs. 4 and 8.

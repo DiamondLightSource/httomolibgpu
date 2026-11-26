@@ -8,7 +8,9 @@ FBP2D (ASTRA-Toolbox)
 This module performs Filtered-Back-projection direct reconstruction using `ASTRA-Toolbox <https://astra-toolbox.com>`_. It is an implementation of parallel-beam
 `FBP_CUDA <https://astra-toolbox.com/docs/algs/FBP_CUDA.html>`_ reconstruction method by ASTRA.
 
-.. note:: This is the slowest (slice-by-slice) direct reconstruction method in the library and it is recommended to use other faster methods, such as, :ref:`method_LPRec3d_tomobar` or :ref:`method_FBP3d_tomobar`.
+.. note:: This wrapper reconstructs slices individually and transfers NumPy
+   data to the GPU. The 3D wrappers avoid this slice-wise transfer pattern;
+   compare their runtime and workspace requirements for your dataset.
 
 **Where and how to use it:**
 
@@ -21,3 +23,15 @@ See :func:`httomolibgpu.recon.algorithm.FBP2d_astra` for the parameters
 accepted by this wrapper. The filter options are described in ASTRA's
 `FBP_CUDA documentation <https://astra-toolbox.com/docs/algs/FBP_CUDA.html>`_.
 
+Validation examples and images
+------------------------------
+
+See the saved reconstruction images, processing settings and dataset details
+in the following validation notebooks:
+
+* :doc:`FBP2D · I12 dataset 1 <../../../validation/reconstruction/direct/fbp2d_i12_dataset1>`
+
+API reference
+-------------
+
+:func:`httomolibgpu.recon.algorithm.FBP2d_astra` — signature, input/output types and full parameter details.

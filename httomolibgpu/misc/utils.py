@@ -20,20 +20,17 @@
 # ---------------------------------------------------------------------------
 """Various utilities for data inspection and correction"""
 
-import numpy as np
+from __future__ import annotations
+
 from numbers import Integral, Real
-from httomolibgpu import cupywrapper
 from typing import Optional
 
+import numpy as np
+
+from httomolibgpu import cupywrapper
+from httomolibgpu.cuda_kernels import load_cuda_module
+
 cp = cupywrapper.cp
-cupy_run = cupywrapper.cupy_run
-
-from unittest.mock import Mock
-
-if cupy_run:
-    from httomolibgpu.cuda_kernels import load_cuda_module
-else:
-    load_cuda_module = Mock()
 
 
 __all__ = [

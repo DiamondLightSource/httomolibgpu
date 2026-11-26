@@ -24,21 +24,21 @@
 
 """
 
+from __future__ import annotations
+
+from typing import Literal, Optional, Tuple, Union
+
 import numpy as np
+
 from httomolibgpu import cupywrapper
+from httomolibgpu.misc.utils import __check_if_data_correct_type, __check_variable_type
 
 cp = cupywrapper.cp
 
-from typing import Literal, Optional, Tuple, Union
 
 __all__ = [
     "rescale_to_int",
 ]
-
-from httomolibgpu.misc.utils import (
-    __check_variable_type,
-    __check_if_data_correct_type,
-)
 
 
 def rescale_to_int(
@@ -79,6 +79,7 @@ def rescale_to_int(
         The original data, clipped to the range specified with the perc_range_min and
         perc_range_max, and scaled to the full range of the output integer type
     """
+    cupywrapper.require_gpu("rescale_to_int")
 
     ### Data and parameters checks ###
     methods_name = "rescale_to_int"

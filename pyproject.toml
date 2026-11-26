@@ -48,6 +48,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+validation = ["pytest", "nbmake", "ipykernel", "matplotlib"]
 dev = [
   "pytest",
   "pytest-cov",

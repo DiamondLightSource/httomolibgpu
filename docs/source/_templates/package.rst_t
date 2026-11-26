@@ -1,0 +1,24 @@
+:orphan:
+
+{{ pkgname | e | heading }}
+
+See the :doc:`/reference/api` for the grouped module reference.
+
+{% if pkgname == 'httomolibgpu' %}
+.. py:module:: {{ pkgname }}
+{% else %}
+.. automodule:: {{ pkgname }}
+   :ignore-module-all:
+{%- for option in automodule_options %}
+   :{{ option }}:
+{%- endfor %}
+{% endif %}
+
+{% if subpackages or submodules %}
+Modules
+-------
+
+{% for name in subpackages + submodules %}
+* :doc:`{{ name }}`
+{% endfor %}
+{% endif %}

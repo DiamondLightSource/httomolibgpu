@@ -1,7 +1,7 @@
 .. _phase_contrast_module:
 
-Phase-contrast enhancement
-**************************
+Phase retrieval
+***************
 
 Methods from the :mod:`httomolibgpu.prep.phase` module needed when the data requires phase contrast enhancement.
 
@@ -61,7 +61,12 @@ Works well for single-material and relatively homogeneous or weakly heterogeneou
 
 * :code:`energy` Incident beam energy in keV.
 
-* :code:`ratio_delta_beta` The ratio of :math:`\frac{\delta}{\beta}` is a critical parameter as it defines how the algorithm balances phase contrast versus absorption contrast. Higher ratio values lead to stronger smoothing, more phase contrast recovered, but potential loss of edge sharpness. It is recommended to keep :math:`\frac{\delta}{\beta} > 250` for weakly absorbing materials (like biological tissue, polymers, and light materials). Lower values :math:`\frac{\delta}{\beta} << 250` lead to less smoothing, more edges preserved.
+* :code:`ratio_delta_beta` sets the material ratio :math:`\delta/\beta`.
+  Increasing it strengthens low-pass filtering and can suppress noise and
+  propagation fringes at the cost of edge sharpness. Choose it for the sample,
+  beam energy and acquisition geometry; the values illustrated below are not
+  universal recommendations.
+
 
 **Real data examples:**
 
@@ -108,3 +113,14 @@ We also used the following parameters for Paganin filter, while varying only :co
            :width: 200px
 
            Paganin filter with :math:`\frac{\delta}{\beta} = 2000`. Oversmoothed.
+
+.. toctree::
+   :maxdepth: 1
+
+   phase/paganin_filter
+
+Papers and further reading
+--------------------------
+
+* `Simultaneous phase and amplitude extraction from a single defocused image of a homogeneous object <https://doi.org/10.1046/j.1365-2818.2002.01010.x>`_.
+* `Boosting spatial resolution by incorporating periodic boundary conditions into single-distance hard-x-ray phase retrieval <https://doi.org/10.1088/2040-8986/abbab9>`_.

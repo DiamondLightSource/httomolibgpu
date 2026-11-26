@@ -24,28 +24,26 @@
 
 """
 
+from __future__ import annotations
+
+from typing import List, Literal, Optional
+
 from httomolibgpu import cupywrapper
+from httomolibgpu.misc.utils import __check_if_data_correct_type, __check_variable_type
 
 cp = cupywrapper.cp
 cupy_run = cupywrapper.cupy_run
 
-from unittest.mock import Mock
 
 if cupy_run:
     from cupyx.scipy.ndimage import map_coordinates
 else:
-    map_coordinates = Mock()
+    map_coordinates = cupywrapper._UnavailableGPU("map_coordinates")
 
-from typing import Literal, List, Optional
 
 __all__ = [
     "distortion_correction_proj_discorpy",
 ]
-
-from httomolibgpu.misc.utils import (
-    __check_variable_type,
-    __check_if_data_correct_type,
-)
 
 
 # CuPy implementation of distortion correction from Discorpy
@@ -110,6 +108,7 @@ def distortion_correction_proj_discorpy(
     cp.ndarray
         3D array. Distortion-corrected array.
     """
+    cupywrapper.require_gpu("distortion_correction_proj_discorpy")
     ### Data and parameters checks ###
     methods_name = "distortion_correction_proj_discorpy"
     __check_if_data_correct_type(

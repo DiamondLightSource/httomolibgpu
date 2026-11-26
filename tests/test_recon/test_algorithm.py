@@ -72,15 +72,15 @@ def test_reconstruct_FBP3d_tomobar_1(data, flats, darks, ensure_clean_memory):
         normalised_data,
         np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
         79.5,
-        filter_freq_cutoff=1.1,
+        filter_freq_cutoff=0.35,
         recon_mask_radius=None,
     )
     assert recon_data.flags.c_contiguous
-    recon_data = recon_data.get()
-    assert_allclose(np.mean(recon_data), 0.000798, rtol=1e-07, atol=1e-6)
-    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.102106, rtol=1e-05)
-    assert_allclose(np.std(recon_data), 0.006293, rtol=1e-07, atol=1e-6)
-    assert_allclose(np.median(recon_data), -0.000555, rtol=1e-07, atol=1e-6)
+    recon_data = cp.asnumpy(recon_data)
+    assert_allclose(np.mean(recon_data), 0.00186661724, rtol=1e-07, atol=1e-6)
+    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.238926992, rtol=1e-05)
+    assert_allclose(np.std(recon_data), 0.00618566386, rtol=1e-07, atol=1e-6)
+    assert_allclose(np.median(recon_data), 0.00024222699, rtol=1e-07, atol=1e-6)
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (160, 128, 160)
 
@@ -93,16 +93,16 @@ def test_reconstruct_FBP3d_tomobar_2(data, flats, darks, ensure_clean_memory):
         normalised_data,
         np.linspace(5.0 * np.pi / 360.0, 180.0 * np.pi / 360.0, data.shape[0]),
         15.5,
-        filter_freq_cutoff=1.1,
+        filter_freq_cutoff=0.35,
         recon_mask_radius=2.0,
     )
 
-    recon_data = recon_data.get()
-    assert_allclose(np.mean(recon_data), 0.000265, rtol=1e-07, atol=1e-6)
+    recon_data = cp.asnumpy(recon_data)
+    assert_allclose(np.mean(recon_data), 0.000987772015, rtol=1e-07, atol=1e-6)
     assert_allclose(
-        np.mean(recon_data, axis=(0, 2)).sum(), 0.03396, rtol=1e-06, atol=1e-5
+        np.mean(recon_data, axis=(0, 2)).sum(), 0.126434818, rtol=1e-06, atol=1e-5
     )
-    assert_allclose(np.std(recon_data), 0.006599, rtol=1e-07, atol=1e-6)
+    assert_allclose(np.std(recon_data), 0.00639377488, rtol=1e-07, atol=1e-6)
     assert recon_data.dtype == np.float32
 
 
@@ -114,18 +114,18 @@ def test_reconstruct_FBP3d_tomobar_3_detpad_true(
 
     recon_data = FBP3d_tomobar(
         normalised_data,
-        np.linspace(5.0 * np.pi / 360.0, 180.0 * np.pi / 360.0, data.shape[0]),
+        np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
         79,  # center
         True,  # detector pad
-        1.1,  # filter_freq_cutoff
+        0.35,  # filter_freq_cutoff
         210,  # recon_size
         2.0,  # recon_mask_radius
     )
 
-    recon_data = recon_data.get()
-    assert_allclose(np.mean(recon_data), 0.000692, atol=1e-6)
+    recon_data = cp.asnumpy(recon_data)
+    assert_allclose(np.mean(recon_data), 0.00104982289, atol=1e-6)
     assert_allclose(
-        np.mean(recon_data, axis=(0, 2)).sum(), 0.088599, rtol=1e-06, atol=1e-5
+        np.mean(recon_data, axis=(0, 2)).sum(), 0.134377331, rtol=1e-06, atol=1e-5
     )
     assert recon_data.dtype == np.float32
     assert recon_data.shape == (210, 128, 210)
@@ -184,8 +184,10 @@ def test_reconstruct_SIRT3d_tomobar(data, flats, darks, ensure_clean_memory):
     )
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
-    assert_allclose(np.mean(recon_data), 0.0018319691, rtol=1e-07, atol=1e-6)
-    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.23449206, rtol=1e-05)
+    assert_allclose(np.mean(recon_data), 0.0018319693626835942, rtol=1e-07, atol=1e-6)
+    assert_allclose(
+        np.mean(recon_data, axis=(0, 2)).sum(), 0.23449206352233887, rtol=1e-05
+    )
     assert recon_data.dtype == np.float32
 
 
@@ -204,8 +206,10 @@ def test_reconstruct_CGLS3d_tomobar(data, flats, darks, ensure_clean_memory):
     )
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
-    assert_allclose(np.mean(recon_data), 0.0020498533, rtol=1e-07, atol=1e-6)
-    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.26238117, rtol=1e-03)
+    assert_allclose(np.mean(recon_data), 0.002084593288600445, rtol=1e-07, atol=1e-6)
+    assert_allclose(
+        np.mean(recon_data, axis=(0, 2)).sum(), 0.26682791113853455, rtol=1e-03
+    )
     assert recon_data.dtype == np.float32
 
 
@@ -227,8 +231,10 @@ def test_reconstruct_CGLS3d_tomobar_detpad_true(
     )
     assert recon_data.flags.c_contiguous
     recon_data = recon_data.get()
-    assert_allclose(np.mean(recon_data), 0.0021257945, rtol=1e-07, atol=1e-6)
-    assert_allclose(np.mean(recon_data, axis=(0, 2)).sum(), 0.27210176, rtol=1e-03)
+    assert_allclose(np.mean(recon_data), 0.0020835036411881447, rtol=1e-07, atol=1e-6)
+    assert_allclose(
+        np.mean(recon_data, axis=(0, 2)).sum(), 0.2666884958744049, rtol=1e-03
+    )
     assert recon_data.dtype == np.float32
 
 
@@ -324,7 +330,6 @@ def test_reconstruct_ADMM3d_tomobar_pd_tv(data, flats, darks, ensure_clean_memor
         detector_pad=0,
         recon_size=objrecon_size,
         iterations=5,
-        subsets_number=24,
         initialisation=None,
         regularisation_type="PD_TV",
         regularisation_parameter=0.004,
@@ -352,7 +357,6 @@ def test_reconstruct_ADMM3d_warm_tomobar_pd_tv(data, flats, darks, ensure_clean_
         detector_pad=0,
         recon_size=objrecon_size,
         iterations=2,
-        subsets_number=24,
         initialisation="FBP",
         regularisation_type="PD_TV",
         regularisation_parameter=0.004,
@@ -382,7 +386,6 @@ def test_reconstruct_ADMM3d_warm2_tomobar_pd_tv(
         detector_pad=0,
         recon_size=objrecon_size,
         iterations=2,
-        subsets_number=24,
         initialisation="CGLS",
         regularisation_type="PD_TV",
         regularisation_parameter=0.0008,
@@ -413,7 +416,6 @@ def test_reconstruct_ADMM3d_tomobar_pd_tv_detpad_true(
         recon_size=objrecon_size,
         recon_mask_radius=2.0,
         iterations=5,
-        subsets_number=24,
         initialisation=None,
         regularisation_type="PD_TV",
         regularisation_parameter=0.004,
@@ -445,7 +447,6 @@ def test_reconstruct_ADMM3d_warm_tomobar_pd_tv_detpad_true(
         recon_mask_radius=2.0,
         initialisation="FBP",
         iterations=2,
-        subsets_number=24,
         regularisation_type="PD_TV",
         regularisation_parameter=0.004,
         regularisation_iterations=50,
@@ -471,7 +472,6 @@ def test_reconstruct_ADMM3d_tomobar_rof_tv(data, flats, darks, ensure_clean_memo
         center=79.5,
         recon_size=objrecon_size,
         iterations=3,
-        subsets_number=24,
         regularisation_type="ROF_TV",
         regularisation_parameter=0.01,
         regularisation_iterations=50,

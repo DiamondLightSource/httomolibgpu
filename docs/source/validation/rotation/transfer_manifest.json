@@ -1,0 +1,19 @@
+{
+  "source_file": "zenodo-tests/test_recon/test_rotation.py",
+  "source_sha256": "a6e5bfd58d3962fff42f2c044426e2a2f8be7731e6c6867b779ed037572049a4",
+  "cases": {
+    "test_center_vo_i12_dataset1": "docs/source/validation/rotation/center_vo.ipynb",
+    "test_center_vo_i12_dataset2": "docs/source/validation/rotation/center_vo.ipynb",
+    "test_center_vo_average_i12_dataset2": "docs/source/validation/rotation/center_vo.ipynb",
+    "test_center_vo_i13_dataset2": "docs/source/validation/rotation/center_vo.ipynb",
+    "test_center_vo_geant4_dataset1": "docs/source/validation/rotation/center_vo.ipynb",
+    "test_center_vo_k11_dataset1": "docs/source/validation/rotation/center_vo.ipynb",
+    "test_center_pc_i12_dataset3": "docs/source/validation/rotation/center_pc.ipynb",
+    "test_center_360_i12_dataset5": "docs/source/validation/rotation/center_360.ipynb",
+    "test_center_360_i13_dataset1": "docs/source/validation/rotation/center_360.ipynb",
+    "test_center_360_i13_dataset3": "docs/source/validation/rotation/center_360.ipynb",
+    "test_center_vo_i12_dataset1_performance": "docs/source/benchmarks/center_vo_i12_dataset1.ipynb"
+  },
+  "numerical_assertions": "Original exact float/dtype and int/side checks are retained.",
+  "performance_change": "Separate benchmark; synchronised per-call timings, same-parameter warm-up, finite positive durations instead of string placeholder."
+}

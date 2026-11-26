@@ -19,11 +19,6 @@ jobs:
         - name: Checkout repository code
           uses: actions/checkout@v3
 
-        - name: Setup Python 3.10
-          uses: actions/setup-python@v3
-          with:
-            python-version: "3.10"
-
         - name: httomolibgpu-docs
           uses: mamba-org/setup-micromamba@v2
           with:
@@ -32,11 +27,8 @@ jobs:
             post-cleanup: 'all'
             init-shell: bash
 
-        - name: Build api docs
-          run: sphinx-apidoc -feT -t=./docs/source/_templates -o ./docs/source/api ./httomolibgpu
-
-        - name: Build html
-          run: sphinx-build -a -E -b html ./docs/source/ ./docs/build/
+        - name: Build documentation
+          run: bash docs/sphinx-build.sh
 
         - name: Publish docs
           if: github.ref_type == 'tag' || github.ref_name == 'main'

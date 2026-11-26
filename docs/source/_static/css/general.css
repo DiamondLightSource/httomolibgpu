@@ -1,0 +1,42 @@
+/* Shared HTTomo-family styling. All colours adapt to the documentation theme. */
+html[data-theme="light"] {
+    --pst-color-primary: #510c86;
+    --pst-color-link: #510c86;
+    --pst-color-link-hover: #10047a;
+}
+html[data-theme="dark"] {
+    --pst-color-primary: #c592ed;
+    --pst-color-link: #c592ed;
+    --pst-color-link-hover: #d8d3ff;
+}
+.bd-main .bd-content .bd-article-container { max-width: 64rem; }
+.bd-article { line-height: 1.65; }
+.bd-article h1 { font-size: clamp(1.8rem, 3vw, 2.5rem); line-height: 1.2; overflow-wrap: anywhere; }
+.bd-article h2 { margin-top: 2rem; padding-bottom: .35rem; border-bottom: 1px solid var(--pst-color-border); }
+.search-button-field { color: var(--pst-color-text-base); }
+.navbar-brand.logo { padding: 1.25rem .5rem; }
+.navbar-brand.logo img { width: 100%; height: auto; max-height: none; }
+.sd-card { border: 1px solid var(--pst-color-border); border-radius: .6rem; box-shadow: none; }
+.sd-card-title { color: var(--pst-color-primary); }
+.sd-card-body { padding: 1.1rem; }
+.bd-article table { font-size: .95rem; }
+.bd-article th, .bd-article td { padding: .6rem .8rem; vertical-align: top; }
+.bd-article pre { font-size: .88rem; line-height: 1.5; }
+/* Qualified API names must wrap rather than widen the page on small screens. */
+.bd-article a.reference code,
+.bd-article a.reference code .pre,
+.bd-article .sig .pre {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+.nboutput .output_area { overflow-x: auto; }
+.nboutput img { max-width: 100%; height: auto; }
+.sphinx-bs.dropdown.card { background-color: var(--pst-color-surface); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--pst-color-primary); outline-offset: 3px; }
+@media (max-width: 575.98px) {
+    .bd-article th, .bd-article td { padding: .4rem; }
+}
+
+/* Keep tall fractions and accents visible; scroll long equations horizontally. */
+.bd-article div.math { overflow-x: auto; padding-block: .35rem; }
+.bd-article mjx-container[display="true"] { overflow-x: auto; overflow-y: hidden; padding-block: .25rem; }

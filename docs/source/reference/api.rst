@@ -4,26 +4,48 @@
 API reference
 ==========================
 
-This section contains the API reference and usage information for HTTomolibGPU.
+Function signatures and parameters, grouped by processing stage.
+See :doc:`methods` for method descriptions and validation examples.
 
-HTTomolibGPU Modules
---------------------
-
-.. toctree::
-   :glob:
-
-   ../api/httomolibgpu.misc.corr
-   ../api/httomolibgpu.misc.denoise
-   ../api/httomolibgpu.misc.morph
-   ../api/httomolibgpu.misc.rescale
-   ../api/httomolibgpu.prep.alignment
-   ../api/httomolibgpu.prep.normalize
-   ../api/httomolibgpu.prep.phase
-   ../api/httomolibgpu.prep.stripe
-   ../api/httomolibgpu.recon.algorithm
-   ../api/httomolibgpu.recon.rotation
+Preprocessing
+-------------
 
 .. toctree::
-   :hidden:
+   :maxdepth: 1
 
-   ../api/httomolibgpu
+   Alignment <../api/httomolibgpu.prep.alignment>
+   Normalisation <../api/httomolibgpu.prep.normalize>
+   Phase retrieval <../api/httomolibgpu.prep.phase>
+   Stripe removal <../api/httomolibgpu.prep.stripe>
+
+Reconstruction
+--------------
+
+.. toctree::
+   :maxdepth: 1
+
+   Reconstruction algorithms <../api/httomolibgpu.recon.algorithm>
+   Centre of rotation <../api/httomolibgpu.recon.rotation>
+
+Image processing
+----------------
+
+.. toctree::
+   :maxdepth: 1
+
+   Corrections <../api/httomolibgpu.misc.corr>
+   Denoising <../api/httomolibgpu.misc.denoise>
+   Morphology and resampling <../api/httomolibgpu.misc.morph>
+   Rescaling <../api/httomolibgpu.misc.rescale>
+   Blending <../api/httomolibgpu.misc.blend>
+
+Utilities
+---------
+
+.. toctree::
+   :maxdepth: 1
+
+   Data checks <../api/httomolibgpu.misc.utils>
+   Sorting <../api/httomolibgpu.misc.sorting>
+   CuPy compatibility <../api/httomolibgpu.cupywrapper>
+   CUDA kernels <../api/httomolibgpu.cuda_kernels>

@@ -25,19 +25,19 @@ The resulting denoised images are piecewise-constant or cartoon-like.
 
            Zoomed to ROF-TV denoised image
 
-Mathematically speaking, the optimisation problem involving TV-norm needs to be solved, where TV norm is defined as:
+For noisy input :math:`f`, the smoothed ROF model balances fidelity and a
+regularised gradient penalty:
 
 .. math::
 
-     \mathbf{x} \in \mathrm{R}^{m \times n}: \textit{input}
+   \min_u\;\frac{1}{2}\lVert u-f\rVert_2^2
+   +\lambda\sum_p\sqrt{\lVert(Du)_p\rVert_2^2+\varepsilon}.
 
-     \mathbf{u} \in \mathrm{R}^{m \times n}: \textit{output}
-
-     g(\mathbf{x}) = \lambda\|\nabla \mathbf{x} \|_{\epsilon} : \textit{TV-functional}
-
-The authors used partial differential equations explicit model to minimise the functional above with the help of a small constant (:math:`\epsilon = 1\mathrm{e}{-12}`) to avoid singularity in the derivative.
-Because of that constant, the recovery using ROF-TV does not result in pure piecewise-constant solution. However, depending on the data, this might be even the desirable feature. More information
-about different denoising models, including TV-models can be found in this paper :cite:`kazantsev2019ccpi`.
+Here :math:`D` is the spatial finite-difference operator, :math:`\lambda`
+controls smoothing, and a small positive :math:`\varepsilon` prevents a
+singularity at a zero gradient. This is a smoothed TV model rather than an
+exact nonsmooth TV proximal solve. See :cite:`rudin1992nonlinear` and
+:cite:`kazantsev2019ccpi` for the model and software background.
 
 **Where and how to use it:**
 
@@ -52,3 +52,21 @@ Use it when the noise in the reconstructed image/volume needs to be removed. The
 * :code:`iterations` Algorithm iterations. You will need a significant number of iterations to run in order to see the change in the image. It is recommended to keep this number between 1000 and 5000 iterations.
 
 * :code:`time_marching_parameter` This parameter ensures the stability of iterations and needs to be small. If you notice unusual artefacts in the denoised image, reduce the value of the parameter. We suggest to keep it 0.001 or smaller.
+
+
+**Validation examples and images**
+
+See the :doc:`pepper-image comparison <../../../validation/denoising/denoising_peppers>`
+and :doc:`3D Shepp–Logan comparison <../../../validation/denoising/denoising_shepp_logan_3d>`
+for saved denoised images, parameter settings, PSNR and SSIM.
+
+Papers and further reading
+--------------------------
+
+* `Nonlinear total variation based noise removal algorithms <https://doi.org/10.1016/0167-2789(92)90242-F>`_.
+* `CCPi-Regularisation toolkit for computed tomographic image reconstruction with proximal splitting algorithms <https://doi.org/10.1016/j.softx.2019.04.003>`_.
+
+API reference
+-------------
+
+:func:`httomolibgpu.misc.denoise.total_variation_ROF` — signature, input/output types and full parameter details.

@@ -51,3 +51,6 @@ save_to_images
 build_env_setup.sh
 conda_build.sh
 metadata_conda_debug.yaml
+
+# Local Zenodo validation datasets
+/Zenodo/

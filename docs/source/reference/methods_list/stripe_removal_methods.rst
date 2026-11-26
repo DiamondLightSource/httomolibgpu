@@ -14,3 +14,8 @@ Methods from :mod:`httomolibgpu.prep.stripe` module are normally used as a pre-p
    stripe_removal/remove_stripe_ti
 
 
+
+.. toctree::
+   :maxdepth: 1
+
+   stripe_removal/remove_stripe_fw

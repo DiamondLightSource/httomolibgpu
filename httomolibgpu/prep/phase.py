@@ -22,41 +22,41 @@
 
 * :func:`httomolibgpu.prep.phase.paganin_filter`
 
-* :func:`httomolibgpu.prep.phase.paganin_filter_savu_legacy`
-
 """
 
+from __future__ import annotations
+
+import math
+from typing import Literal, Optional, Tuple, Union
+
 import numpy as np
+
 from httomolibgpu import cupywrapper
+from httomolibgpu.misc.utils import (
+    __check_if_data_3D_array,
+    __check_if_data_correct_type,
+    __check_variable_type,
+)
 
 cp = cupywrapper.cp
 cupy_run = cupywrapper.cupy_run
 next_fast_len = cupywrapper.next_fast_len
 
-from unittest.mock import Mock
-
-from tomobar.supp.memory_estimator_helpers import DeviceMemStack
 
 if cupy_run:
-    from cupyx.scipy.fft import fft2, ifft2, fftshift
+    from cupyx.scipy.fft import fft2, fftshift, ifft2
     from cupyx.scipy.fftpack import get_fft_plan
+    from tomobar.reconstruction.memory import DeviceMemStack
 else:
-    fft2 = Mock()
-    ifft2 = Mock()
-    fftshift = Mock()
+    DeviceMemStack = cupywrapper._UnavailableGPU("DeviceMemStack")
+    fft2 = cupywrapper._UnavailableGPU("fft2")
+    ifft2 = cupywrapper._UnavailableGPU("ifft2")
+    fftshift = cupywrapper._UnavailableGPU("fftshift")
+    get_fft_plan = cupywrapper._UnavailableGPU("get_fft_plan")
 
-from typing import Literal, Optional, Tuple, Union
-import math
-
-from httomolibgpu.misc.utils import (
-    __check_variable_type,
-    __check_if_data_3D_array,
-    __check_if_data_correct_type,
-)
 
 __all__ = [
     "paganin_filter",
-    "paganin_filter_savu_legacy",
 ]
 
 
@@ -103,6 +103,7 @@ def paganin_filter(
     cp.ndarray
         The 3D array of Paganin phase-filtered projection images.
     """
+    cupywrapper.require_gpu("paganin_filter")
     ### Data and parameters checks ###
     methods_name = "paganin_filter"
     __check_variable_type(pixel_size, [int, float], "pixel_size", [], methods_name)
@@ -401,47 +402,3 @@ def _reciprocal_coord(pixel_size: float, num_grid: int) -> np.ndarray:
     rc = np.arange(-n, num_grid, 2, dtype=cp.float32)
     rc *= 2 * math.pi / (n * pixel_size)
     return rc
-
-
-def paganin_filter_savu_legacy(
-    data: cp.ndarray,
-    pixel_size: float = 1.28,
-    distance: float = 1.0,
-    energy: float = 53.0,
-    ratio_delta_beta: float = 250,
-    calc_peak_gpu_mem: bool = False,
-) -> cp.ndarray:
-    """
-    Perform single-material phase retrieval from flats/darks corrected tomographic measurements. For more detailed information, see :ref:`phase_contrast_module`.
-    Also see :cite:`Paganin02` and :cite:`paganin2020boosting` for references. The ratio_delta_beta parameter here follows implementation in Savu software.
-    The module will be retired in future in favour of paganin_filter. One can rescale parameter ratio_delta_beta / 4 to achieve the same effect in paganin_filter.
-
-    Parameters
-    ----------
-    data : cp.ndarray
-        3D array of f/d corrected tomographic projections.
-    pixel_size : float
-        Detector pixel size (resolution) in micron units.
-    distance : float
-        Propagation distance of the wavefront from sample to detector in metre units.
-    energy : float
-        Beam energy in keV.
-    ratio_delta_beta : float
-        The ratio of delta/beta, where delta is the phase shift and real part of the complex material refractive index and beta is the absorption.
-    calc_peak_gpu_mem: bool
-        Parameter to support memory estimation in HTTomo. Irrelevant to the method itself and can be ignored by user.
-
-    Returns
-    -------
-    cp.ndarray
-        The 3D array of Paganin phase-filtered projection images.
-    """
-
-    return paganin_filter(
-        data,
-        pixel_size,
-        distance,
-        energy,
-        ratio_delta_beta / 4,
-        calc_peak_gpu_mem=calc_peak_gpu_mem,
-    )

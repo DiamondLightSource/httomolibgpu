@@ -48,3 +48,16 @@ Normally, noise amplification or overfitting can happen when too many iterations
    :alt: CGLS rec
 
    CGLS reconstruction with :code:`iterations=15` and :code:`nonnegativity=True`.
+
+Validation examples and images
+------------------------------
+
+See the saved reconstruction images, processing settings and dataset details
+in the following validation notebooks:
+
+* :doc:`CGLS · K11 dataset 2 <../../../validation/reconstruction/iterative/cgls3d_k11_dataset2>`
+
+API reference
+-------------
+
+:func:`httomolibgpu.recon.algorithm.CGLS3d_tomobar` — signature, input/output types and full parameter details.

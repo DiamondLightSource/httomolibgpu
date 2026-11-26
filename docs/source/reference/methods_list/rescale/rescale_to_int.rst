@@ -29,7 +29,10 @@ clipping of the data and therefore the loss of the information.
 
 **Practical example:**
 
-In this example we demonstrate how to use the rescaling when saving the data from float 32-bit precision into rescaled 8-bit.
+The example uses realistic model 7 data after outlier removal and logarithmic
+normalisation. A global 0.5--99.5 percentile display window removes rare extreme
+values before the illustrated range cutoffs are applied. See
+:doc:`../../../scripts/README` for reproducible generation settings.
 
 .. list-table::
 
@@ -40,18 +43,23 @@ In this example we demonstrate how to use the rescaling when saving the data fro
 
       - .. figure:: ../../../_static/auto_images_methods/rescale_to_int_histo_0_to_100.png
 
-           The corresponding histogram of the image to the left. Note that the background contains high values (250-255) and they dominate the image which is what reflected in the histogram.
+           Histogram of the 8-bit projection using the full prepared display window.
 
     * - .. figure:: ../../../_static/auto_images_methods/rescale_to_int_proj_10_to_90.png
 
            Projection data saved into 8-bit image with :code:`perc_range_min = 10` and :code:`perc_range_max = 90` scaling. Note that the contrast appears to be better with this scaling.
       - .. figure:: ../../../_static/auto_images_methods/rescale_to_int_histo_10_to_90.png
 
-           The corresponding histogram of the image to the left. Note that the background is now outside the range and the histogram shows a good distribution of values within the [0,128] range. If possible, however, it is better to aim for a wider histogram which represents the image well within the given range.
+           Histogram after narrowing the input range. Values outside the selected range are clipped to the endpoints.
 
     * - .. figure:: ../../../_static/auto_images_methods/rescale_to_int_proj_30_to_70.png
 
            Projection data saved into 8-bit image with :code:`perc_range_min = 30` and :code:`perc_range_max = 70` scaling. This is an example of a poorer scaling when the loss of the information is clearly visible through poorer contrast.
       - .. figure:: ../../../_static/auto_images_methods/rescale_to_int_histo_30_to_70.png
 
-           The corresponding histogram of the image to the left. Note that the histogram has been significantly flattened with this scaling. Meaning that there is less values that represent the image in the selected range. And the histogram also has got less variation of values compared to the histogram without percentage scaling. Such flat histograms is best to avoid.
+           Histogram after a stronger cutoff. Endpoint accumulation shows where clipping has discarded intensity differences.
+
+API reference
+-------------
+
+:func:`httomolibgpu.misc.rescale.rescale_to_int` — signature, input/output types and full parameter details.

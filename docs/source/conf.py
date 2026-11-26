@@ -23,10 +23,13 @@ MOCK_MODULES = [
     "cupyx",
     "numpy.polynomial",
     "tomobar",
-    "tomobar.methodsDIR",
-    "tomobar.regularisersCuPy",
-    "tomobar.methodsDIR_CuPy",
-    "tomobar.methodsIR_CuPy",
+    "tomobar.geometry",
+    "tomobar.options",
+    "tomobar.regularisers",
+    "tomobar.reconstruction",
+    "tomobar.reconstruction.direct",
+    "tomobar.reconstruction.iterative",
+    "tomobar.reconstruction.memory",
     "PIL",
     "skimage",
     "scipy",
@@ -56,11 +59,9 @@ sys.modules["cupyx.scipy.fft"] = CustomMock()
 sys.modules["cupyx.scipy.fftpack"] = CustomMock()
 sys.modules["scipy.fftpack"] = CustomMock()
 sys.modules["tomobar"] = CustomMock()
-sys.modules["tomobar.methodsDIR"] = CustomMock()
-sys.modules["tomobar.methodsDIR_CuPy"] = CustomMock()
-sys.modules["tomobar.methodsIR_CuPy"] = CustomMock()
+sys.modules["tomobar.reconstruction.direct"] = CustomMock()
 sys.modules["skimage.registration"] = CustomMock()
-sys.modules["tomobar.supp.memory_estimator_helpers"] = CustomMock()
+sys.modules["tomobar.reconstruction.memory"] = CustomMock()
 # ------------------------------------------------------------------------------
 
 project = "HTTomolibGPU"
@@ -104,7 +105,16 @@ bibtex_bibfiles = ["bibliography/references.bib"]
 
 autosummary_generate = True
 numfig = True
-template_patterns = ["_templates"]
+# Document class attributes once rather than duplicating NumPy Attributes entries.
+napoleon_use_ivar = True
+# Each API page already identifies its module; keep function headings compact.
+add_module_names = False
+exclude_patterns = ["**/.ipynb_checkpoints", "**/.virtual_documents"]
+# Build from saved results; documentation rendering must not require a GPU.
+nbsphinx_execute = "never"
+copybutton_prompt_text = r">>> |\.\.\. |\$ "
+copybutton_prompt_is_regexp = True
+templates_path = ["_templates"]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
@@ -116,11 +126,27 @@ html_title = "HTTomolibGPU Documentation"
 html_copy_source = True
 html_last_updated_fmt = ""
 html_static_path = ["_static"]
-html_use_smartypants = True
+html_css_files = ["css/general.css"]
+html_codeblock_linenos_style = "table"
+
+# Theme-aware SVG logos shared by the sidebar and documentation home link.
+html_logo = "_static/logo-httomolibgpu-light.svg"
 
 html_theme_options = {
+    # Keep search in the sidebar; omit the redundant top navigation search.
+    "navbar_persistent": [],
+    "logo": {
+        "image_light": "_static/logo-httomolibgpu-light.svg",
+        "image_dark": "_static/logo-httomolibgpu-dark.svg",
+        "alt_text": "HTTomolibGPU",
+    },
     "show_toc_level": 1,
-    "navbar_align": "left",  # [left, content, right] For testing that the navbar items align properly
+    "repository_url": "https://github.com/DiamondLightSource/httomolibgpu",
+    "repository_branch": "main",
+    "path_to_docs": "docs/source",
+    "use_repository_button": True,
+    "use_issues_button": True,
+    "show_navbar_depth": 1,
 }
 
 html_context = {
@@ -131,5 +157,58 @@ html_context = {
 }
 
 
+# Keep method guides reachable from every function's API entry. Check coverage
+# from source rather than importing CUDA modules during documentation builds.
+import ast
+import json
+from pathlib import Path
+
+
+def _method_guide_links(app, what, name, obj, options, lines):
+    if what == "function" and name in app.config.method_guides:
+        guide = app.config.method_guides[name]
+        lines[:0] = [
+            f":doc:`Method guide: description, principles and usage </{guide}>`",
+            "",
+        ]
+
+
+def _check_method_guides(app):
+    from sphinx.errors import ExtensionError
+
+    source = Path(app.srcdir)
+    package = source.parent.parent / "httomolibgpu"
+    public = set()
+    for path in package.rglob("*.py"):
+        relative = path.relative_to(package.parent)
+        if any(
+            part.startswith("_") and part != "__init__.py" for part in relative.parts
+        ):
+            continue
+        module = ".".join(relative.with_suffix("").parts).removesuffix(".__init__")
+        for node in ast.parse(path.read_text()).body:
+            if isinstance(
+                node, (ast.FunctionDef, ast.AsyncFunctionDef)
+            ) and not node.name.startswith("_"):
+                public.add(f"{module}.{node.name}")
+    guides = app.config.method_guides
+    missing = public - guides.keys()
+    stale = guides.keys() - public
+    broken = [
+        name for name, doc in guides.items() if not (source / (doc + ".rst")).is_file()
+    ]
+    if missing or stale or broken:
+        raise ExtensionError(
+            f"Method guide coverage: missing={sorted(missing)}, stale={sorted(stale)}, broken={broken}"
+        )
+
+
 def setup(app):
-    app.add_css_file("css/general.css")
+    guides = json.loads((Path(__file__).parent / "method_guides.json").read_text())
+    app.add_config_value("method_guides", guides, "env")
+    app.connect("builder-inited", _check_method_guides)
+    app.connect("autodoc-process-docstring", _method_guide_links)
+
+
+# Pin the renderer so Sphinx upgrades do not silently change equation layout.
+mathjax_path = "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js"

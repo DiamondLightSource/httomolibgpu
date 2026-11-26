@@ -26,25 +26,21 @@
 
 """
 
-from httomolibgpu import cupywrapper
+from __future__ import annotations
 
-cp = cupywrapper.cp
-cupy_run = cupywrapper.cupy_run
-
-from unittest.mock import Mock
-
-if cupy_run:
-    from httomolibgpu.cuda_kernels import load_cuda_module
-else:
-    load_cuda_module = Mock()
 from typing import Union
 
+from httomolibgpu import cupywrapper
+from httomolibgpu.cuda_kernels import load_cuda_module
 from httomolibgpu.misc.utils import (
-    __check_variable_type,
     __check_if_data_3D_array,
     __check_if_data_correct_type,
     __check_if_positive_nonzero,
+    __check_variable_type,
 )
+
+cp = cupywrapper.cp
+
 
 __all__ = [
     "median_filter",
@@ -80,6 +76,7 @@ def median_filter(
     ValueError
         If the input array is not three dimensional.
     """
+    cupywrapper.require_gpu("median_filter")
     ### Data and parameters checks ###
     methods_name = "median_filter/remove_outlier"
     __check_if_data_3D_array(data, methods_name)

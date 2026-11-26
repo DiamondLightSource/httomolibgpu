@@ -1,0 +1,679 @@
+{
+  "description": "Remaining Zenodo test transfer; original parameters and assertions retained unless a protocol change is explicitly documented.",
+  "sources": {
+    "zenodo-tests/test_prep/test_stripe.py": {
+      "sha256": "da3186c02332005a7b51c1a1be5350fb1fbefad608fd1e24eb6e532551603660",
+      "functions": [
+        "test_remove_stripe_based_sorting_i12_dataset4",
+        "test_remove_stripe_ti_i12_dataset4",
+        "test_remove_stripe_fw_i12_dataset4",
+        "test_remove_all_stripe_i12_dataset4",
+        "test_raven_filter_i12_dataset4"
+      ]
+    },
+    "zenodo-tests/test_prep/test_phase.py": {
+      "sha256": "170e0a1ee59a113a4bce410ca2b0e3c95061157b545e3ae9c86cfaf5d707c25e",
+      "functions": [
+        "test_paganin_filter_i12_dataset3"
+      ]
+    },
+    "zenodo-tests/test_recon/test_algorithm.py": {
+      "sha256": "6bc5eaa150a5ec20cd8343b7bb26bcabaff6424a8e5d81964e727aad90266189",
+      "functions": [
+        "test_reconstruct_FBP2d_astra_i12_dataset1",
+        "test_reconstruct_FBP3d_tomobar_i12_dataset1",
+        "test_reconstruct_FBP3d_tomobar_i12_dataset1_pad",
+        "test_reconstruct_FBP3d_tomobar_i12_dataset1_autopad",
+        "test_reconstruct_LPRec3d_tomobar_i12_dataset1",
+        "test_reconstruct_LPRec3d_tomobar_i12_dataset1_autopad",
+        "test_reconstruct_LPRec_tomobar_i13_dataset1",
+        "test_FBP3d_tomobar_performance_i13_dataset2",
+        "test_reconstruct_LPRec3d_tomobar_i13_dataset2",
+        "test_reconstruct_LPRec3d_tomobar_k11_dataset2",
+        "test_reconstruct_CGLS3d_tomobar_k11_dataset2",
+        "test_reconstruct_SIRT3d_tomobar_k11_dataset2",
+        "test_reconstruct_FISTA3d_tomobar_autopad_k11_dataset2",
+        "test_reconstruct_ADMM3d_tomobar_autopad_k11_dataset2"
+      ],
+      "previous_transfer_snapshot": {
+        "git_revision": "b9977ce85641a22d3dc76156c99b48234f9b61ef",
+        "sha256": "2d9fc1d63bd393d07b57e0f4df16e8bc8fe13be48b24c944c8df151ed307982d",
+        "functions": [
+          "test_reconstruct_FBP2d_astra_i12_dataset1",
+          "test_reconstruct_FBP3d_tomobar_i12_dataset1",
+          "test_reconstruct_FBP3d_tomobar_i12_dataset1_pad",
+          "test_reconstruct_FBP3d_tomobar_i12_dataset1_autopad",
+          "test_reconstruct_LPRec3d_tomobar_i12_dataset1",
+          "test_reconstruct_LPRec3d_tomobar_i12_dataset1_autopad",
+          "test_reconstruct_LPRec_tomobar_i13_dataset1",
+          "test_FBP3d_tomobar_performance_i13_dataset2",
+          "test_reconstruct_LPRec3d_tomobar_i13_dataset2",
+          "test_LPRec3d_tomobar_performance_i13_dataset2",
+          "test_reconstruct_FBP3d_tomobar_i13_dataset3",
+          "test_reconstruct_FBP3d_tomobar_i12_dataset5",
+          "test_reconstruct_LPRec3d_tomobar_k11_dataset2",
+          "test_reconstruct_CGLS3d_tomobar_k11_dataset2",
+          "test_reconstruct_SIRT3d_tomobar_k11_dataset2",
+          "test_reconstruct_FISTA3d_tomobar_autopad_k11_dataset2",
+          "test_reconstruct_ADMM3d_tomobar_autopad_k11_dataset2"
+        ]
+      }
+    },
+    "zenodo-tests/test_misc/test_morph.py": {
+      "sha256": "9c4b093a001c5dfe8973587ec87aed319b13178c1626c3b1edf589a67ffa7b47",
+      "functions": [
+        "test_sino_360_to_180_i13_dataset1",
+        "test_sino_360_to_180_i13_dataset3",
+        "test_sino_360_to_180_i12_dataset5"
+      ]
+    },
+    "zenodo-tests/test_recon/test_rotation.py": {
+      "sha256": "a6e5bfd58d3962fff42f2c044426e2a2f8be7731e6c6867b779ed037572049a4",
+      "functions": [
+        "test_center_vo_i12_dataset1",
+        "test_center_vo_i12_dataset2",
+        "test_center_vo_average_i12_dataset2",
+        "test_center_vo_i13_dataset2",
+        "test_center_vo_geant4_dataset1",
+        "test_center_vo_k11_dataset1",
+        "test_center_pc_i12_dataset3",
+        "test_center_360_i12_dataset5",
+        "test_center_360_i13_dataset1",
+        "test_center_360_i13_dataset3",
+        "test_center_vo_i12_dataset1_performance"
+      ]
+    }
+  },
+  "cases": [
+    {
+      "source": "zenodo-tests/test_prep/test_stripe.py",
+      "test": "test_remove_stripe_based_sorting_i12_dataset4",
+      "parameter_cases": 3,
+      "notebook": "docs/source/validation/preprocessing/stripe_removal.ipynb",
+      "parameters": [
+        {
+          "parameters": {
+            "size": 11,
+            "dim": 1
+          },
+          "expected_norm": 78.8627
+        },
+        {
+          "parameters": {
+            "size": 21,
+            "dim": 1
+          },
+          "expected_norm": 92.8653
+        },
+        {
+          "parameters": {
+            "size": 31,
+            "dim": 1
+          },
+          "expected_norm": 99.6979
+        }
+      ],
+      "assertions": [
+        "assert isclose(norm_res, norm_res_expected, abs_tol=10 ** (-4))",
+        "assert output.dtype == np.float32",
+        "assert output.flags.c_contiguous"
+      ]
+    },
+    {
+      "source": "zenodo-tests/test_prep/test_stripe.py",
+      "test": "test_remove_stripe_ti_i12_dataset4",
+      "parameter_cases": 3,
+      "notebook": "docs/source/validation/preprocessing/stripe_removal.ipynb",
+      "parameters": [
+        {
+          "parameters": {
+            "beta": 0.01
+          },
+          "expected_norm": 322.5501
+        },
+        {
+          "parameters": {
+            "beta": 0.03
+          },
+          "expected_norm": 173.1643
+        },
+        {
+          "parameters": {
+            "beta": 0.06
+          },
+          "expected_norm": 128.8032
+        }
+      ],
+      "assertions": [
+        "assert isclose(norm_res, norm_res_expected, abs_tol=10 ** (-4))",
+        "assert output.dtype == np.float32",
+        "assert output.flags.c_contiguous"
+      ]
+    },
+    {
+      "source": "zenodo-tests/test_prep/test_stripe.py",
+      "test": "test_remove_stripe_fw_i12_dataset4",
+      "parameter_cases": 3,
+      "notebook": "docs/source/validation/preprocessing/stripe_removal.ipynb",
+      "parameters": [
+        {
+          "parameters": {
+            "sigma": 0.01,
+            "level": 7
+          },
+          "expected_norm": 67.9479
+        },
+        {
+          "parameters": {
+            "sigma": 0.3,
+            "level": 5
+          },
+          "expected_norm": 68.80203
+        },
+        {
+          "parameters": {
+            "sigma": 1.0,
+            "level": 10
+          },
+          "expected_norm": 873.24664
+        }
+      ],
+      "assertions": [
+        "assert isclose(norm_res, norm_res_expected, abs_tol=10 ** (-4))",
+        "assert output.dtype == np.float32",
+        "assert output.flags.c_contiguous"
+      ]
+    },
+    {
+      "source": "zenodo-tests/test_prep/test_stripe.py",
+      "test": "test_remove_all_stripe_i12_dataset4",
+      "parameter_cases": 4,
+      "notebook": "docs/source/validation/preprocessing/stripe_removal.ipynb",
+      "parameters": [
+        {
+          "parameters": {
+            "snr": 1.0,
+            "la_size": 31,
+            "sm_size": 10,
+            "dim": 1,
+            "normalize": true
+          },
+          "expected_norm": 105.3542
+        },
+        {
+          "parameters": {
+            "snr": 2.0,
+            "la_size": 41,
+            "sm_size": 17,
+            "dim": 1,
+            "normalize": true
+          },
+          "expected_norm": 99.9182
+        },
+        {
+          "parameters": {
+            "snr": 3.0,
+            "la_size": 61,
+            "sm_size": 21,
+            "dim": 1,
+            "normalize": true
+          },
+          "expected_norm": 103.3776
+        },
+        {
+          "parameters": {
+            "snr": 4.0,
+            "la_size": 71,
+            "sm_size": 31,
+            "dim": 1,
+            "normalize": true
+          },
+          "expected_norm": 106.6767
+        }
+      ],
+      "assertions": [
+        "assert isclose(norm_res, norm_res_expected, abs_tol=10 ** (-4))",
+        "assert not np.isnan(output).any(), 'Output contains NaN values'",
+        "assert output.dtype == np.float32",
+        "assert output.flags.c_contiguous"
+      ]
+    },
+    {
+      "source": "zenodo-tests/test_prep/test_stripe.py",
+      "test": "test_raven_filter_i12_dataset4",
+      "parameter_cases": 3,
+      "notebook": "docs/source/validation/preprocessing/stripe_removal.ipynb",
+      "parameters": [
+        {
+          "parameters": {
+            "pad_y": 20,
+            "pad_x": 20,
+            "pad_method": "edge",
+            "uvalue": 20,
+            "nvalue": 2,
+            "vvalue": 4
+          },
+          "expected_norm": 94.0996
+        },
+        {
+          "parameters": {
+            "pad_y": 20,
+            "pad_x": 20,
+            "pad_method": "edge",
+            "uvalue": 20,
+            "nvalue": 4,
+            "vvalue": 2
+          },
+          "expected_norm": 86.3459
+        },
+        {
+          "parameters": {
+            "pad_y": 20,
+            "pad_x": 20,
+            "pad_method": "edge",
+            "uvalue": 20,
+            "nvalue": 6,
+            "vvalue": 5
+          },
+          "expected_norm": 111.1377
+        }
+      ],
+      "assertions": [
+        "assert isclose(norm_res, norm_res_expected, abs_tol=10 ** (-4))",
+        "assert output.dtype == np.float32",
+        "assert output.flags.c_contiguous"
+      ]
+    },
+    {
+      "source": "zenodo-tests/test_prep/test_phase.py",
+      "test": "test_paganin_filter_i12_dataset3",
+      "parameter_cases": 3,
+      "notebook": "docs/source/validation/preprocessing/paganin_padding.ipynb",
+      "parameters": [
+        [
+          "next_power_of_2",
+          null,
+          -6.2188172,
+          -10.92260456
+        ],
+        [
+          "next_fast_length",
+          null,
+          -6.867182,
+          -10.92272
+        ],
+        [
+          "use_pad_x_y",
+          [
+            80,
+            80
+          ],
+          -6.3293,
+          -10.9227
+        ]
+      ],
+      "assertions": [
+        "assert pytest.approx(np.max(cp.asnumpy(filtered_paganin)), rel=0.001) == test_max",
+        "assert pytest.approx(np.min(cp.asnumpy(filtered_paganin)), rel=0.001) == test_min"
+      ]
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_algorithm.py",
+      "test": "test_reconstruct_FBP2d_astra_i12_dataset1",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/reconstruction/direct/fbp2d_i12_dataset1.ipynb",
+      "note": "Existing notebook retains original method settings, selected rows, structural assertions, sum and tolerance. CGLS/SIRT explicitly state the unchanged nonnegativity=True default.",
+      "assertions": [
+        "assert recon_data.flags.c_contiguous",
+        "assert recon_data.dtype == np.float32",
+        "assert recon_data.shape == (2560, 50, 2560)"
+      ]
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_algorithm.py",
+      "test": "test_reconstruct_CGLS3d_tomobar_k11_dataset2",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/reconstruction/iterative/cgls3d_k11_dataset2.ipynb",
+      "note": "Existing notebook retains original method settings, selected rows, structural assertions, sum and tolerance. CGLS/SIRT explicitly state the unchanged nonnegativity=True default.",
+      "assertions": [
+        "assert recon_data.flags.c_contiguous",
+        "assert isclose(np.sum(recon_data), 7714.783203125, abs_tol=10 ** (-2))",
+        "assert recon_data.dtype == np.float32",
+        "assert recon_data.shape == (2560, 5, 2560)"
+      ]
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_algorithm.py",
+      "test": "test_reconstruct_SIRT3d_tomobar_k11_dataset2",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/reconstruction/iterative/sirt3d_k11_dataset2.ipynb",
+      "note": "Existing notebook retains original method settings, selected rows, structural assertions, sum and tolerance. CGLS/SIRT explicitly state the unchanged nonnegativity=True default.",
+      "assertions": [
+        "assert recon_data.flags.c_contiguous",
+        "assert isclose(np.sum(recon_data), 2564.56005859375, abs_tol=10 ** (-3))",
+        "assert recon_data.dtype == np.float32",
+        "assert recon_data.shape == (2560, 5, 2560)"
+      ]
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_algorithm.py",
+      "test": "test_reconstruct_FBP3d_tomobar_i12_dataset1",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/reconstruction/transferred/fbp_padding.ipynb",
+      "method_calls": [
+        "FBP3d_tomobar(data_normalised, np.deg2rad(angles), center=1253.75, detector_pad=0, filter_freq_cutoff=0.35)"
+      ],
+      "assertions": [
+        "assert recon_data.flags.c_contiguous",
+        "assert recon_data.dtype == np.float32",
+        "assert recon_data.shape == (2560, 50, 2560)"
+      ]
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_algorithm.py",
+      "test": "test_reconstruct_FBP3d_tomobar_i12_dataset1_pad",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/reconstruction/transferred/fbp_padding.ipynb",
+      "method_calls": [
+        "FBP3d_tomobar(data_normalised[:, 10:20, :], np.deg2rad(angles), center=1253.75, detector_pad=150, filter_freq_cutoff=0.35, recon_mask_radius=2.0)"
+      ],
+      "assertions": [
+        "assert recon_data.flags.c_contiguous",
+        "assert recon_data.dtype == np.float32",
+        "assert recon_data.shape == (2560, 10, 2560)"
+      ]
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_algorithm.py",
+      "test": "test_reconstruct_FBP3d_tomobar_i12_dataset1_autopad",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/reconstruction/transferred/fbp_padding.ipynb",
+      "method_calls": [
+        "FBP3d_tomobar(data_normalised[:, 10:15, :], np.deg2rad(angles), center=1253.75, detector_pad=True, filter_freq_cutoff=0.35, recon_mask_radius=2.0)"
+      ],
+      "assertions": [
+        "assert recon_data.flags.c_contiguous",
+        "assert recon_data.dtype == np.float32",
+        "assert recon_data.shape == (2560, 5, 2560)"
+      ]
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_algorithm.py",
+      "test": "test_reconstruct_LPRec3d_tomobar_i12_dataset1",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/reconstruction/transferred/lprec_legacy.ipynb",
+      "method_calls": [
+        "LPRec3d_tomobar(data_normalised_cut, np.deg2rad(angles), center=1253.75, detector_pad=0, filter_type='shepp', filter_freq_cutoff=1.0, recon_mask_radius=2.0)"
+      ],
+      "assertions": [
+        "assert recon_data.flags.c_contiguous",
+        "assert isclose(np.sum(recon_data), 9628.824, abs_tol=10 ** (-3))",
+        "assert pytest.approx(np.max(recon_data), rel=0.001) == 0.006367563270032406",
+        "assert pytest.approx(np.min(recon_data), rel=0.001) == -0.0062076798",
+        "assert recon_data.dtype == np.float32",
+        "assert recon_data.shape == (2560, 3, 2560)"
+      ]
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_algorithm.py",
+      "test": "test_reconstruct_LPRec3d_tomobar_i12_dataset1_autopad",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/reconstruction/transferred/lprec_legacy.ipynb",
+      "method_calls": [
+        "LPRec3d_tomobar(data_normalised_cut, np.deg2rad(angles), center=1253.75, detector_pad=True, filter_type='shepp', filter_freq_cutoff=1.0, recon_mask_radius=2.0)"
+      ],
+      "assertions": [
+        "assert recon_data.flags.c_contiguous",
+        "assert int(np.sum(recon_data)) == 9147",
+        "assert pytest.approx(np.max(recon_data), rel=0.001) == 0.0063818083",
+        "assert pytest.approx(np.min(recon_data), rel=0.001) == -0.006200762",
+        "assert recon_data.dtype == np.float32",
+        "assert recon_data.shape == (2560, 3, 2560)"
+      ]
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_algorithm.py",
+      "test": "test_reconstruct_LPRec_tomobar_i13_dataset1",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/reconstruction/transferred/lprec_legacy.ipynb",
+      "method_calls": [
+        "LPRec3d_tomobar(data=stiched_data_180degrees, angles=np.deg2rad(angles[0:3000]), center=2560, detector_pad=False, filter_type='shepp', filter_freq_cutoff=1.0, recon_mask_radius=2.0)"
+      ],
+      "assertions": [
+        "assert recon_data.flags.c_contiguous",
+        "assert int(np.sum(recon_data)) == 1142",
+        "assert recon_data.dtype == np.float32",
+        "assert recon_data.shape == (5120, 1, 5120)"
+      ]
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_algorithm.py",
+      "test": "test_reconstruct_LPRec3d_tomobar_i13_dataset2",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/reconstruction/transferred/lprec_legacy.ipynb",
+      "method_calls": [
+        "LPRec3d_tomobar(data=data_normalised, angles=np.deg2rad(angles), center=1286.25, detector_pad=False, filter_type='shepp', filter_freq_cutoff=1.0, recon_mask_radius=2.0)"
+      ],
+      "assertions": [
+        "assert recon_data.flags.c_contiguous",
+        "assert int(np.sum(recon_data)) == 3448",
+        "assert pytest.approx(np.max(recon_data), rel=0.001) == 0.010543354",
+        "assert pytest.approx(np.min(recon_data), rel=0.001) == -0.008385599",
+        "assert recon_data.dtype == np.float32",
+        "assert recon_data.shape == (2560, 10, 2560)"
+      ]
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_algorithm.py",
+      "test": "test_reconstruct_LPRec3d_tomobar_k11_dataset2",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/reconstruction/transferred/lprec_legacy.ipynb",
+      "method_calls": [
+        "LPRec3d_tomobar(data=data_normalised, angles=np.deg2rad(angles), center=1280.25, detector_pad=False, filter_type='shepp', filter_freq_cutoff=1.0, recon_mask_radius=2.0)"
+      ],
+      "assertions": [
+        "assert recon_data.flags.c_contiguous",
+        "assert isclose(np.sum(recon_data), 10865.37, abs_tol=10 ** (-2))",
+        "assert recon_data.dtype == np.float32",
+        "assert recon_data.shape == (2560, 25, 2560)"
+      ]
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_algorithm.py",
+      "test": "test_reconstruct_FISTA3d_tomobar_autopad_k11_dataset2",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/reconstruction/transferred/regularised_legacy.ipynb",
+      "method_calls": [
+        "FISTA3d_tomobar(data=data_normalised[:, 5:10, :], angles=np.deg2rad(angles), center=1280.25, detector_pad=True, recon_mask_radius=2.0, iterations=7, regularisation_parameter=5e-07)"
+      ],
+      "assertions": [
+        "assert recon_data.flags.c_contiguous",
+        "assert isclose(np.sum(recon_data), 1355.4636, abs_tol=10 ** (-3))",
+        "assert recon_data.dtype == np.float32",
+        "assert recon_data.shape == (2560, 5, 2560)"
+      ]
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_algorithm.py",
+      "test": "test_reconstruct_ADMM3d_tomobar_autopad_k11_dataset2",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/reconstruction/transferred/regularised_legacy.ipynb",
+      "method_calls": [
+        "ADMM3d_tomobar(data=data, **args)"
+      ],
+      "assertions": [
+        "assert recon_data.flags.c_contiguous",
+        "assert isclose(np.sum(recon_data), 2275.8916, abs_tol=10 ** (-3))",
+        "assert recon_data.dtype == np.float32",
+        "assert recon_data.shape == (4150, 3, 4150)"
+      ]
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_algorithm.py",
+      "test": "test_FBP3d_tomobar_performance_i13_dataset2",
+      "parameter_cases": 1,
+      "notebook": "docs/source/benchmarks/fbp3d_i13_dataset2.ipynb",
+      "note": "Ten measured calls retained; same-parameter warmup and individually synchronised timing samples replace the placeholder string assertion.",
+      "assertions": [
+        "assert 'performance in ms' == duration_ms"
+      ]
+    },
+    {
+      "source": "zenodo-tests/test_misc/test_morph.py",
+      "test": "test_sino_360_to_180_i12_dataset5",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/rotation/center_360.ipynb",
+      "overlap": 186.66,
+      "side": "left",
+      "expected_shape": [
+        1800,
+        15,
+        5120
+      ],
+      "assertions": [
+        "assert stiched_data_180degrees.shape == (1800, 15, 5120)",
+        "assert stiched_data_180degrees.dtype == np.float32",
+        "assert stiched_data_180degrees.flags.c_contiguous"
+      ]
+    },
+    {
+      "source": "zenodo-tests/test_misc/test_morph.py",
+      "test": "test_sino_360_to_180_i13_dataset1",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/rotation/center_360.ipynb",
+      "overlap": 473.822265625,
+      "side": "right",
+      "expected_shape": [
+        3000,
+        10,
+        5120
+      ],
+      "assertions": [
+        "assert stiched_data_180degrees.shape == (3000, 10, 5120)",
+        "assert stiched_data_180degrees.dtype == np.float32",
+        "assert stiched_data_180degrees.flags.c_contiguous"
+      ]
+    },
+    {
+      "source": "zenodo-tests/test_misc/test_morph.py",
+      "test": "test_sino_360_to_180_i13_dataset3",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/rotation/center_360.ipynb",
+      "overlap": 438.173828,
+      "side": "left",
+      "expected_shape": [
+        3000,
+        3,
+        5120
+      ],
+      "assertions": [
+        "assert stiched_data_180degrees.shape == (3000, 3, 5120)",
+        "assert stiched_data_180degrees.dtype == np.float32",
+        "assert stiched_data_180degrees.flags.c_contiguous"
+      ]
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_rotation.py",
+      "test": "test_center_vo_i12_dataset1",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/rotation/center_vo.ipynb"
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_rotation.py",
+      "test": "test_center_vo_i12_dataset2",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/rotation/center_vo.ipynb"
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_rotation.py",
+      "test": "test_center_vo_average_i12_dataset2",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/rotation/center_vo.ipynb"
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_rotation.py",
+      "test": "test_center_vo_i13_dataset2",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/rotation/center_vo.ipynb"
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_rotation.py",
+      "test": "test_center_vo_geant4_dataset1",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/rotation/center_vo.ipynb"
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_rotation.py",
+      "test": "test_center_vo_k11_dataset1",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/rotation/center_vo.ipynb"
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_rotation.py",
+      "test": "test_center_pc_i12_dataset3",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/rotation/center_pc.ipynb"
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_rotation.py",
+      "test": "test_center_360_i12_dataset5",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/rotation/center_360.ipynb"
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_rotation.py",
+      "test": "test_center_360_i13_dataset1",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/rotation/center_360.ipynb"
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_rotation.py",
+      "test": "test_center_360_i13_dataset3",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/rotation/center_360.ipynb"
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_rotation.py",
+      "test": "test_center_vo_i12_dataset1_performance",
+      "parameter_cases": 1,
+      "notebook": "docs/source/benchmarks/center_vo_i12_dataset1.ipynb"
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_algorithm.py",
+      "test": "test_reconstruct_FBP3d_tomobar_i12_dataset5",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/reconstruction/transferred/full_turn.ipynb",
+      "source_snapshot": "previous_transfer_snapshot",
+      "assertions": [
+        "assert recon_data.flags.c_contiguous",
+        "assert recon_data.dtype == np.float32",
+        "assert recon_data.shape == (5120, 15, 5120)"
+      ]
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_algorithm.py",
+      "test": "test_reconstruct_FBP3d_tomobar_i13_dataset3",
+      "parameter_cases": 1,
+      "notebook": "docs/source/validation/reconstruction/transferred/full_turn.ipynb",
+      "source_snapshot": "previous_transfer_snapshot",
+      "assertions": [
+        "assert recon_data.flags.c_contiguous",
+        "assert recon_data.dtype == np.float32",
+        "assert recon_data.shape == (5120, 3, 5120)"
+      ]
+    },
+    {
+      "source": "zenodo-tests/test_recon/test_algorithm.py",
+      "test": "test_LPRec3d_tomobar_performance_i13_dataset2",
+      "parameter_cases": 1,
+      "notebook": "docs/source/benchmarks/lprec3d_i13_dataset2.ipynb",
+      "source_snapshot": "previous_transfer_snapshot",
+      "note": "Earlier transfer: same full dataset, centre and ten repetitions. Notebook explicitly uses legacy_scaling=False for quantitative scaling and individually synchronised timing; this changes the old default legacy scaling. Timings are not directly comparable. The old placeholder string assertion is replaced by finite positive timings."
+    }
+  ],
+  "coverage": {
+    "functions": 37,
+    "expanded_cases": 50
+  },
+  "retired_fixture_sha256": "e1fc69565a6274208924823fd27bd65ec9b5e0733a2a6cef3230cedfe65ebb5c"
+}

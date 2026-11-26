@@ -43,7 +43,10 @@ Most of parameters are self-explanatory from the method's API :func:`httomolibgp
            Applying circular masking :code:`recon_mask_radius=0.9`.
 
 
-* :code:`filter_freq_cutoff` can behave differently for this method compared to :ref:`method_LPRec3d_tomobar`. Normally the lower values might give you noisier and sharper reconstruction, while the higher values can lead to a blur. Note that the change of the filter will lead to the change in the dynamic range of the reconstructed image (see colour bars in the figures below).
+* :code:`filter_freq_cutoff` is a positive SINC filter shape parameter in this
+  wrapper, rather than a normalised cutoff shared with every other filter.
+  It changes the resolution/noise balance and intensity scale. The images
+  below illustrate particular settings; the current API default is 0.35.
 
 .. list-table::
 
@@ -51,9 +54,35 @@ Most of parameters are self-explanatory from the method's API :func:`httomolibgp
     * - .. figure:: ../../../_static/figures/reconstructions/FBP3D_tomobar_filter03.png
            :width: 315px
 
-           FBP reconstruction with :code:`filter_freq_cutoff = 0.3` (default value).
+           FBP reconstruction with :code:`filter_freq_cutoff = 0.3` (illustrated setting; the current default is 0.35).
 
       - .. figure:: ../../../_static/figures/reconstructions/FBP3D_tomobar_filter20.png
            :width: 315px
 
            FBP reconstruction with :code:`filter_freq_cutoff = 2.0`. A slight loss of the resolution, yet reduced noise.
+
+Papers and further reading
+--------------------------
+
+* `Fast and flexible X-ray tomography using the ASTRA toolbox <https://doi.org/10.1364/OE.24.025129>`_.
+
+Validation examples and images
+------------------------------
+
+See the saved reconstruction images, processing settings and dataset details
+in the following validation notebooks:
+
+* :doc:`FBP3D · I12 dataset 1 <../../../validation/reconstruction/direct/fbp3d_i12_dataset1>`
+* :doc:`FBP3D · I12 dataset 5 <../../../validation/reconstruction/direct/fbp3d_i12_dataset5>`
+* :doc:`FBP3D · I13 dataset 3 <../../../validation/reconstruction/direct/fbp3d_i13_dataset3>`
+
+:doc:`Original unpadded and padded cases <../../../validation/reconstruction/transferred/fbp_padding>` retains the original
+Zenodo regression parameters and numerical checks.
+
+:doc:`Original full-turn detector stacks <../../../validation/reconstruction/transferred/full_turn>`
+retain the complete I12 and I13 reconstruction cases.
+
+API reference
+-------------
+
+:func:`httomolibgpu.recon.algorithm.FBP3d_tomobar` — signature, input/output types and full parameter details.

@@ -32,39 +32,42 @@
 
 """
 
+from __future__ import annotations
+
+from typing import Literal, Optional, Tuple, Union
+
 import numpy as np
 import pywt
+
 from httomolibgpu import cupywrapper
+from httomolibgpu.cuda_kernels import load_cuda_module
 from httomolibgpu.misc.sorting import argsort_with_reverse
+from httomolibgpu.misc.utils import (
+    __check_if_data_3D_array,
+    __check_if_data_correct_type,
+    __check_if_positive_nonzero,
+    __check_variable_type,
+)
 
 cp = cupywrapper.cp
 cupy_run = cupywrapper.cupy_run
 
-from unittest.mock import Mock
-
-from tomobar.supp.memory_estimator_helpers import DeviceMemStack
 
 if cupy_run:
-    from cupyx.scipy.ndimage import median_filter, binary_dilation, uniform_filter1d
-    from cupyx.scipy.fft import fft2, ifft2, fftshift
+    from cupyx.scipy.fft import fft2, fftshift, ifft2
     from cupyx.scipy.fftpack import get_fft_plan
-    from httomolibgpu.cuda_kernels import load_cuda_module
+    from cupyx.scipy.ndimage import binary_dilation, median_filter, uniform_filter1d
+    from tomobar.reconstruction.memory import DeviceMemStack
 else:
-    median_filter = Mock()
-    binary_dilation = Mock()
-    uniform_filter1d = Mock()
-    fft2 = Mock()
-    ifft2 = Mock()
-    fftshift = Mock()
+    DeviceMemStack = cupywrapper._UnavailableGPU("DeviceMemStack")
+    median_filter = cupywrapper._UnavailableGPU("median_filter")
+    binary_dilation = cupywrapper._UnavailableGPU("binary_dilation")
+    uniform_filter1d = cupywrapper._UnavailableGPU("uniform_filter1d")
+    fft2 = cupywrapper._UnavailableGPU("fft2")
+    ifft2 = cupywrapper._UnavailableGPU("ifft2")
+    fftshift = cupywrapper._UnavailableGPU("fftshift")
+    get_fft_plan = cupywrapper._UnavailableGPU("get_fft_plan")
 
-from typing import Optional, Tuple, Union, Literal
-
-from httomolibgpu.misc.utils import (
-    __check_variable_type,
-    __check_if_data_3D_array,
-    __check_if_data_correct_type,
-    __check_if_positive_nonzero,
-)
 
 __all__ = [
     "remove_stripe_based_sorting",
@@ -104,6 +107,7 @@ def remove_stripe_based_sorting(
         Corrected 3D tomographic data as a CuPy or NumPy array.
 
     """
+    cupywrapper.require_gpu("remove_stripe_based_sorting")
     ### Data and parameters checks ###
     methods_name = "remove_stripe_based_sorting"
     __check_if_data_3D_array(data, methods_name)
@@ -165,6 +169,7 @@ def remove_stripe_ti(
     ndarray
         3D array of de-striped projections.
     """
+    cupywrapper.require_gpu("remove_stripe_ti")
     ### Data and parameters checks ###
     methods_name = "remove_stripe_ti"
     __check_if_data_3D_array(data, methods_name)
@@ -685,6 +690,7 @@ def remove_stripe_fw(
     ndarray
         Stripe-corrected 3D tomographic data as a CuPy array.
     """
+    cupywrapper.require_gpu("remove_stripe_fw")
     ### Data and parameters checks ###
     methods_name = "remove_stripe_fw"
     if not calc_peak_gpu_mem:
@@ -860,6 +866,7 @@ def remove_all_stripe(
         Corrected 3D tomographic data as a CuPy or NumPy array.
 
     """
+    cupywrapper.require_gpu("remove_all_stripe")
 
     ### Data and parameters checks ###
     methods_name = "remove_all_stripe"
@@ -898,7 +905,7 @@ def _mpolyfit(x, y):
 
 def _detect_stripe(listdata, snr):
     """
-    Algorithm 4 in :cite:`Vo:18`. Used to locate stripes.
+    Algorithm 4 in :cite:`vo2018superior`. Used to locate stripes.
     """
 
     numdata = len(listdata)
@@ -1032,6 +1039,7 @@ def raven_filter(
         If the input array is not three dimensional or float32, or a parameter
         has an invalid type or range.
     """
+    cupywrapper.require_gpu("raven_filter")
     ### Data and parameters checks ###
     methods_name = "raven_filter"
     __check_if_data_3D_array(data, methods_name)

@@ -13,6 +13,12 @@ The optimal centre of rotation is found by minimising a metric of the reconstruc
 
 where :math:`\mathcal{C}` is the set of candidate centres and :math:`M` is an image-quality metric.
 
+.. note:: The current implementation selects the minimum for every metric,
+   including ``sharpness``. The Laplacian-variance helper itself reports larger
+   values for sharper images; this search therefore does not maximise that
+   sharpness score. Inspect candidate reconstructions and the score curve
+   before interpreting the selected centre.
+
 The choice of metric is important because different metrics respond differently to noise, background, contrast, and reconstruction artefacts. It is therefore useful to compare several metrics rather than relying on a single measure.
 
 
@@ -69,3 +75,8 @@ In this example we demonstrate how the choice of smoothing can affect the perfor
       - .. figure:: ../../../_static/figures/center_find/find_center_entropy_1253_smoothing3.jpg
 
            :code:`metric_type = entropy`, :code:`squared_mask_x_y_size = None` (center), :code:`gaussian_filter_sigma = 3`. Correct CoR found as the masked image is smoothed.
+
+API reference
+-------------
+
+:func:`httomolibgpu.recon.rotation.find_center_metric_recon` — signature, input/output types and full parameter details.

@@ -1,0 +1,534 @@
+{
+  "clean_projection_max": 276.9468994140625,
+  "clipped_voxels": 5158,
+  "axis_order": "angle,detector_y,detector_x",
+  "ideal_domain": "line integrals divided by global clean maximum",
+  "versions": {
+    "httomolibgpu": "5.4.post39+git.660ec2dc.dirty",
+    "tomophantom": "3.1.1.post0+git.8a6bf2c8.dirty",
+    "tomobar": "2026.3.0.0",
+    "astra-toolbox": "2.5.0",
+    "cupy": "14.0.1",
+    "numpy": "2.4.3"
+  },
+  "arguments": {
+    "output": "docs/source/_static/auto_images_methods",
+    "model_number": 7,
+    "sinogram_shape": [
+      256,
+      512,
+      740
+    ],
+    "flats": 20,
+    "darks": 10,
+    "source_intensity": 20000,
+    "artefacts": "/home/algol/Documents/DEV/httomolibgpu/docs/source/scripts/artefacts.json",
+    "flat_settings": "/home/algol/Documents/DEV/httomolibgpu/docs/source/scripts/flat_settings.json",
+    "seed": 1,
+    "dark_mean": 100.0,
+    "read_noise": 2.0,
+    "signal_scale": 0.9,
+    "chunk_rows": 32,
+    "gpu_rows": 16,
+    "crop": 30,
+    "gpu_id": 0,
+    "row": 128,
+    "projection": 128,
+    "methods": [
+      "normalisation",
+      "remove_outlier",
+      "median_filter",
+      "rescale_to_int",
+      "raven_filter",
+      "remove_stripe_based_sorting",
+      "remove_stripe_ti",
+      "remove_all_stripe",
+      "remove_stripe_fw",
+      "reconstruction"
+    ],
+    "synthesis_only": false
+  },
+  "flat_settings": {
+    "detectors_miscallibration": 0.05,
+    "variations_number": 3,
+    "arguments_Bessel": [
+      1,
+      25
+    ],
+    "specklesize": 2,
+    "kbar": 2,
+    "sigmasmooth": 3,
+    "jitter_projections": 0.0
+  },
+  "artefacts": {
+    "zingers_percentage": 0.05,
+    "zingers_modulus": 10,
+    "stripes_percentage": 3.0,
+    "stripes_maxthickness": 3,
+    "stripes_intensity": 0.05,
+    "stripes_type": "full",
+    "stripes_variability": 0.002,
+    "verbose": false
+  },
+  "methods": {
+    "remove_outlier": {
+      "kernel_size": 5,
+      "dif": 2000.0
+    },
+    "median_filter": {
+      "kernel_size": 5
+    },
+    "stripe_filters": {
+      "raven_filter": {
+        "uvalue": 20,
+        "nvalue": 2,
+        "vvalue": 2
+      },
+      "remove_stripe_based_sorting": {
+        "size": 21,
+        "dim": 1
+      },
+      "remove_stripe_ti": {
+        "beta": 0.03
+      },
+      "remove_all_stripe": {
+        "snr": 3.0,
+        "la_size": 61,
+        "sm_size": 21,
+        "dim": 1
+      },
+      "remove_stripe_fw": {
+        "sigma": 1.0,
+        "wname": "db5"
+      }
+    },
+    "rescale_input_limits": [
+      -0.004111718980129806,
+      0.8774240016937256
+    ],
+    "reconstruction": "FBP3d_tomobar, central detector-row slab"
+  },
+  "images": {
+    "raw_data_sino.png": {
+      "display_limits": [
+        18104.595,
+        51696.0
+      ],
+      "view": "sino"
+    },
+    "raw_data_proj.png": {
+      "display_limits": [
+        18104.595,
+        51696.0
+      ],
+      "view": "proj"
+    },
+    "proj_ground_truth_sino.png": {
+      "display_limits": [
+        0.0,
+        0.8208113366365436
+      ],
+      "view": "sino"
+    },
+    "proj_ground_truth_proj.png": {
+      "display_limits": [
+        0.0,
+        0.8208113366365436
+      ],
+      "view": "proj"
+    },
+    "flats_proj.png": {
+      "display_limits": [
+        25244.0,
+        54994.0
+      ],
+      "view": "proj"
+    },
+    "flats_sino.png": {
+      "display_limits": [
+        25244.0,
+        54994.0
+      ],
+      "view": "sino"
+    },
+    "darks_proj.png": {
+      "display_limits": [
+        75.0,
+        127.0
+      ],
+      "view": "proj"
+    },
+    "darks_sino.png": {
+      "display_limits": [
+        75.0,
+        127.0
+      ],
+      "view": "sino"
+    },
+    "dark_flat_field_correction_input_sino.png": {
+      "display_limits": [
+        18104.595,
+        51696.0
+      ],
+      "view": "sino"
+    },
+    "dark_flat_field_correction_input_proj.png": {
+      "display_limits": [
+        18104.595,
+        51696.0
+      ],
+      "view": "proj"
+    },
+    "dark_flat_field_correction_proj.png": {
+      "display_limits": [
+        0.0,
+        1.1
+      ],
+      "view": "proj"
+    },
+    "dark_flat_field_correction_sino.png": {
+      "display_limits": [
+        0.0,
+        1.1
+      ],
+      "view": "sino"
+    },
+    "normalisation_sino.png": {
+      "display_limits": [
+        -0.0059653051616623915,
+        0.8937105202674877
+      ],
+      "view": "sino"
+    },
+    "normalisation_proj.png": {
+      "display_limits": [
+        -0.0059653051616623915,
+        0.8937105202674877
+      ],
+      "view": "proj"
+    },
+    "proj_ground_truth_recon.png": {
+      "display_limits": [
+        -0.0002842734393198043,
+        0.0037368064071051778
+      ],
+      "view": "reconstruction"
+    },
+    "raw_data_recon.png": {
+      "display_limits": [
+        -0.0002842734393198043,
+        0.0037368064071051778
+      ],
+      "view": "reconstruction"
+    },
+    "remove_outlier_input_sino.png": {
+      "display_limits": [
+        18104.595,
+        51696.0
+      ],
+      "view": "sino"
+    },
+    "remove_outlier_input_proj.png": {
+      "display_limits": [
+        18104.595,
+        51696.0
+      ],
+      "view": "proj"
+    },
+    "remove_outlier_sino.png": {
+      "display_limits": [
+        18104.595,
+        51696.0
+      ],
+      "view": "sino"
+    },
+    "remove_outlier_proj.png": {
+      "display_limits": [
+        18104.595,
+        51696.0
+      ],
+      "view": "proj"
+    },
+    "remove_outlier_res_sino.png": {
+      "display_limits": [
+        0,
+        2000.0
+      ],
+      "view": "sino"
+    },
+    "remove_outlier_res_proj.png": {
+      "display_limits": [
+        0,
+        2000.0
+      ],
+      "view": "proj"
+    },
+    "median_filter_sino.png": {
+      "display_limits": [
+        -0.0059653051616623915,
+        0.8937105202674877
+      ],
+      "view": "sino"
+    },
+    "median_filter_proj.png": {
+      "display_limits": [
+        -0.0059653051616623915,
+        0.8937105202674877
+      ],
+      "view": "proj"
+    },
+    "median_filter_res_sino.png": {
+      "display_limits": [
+        0,
+        0.05
+      ],
+      "view": "sino"
+    },
+    "median_filter_res_proj.png": {
+      "display_limits": [
+        0,
+        0.05
+      ],
+      "view": "proj"
+    },
+    "rescale_to_int_proj_0_to_100.png": {
+      "display_limits": [
+        0,
+        255
+      ],
+      "view": "projection"
+    },
+    "rescale_to_int_histo_0_to_100.png": {
+      "intensity_range": [
+        0,
+        255
+      ],
+      "view": "histogram"
+    },
+    "rescale_to_int_proj_10_to_90.png": {
+      "display_limits": [
+        0,
+        255
+      ],
+      "view": "projection"
+    },
+    "rescale_to_int_histo_10_to_90.png": {
+      "intensity_range": [
+        0,
+        255
+      ],
+      "view": "histogram"
+    },
+    "rescale_to_int_proj_30_to_70.png": {
+      "display_limits": [
+        0,
+        255
+      ],
+      "view": "projection"
+    },
+    "rescale_to_int_histo_30_to_70.png": {
+      "intensity_range": [
+        0,
+        255
+      ],
+      "view": "histogram"
+    },
+    "data_stripes_added_sino.png": {
+      "display_limits": [
+        0.0011142140720039606,
+        0.8585807678103455
+      ],
+      "view": "sino"
+    },
+    "data_stripes_added_proj.png": {
+      "display_limits": [
+        0.0011142140720039606,
+        0.8585807678103455
+      ],
+      "view": "proj"
+    },
+    "data_stripes_added_recon.png": {
+      "display_limits": [
+        -0.0002842734393198043,
+        0.0037368064071051778
+      ],
+      "view": "reconstruction"
+    },
+    "raven_filter_sino.png": {
+      "display_limits": [
+        0.0011142140720039606,
+        0.8585807678103455
+      ],
+      "view": "sino"
+    },
+    "raven_filter_proj.png": {
+      "display_limits": [
+        0.0011142140720039606,
+        0.8585807678103455
+      ],
+      "view": "proj"
+    },
+    "raven_filter_res_sino.png": {
+      "display_limits": [
+        0,
+        0.1
+      ],
+      "view": "sino"
+    },
+    "raven_filter_res_proj.png": {
+      "display_limits": [
+        0,
+        0.1
+      ],
+      "view": "proj"
+    },
+    "raven_filter_recon.png": {
+      "display_limits": [
+        -0.0002842734393198043,
+        0.0037368064071051778
+      ],
+      "view": "reconstruction"
+    },
+    "remove_stripe_based_sorting_sino.png": {
+      "display_limits": [
+        0.0011142140720039606,
+        0.8585807678103455
+      ],
+      "view": "sino"
+    },
+    "remove_stripe_based_sorting_proj.png": {
+      "display_limits": [
+        0.0011142140720039606,
+        0.8585807678103455
+      ],
+      "view": "proj"
+    },
+    "remove_stripe_based_sorting_res_sino.png": {
+      "display_limits": [
+        0,
+        0.1
+      ],
+      "view": "sino"
+    },
+    "remove_stripe_based_sorting_res_proj.png": {
+      "display_limits": [
+        0,
+        0.1
+      ],
+      "view": "proj"
+    },
+    "remove_stripe_based_sorting_recon.png": {
+      "display_limits": [
+        -0.0002842734393198043,
+        0.0037368064071051778
+      ],
+      "view": "reconstruction"
+    },
+    "remove_stripe_ti_sino.png": {
+      "display_limits": [
+        0.0011142140720039606,
+        0.8585807678103455
+      ],
+      "view": "sino"
+    },
+    "remove_stripe_ti_proj.png": {
+      "display_limits": [
+        0.0011142140720039606,
+        0.8585807678103455
+      ],
+      "view": "proj"
+    },
+    "remove_stripe_ti_res_sino.png": {
+      "display_limits": [
+        0,
+        0.1
+      ],
+      "view": "sino"
+    },
+    "remove_stripe_ti_res_proj.png": {
+      "display_limits": [
+        0,
+        0.1
+      ],
+      "view": "proj"
+    },
+    "remove_stripe_ti_recon.png": {
+      "display_limits": [
+        -0.0002842734393198043,
+        0.0037368064071051778
+      ],
+      "view": "reconstruction"
+    },
+    "remove_all_stripe_sino.png": {
+      "display_limits": [
+        0.0011142140720039606,
+        0.8585807678103455
+      ],
+      "view": "sino"
+    },
+    "remove_all_stripe_proj.png": {
+      "display_limits": [
+        0.0011142140720039606,
+        0.8585807678103455
+      ],
+      "view": "proj"
+    },
+    "remove_all_stripe_res_sino.png": {
+      "display_limits": [
+        0,
+        0.1
+      ],
+      "view": "sino"
+    },
+    "remove_all_stripe_res_proj.png": {
+      "display_limits": [
+        0,
+        0.1
+      ],
+      "view": "proj"
+    },
+    "remove_all_stripe_recon.png": {
+      "display_limits": [
+        -0.0002842734393198043,
+        0.0037368064071051778
+      ],
+      "view": "reconstruction"
+    },
+    "remove_stripe_fw_sino.png": {
+      "display_limits": [
+        0.0011142140720039606,
+        0.8585807678103455
+      ],
+      "view": "sino"
+    },
+    "remove_stripe_fw_proj.png": {
+      "display_limits": [
+        0.0011142140720039606,
+        0.8585807678103455
+      ],
+      "view": "proj"
+    },
+    "remove_stripe_fw_res_sino.png": {
+      "display_limits": [
+        0,
+        0.1
+      ],
+      "view": "sino"
+    },
+    "remove_stripe_fw_res_proj.png": {
+      "display_limits": [
+        0,
+        0.1
+      ],
+      "view": "proj"
+    },
+    "remove_stripe_fw_recon.png": {
+      "display_limits": [
+        -0.0002842734393198043,
+        0.0037368064071051778
+      ],
+      "view": "reconstruction"
+    }
+  },
+  "note": "Synthetic TomoPhantom data; residuals are absolute input/output differences, not reconstruction error."
+}
