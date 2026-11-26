@@ -2,7 +2,10 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 #!/usr/bin/env python
+import ast
+import json
 import os
+from pathlib import Path
 import sys
 from datetime import date
 from unittest import mock
@@ -159,9 +162,6 @@ html_context = {
 
 # Keep method guides reachable from every function's API entry. Check coverage
 # from source rather than importing CUDA modules during documentation builds.
-import ast
-import json
-from pathlib import Path
 
 
 def _method_guide_links(app, what, name, obj, options, lines):

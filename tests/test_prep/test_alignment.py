@@ -82,10 +82,6 @@ def test_correct_distortion_parameters(
     max_value,
     mean_value,
 ):
-    distortion_coeffs_path = os.path.join(
-        distortion_correction_path, "distortion-coeffs.txt"
-    )
-
     path = os.path.join(distortion_correction_path, image)
     im_host = imread(path)
     im = cp.asarray(im_host.astype(cp.uint16))

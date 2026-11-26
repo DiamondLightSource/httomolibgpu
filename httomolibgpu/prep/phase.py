@@ -301,11 +301,20 @@ def _calculate_pad_size(
             raise ValueError("pad_x_y must be a list of two integers")
 
     if calculate_padding_value_method == "next_power_of_2":
-        calculate_padded_dim = lambda _, size: _shift_bit_length(size + 1)
+
+        def calculate_padded_dim(_, size):
+            return _shift_bit_length(size + 1)
+
     elif calculate_padding_value_method == "next_fast_length":
-        calculate_padded_dim = lambda _, size: next_fast_len(size)
+
+        def calculate_padded_dim(_, size):
+            return next_fast_len(size)
+
     elif calculate_padding_value_method == "use_pad_x_y":
-        calculate_padded_dim = lambda dim, size: size + 2 * pad_x_y[2 - dim]
+
+        def calculate_padded_dim(dim, size):
+            return size + 2 * pad_x_y[2 - dim]
+
     else:
         raise ValueError(
             f'Unexpected calculate_padding_value_method: "{calculate_padding_value_method}"'

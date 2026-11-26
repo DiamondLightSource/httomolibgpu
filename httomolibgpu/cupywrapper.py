@@ -33,7 +33,7 @@ if cupy_run:
     from cupyx.scipy.fft import next_fast_len
 else:
     import numpy as cp
-    from scipy.fft import next_fast_len
+    from scipy.fft import next_fast_len as next_fast_len
 
     logging.getLogger(__name__).info("CUDA unavailable: %s", _gpu_error)
 

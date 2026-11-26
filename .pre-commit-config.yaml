@@ -1,17 +1,27 @@
 repos:
-- repo: https://github.com/psf/black
-  rev: 23.12.1
+- repo: https://github.com/rhysd/actionlint
+  rev: v1.7.12
+  hooks:
+    - id: actionlint
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.15.0
+  hooks:
+    - id: ruff-check
+      types_or: [python, pyi]
+- repo: https://github.com/psf/black-pre-commit-mirror
+  rev: 26.1.0
   hooks:
     - id: black
       language_version: python3
+      args: [--workers=1]
       exclude: ^docs/source/examples/
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.5.0
+  rev: v6.0.0
   hooks:
     - id: trailing-whitespace  # This hook trims trailing whitespace.
     - id: check-docstring-first  # Checks a common error of defining a docstring after code.
     - id: check-merge-conflict  # Check for files that contain merge conflict strings.
-    #- id: check-yaml  # This hook checks yaml files for parseable syntax.
+    - id: check-yaml  # This hook checks yaml files for parseable syntax.
     - id: detect-private-key  # Detects the presence of private keys.
     - id: check-symlinks
     - id: check-toml
@@ -23,12 +33,15 @@ repos:
   rev: 0.6.1
   hooks:
     - id: nbstripout
-      exclude: ^docs/source/examples/
+      # Saved documentation figures and validation results are published.
+      exclude: '^docs/source/(examples|validation|benchmarks)/'
 -   repo: https://github.com/asottile/blacken-docs
     rev: 1.16.0
     hooks:
     - id: blacken-docs
+      additional_dependencies: [black==26.1.0]
 - repo: https://github.com/nbQA-dev/nbQA
   rev: 1.7.1
   hooks:
     - id: nbqa-black
+      additional_dependencies: [black==26.1.0]

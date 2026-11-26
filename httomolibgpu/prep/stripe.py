@@ -257,8 +257,10 @@ def _mypad(
     # Vertical only
     if pad[0] == 0 and pad[1] == 0:
         m1, m2 = pad[2], pad[3]
-        l = x.shape[-2] if not mem_stack else x[-2]
-        xe = _reflect(np.arange(-m1, l + m2, dtype="int32"), -0.5, l - 0.5)
+        axis_length = x.shape[-2] if not mem_stack else x[-2]
+        xe = _reflect(
+            np.arange(-m1, axis_length + m2, dtype="int32"), -0.5, axis_length - 0.5
+        )
         if mem_stack:
             ret_shape = [x[0], x[1], xe.size, x[3]]
             mem_stack.malloc(np.prod(ret_shape) * np.float32().itemsize)
@@ -267,8 +269,10 @@ def _mypad(
     # horizontal only
     elif pad[2] == 0 and pad[3] == 0:
         m1, m2 = pad[0], pad[1]
-        l = x.shape[-1] if not mem_stack else x[-1]
-        xe = _reflect(np.arange(-m1, l + m2, dtype="int32"), -0.5, l - 0.5)
+        axis_length = x.shape[-1] if not mem_stack else x[-1]
+        xe = _reflect(
+            np.arange(-m1, axis_length + m2, dtype="int32"), -0.5, axis_length - 0.5
+        )
         if mem_stack:
             ret_shape = [x[0], x[1], x[2], xe.size]
             mem_stack.malloc(np.prod(ret_shape) * np.float32().itemsize)

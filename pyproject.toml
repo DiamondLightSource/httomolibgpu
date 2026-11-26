@@ -54,13 +54,11 @@ dev = [
   "pytest-cov",
   "pytest-xdist",
   "pytest-benchmark",
-  "flake8",
-  "pyproject-flake8",
-  "pydocstyle",
-  "toml",
+  "ruff==0.15.0",
+  "black==26.1.0",
   "imageio",
   "h5py",
-  "pre-commit",
+  "pre-commit==4.5.1",
   "pyfftw",
   "tomophantom"
 ]
@@ -102,25 +100,22 @@ source = [
 # Ignore missing stubs for modules we use
 ignore_missing_imports = true
 
-[tool.isort]
-profile = "black"
-float_to_top = true
+# Black formats Python source files; notebook outputs are preserved.
+[tool.black]
+line-length = 88
+target-version = ["py312"]
+required-version = "26.1.0"
+include = '\.pyi?$'
+force-exclude = '/(build|dist|\.virtual_documents|\.vscode|bin|Zenodo)/'
 
-[tool.pydocstyle]
-convention = "google"
-add-ignore = [
-    "D100", # Ignore missing docstrings in public modules
-    "D104", # Ignore missing docstrings in public packages
-    "D418", # Ignore missing docstrings in dunder methods; See: https://github.com/PyCQA/pydocstyle/issues/525
-]
+[tool.ruff]
+required-version = "==0.15.0"
+target-version = "py312"
+line-length = 88
+extend-exclude = ["build", "dist", ".virtual_documents", ".vscode", "bin", "Zenodo", "*.ipynb"]
+force-exclude = true
 
-[tool.flake8]
-# Make flake8 respect black's line length (default 88),
-max-line-length = 88
-extend-ignore = [
-    "E203",
-    "F811"
-]
-per-file-ignores = [
-    "*pyi:E302"
-]
+[tool.ruff.lint]
+# Start with Python errors, unused names and ambiguous or invalid statements.
+# Black owns formatting; expand stylistic rules separately.
+select = ["F", "E4", "E7", "E9"]

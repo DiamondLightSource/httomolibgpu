@@ -18,8 +18,7 @@ def run_import_check(code):
 
 
 def test_phase_correlation_import_does_not_load_tomobar_wrappers():
-    run_import_check(
-        """
+    run_import_check("""
         import importlib.abc
         import sys
         class BlockReconstructionImports(importlib.abc.MetaPathFinder):
@@ -34,13 +33,11 @@ def test_phase_correlation_import_does_not_load_tomobar_wrappers():
             assert name in dir(httomolibgpu)
             assert name in httomolibgpu.__all__
             assert name not in httomolibgpu.__dict__
-    """
-    )
+    """)
 
 
 def test_top_level_reconstruction_exports_are_resolved_and_cached():
-    run_import_check(
-        """
+    run_import_check("""
         import sys
         from types import ModuleType
         import httomolibgpu
@@ -64,13 +61,11 @@ def test_top_level_reconstruction_exports_are_resolved_and_cached():
             pass
         else:
             raise AssertionError('Missing export did not raise AttributeError')
-    """
-    )
+    """)
 
 
 def test_all_modules_import_without_cuda_or_tomobar():
-    run_import_check(
-        """
+    run_import_check("""
         import importlib
         import importlib.abc
         import pkgutil
@@ -130,13 +125,11 @@ def test_all_modules_import_without_cuda_or_tomobar():
                 assert 'CUDA GPU' in str(exc), (module, name, str(exc))
             else:
                 raise AssertionError('GPU-only call unexpectedly succeeded: ' + name)
-    """
-    )
+    """)
 
 
 def test_installed_cupy_with_unavailable_device_falls_back_consistently():
-    run_import_check(
-        """
+    run_import_check("""
         import importlib
         import pkgutil
         import sys
@@ -164,5 +157,4 @@ def test_installed_cupy_with_unavailable_device_falls_back_consistently():
             assert 'test: device is not accessible' in str(exc)
         else:
             raise AssertionError('Unavailable dependency returned a fake result')
-    """
-    )
+    """)

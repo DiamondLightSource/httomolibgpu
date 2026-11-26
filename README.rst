@@ -83,6 +83,27 @@ The ``validation`` extra supplies notebook execution and plotting tools.
 TomoPhantom is used by phantom-based tests and the 3D denoising notebook.
 Install ``jupyterlab`` separately if you want to edit notebooks interactively.
 
+Code quality
+~~~~~~~~~~~~
+
+Code-quality checks run on pull requests and pushes to ``main`` without GPU
+libraries. Install the pinned checker and enable the local hooks::
+
+    python -m pip install pre-commit==4.5.1
+    pre-commit install
+
+Run the same checks as CI::
+
+    pre-commit validate-config
+    pre-commit run actionlint --all-files
+    pre-commit run check-yaml --all-files
+    pre-commit run check-toml --all-files
+    pre-commit run ruff-check --all-files
+    pre-commit run black --all-files
+
+Ruff checks Python errors and unused names; Black formats Python source.
+The hooks preserve saved figures in documentation and validation notebooks.
+
 Virtual environment
 ~~~~~~~~~~~~~~~~~~~
 

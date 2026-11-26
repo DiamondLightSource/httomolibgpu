@@ -562,7 +562,7 @@ def main(argv=None):
         require_gpu("Documentation image generation", args.gpu_id)
         cp.cuda.Device(args.gpu_id).use()
         if "rescale_to_int" in args.methods:
-            import matplotlib  # Fail before synthesising a full dataset.
+            __import__("matplotlib")  # Fail before synthesising a full dataset.
         if "reconstruction" in args.methods:
             import astra
 

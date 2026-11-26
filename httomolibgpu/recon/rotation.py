@@ -1099,7 +1099,6 @@ def find_center_metric_recon(
     best_index = np.argmin(values_arr)
 
     best_center = centres[best_index]
-    value_function_min = values_arr[best_index]
 
     return best_center
     ###################################

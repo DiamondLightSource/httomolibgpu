@@ -43,7 +43,31 @@ _LAZY_EXPORTS = {
 }
 
 # Preserve star-import discovery as well as the usual explicit imports.
-__all__ = [name for name in globals() if not name.startswith("_")] + list(_LAZY_EXPORTS)
+__all__ = [
+    "data_checker",
+    "seam_blend_stitched_data",
+    "median_filter",
+    "remove_outlier",
+    "total_variation_ROF",
+    "total_variation_PD",
+    "total_variation_SB",
+    "total_variation_FGP",
+    "total_generalised_variation",
+    "nonlinear_diffusion",
+    "non_local_means",
+    "sino_360_to_180",
+    "data_resampler",
+    "rescale_to_int",
+    "distortion_correction_proj_discorpy",
+    "dark_flat_field_correction",
+    "minus_log",
+    "paganin_filter",
+    "remove_stripe_based_sorting",
+    "remove_stripe_fw",
+    "remove_stripe_ti",
+    "remove_all_stripe",
+    "raven_filter",
+] + list(_LAZY_EXPORTS)
 
 
 def __getattr__(name):

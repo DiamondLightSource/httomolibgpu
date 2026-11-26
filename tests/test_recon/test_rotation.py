@@ -1,11 +1,10 @@
 import time
-from unittest import mock
 import cupy as cp
 from cupy.cuda import nvtx
 from cupyx.scipy.ndimage import shift
 import numpy as np
 import pytest
-from httomolibgpu.prep.normalize import dark_flat_field_correction, minus_log
+from httomolibgpu.prep.normalize import dark_flat_field_correction
 from httomolibgpu.recon.rotation import (
     _calculate_chunks,
     find_center_360,

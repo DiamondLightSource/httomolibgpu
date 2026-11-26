@@ -15,7 +15,6 @@ from numpy.testing import assert_allclose
 import time
 import pytest
 from cupy.cuda import nvtx
-from ..conftest import MaxMemoryHook
 
 
 def test_reconstruct_FBP_2d_astra(data, flats, darks, ensure_clean_memory):

@@ -3,6 +3,7 @@
 These are deterministic synthetic examples, not library validation results.
 Run from any directory; figures are written beside the method documentation.
 """
+
 from pathlib import Path
 import numpy as np
 import matplotlib
