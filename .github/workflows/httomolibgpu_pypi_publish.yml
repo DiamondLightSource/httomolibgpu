@@ -1,33 +1,53 @@
-name: Upload Python Package to PyPI when "v" tag is pushed
+name: Publish Python package to PyPI
 
-# Run the workflow whenever a tag beginning with `v` is pushed to any branch
 on:
   push:
-    tags:
-      - v*
+    tags: [v*]
+
+permissions:
+  contents: read
 
 jobs:
-  pypi-publish:
-    name: Publish release to PyPI
+  build:
+    name: Build and validate release
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install build tools
+        run: python -m pip install build twine
+      - name: Build source distribution and wheel
+        run: python -m build
+      - name: Validate package metadata and README
+        run: python -m twine check --strict dist/*
+      - name: Save validated distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-distributions
+          path: dist/
+          if-no-files-found: error
+
+  pypi-publish:
+    name: Publish validated release to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment:
       name: pypi
       url: https://pypi.org/p/httomolibgpu
     permissions:
       id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Download validated distributions
+        uses: actions/download-artifact@v4
         with:
-          python-version: "3.12"
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install setuptools wheel
-          pip install --upgrade build
-      - name: Build package
-        run: |
-          python -m build
+          name: release-distributions
+          path: dist/
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1

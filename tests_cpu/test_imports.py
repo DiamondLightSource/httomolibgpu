@@ -3,17 +3,19 @@
 import subprocess
 import sys
 import textwrap
-from pathlib import Path
+from tempfile import TemporaryDirectory
 
 
 def run_import_check(code):
-    result = subprocess.run(
-        [sys.executable, "-c", textwrap.dedent(code)],
-        cwd=Path(__file__).resolve().parents[1],
-        capture_output=True,
-        text=True,
-        timeout=60,
-    )
+    # A fresh process outside the checkout exercises the installed package.
+    with TemporaryDirectory() as directory:
+        result = subprocess.run(
+            [sys.executable, "-c", textwrap.dedent(code)],
+            cwd=directory,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
     assert result.returncode == 0, result.stdout + result.stderr
 
 

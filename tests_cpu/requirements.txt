@@ -1,0 +1,7 @@
+# CPU runtime dependencies only; do not install the GPU development extra.
+numpy==2.4.*
+scipy
+pillow
+scikit-image
+PyWavelets
+pytest

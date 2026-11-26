@@ -83,6 +83,25 @@ The ``validation`` extra supplies notebook execution and plotting tools.
 TomoPhantom is used by phantom-based tests and the 3D denoising notebook.
 Install ``jupyterlab`` separately if you want to edit notebooks interactively.
 
+CPU tests
+~~~~~~~~~
+
+The small CPU suite checks NumPy utilities, imports without CUDA, clear errors
+for GPU-only operations, and the CUDA sources included in the installed wheel.
+It runs separately from the numerical GPU tests and needs no CuPy, ToMoBAR,
+ASTRA or Zenodo data. In a clean Python 3.12 environment::
+
+    python -m pip install build twine -r tests_cpu/requirements.txt
+    python -m build
+    python -m twine check --strict dist/*
+    python -m pip install --no-deps dist/*.whl
+    python -m pytest tests_cpu -o addopts="-ra --tb=short"
+
+The GitHub ``CPU tests and package validation`` job validates package metadata
+and runs the suite outside the checkout to verify the
+installed package rather than importing source files from the repository.
+Continue to use ``pytest tests`` in the GPU environment for numerical tests.
+
 Code quality
 ~~~~~~~~~~~~
 

@@ -1,0 +1,37 @@
+name: CPU tests and package validation
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cpu-tests:
+    name: Installed package without CUDA
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: tests_cpu/requirements.txt
+      - name: Install CPU test tools
+        run: python -m pip install build twine -r tests_cpu/requirements.txt
+      - name: Build source distribution and wheel
+        run: python -m build
+      - name: Validate package metadata and README
+        run: python -m twine check --strict dist/*
+      - name: Install wheel without GPU dependencies
+        run: python -m pip install --no-deps dist/*.whl
+      - name: Run CPU tests outside the checkout
+        working-directory: ${{ runner.temp }}
+        run: python -m pytest "$GITHUB_WORKSPACE/tests_cpu" -o addopts="-ra --tb=short"
