@@ -16,7 +16,6 @@ limitations, and records the software environment used for execution.
     rotation/index
     preprocessing/index
     denoising/index
-    zenodo_transfer
 
 Running the validation
 ----------------------

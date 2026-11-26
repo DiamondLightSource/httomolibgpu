@@ -78,8 +78,6 @@ in the following validation notebooks:
 * :doc:`LPRec3D · I13 dataset 2 <../../../validation/reconstruction/direct/lprec3d_i13_dataset2>`
 * :doc:`LPRec3D · K11 dataset 2 <../../../validation/reconstruction/direct/lprec3d_k11_dataset2>`
 
-:doc:`Original legacy-scaling and padding cases <../../../validation/reconstruction/transferred/lprec_legacy>` retains the original
-Zenodo regression parameters and numerical checks.
 
 API reference
 -------------

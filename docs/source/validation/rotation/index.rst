@@ -1,11 +1,9 @@
 Centre of rotation and 360-degree scans
 =======================================
 
-These notebooks transfer all ten numerical cases from the former Zenodo
-``test_rotation.py`` suite. Cases are grouped by the public method, with shared
-preprocessing for the central-row and averaging cases on I12 dataset 2.
-Each notebook records archive checksums, software/GPU provenance, parameters,
-observed values and saved figures, then enforces the original regression checks.
+Estimate rotation centres and overlap using experimental and simulated datasets.
+Each notebook describes preprocessing, method settings and numerical references,
+and combines assertions with sinogram and registration plots.
 
 .. list-table:: Validation coverage
    :header-rows: 1
@@ -13,7 +11,7 @@ observed values and saved figures, then enforces the original regression checks.
 
    * - Method
      - Datasets and cases
-     - Original checks
+     - Numerical checks
    * - Vo centre finding
      - I12 datasets 1 and 2 (including row averaging), I13 dataset 2,
        GEANT4 dataset 1 and K11 dataset 1
@@ -33,21 +31,13 @@ observed values and saved figures, then enforces the original regression checks.
    360-degree overlap and stitching <center_360>
 
 The :doc:`execution instructions <../index>` cover dependencies, archive
-location and updating saved outputs. Exact reference values and integer
-conversions are retained from the tests; figures do not relax those checks.
-The :download:`transfer manifest <transfer_manifest.json>` maps all eleven
-original test names, including the performance case, to their destinations.
+location and updating saved outputs. The notebooks check numerical references,
+dtype and stitched shape, with plots for visual review.
 
-The timing case is a separate :doc:`Vo centre-search benchmark
-<../../benchmarks/center_vo_i12_dataset1>`, excluded from routine validation.
-It records synchronised timing samples rather than comparing milliseconds
-with the original placeholder string assertion.
+For execution times, see the separate :doc:`Vo centre-search benchmark
+<../../benchmarks/center_vo_i12_dataset1>`.
 
 For method descriptions, see :doc:`Vo centre finding
 <../../reference/methods_list/cor_finder/find_center_vo>`,
 :doc:`phase correlation <../../reference/methods_list/cor_finder/find_center_pc>`
 and :doc:`360-degree overlap <../../reference/methods_list/cor_finder/find_center_360>`.
-
-The overlap notebook also transfers all three full-stack stitching cases from
-``test_morph.py``, retaining their original fixed fractional overlaps, detector
-rows and output shape/dtype/contiguity assertions. See :doc:`../zenodo_transfer`.

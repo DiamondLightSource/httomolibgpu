@@ -57,8 +57,6 @@ in the following validation notebooks:
 
 * :doc:`ADMM · K11 dataset 2 <../../../validation/reconstruction/regularised/admm3d_k11_dataset2>`
 
-:doc:`Original regularisation settings <../../../validation/reconstruction/transferred/regularised_legacy>` retains the original
-Zenodo regression parameters and numerical checks.
 
 API reference
 -------------

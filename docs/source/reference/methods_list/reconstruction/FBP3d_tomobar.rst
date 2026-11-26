@@ -76,11 +76,7 @@ in the following validation notebooks:
 * :doc:`FBP3D · I12 dataset 5 <../../../validation/reconstruction/direct/fbp3d_i12_dataset5>`
 * :doc:`FBP3D · I13 dataset 3 <../../../validation/reconstruction/direct/fbp3d_i13_dataset3>`
 
-:doc:`Original unpadded and padded cases <../../../validation/reconstruction/transferred/fbp_padding>` retains the original
-Zenodo regression parameters and numerical checks.
 
-:doc:`Original full-turn detector stacks <../../../validation/reconstruction/transferred/full_turn>`
-retain the complete I12 and I13 reconstruction cases.
 
 API reference
 -------------

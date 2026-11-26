@@ -82,8 +82,6 @@ in the following validation notebooks:
 * :doc:`FISTA · K11 dataset 2 <../../../validation/reconstruction/regularised/fista3d_k11_dataset2>`
 * :doc:`FISTA · GEANT4 dataset 1 <../../../validation/reconstruction/regularised/fista3d_geant4_dataset1>`
 
-:doc:`Original regularisation settings <../../../validation/reconstruction/transferred/regularised_legacy>` retains the original
-Zenodo regression parameters and numerical checks.
 
 API reference
 -------------

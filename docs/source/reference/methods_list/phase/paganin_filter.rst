@@ -35,8 +35,9 @@ Papers and further reading
 Validation
 ----------
 
-:doc:`Paganin padding choices <../../../validation/preprocessing/paganin_padding>` retains the original
-Zenodo regression parameters and numerical checks.
+:doc:`Paganin reconstruction <../../../validation/preprocessing/paganin_reconstruction>`
+applies phase retrieval to the biological sample in I12 dataset 6 and compares
+five reconstructed slices with and without filtering.
 
 API reference
 -------------

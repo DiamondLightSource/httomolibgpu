@@ -75,7 +75,7 @@ Validation examples and images
 ------------------------------
 
 See :doc:`the saved validation notebook <../../../validation/rotation/center_360>`.
-Worked overlap estimates and stitched sinograms for I12 and I13 full-turn datasets. The original regressions validate centre/overlap estimation; the stitching plots provide additional interpretation.
+Worked overlap estimates and stitched sinograms for I12 and I13 full-turn datasets. Numerical checks validate centre/overlap estimation; the stitching plots provide additional interpretation.
 
 
 API reference

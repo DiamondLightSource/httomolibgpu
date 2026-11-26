@@ -48,7 +48,7 @@ Three full-turn scans with the original integer centre, integer overlap and side
 
 
 .. note:: In the current wrapper, the first return value is the input detector
-   width (the value called ``cor`` in the historical tests), not an independent
+   width, not an independent
    estimate of the rotation axis in raw detector coordinates. The overlap and
    side are the estimated quantities used for 360-to-180 conversion. The
    validation notebook preserves and explains this return-value convention.

@@ -63,20 +63,3 @@ Additional automated coverage
 :doc:`iterative projection alignment <../../reference/methods_list/reconstruction/iterative_alignment>`
 currently link to automated test coverage, including GPU execution checks.
 They do not yet have saved reconstruction validation notebooks.
-
-Original Zenodo regression settings
------------------------------------
-
-The notebooks above include worked examples with deliberately chosen settings.
-The following notebooks preserve additional historical settings that differ
-from those examples, including padding, LPRec legacy scaling and regularisation.
-Their original numerical checks remain strict; a saved failure is not a new
-accepted reference. See :doc:`../zenodo_transfer` for the transfer map.
-
-.. toctree::
-   :maxdepth: 1
-
-   Full-turn FBP with original detector stacks <transferred/full_turn>
-   FBP3D unpadded and padded cases <transferred/fbp_padding>
-   LPRec3D legacy scaling and padding <transferred/lprec_legacy>
-   Original FISTA and ADMM settings <transferred/regularised_legacy>
